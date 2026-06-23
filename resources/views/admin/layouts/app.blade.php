@@ -10,34 +10,36 @@
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700,800&display=swap" rel="stylesheet" />
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="bg-light antialiased" style="height: 100vh; overflow: hidden;">
+<body class="admin-shell antialiased" style="height: 100vh; overflow: hidden;">
 
     <div class="d-flex vh-100 w-100 overflow-hidden">
 
-        @include('layouts.sidebar')
+        @include('admin.layouts.sidebar')
 
-        <div class="d-flex flex-column flex-grow-1 h-100 overflow-auto bg-light">
+        <div class="d-flex flex-column flex-grow-1 h-100 overflow-auto admin-workspace">
 
             @isset($header)
-            <header class="bg-white border-bottom shadow-sm sticky-top">
-                @include('layouts.header')
+            <header class="admin-topbar sticky-top">
+                @include('admin.layouts.header')
             </header>
             @endisset
 
-            <main class="flex-grow-1 p-4">
+            <main class="flex-grow-1 admin-main">
                 {{ $slot }}
             </main>
 
-            <footer class="bg-white border-top py-3 px-4 d-flex justify-content-between text-secondary small">
-                @include('layouts.footer')
+            <footer class="admin-footer py-3 px-4 d-flex justify-content-between text-secondary small">
+                @include('admin.layouts.footer')
             </footer>
         </div>
     </div>
+
+    @stack('js')
 </body>
 </html>

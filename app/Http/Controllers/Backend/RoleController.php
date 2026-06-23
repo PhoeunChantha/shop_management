@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Backend;
+
+use App\Http\Controllers\Controller;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -8,6 +10,7 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\View\View;
 
 class RoleController extends Controller implements HasMiddleware
 {
@@ -25,18 +28,40 @@ class RoleController extends Controller implements HasMiddleware
         ];
     }
 
-    public function index()
+    public function index(Request $request): View
     {
-        $roles = Role::orderBy('id', 'asc')->paginate(10);
-        return view('roles.index', [
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
+        ]);
+
+        $perPage = (int) ($filters['per_page'] ?? 10);
+        $search = trim($filters['search'] ?? '');
+
+        $roles = Role::query()
+            ->with('permissions')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('name', 'like', "%{$search}%")
+                        ->orWhereHas('permissions', function ($query) use ($search) {
+                            $query->where('name', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->orderBy('id', 'asc')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        return view('admin.roles.index', [
             'roles' => $roles,
+            'perPage' => $perPage,
         ]);
     }
 
     public function create()
     {
         $permissions = Permission::orderBy('id', 'asc')->get();
-        return view('roles.create', [
+        return view('admin.roles.create', [
             'permissions' => $permissions,
         ]);
     }
@@ -69,7 +94,7 @@ class RoleController extends Controller implements HasMiddleware
         $role = Role::findOrFail($id);
         $hasPermissions = $role->permissions()->pluck('name');
         $permissions = Permission::orderBy('id', 'asc')->get();
-        return view('roles.edit', [
+        return view('admin.roles.edit', [
             'role' => $role,
             'permissions' => $permissions,
             'hasPermissions' => $hasPermissions,

@@ -1,17 +1,19 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Backend;
+
+use App\Http\Controllers\Controller;
 
 use Illuminate\Http\Request;
 use App\Models\User;
-use GrahamCampbell\ResultType\Success;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\View\View;
 
 class UserController extends Controller implements HasMiddleware
 {
@@ -25,18 +27,55 @@ class UserController extends Controller implements HasMiddleware
         ];
     }
 
-    public function index()
+    public function index(Request $request): View
     {
-        $users = User::orderBy('id', 'asc')->paginate(10);
-        return view('users.index', [
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'role' => ['nullable', 'string', 'exists:roles,name'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+            'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
+        ]);
+
+        $perPage = (int) ($filters['per_page'] ?? 10);
+        $search = trim($filters['search'] ?? '');
+
+        $users = User::query()
+            ->with('roles')
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                });
+            })
+            ->when(! empty($filters['role']), function ($query) use ($filters) {
+                $query->whereHas('roles', function ($query) use ($filters) {
+                    $query->where('name', $filters['role']);
+                });
+            })
+            ->when(! empty($filters['date_from']), function ($query) use ($filters) {
+                $query->whereDate('created_at', '>=', $filters['date_from']);
+            })
+            ->when(! empty($filters['date_to']), function ($query) use ($filters) {
+                $query->whereDate('created_at', '<=', $filters['date_to']);
+            })
+            ->orderBy('id', 'asc')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        $roles = Role::orderBy('name', 'asc')->get();
+
+        return view('admin.users.index', [
             'users' => $users,
+            'roles' => $roles,
+            'perPage' => $perPage,
         ]);
     }
 
     public function create()
     {
         $roles = Role::orderBy('name', 'asc')->get();
-        return view('users.create', [
+        return view('admin.users.create', [
             'roles' => $roles,
         ]);
     }
@@ -49,6 +88,7 @@ class UserController extends Controller implements HasMiddleware
             'password' => 'required|min:5|same:confirm_password',
             'confirm_password' => 'required',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'role' => 'required|exists:roles,name',
         ]);
 
         if ($validator->fails()) {
@@ -63,15 +103,12 @@ class UserController extends Controller implements HasMiddleware
         $user->password = $request->password;
 
         if ($request->hasFile('avatar')) {
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
-            $user->avatar = $avatarPath;
+            $user->avatar = $this->storeAvatar($request);
         }
 
         $user->save();
 
-        if ($request->has('roles')) {
-            $user->syncRoles($request->roles);
-        }
+        $user->syncRoles([$request->role]);
 
         return redirect()->route('users.index')
             ->with('success', 'User created successfully!');
@@ -83,7 +120,7 @@ class UserController extends Controller implements HasMiddleware
         $roles = Role::orderBy('id', 'asc')->get();
         $hasRoles = $user->roles->pluck('name');
 
-        return view('users.edit', [
+        return view('admin.users.edit', [
             'user' => $user,
             'roles' => $roles,
             'hasRoles' => $hasRoles,
@@ -97,7 +134,7 @@ class UserController extends Controller implements HasMiddleware
         $validator = Validator::make($request->all(), [
             'name' => 'required|min:3',
             'email' => 'required|email|unique:users,email,' . $id,
-            'roles' => 'required|array',
+            'role' => 'required|exists:roles,name',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
@@ -111,16 +148,13 @@ class UserController extends Controller implements HasMiddleware
         $user->email = $request->email;
 
         if ($request->hasFile('avatar')) {
-            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
-                Storage::disk('public')->delete($user->avatar);
-            }
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
-            $user->avatar = $avatarPath;
+            $this->deleteAvatar($user->avatar);
+            $user->avatar = $this->storeAvatar($request);
         }
 
         $user->save();
 
-        $user->syncRoles($request->roles);
+        $user->syncRoles([$request->role]);
         return redirect()->route('users.index')
             ->with('success', 'User update success!!');
     }
@@ -135,9 +169,43 @@ class UserController extends Controller implements HasMiddleware
         }
 
         $user->roles()->detach();
+        $this->deleteAvatar($user->avatar);
         $user->delete();
 
         return redirect()->route('users.index')
             ->with('success', 'User deleted successfully!');
+    }
+
+    private function storeAvatar(Request $request): string
+    {
+        $directory = 'uploads/users';
+        $file = $request->file('avatar');
+        $filename = $file->hashName();
+
+        File::ensureDirectoryExists(public_path($directory));
+        $file->move(public_path($directory), $filename);
+
+        return $filename;
+    }
+
+    private function deleteAvatar(?string $avatar): void
+    {
+        if (! $avatar) {
+            return;
+        }
+
+        if (str_contains($avatar, '/') && str_starts_with($avatar, 'uploads/')) {
+            File::delete(public_path($avatar));
+            return;
+        }
+
+        if (! str_contains($avatar, '/')) {
+            File::delete(public_path("uploads/users/{$avatar}"));
+            return;
+        }
+
+        if (Storage::disk('public')->exists($avatar)) {
+            Storage::disk('public')->delete($avatar);
+        }
     }
 }
