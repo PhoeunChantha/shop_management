@@ -92,6 +92,7 @@ class PermissionController extends Controller implements HasMiddleware
             $permission->name = $request->name;
             $permission->save();
 
+            
             return redirect()->route('permissions.index')->with('success', 'Permission updated successfully!');
         } else {
             return redirect()->route('permissions.edit', $id)->withInput()->withErrors($validator);
@@ -101,6 +102,7 @@ class PermissionController extends Controller implements HasMiddleware
     public function destroy($id, Request $request)
     {
         $permission = Permission::findOrFail($id);
+
 
         $permission->delete();
 

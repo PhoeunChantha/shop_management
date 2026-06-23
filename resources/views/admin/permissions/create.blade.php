@@ -9,6 +9,7 @@
     </x-slot>
 
     <div class="admin-page admin-form-page">
+        
         <div class="page-section-header">
             <div>
                 <p class="section-kicker">Permission setup</p>
