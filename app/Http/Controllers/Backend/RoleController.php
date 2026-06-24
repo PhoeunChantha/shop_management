@@ -83,9 +83,9 @@ class RoleController extends Controller implements HasMiddleware
                 $role->syncPermissions($permissions);
             }
 
-            return redirect()->route('roles.index')->with('success', 'Role created successfully!');
+            return redirect()->route('admin.roles.index')->with('success', 'Role created successfully!');
         } else {
-            return redirect()->route('roles.create')->withInput()->withErrors($validator);
+            return redirect()->route('admin.roles.create')->withInput()->withErrors($validator);
         }
     }
 
@@ -121,9 +121,9 @@ class RoleController extends Controller implements HasMiddleware
                 $role->syncPermissions([]);
             }
 
-            return redirect()->route('roles.index')->with('success', 'Role updated successfully!');
+            return redirect()->route('admin.roles.index')->with('success', 'Role updated successfully!');
         } else {
-            return redirect()->route('roles.edit', $role->id)->withInput()->withErrors($validator);
+            return redirect()->route('admin.roles.edit', $role->id)->withInput()->withErrors($validator);
         }
     }
 
@@ -132,10 +132,10 @@ class RoleController extends Controller implements HasMiddleware
         $role = Role::find($id);
 
         if ($role == null) {
-            return redirect()->route('roles.index')->with('fail', 'Role not found.');
+            return redirect()->route('admin.roles.index')->with('fail', 'Role not found.');
         }
 
         $role->delete();
-        return redirect()->route('roles.index')->with('success', 'Role deleted successfully!');
+        return redirect()->route('admin.roles.index')->with('success', 'Role deleted successfully!');
     }
 }

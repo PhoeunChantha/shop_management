@@ -14,7 +14,7 @@
                 <p class="section-kicker">Role table</p>
                 <h3>All Roles</h3>
             </div>
-            <a href="{{ route('roles.create') }}" class="premium-button premium-button--dark">
+            <a href="{{ route('admin.roles.create') }}" class="premium-button premium-button--dark">
                 <i class="fa-solid fa-plus"></i>
                 <span>New Role</span>
             </a>
@@ -23,7 +23,7 @@
         <x-message />
 
         <section class="premium-card">
-            <form method="GET" action="{{ route('roles.index') }}" class="table-toolbar">
+            <form method="GET" action="{{ route('admin.roles.index') }}" class="table-toolbar">
                 <div class="table-toolbar__left">
                     <div class="result-badge">
                         <i class="fa-solid fa-shield-halved"></i>
@@ -85,14 +85,14 @@
                                 </td>
                                 <td>
                                     <div class="action-group">
-                                        <a href="{{ route('roles.edit', $role->id) }}" class="table-action table-action--edit">
+                                        <a href="{{ route('admin.roles.edit', $role->id) }}" class="table-action table-action--edit">
                                             <i class="fa-solid fa-pen"></i>
                                             <span>Edit</span>
                                         </a>
 
                                         <button type="button" class="table-action table-action--delete"
                                             data-delete-modal-target="deleteRoleModal"
-                                            data-delete-action="{{ route('roles.destroy', $role->id) }}"
+                                            data-delete-action="{{ route('admin.roles.destroy', $role->id) }}"
                                             data-delete-name="{{ $role->name }}">
                                             <i class="fa-solid fa-trash"></i>
                                             <span>Delete</span>

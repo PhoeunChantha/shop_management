@@ -51,7 +51,7 @@
     </div>
 
     <div class="form-panel-footer">
-        <a href="{{ route('permissions.index') }}" class="form-cancel-button">Cancel</a>
+        <a href="{{ route('admin.permissions.index') }}" class="form-cancel-button">Cancel</a>
         <button type="submit" class="form-submit-button">
             <i class="fa-solid fa-check"></i>
             {{ $submitText }}

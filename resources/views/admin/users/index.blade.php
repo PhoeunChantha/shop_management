@@ -14,20 +14,20 @@
                 <p class="section-kicker">User table</p>
                 <h3>All Users</h3>
             </div>
-            <a href="{{ route('users.create') }}" class="premium-button premium-button--dark">
+            <a href="{{ route('admin.users.create') }}" class="premium-button premium-button--dark">
                 <i class="fa-solid fa-plus"></i>
                 <span>New User</span>
             </a>
         </div>
         <x-message />
 
-        <form method="GET" action="{{ route('users.index') }}" class="filter-card">
+        <form method="GET" action="{{ route('admin.users.index') }}" class="filter-card">
             <div class="filter-card__header">
                 <div>
                     <p class="section-kicker">Filters</p>
                     <h3>Refine user records</h3>
                 </div>
-                <a href="{{ route('users.index') }}" class="ghost-button">
+                <a href="{{ route('admin.users.index') }}" class="ghost-button">
                     <i class="fa-solid fa-rotate-left"></i>
                     <span>Reset</span>
                 </a>
@@ -67,7 +67,7 @@
         </form>
 
         <section class="premium-card">
-            <form method="GET" action="{{ route('users.index') }}" class="table-toolbar">
+            <form method="GET" action="{{ route('admin.users.index') }}" class="table-toolbar">
                 <input type="hidden" name="role" value="{{ request('role') }}">
                 <input type="hidden" name="date_from" value="{{ request('date_from') }}">
                 <input type="hidden" name="date_to" value="{{ request('date_to') }}">
@@ -149,21 +149,22 @@
                                 </td>
                                 <td>
                                     <div class="action-group">
-                                        <a href="{{ route('users.edit', $user->id) }}"
+                                        <a href="{{ route('admin.users.edit', $user->id) }}"
                                             class="table-action table-action--edit">
                                             <i class="fa-solid fa-pen"></i>
                                             <span>Edit</span>
                                         </a>
 
-                                        @hasanyrole('admin|manager')
+                                        @can('delete users')
                                             <button type="button" class="table-action table-action--delete"
                                                 data-delete-modal-target="deleteUserModal"
-                                                data-delete-action="{{ route('users.destroy', $user->id) }}"
+                                                data-delete-action="{{ route('admin.users.destroy', $user->id) }}"
                                                 data-delete-name="{{ $user->name }}">
                                                 <i class="fa-solid fa-trash"></i>
                                                 <span>Delete</span>
                                             </button>
-                                        @endhasanyrole
+                                        @endcan
+                                        
                                     </div>
                                 </td>
                             </tr>

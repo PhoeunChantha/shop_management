@@ -1,11 +1,11 @@
 @php
     $isEdit = ($mode ?? 'create') === 'edit';
     $selectedPermissions = old('permissions', $isEdit ? $hasPermissions->toArray() : []);
-    $permissionGroups = [
-        'role' => 'Role',
-        'user' => 'Users',
-        'permission' => 'Permission',
-    ];
+    // Group permissions by their resource (the last word of the name),
+    // e.g. "view product" => "product". New resources appear automatically.
+    $permissionGroups = $permissions->groupBy(
+        fn ($permission) => \Illuminate\Support\Str::afterLast(trim($permission->name), ' ')
+    );
 @endphp
 
 <form action="{{ $action }}" method="POST">
@@ -34,15 +34,11 @@
             </div>
 
             <div class="permission-groups">
-                @foreach ($permissionGroups as $groupKey => $groupLabel)
-                    @php
-                        $groupPermissions = $permissions->filter(fn ($permission) => str_contains($permission->name, $groupKey));
-                    @endphp
-
+                @foreach ($permissionGroups as $groupKey => $groupPermissions)
                     <div class="permission-group-row">
                         <label class="permission-group-toggle">
                             <input type="checkbox" data-permission-group-select="{{ $groupKey }}">
-                            <span>{{ $groupLabel }}</span>
+                            <span>{{ \Illuminate\Support\Str::title($groupKey) }}</span>
                         </label>
 
                         <div class="permission-group-options">
@@ -66,7 +62,7 @@
     </div>
 
     <div class="form-panel-footer">
-        <a href="{{ route('roles.index') }}" class="form-cancel-button">Cancel</a>
+        <a href="{{ route('admin.roles.index') }}" class="form-cancel-button">Cancel</a>
         <button type="submit" class="form-submit-button">
             <i class="fa-solid fa-check"></i>
             {{ $submitText }}

@@ -15,7 +15,7 @@
                 <p class="section-kicker">Role setup</p>
                 <h3>New Role</h3>
             </div>
-            <a href="{{ route('roles.index') }}" class="ghost-button ghost-button--panel">
+            <a href="{{ route('admin.roles.index') }}" class="ghost-button ghost-button--panel">
                 <i class="fa-solid fa-arrow-left"></i>
                 <span>Back</span>
             </a>
@@ -37,7 +37,7 @@
 
             @include('admin.roles._form', [
                 'mode' => 'create',
-                'action' => route('roles.store'),
+                'action' => route('admin.roles.store'),
                 'permissions' => $permissions,
                 'submitText' => __('Create Role'),
             ])

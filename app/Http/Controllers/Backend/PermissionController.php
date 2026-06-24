@@ -66,9 +66,9 @@ class PermissionController extends Controller implements HasMiddleware
                 ]);
             }
 
-            return redirect()->route('permissions.index')->with('success', 'Permission created successfully!');
+            return redirect()->route('admin.permissions.index')->with('success', 'Permission created successfully!');
         } else {
-            return redirect()->route('permissions.create')->withInput()->withErrors($validator);
+            return redirect()->route('admin.permissions.create')->withInput()->withErrors($validator);
         }
     }
 
@@ -93,9 +93,9 @@ class PermissionController extends Controller implements HasMiddleware
             $permission->save();
 
             
-            return redirect()->route('permissions.index')->with('success', 'Permission updated successfully!');
+            return redirect()->route('admin.permissions.index')->with('success', 'Permission updated successfully!');
         } else {
-            return redirect()->route('permissions.edit', $id)->withInput()->withErrors($validator);
+            return redirect()->route('admin.permissions.edit', $id)->withInput()->withErrors($validator);
         }
     }
 
@@ -106,6 +106,6 @@ class PermissionController extends Controller implements HasMiddleware
 
         $permission->delete();
 
-        return redirect()->route('permissions.index')->with('success', 'Permission deleted successfully!');
+        return redirect()->route('admin.permissions.index')->with('success', 'Permission deleted successfully!');
     }
 }

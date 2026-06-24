@@ -107,7 +107,7 @@
     </div>
 
     <div class="flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-100">
-        <a href="{{ route('users.index') }}" class="text-sm font-medium text-gray-600 hover:text-gray-900 px-4 py-2.5">Cancel</a>
+        <a href="{{ route('admin.users.index') }}" class="text-sm font-medium text-gray-600 hover:text-gray-900 px-4 py-2.5">Cancel</a>
         <button type="submit"
             class="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-medium py-2.5 px-5 rounded-lg shadow-sm transition-colors">
             <i class="fa-solid fa-check text-xs"></i>

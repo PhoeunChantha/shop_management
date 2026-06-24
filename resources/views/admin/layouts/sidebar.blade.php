@@ -16,20 +16,20 @@
             <!-- <p class="px-3 text-secondary text-uppercase fw-bold tracking-wider mb-2" style="font-size: 10px; letter-spacing: 0.05em;">Main</p> -->
 
             <div class="nav flex-column nav-pills admin-nav">
-                <a href="{{ route('dashboard') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                <a href="{{ route('admin.dashboard') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                     <span class="me-3"><i class="fa-solid fa-home"></i></span>
                     <span class="small fw-medium">Dashboard</span>
                 </a>
-                <a href="{{ route('users.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                <a href="{{ route('admin.users.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                     <span class="me-3"><i class="fa-solid fa-users"></i></span>
                     <span class="small fw-medium">Users</span>
                 </a>
-                <a href="{{ route('roles.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('roles.*') ? 'active' : '' }}">
+                <a href="{{ route('admin.roles.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
                     <span class="me-3"><i class="fa-solid fa-shield-halved"></i></span>
                     <span class="small fw-medium">Roles</span>
                 </a>
 
-                <a href="{{ route('permissions.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('permissions.*') ? 'active' : '' }}">
+                <a href="{{ route('admin.permissions.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
                     <span class="me-3"><i class="fa-solid fa-user-group"></i></span>
                     <span class="small fw-medium">Permissions</span>
                 </a>

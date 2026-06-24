@@ -14,7 +14,7 @@
                 <p class="section-kicker">Role setup</p>
                 <h3>Edit Role</h3>
             </div>
-            <a href="{{ route('roles.index') }}" class="ghost-button ghost-button--panel">
+            <a href="{{ route('admin.roles.index') }}" class="ghost-button ghost-button--panel">
                 <i class="fa-solid fa-arrow-left"></i>
                 <span>Back</span>
             </a>
@@ -36,7 +36,7 @@
 
             @include('admin.roles._form', [
                 'mode' => 'edit',
-                'action' => route('roles.update', $role->id),
+                'action' => route('admin.roles.update', $role->id),
                 'role' => $role,
                 'permissions' => $permissions,
                 'hasPermissions' => $hasPermissions,

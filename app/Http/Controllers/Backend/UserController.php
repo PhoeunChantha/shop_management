@@ -74,9 +74,8 @@ class UserController extends Controller implements HasMiddleware
 
     public function create()
     {
-        $roles = Role::orderBy('name', 'asc')->get();
         return view('admin.users.create', [
-            'roles' => $roles,
+            'roles' => Role::orderBy('name', 'asc')->get(),
         ]);
     }
 
@@ -92,7 +91,7 @@ class UserController extends Controller implements HasMiddleware
         ]);
 
         if ($validator->fails()) {
-            return redirect()->route('users.create')
+            return redirect()->route('admin.users.create')
                 ->withErrors($validator)
                 ->withInput();
         }
@@ -110,7 +109,7 @@ class UserController extends Controller implements HasMiddleware
 
         $user->syncRoles([$request->role]);
 
-        return redirect()->route('users.index')
+        return redirect()->route('admin.users.index')
             ->with('success', 'User created successfully!');
     }
 
@@ -139,7 +138,7 @@ class UserController extends Controller implements HasMiddleware
         ]);
 
         if ($validator->fails()) {
-            return redirect()->route('users.edit', $id)
+            return redirect()->route('admin.users.edit', $id)
                 ->withErrors($validator)
                 ->withInput();
         }
@@ -155,7 +154,7 @@ class UserController extends Controller implements HasMiddleware
         $user->save();
 
         $user->syncRoles([$request->role]);
-        return redirect()->route('users.index')
+        return redirect()->route('admin.users.index')
             ->with('success', 'User update success!!');
     }
 
@@ -164,7 +163,7 @@ class UserController extends Controller implements HasMiddleware
         $user = User::findOrFail($id);
 
         if (Auth::id() === $user->id) {
-            return redirect()->route('users.index')
+            return redirect()->route('admin.users.index')
                 ->with('error', 'You cannot delete your own account!');
         }
 
@@ -172,7 +171,7 @@ class UserController extends Controller implements HasMiddleware
         $this->deleteAvatar($user->avatar);
         $user->delete();
 
-        return redirect()->route('users.index')
+        return redirect()->route('admin.users.index')
             ->with('success', 'User deleted successfully!');
     }
 

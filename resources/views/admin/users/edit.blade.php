@@ -15,7 +15,7 @@
                         <h3 class="text-lg font-semibold text-gray-900">Edit User</h3>
                         <p class="text-sm text-gray-500 mt-0.5">Update account details and roles.</p>
                     </div>
-                    <a href="{{ route('users.index') }}"
+                    <a href="{{ route('admin.users.index') }}"
                         class="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 text-sm font-medium py-2 px-3 rounded-lg ring-1 ring-gray-300 hover:bg-gray-50 transition-colors">
                         <i class="fa-solid fa-arrow-left text-xs"></i>
                         Back
@@ -24,7 +24,7 @@
 
                 @include('admin.users._form', [
                     'mode' => 'edit',
-                    'action' => route('users.update', $user->id),
+                    'action' => route('admin.users.update', $user->id),
                     'user' => $user,
                     'roles' => $roles,
                     'hasRoles' => $hasRoles,

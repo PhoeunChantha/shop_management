@@ -14,7 +14,7 @@
                 <p class="section-kicker">Permission table</p>
                 <h3>All Permissions</h3>
             </div>
-            <a href="{{ route('permissions.create') }}" class="premium-button premium-button--dark">
+            <a href="{{ route('admin.permissions.create') }}" class="premium-button premium-button--dark">
                 <i class="fa-solid fa-plus"></i>
                 <span>New Permission</span>
             </a>
@@ -23,7 +23,7 @@
         <x-message />
 
         <section class="premium-card">
-            <form method="GET" action="{{ route('permissions.index') }}" class="table-toolbar">
+            <form method="GET" action="{{ route('admin.permissions.index') }}" class="table-toolbar">
                 <div class="table-toolbar__left">
                     <div class="result-badge">
                         <i class="fa-solid fa-key"></i>
@@ -75,18 +75,20 @@
                                 </td>
                                 <td>
                                     <div class="action-group">
-                                        <a href="{{ route('permissions.edit', $permission->id) }}" class="table-action table-action--edit">
+                                        <a href="{{ route('admin.permissions.edit', $permission->id) }}" class="table-action table-action--edit">
                                             <i class="fa-solid fa-pen"></i>
                                             <span>Edit</span>
                                         </a>
 
-                                        <button type="button" class="table-action table-action--delete"
-                                            data-delete-modal-target="deletePermissionModal"
-                                            data-delete-action="{{ route('permissions.destroy', $permission->id) }}"
-                                            data-delete-name="{{ $permission->name }}">
-                                            <i class="fa-solid fa-trash"></i>
-                                            <span>Delete</span>
-                                        </button>
+                                        @can('delete permission')
+                                            <button type="button" class="table-action table-action--delete"
+                                                data-delete-modal-target="deletePermissionModal"
+                                                data-delete-action="{{ route('admin.permissions.destroy', $permission->id) }}"
+                                                data-delete-name="{{ $permission->name }}">
+                                                <i class="fa-solid fa-trash"></i>
+                                                <span>Delete</span>
+                                            </button>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

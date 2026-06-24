@@ -15,7 +15,7 @@
                         <h3 class="text-lg font-semibold text-gray-900">New User</h3>
                         <p class="text-sm text-gray-500 mt-0.5">Create an account and assign roles.</p>
                     </div>
-                    <a href="{{ route('users.index') }}"
+                    <a href="{{ route('admin.users.index') }}"
                         class="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 text-sm font-medium py-2 px-3 rounded-lg ring-1 ring-gray-300 hover:bg-gray-50 transition-colors">
                         <i class="fa-solid fa-arrow-left text-xs"></i>
                         Back
@@ -24,7 +24,7 @@
 
                 @include('admin.users._form', [
                     'mode' => 'create',
-                    'action' => route('users.store'),
+                    'action' => route('admin.users.store'),
                     'roles' => $roles,
                     'submitText' => __('Create User'),
                 ])
