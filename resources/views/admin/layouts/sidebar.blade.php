@@ -33,7 +33,12 @@
                     <span class="me-3"><i class="fa-solid fa-user-group"></i></span>
                     <span class="small fw-medium">Permissions</span>
                 </a>
-                
+
+                <a href="{{ route('admin.settings.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+                    <span class="me-3"><i class="fa-solid fa-gear"></i></span>
+                    <span class="small fw-medium">Settings</span>
+                </a>
+
             </div>
         </div>
 
