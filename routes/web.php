@@ -4,6 +4,9 @@ use App\Http\Controllers\Backend\PermissionController;
 use App\Http\Controllers\Backend\ProfileController;
 use App\Http\Controllers\Backend\RoleController;
 use App\Http\Controllers\Backend\UserController;
+use App\Http\Controllers\Backend\CategoryController;
+use App\Http\Controllers\Backend\SizeController;
+use App\Http\Controllers\Backend\ColorController;
 use App\Http\Controllers\Frontend\AccountController;
 use App\Http\Controllers\Frontend\AuthController;
 use App\Http\Controllers\Frontend\CartController;
@@ -11,6 +14,7 @@ use App\Http\Controllers\Frontend\CheckoutController;
 use App\Http\Controllers\Frontend\HomeController;
 use App\Http\Controllers\Frontend\PageController;
 use App\Http\Controllers\Frontend\ShopController;
+
 use Illuminate\Support\Facades\Route;
 
 Route::name('frontend.')->group(function () {
@@ -52,7 +56,6 @@ Route::name('frontend.')->group(function () {
     Route::get('/faq', [PageController::class, 'faq'])->name('pages.faq');
     Route::get('/privacy', [PageController::class, 'privacy'])->name('pages.privacy');
     Route::get('/terms', [PageController::class, 'terms'])->name('pages.terms');
-
 });
 
 // ---- Admin ----
@@ -96,6 +99,33 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::put('/{id}', [UserController::class, 'update'])->name('update');
         Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy');
     });
+
+    Route::prefix('categories')->name('categories.')->group(function () {
+        Route::get('/', [CategoryController::class, 'index'])->name('index');
+        Route::get('/create', [CategoryController::class, 'create'])->name('create');
+        Route::post('/', [CategoryController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [CategoryController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [CategoryController::class, 'update'])->name('update');
+        Route::delete('/{id}', [CategoryController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('sizes')->name('sizes.')->group(function () {
+        Route::get('/', [SizeController::class, 'index'])->name('index');
+        Route::get('/create', [SizeController::class, 'create'])->name('create');
+        Route::post('/', [SizeController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [SizeController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [SizeController::class, 'update'])->name('update');
+        Route::delete('/{id}', [SizeController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('colors')->name('colors.')->group(function () {
+        Route::get('/', [ColorController::class, 'index'])->name('index');
+        Route::get('/create', [ColorController::class, 'create'])->name('create');
+        Route::post('/', [ColorController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [ColorController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [ColorController::class, 'update'])->name('update');
+        Route::delete('/{id}', [ColorController::class, 'destroy'])->name('destroy');
+    });
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
