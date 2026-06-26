@@ -20,8 +20,6 @@
             </a>
         </div>
 
-        <x-message />
-
         <section class="premium-card form-panel">
             <div class="form-panel-header">
                 <div class="form-panel-icon">

@@ -19,8 +19,6 @@
                 <span>New User</span>
             </a>
         </div>
-        <x-message />
-
         <form method="GET" action="{{ route('admin.users.index') }}" class="filter-card">
             <div class="filter-card__header">
                 <div>
