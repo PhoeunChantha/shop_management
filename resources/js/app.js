@@ -1,10 +1,21 @@
 
-import 'bootstrap'; 
+import 'bootstrap';
 import $ from 'jquery';
 import Alpine from 'alpinejs';
+import toastr from 'toastr';
+import 'toastr/build/toastr.min.css';
 
 window.$ = window.jQuery = $;
 window.Alpine = Alpine;
+
+toastr.options = {
+    closeButton: true,
+    progressBar: true,
+    newestOnTop: true,
+    positionClass: 'toast-top-right',
+    timeOut: 4000,
+};
+window.toastr = toastr;
 
 $(function () {
     let searchTimer;

@@ -1,0 +1,53 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Backend;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\UpdateSettingsRequest;
+use App\Services\SettingService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\View\View;
+
+final class SettingController extends Controller implements HasMiddleware
+{
+    public function __construct(
+        private readonly SettingService $settings,
+    ) {}
+
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('role:admin|manager'),
+        ];
+    }
+
+    public function index(): View
+    {
+        // Re-populate from old input on validation failure, else from saved value.
+        $rows = old('social_links', $this->settings->socialLinks());
+
+        if (empty($rows)) {
+            $rows = [['icon' => '', 'title' => '', 'url' => '']];
+        }
+
+        return view('admin.settings.index', [
+            'schema' => $this->settings->schema(),
+            'values' => $this->settings->values(),
+            'iconChoices' => $this->settings->iconChoices(),
+            'socialRows' => array_values($rows),
+        ]);
+    }
+
+    public function update(UpdateSettingsRequest $request): RedirectResponse
+    {
+        $this->settings->save($request->validated());
+
+        return redirect()
+            ->route('admin.settings.index')
+            ->with('success', 'Settings updated successfully!');
+    }
+}

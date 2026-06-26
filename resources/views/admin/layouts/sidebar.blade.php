@@ -47,6 +47,9 @@
                 <a href="{{ route('admin.colors.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('admin.colors.*') ? 'active' : '' }}">
                     <span class="me-3"><i class="fa-solid fa-palette"></i></span>
                     <span class="small fw-medium">Colors</span>
+                <a href="{{ route('admin.settings.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+                    <span class="me-3"><i class="fa-solid fa-gear"></i></span>
+                    <span class="small fw-medium">Settings</span>
                 </a>
 
             </div>

@@ -7,8 +7,6 @@
 
     <div class="py-8">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
-            <x-message />
-
             <div class="bg-white rounded-xl shadow-sm ring-1 ring-gray-200 overflow-hidden">
                 <div class="flex items-center justify-between gap-4 px-6 py-5 border-b border-gray-100">
                     <div>
