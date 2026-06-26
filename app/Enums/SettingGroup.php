@@ -1,0 +1,49 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Enums;
+
+enum SettingGroup: string
+{
+    case General = 'general';
+    case Contact = 'contact';
+    case Social = 'social';
+
+    /**
+     * Human-readable tab label.
+     */
+    public function label(): string
+    {
+        return match ($this) {
+            self::General => 'General',
+            self::Contact => 'Contact',
+            self::Social => 'Social links',
+        };
+    }
+
+    /**
+     * FontAwesome icon class for the tab.
+     */
+    public function icon(): string
+    {
+        return match ($this) {
+            self::General => 'fa-sliders',
+            self::Contact => 'fa-address-book',
+            self::Social => 'fa-share-nodes',
+        };
+    }
+
+    /**
+     * Rendering type: fixed fields or a dynamic repeater.
+     */
+    public function type(): string
+    {
+        return $this === self::Social ? 'repeater' : 'fields';
+    }
+
+    public function isRepeater(): bool
+    {
+        return $this->type() === 'repeater';
+    }
+}

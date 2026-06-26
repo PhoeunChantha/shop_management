@@ -20,8 +20,6 @@
             </a>
         </div>
 
-        <x-message />
-
         <section class="premium-card">
             <form method="GET" action="{{ route('admin.roles.index') }}" class="table-toolbar">
                 <div class="table-toolbar__left">

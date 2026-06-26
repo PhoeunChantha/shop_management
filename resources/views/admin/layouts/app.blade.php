@@ -40,6 +40,8 @@
         </div>
     </div>
 
+    <x-toastr />
+
     @stack('js')
 </body>
 </html>
