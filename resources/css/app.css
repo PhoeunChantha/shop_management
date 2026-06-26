@@ -1870,3 +1870,235 @@ body.admin-shell {
         padding: 2.5rem 2rem 3rem;
     }
 }
+
+/* =====================================================================
+   Dark mode (admin) — themes the custom design-system surfaces.
+   The dashboard uses Tailwind `dark:` variants directly.
+   ===================================================================== */
+html.dark {
+    --admin-ink: #e6eaf2;
+    --admin-muted: #93a1b8;
+    --admin-line: #26324a;
+    --admin-bg: #0b1220;
+    --admin-panel: #121c31;
+    --admin-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+
+html.dark body.admin-shell {
+    background:
+        radial-gradient(circle at top left, rgba(15, 118, 110, 0.16), transparent 32rem),
+        linear-gradient(135deg, #0b1220 0%, #0e1730 100%);
+    color: var(--admin-ink);
+}
+
+/* Topbar & footer */
+html.dark .admin-topbar {
+    background: rgba(17, 26, 47, 0.85);
+    border-color: rgba(255, 255, 255, 0.07);
+}
+
+html.dark .admin-footer {
+    background: rgba(17, 26, 47, 0.82);
+    border-color: rgba(255, 255, 255, 0.07);
+}
+
+html.dark .page-title,
+html.dark .admin-footer h6 {
+    color: var(--admin-ink) !important;
+}
+
+html.dark .icon-button {
+    color: #9fb0c9 !important;
+}
+
+html.dark .icon-button:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: #ffffff !important;
+}
+
+html.dark .user-menu {
+    border-color: var(--admin-line);
+}
+
+html.dark .user-menu span {
+    color: var(--admin-ink) !important;
+}
+
+html.dark .language-switch {
+    background-color: #0e1830 !important;
+}
+
+html.dark .language-switch .bg-white {
+    background: #1b2944 !important;
+    color: #e6eaf2 !important;
+}
+
+/* Cards & panels */
+html.dark .premium-card,
+html.dark .filter-card,
+html.dark .dashboard-hero {
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .premium-card,
+html.dark .filter-card {
+    background: var(--admin-panel);
+}
+
+html.dark .form-panel-header {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent);
+    border-color: var(--admin-line);
+}
+
+html.dark .form-panel-footer,
+html.dark .table-toolbar,
+html.dark .table-footer {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: var(--admin-line);
+}
+
+html.dark .page-section-header h3,
+html.dark .table-titlebar h3,
+html.dark .filter-card h3,
+html.dark .form-panel-header h3,
+html.dark .form-field > label,
+html.dark .permission-section-title label,
+html.dark .form-panel-header p:last-child {
+    color: var(--admin-ink);
+}
+
+/* Settings tabs */
+html.dark .settings-tabs {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: var(--admin-line);
+}
+
+html.dark .settings-tab {
+    color: var(--admin-muted);
+}
+
+html.dark .settings-tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+}
+
+html.dark .settings-tab.is-active {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--admin-line);
+    color: #ffffff;
+}
+
+/* Inputs */
+html.dark .form-input,
+html.dark .filter-field input,
+html.dark .filter-field select,
+html.dark .per-page-control,
+html.dark .per-page-control select,
+html.dark .search-control,
+html.dark .search-control input,
+html.dark .icon-picker__trigger,
+html.dark .icon-picker__search {
+    background-color: #0e1830;
+    border-color: var(--admin-line);
+    color: var(--admin-ink);
+}
+
+html.dark .form-input::placeholder,
+html.dark .search-control input::placeholder {
+    color: #5b6b86;
+}
+
+/* Tables */
+html.dark .premium-table thead th {
+    background: #0e1830;
+    color: #9fb0c9;
+    border-color: var(--admin-line);
+}
+
+html.dark .premium-table tbody td {
+    color: #cdd6e6;
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+html.dark .premium-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+html.dark .muted-id,
+html.dark .date-text,
+html.dark .table-footer p,
+html.dark .empty-state {
+    color: #93a1b8;
+}
+
+html.dark .empty-state strong,
+html.dark .role-name-cell strong,
+html.dark .permission-name-cell strong,
+html.dark .user-cell strong {
+    color: var(--admin-ink);
+}
+
+/* Buttons & chips */
+html.dark .premium-button {
+    background: #1b2944;
+    color: #e6eaf2;
+    box-shadow: none;
+}
+
+html.dark .ghost-button--panel {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--admin-line);
+    color: #b9c4d8;
+}
+
+html.dark .status-pill--neutral {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--admin-line);
+    color: #cdd6e6;
+}
+
+/* Permission selectors */
+html.dark .permission-option {
+    background: #0e1830;
+    border-color: var(--admin-line);
+}
+
+html.dark .permission-option span {
+    color: #cdd6e6;
+}
+
+html.dark .permission-option:has(.permission-checkbox:checked) {
+    background: rgba(15, 118, 110, 0.18);
+    border-color: rgba(24, 168, 154, 0.5);
+}
+
+html.dark .permission-group-row .permission-group-toggle {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--admin-line);
+    color: #cdd6e6;
+}
+
+/* Icon picker popover */
+html.dark .icon-picker__panel {
+    background: #121c31;
+    border-color: var(--admin-line);
+}
+
+html.dark .icon-picker__option {
+    background: rgba(255, 255, 255, 0.04);
+    color: #cdd6e6;
+}
+
+html.dark .icon-picker__custom-row {
+    background: #0e1830;
+    border-color: var(--admin-line);
+}
+
+/* Delete modal */
+html.dark .delete-modal {
+    background: #121c31;
+}
+
+html.dark .delete-modal h3 {
+    color: var(--admin-ink);
+}

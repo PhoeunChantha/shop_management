@@ -16,8 +16,11 @@
             </button>
         </div>
 
-        <button class="icon-button btn btn-link p-0 text-decoration-none fs-5 text-secondary me-2" type="button" aria-label="Toggle dark mode">
-            <i class="fa-regular fa-moon"></i>
+        <button class="icon-button btn btn-link p-0 text-decoration-none fs-5 text-secondary me-2" type="button" aria-label="Toggle dark mode"
+            x-data="{ dark: document.documentElement.classList.contains('dark') }"
+            @click="dark = !dark; document.documentElement.classList.toggle('dark', dark); localStorage.setItem('admin-theme', dark ? 'dark' : 'light')"
+            :title="dark ? 'Switch to light mode' : 'Switch to dark mode'">
+            <i class="fa-regular" :class="dark ? 'fa-sun' : 'fa-moon'"></i>
         </button>
         <button class="icon-button btn btn-link p-0 text-decoration-none fs-5 text-secondary me-3" type="button" aria-label="Notifications">
             <i class="fa-regular fa-bell"></i>
