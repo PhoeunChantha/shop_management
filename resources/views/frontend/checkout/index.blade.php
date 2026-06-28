@@ -5,8 +5,8 @@
 <style>
     .ut-checkout-grid { display:grid; grid-template-columns:1fr 380px; gap:40px; align-items:start; }
     .ut-form-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    .ut-radio-card{ display:flex;align-items:center;gap:14px;padding:16px 18px;border:1.5px solid var(--border);border-radius:var(--r-md);cursor:pointer;background:#fff; }
-    .ut-radio-card.sel{ border-color:var(--blue);background:rgba(37,99,235,.04); }
+    .ut-radio-card{ display:flex;align-items:center;gap:14px;padding:16px 18px;border:1px solid var(--border);border-radius:var(--r-md);cursor:pointer;background:var(--card);transition:border-color .24s cubic-bezier(.22,1,.36,1),background .24s cubic-bezier(.22,1,.36,1); }
+    .ut-radio-card.sel{ border-color:var(--ink);background:var(--accent-soft); }
     @media (max-width:1024px){ .ut-checkout-grid{ grid-template-columns:1fr; } .ut-checkout-grid .summary{ position:static !important; } }
     @media (max-width:600px){ .ut-step-label{ display:none; } }
 </style>

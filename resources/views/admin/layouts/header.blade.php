@@ -7,7 +7,7 @@
     ];
 @endphp
 
-<div class="container-fluid py-3 px-4 d-flex justify-content-between align-items-center gap-3">
+<div class="container-fluid py-2 px-4 d-flex justify-content-between align-items-center gap-3">
 
     <div class="page-title fs-5 fw-bold text-dark min-w-0">
         {{ $header }}
@@ -18,17 +18,17 @@
         {{-- Language switcher --}}
         <div class="language-switch d-none d-sm-inline-flex align-items-center p-1 rounded-pill">
             <a href="{{ route('lang.switch', 'km') }}"
-                class="btn btn-sm border-0 px-3 py-1 rounded-pill fs-7 text-decoration-none {{ $locale === 'km' ? 'fw-bold bg-white shadow-sm text-dark' : 'fw-medium bg-transparent text-secondary' }}">
+                class="btn btn-sm border-0 px-2.5 py-0.5 rounded-pill fs-7 text-decoration-none {{ $locale === 'km' ? 'fw-bold bg-white shadow-sm text-dark' : 'fw-medium bg-transparent text-secondary' }}">
                 ខ្មែរ
             </a>
             <a href="{{ route('lang.switch', 'en') }}"
-                class="btn btn-sm border-0 px-3 py-1 rounded-pill fs-7 text-decoration-none {{ $locale === 'en' ? 'fw-bold bg-white shadow-sm text-dark' : 'fw-medium bg-transparent text-secondary' }}">
+                class="btn btn-sm border-0 px-2.5 py-0.5 rounded-pill fs-7 text-decoration-none {{ $locale === 'en' ? 'fw-bold bg-white shadow-sm text-dark' : 'fw-medium bg-transparent text-secondary' }}">
                 EN
             </a>
         </div>
 
         {{-- Dark mode toggle --}}
-        <button class="icon-button btn btn-link p-0 text-decoration-none fs-5 text-secondary" type="button" aria-label="Toggle dark mode"
+        <button class="icon-button btn btn-link p-0 text-decoration-none fs-6 text-secondary" type="button" aria-label="Toggle dark mode"
             x-data="{ dark: document.documentElement.classList.contains('dark') }"
             @click="dark = !dark; document.documentElement.classList.toggle('dark', dark); localStorage.setItem('admin-theme', dark ? 'dark' : 'light')"
             :title="dark ? 'Switch to light mode' : 'Switch to dark mode'">
@@ -37,9 +37,9 @@
 
         {{-- Notifications --}}
         <div class="position-relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
-            <button type="button" class="icon-button btn btn-link p-0 text-decoration-none fs-5 text-secondary position-relative" @click="open = !open" aria-label="Notifications">
+            <button type="button" class="icon-button btn btn-link p-0 text-decoration-none fs-6 text-secondary position-relative" @click="open = !open" aria-label="Notifications">
                 <i class="fa-regular fa-bell"></i>
-                <span class="position-absolute top-0 end-0 d-block rounded-circle bg-danger border-2 border-white dark:border-[#121c31]" style="width: 9px; height: 9px; transform: translate(2px, -1px);"></span>
+                <span class="position-absolute top-0 end-0 d-block rounded-circle bg-danger border-2 border-white dark:border-[#121c31]" style="width: 8px; height: 8px; transform: translate(1px, 0);"></span>
             </button>
 
             <div x-show="open" x-cloak x-transition.origin.top.right
@@ -73,11 +73,11 @@
             <div class="position-relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
                 <button type="button" class="user-menu d-flex align-items-center ps-3 border-0 bg-transparent" @click="open = !open">
                     <div class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold text-uppercase"
-                        style="width: 34px; height: 34px; background-color: #233653; font-size: 12px;">
+                        style="width: 30px; height: 30px; background-color: #233653; font-size: 11px;">
                         {{ substr(Auth::user()->name, 0, 1) }}
                     </div>
-                    <span class="fw-semibold text-dark ms-2 d-none d-sm-inline">{{ Auth::user()->name }}</span>
-                    <i class="fa-solid fa-chevron-down ms-2 text-secondary d-none d-sm-inline" style="font-size: 10px;" :class="open ? 'rotate-180' : ''"></i>
+                    <span class="fw-semibold text-dark ms-2 d-none d-sm-inline" style="font-size: 13px;">{{ Auth::user()->name }}</span>
+                    <i class="fa-solid fa-chevron-down ms-2 text-secondary d-none d-sm-inline" style="font-size: 9px;" :class="open ? 'rotate-180' : ''"></i>
                 </button>
 
                 <div x-show="open" x-cloak x-transition.origin.top.right
