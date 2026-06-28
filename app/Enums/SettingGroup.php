@@ -9,6 +9,7 @@ enum SettingGroup: string
     case General = 'general';
     case Contact = 'contact';
     case Social = 'social';
+    case Appearance = 'appearance';
 
     /**
      * Human-readable tab label.
@@ -19,6 +20,7 @@ enum SettingGroup: string
             self::General => 'General',
             self::Contact => 'Contact',
             self::Social => 'Social links',
+            self::Appearance => 'Theme Colors',
         };
     }
 
@@ -31,6 +33,7 @@ enum SettingGroup: string
             self::General => 'fa-sliders',
             self::Contact => 'fa-address-book',
             self::Social => 'fa-share-nodes',
+            self::Appearance => 'fa-palette',
         };
     }
 

@@ -6,7 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    {{-- Site branding + semantic theme colors (Settings). Resolved once and
+         reused by the head, sidebar (via @include scope) and theme variables. --}}
+    @php
+        $brandingService = app(\App\Services\SettingService::class);
+        $adminTheme = $brandingService->themeColors();
+        $adminLogo = $brandingService->logoUrl();
+        $adminFavicon = $brandingService->faviconUrl();
+        $adminSiteName = $brandingService->siteName();
+
+        // Tab title: "<Page> · <Site name>". Page is an explicit $title if a view
+        // sets one, otherwise derived from the current route (admin.users.index → Users).
+        $pageTitle = $title
+            ?? \Illuminate\Support\Str::of((string) \Illuminate\Support\Facades\Route::currentRouteName())
+                ->after('admin.')->before('.')->replace(['-', '_'], ' ')->headline()->value();
+    @endphp
+
+    <title>{{ filled($pageTitle) ? $pageTitle : $adminSiteName }}</title>
 
     {{-- Apply saved theme before paint to avoid a flash --}}
     <script>
@@ -29,6 +45,23 @@
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    @if ($adminFavicon)
+        <link rel="icon" href="{{ $adminFavicon }}">
+    @endif
+
+    <style id="admin-theme-vars">
+        :root {
+            --primary-color: {{ $adminTheme['admin_primary_color'] }};
+            --secondary-color: {{ $adminTheme['admin_secondary_color'] }};
+            --success-color: {{ $adminTheme['admin_success_color'] }};
+            --warning-color: {{ $adminTheme['admin_warning_color'] }};
+            --danger-color: {{ $adminTheme['admin_danger_color'] }};
+            --info-color: {{ $adminTheme['admin_info_color'] }};
+            --light-color: {{ $adminTheme['admin_light_color'] }};
+            --dark-color: {{ $adminTheme['admin_dark_color'] }};
+        }
+    </style>
 </head>
 
 <body class="admin-shell antialiased" style="height: 100vh; overflow: hidden;">

@@ -1,8 +1,20 @@
 <x-guest-layout :bare="true">
+    @php
+        $branding = app(\App\Services\SettingService::class);
+        $loginLogo = $branding->logoUrl();
+        $loginName = $branding->siteName();
+    @endphp
     <main class="admin-login">
         <div class="shell">
             <section class="intro">
-                <div class="brand"><span class="mark">{{ substr(config('app.name', 'T'), 0, 1) }}</span> {{ strtoupper(config('app.name', 'T-Shirt Shop')) }}</div>
+                <div class="brand">
+                    @if ($loginLogo)
+                        <img src="{{ $loginLogo }}" alt="{{ $loginName }}" class="mark-img">
+                    @else
+                        <span class="mark">{{ substr($loginName, 0, 1) }}</span>
+                    @endif
+                    {{ strtoupper($loginName) }}
+                </div>
                 <div>
                     <div class="eyebrow">Operations console</div>
                     <h1>Good work starts here.</h1>

@@ -1,11 +1,15 @@
 <nav class="admin-sidebar d-flex flex-column h-100 shrink-0">
 
     <div class="admin-brand flex-shrink-0 d-flex align-items-center">
-        <div class="brand-mark d-flex align-items-center justify-content-center text-white fw-bold fs-5">
-            <i class="fa-solid fa-shirt"></i>
-        </div>
+        @if (!empty($adminLogo))
+            <img src="{{ $adminLogo }}" alt="{{ $adminSiteName ?? 'Logo' }}" class="admin-brand-logo">
+        @else
+            <div class="brand-mark d-flex align-items-center justify-content-center text-white fw-bold fs-5">
+                <i class="fa-solid fa-shirt"></i>
+            </div>
+        @endif
         <div class="ms-3">
-            <h1 class="fw-bold text-white fs-6 mb-0 lh-sm">T-Shirt Shop</h1>
+            <h1 class="fw-bold text-white fs-6 mb-0 lh-sm">{{ $adminSiteName ?? 'T-Shirt Shop' }}</h1>
             <span class="brand-kicker font-medium">E-commerce System</span>
         </div>
     </div>

@@ -18,7 +18,89 @@
     --admin-gold: #c9a227;
     --admin-danger: #dc2626;
     --admin-shadow: 0 18px 50px rgba(16, 24, 40, 0.08);
+
+    /* ===== Semantic theme colors (Settings → Theme Colors) =====
+       Single source of truth for every button + accent. Overridden
+       per-install by an inline <style> in the admin layout head. */
+    --primary-color: #101928;
+    --secondary-color: #526178;
+    --success-color: #0f766e;
+    --warning-color: #c9a227;
+    --danger-color: #dc2626;
+    --info-color: #2563eb;
+    --light-color: #eef2f7;
+    --dark-color: #101827;
+
+    /* Readable text color placed on top of each semantic fill */
+    --on-primary: #ffffff;
+    --on-secondary: #ffffff;
+    --on-success: #ffffff;
+    --on-warning: #1a1611;
+    --on-danger: #ffffff;
+    --on-info: #ffffff;
+    --on-light: #1a1611;
+    --on-dark: #ffffff;
 }
+
+/* ============================================================
+   SEMANTIC BUTTON UTILITIES
+   Reusable, hex-free. Existing custom button classes are also
+   mapped to these variables further below so all markup inherits
+   its semantic color automatically.
+   ============================================================ */
+.btn-primary,
+.btn-secondary,
+.btn-success,
+.btn-warning,
+.btn-danger,
+.btn-info,
+.btn-light,
+.btn-dark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 0 15px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.btn-primary:hover, .btn-secondary:hover, .btn-success:hover,
+.btn-warning:hover, .btn-danger:hover, .btn-info:hover,
+.btn-light:hover, .btn-dark:hover {
+    transform: translateY(-1px);
+}
+
+.btn-primary { background: var(--primary-color); color: var(--on-primary); }
+.btn-secondary { background: var(--secondary-color); color: var(--on-secondary); }
+.btn-success { background: var(--success-color); color: var(--on-success); }
+.btn-warning { background: var(--warning-color); color: var(--on-warning); }
+.btn-danger { background: var(--danger-color); color: var(--on-danger); }
+.btn-info { background: var(--info-color); color: var(--on-info); }
+.btn-light { background: var(--light-color); color: var(--on-light); border-color: var(--admin-line); }
+.btn-dark { background: var(--dark-color); color: var(--on-dark); }
+
+.btn-primary:hover { background: color-mix(in srgb, var(--primary-color) 86%, #000); color: var(--on-primary); }
+.btn-secondary:hover { background: color-mix(in srgb, var(--secondary-color) 86%, #000); color: var(--on-secondary); }
+.btn-success:hover { background: color-mix(in srgb, var(--success-color) 86%, #000); color: var(--on-success); }
+.btn-warning:hover { background: color-mix(in srgb, var(--warning-color) 86%, #000); color: var(--on-warning); }
+.btn-danger:hover { background: color-mix(in srgb, var(--danger-color) 86%, #000); color: var(--on-danger); }
+.btn-info:hover { background: color-mix(in srgb, var(--info-color) 86%, #000); color: var(--on-info); }
+.btn-light:hover { background: color-mix(in srgb, var(--light-color) 92%, #000); color: var(--on-light); }
+.btn-dark:hover { background: color-mix(in srgb, var(--dark-color) 84%, #fff); color: var(--on-dark); }
+
+/* Soft/outline semantic variants (for subtle table-row actions, chips) */
+.btn-soft-primary { background: color-mix(in srgb, var(--primary-color) 12%, #fff); color: var(--primary-color); }
+.btn-soft-warning { background: color-mix(in srgb, var(--warning-color) 16%, #fff); color: color-mix(in srgb, var(--warning-color) 70%, #000); }
+.btn-soft-danger { background: color-mix(in srgb, var(--danger-color) 12%, #fff); color: var(--danger-color); }
+.btn-soft-info { background: color-mix(in srgb, var(--info-color) 12%, #fff); color: var(--info-color); }
+.btn-soft-success { background: color-mix(in srgb, var(--success-color) 12%, #fff); color: var(--success-color); }
 
 [x-cloak] {
     display: none !important;
@@ -131,7 +213,7 @@ body.admin-shell {
 }
 
 .admin-nav .nav-link.active {
-    box-shadow: inset 3px 0 0 var(--admin-gold);
+    box-shadow: inset 3px 0 0 var(--primary-color);
 }
 
 .admin-sidebar-user {
@@ -267,14 +349,14 @@ body.admin-shell {
 }
 
 .premium-button--dark {
-    color: #ffffff;
-    background: var(--admin-navy);
+    color: var(--on-primary);
+    background: var(--primary-color);
     box-shadow: 0 12px 28px rgba(16, 24, 40, 0.16);
 }
 
 .premium-button--dark:hover {
-    color: #ffffff;
-    background: var(--admin-navy-2);
+    color: var(--on-primary);
+    background: color-mix(in srgb, var(--primary-color) 86%, #000);
 }
 
 .filter-card,
@@ -385,15 +467,15 @@ body.admin-shell {
     align-self: end;
     min-height: 40px;
     padding: 0 14px;
-    color: #ffffff;
-    background: var(--admin-navy);
+    color: var(--on-primary);
+    background: var(--primary-color);
 }
 
 .ghost-button {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: #526178;
+    color: var(--secondary-color);
     font-size: 12px;
     font-weight: 800;
     text-decoration: none;
@@ -473,10 +555,14 @@ body.admin-shell {
 }
 
 .settings-tab.is-active {
-    color: var(--admin-ink);
+    color: var(--primary-color);
     background: #ffffff;
-    border-color: var(--admin-line);
+    border-color: color-mix(in srgb, var(--primary-color) 30%, var(--admin-line));
     box-shadow: 0 8px 20px rgba(16, 24, 40, 0.06);
+}
+
+.settings-tab.is-active i {
+    color: var(--primary-color);
 }
 
 .social-rows {
@@ -744,8 +830,66 @@ body.admin-shell {
 }
 
 .form-input:focus {
-    border-color: rgba(15, 118, 110, 0.55);
-    box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-color) 22%, transparent);
+}
+
+/* Settings → Appearance color pickers (picker doubles as the live preview) */
+.color-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.color-field__picker {
+    width: 46px;
+    height: 42px;
+    padding: 4px;
+    border: 1px solid var(--admin-line);
+    border-radius: 11px;
+    background: #fff;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.color-field__picker::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.color-field__picker::-webkit-color-swatch {
+    border: 0;
+    border-radius: 7px;
+}
+
+.color-field__picker::-moz-color-swatch {
+    border: 0;
+    border-radius: 7px;
+}
+
+.color-field__hex {
+    flex: 1;
+    text-transform: lowercase;
+    font-family: "DM Mono", ui-monospace, monospace;
+}
+
+.color-reset-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+    padding-top: 16px;
+    border-top: 1px solid var(--admin-line);
+}
+
+.color-reset-row .form-cancel-button {
+    border: 1px solid var(--admin-line);
+    padding: 0 14px;
+}
+
+.color-reset-hint {
+    color: var(--admin-muted);
+    font-size: 12.5px;
 }
 
 .dynamic-field-header {
@@ -777,12 +921,12 @@ body.admin-shell {
     min-height: 34px;
     padding: 0 12px;
     border-radius: 10px;
-    color: #ffffff;
-    background: var(--admin-navy);
+    color: var(--on-primary);
+    background: var(--primary-color);
 }
 
 .dynamic-add-button:hover {
-    background: var(--admin-navy-2);
+    background: color-mix(in srgb, var(--primary-color) 86%, #000);
 }
 
 .dynamic-input-list {
@@ -799,13 +943,13 @@ body.admin-shell {
 .dynamic-remove-button {
     min-height: 40px;
     border-radius: 11px;
-    color: var(--admin-danger);
-    background: #fff1f2;
-    border: 1px solid #fecaca;
+    color: var(--danger-color);
+    background: color-mix(in srgb, var(--danger-color) 8%, #fff);
+    border: 1px solid color-mix(in srgb, var(--danger-color) 30%, #fff);
 }
 
 .dynamic-remove-button:hover {
-    background: #ffe4e6;
+    background: color-mix(in srgb, var(--danger-color) 15%, #fff);
 }
 
 .permission-section-title {
@@ -973,22 +1117,22 @@ body.admin-shell {
 }
 
 .form-cancel-button {
-    color: #526178;
+    color: var(--secondary-color);
 }
 
 .form-cancel-button:hover {
-    color: var(--admin-ink);
+    color: color-mix(in srgb, var(--secondary-color) 80%, #000);
 }
 
 .form-submit-button {
     border: 0;
-    color: #ffffff;
-    background: var(--admin-navy);
+    color: var(--on-primary);
+    background: var(--primary-color);
     box-shadow: 0 12px 24px rgba(16, 24, 40, 0.16);
 }
 
 .form-submit-button:hover {
-    background: var(--admin-navy-2);
+    background: color-mix(in srgb, var(--primary-color) 86%, #000);
 }
 
 .premium-card {
@@ -1029,7 +1173,7 @@ body.admin-shell {
 }
 
 .result-badge i {
-    color: var(--admin-accent);
+    color: var(--info-color);
 }
 
 .per-page-control {
@@ -1095,7 +1239,7 @@ body.admin-shell {
 .premium-table thead th {
     padding: 13px 28px;
     color: #5d6b82;
-    background: #f7f9fc;
+    background: var(--light-color);
     border-bottom: 1px solid var(--admin-line);
     font-size: 12px;
     font-weight: 800;
@@ -1235,9 +1379,9 @@ body.admin-shell {
 }
 
 .status-pill {
-    color: #0f3d3a;
-    background: #e6f5f2;
-    border: 1px solid #c6e8e1;
+    color: color-mix(in srgb, var(--success-color) 78%, #000);
+    background: color-mix(in srgb, var(--success-color) 14%, #fff);
+    border: 1px solid color-mix(in srgb, var(--success-color) 26%, #fff);
 }
 
 .status-pill--neutral {
@@ -1321,8 +1465,8 @@ body.admin-shell {
     min-height: 36px;
     padding: 0 13px;
     border-radius: 11px;
-    background: var(--admin-navy);
-    color: #ffffff;
+    background: var(--primary-color);
+    color: var(--on-primary);
     font-size: 12px;
     font-weight: 800;
     cursor: pointer;
@@ -1330,7 +1474,7 @@ body.admin-shell {
 }
 
 .avatar-upload-trigger:hover {
-    background: var(--admin-navy-2);
+    background: color-mix(in srgb, var(--primary-color) 86%, #000);
     transform: translateY(-1px);
 }
 
@@ -1375,22 +1519,23 @@ body.admin-shell {
 }
 
 .table-action--edit {
-    color: #344054;
+    color: color-mix(in srgb, var(--warning-color) 72%, #000);
+    border-color: color-mix(in srgb, var(--warning-color) 38%, #fff);
 }
 
 .table-action--edit:hover {
-    color: var(--admin-ink);
-    background: #f8fafc;
+    color: color-mix(in srgb, var(--warning-color) 80%, #000);
+    background: color-mix(in srgb, var(--warning-color) 14%, #fff);
 }
 
 .table-action--delete {
-    color: var(--admin-danger);
-    border-color: #fecaca;
+    color: var(--danger-color);
+    border-color: color-mix(in srgb, var(--danger-color) 35%, #fff);
 }
 
 .table-action--delete:hover {
-    color: #b91c1c;
-    background: #fff1f2;
+    color: color-mix(in srgb, var(--danger-color) 82%, #000);
+    background: color-mix(in srgb, var(--danger-color) 10%, #fff);
 }
 
 .empty-state {
@@ -1462,8 +1607,8 @@ body.admin-shell {
     height: 42px;
     margin-bottom: 14px;
     border-radius: 13px;
-    color: #b91c1c;
-    background: #fee2e2;
+    color: color-mix(in srgb, var(--danger-color) 80%, #000);
+    background: color-mix(in srgb, var(--danger-color) 16%, #fff);
     font-size: 17px;
 }
 
@@ -1495,14 +1640,14 @@ body.admin-shell {
 .modal-cancel {
     border: 1px solid var(--admin-line);
     border-radius: 12px;
-    color: #344054;
+    color: var(--secondary-color);
     background: #ffffff;
     font-weight: 800;
 }
 
 .modal-delete {
-    color: #ffffff;
-    background: var(--admin-danger);
+    color: var(--on-danger);
+    background: var(--danger-color);
 }
 
 @media (max-width: 991.98px) {
@@ -1822,7 +1967,7 @@ body.admin-shell {
     flex-shrink: 0;
     border-radius: .3rem;
     border-color: #4b5563;
-    accent-color: #f97316;
+    accent-color: var(--primary-color);
     color: #f97316;
 }
 
@@ -2139,3 +2284,115 @@ html.dark .delete-modal {
 html.dark .delete-modal h3 {
     color: var(--admin-ink);
 }
+
+/* ============================================================
+   THEME-DRIVEN COMPONENTS (semantic colors)
+   All values below resolve to the 8 theme variables — no hex.
+   ============================================================ */
+
+/* Settings → General: logo + favicon uploads share one full-width row */
+.settings-upload-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+.settings-upload-row > .form-field {
+    margin: 0;
+}
+
+@media (max-width: 640px) {
+    .settings-upload-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Settings → Theme Colors helper text under each swatch */
+.color-field__hint {
+    margin: 6px 0 0;
+    color: var(--admin-muted);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+/* Checkboxes, radios & range sliders follow the primary color */
+.admin-shell input[type="checkbox"],
+.admin-shell input[type="radio"],
+.admin-shell input[type="range"],
+.admin-shell .form-check-input {
+    accent-color: var(--primary-color);
+}
+
+.admin-shell .form-check-input:checked {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.admin-shell .form-check-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-color) 22%, transparent);
+}
+
+/* Pagination active page = primary */
+.admin-shell .pagination .page-item.active .page-link,
+.admin-shell .pagination .active > .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--on-primary);
+}
+
+.admin-shell .pagination .page-link {
+    color: var(--primary-color);
+}
+
+.admin-shell .pagination .page-link:focus {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-color) 22%, transparent);
+}
+
+/* Toastr alerts inherit semantic colors */
+#toast-container > .toast-success { background-color: var(--success-color); }
+#toast-container > .toast-error   { background-color: var(--danger-color); }
+#toast-container > .toast-warning { background-color: var(--warning-color); color: var(--on-warning); }
+#toast-container > .toast-info    { background-color: var(--info-color); }
+
+/* Bootstrap semantic utilities, scoped to admin, mapped to theme colors.
+   Lets any markup using bg-primary/.badge.bg-danger/etc. follow the theme. */
+.admin-shell .bg-primary { background-color: var(--primary-color) !important; }
+.admin-shell .bg-secondary { background-color: var(--secondary-color) !important; }
+.admin-shell .bg-success { background-color: var(--success-color) !important; }
+.admin-shell .bg-warning { background-color: var(--warning-color) !important; }
+.admin-shell .bg-danger { background-color: var(--danger-color) !important; }
+.admin-shell .bg-info { background-color: var(--info-color) !important; }
+.admin-shell .text-primary { color: var(--primary-color) !important; }
+.admin-shell .text-success { color: var(--success-color) !important; }
+.admin-shell .text-danger { color: var(--danger-color) !important; }
+.admin-shell .text-warning { color: var(--warning-color) !important; }
+.admin-shell .text-info { color: var(--info-color) !important; }
+
+/* Uploaded branding: sidebar logo + login logo */
+.admin-brand-logo {
+    height: 38px;
+    width: auto;
+    max-width: 132px;
+    object-fit: contain;
+    border-radius: 8px;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.admin-login .brand .mark-img {
+    height: 34px;
+    width: auto;
+    max-width: 120px;
+    object-fit: contain;
+    border-radius: 9px;
+    vertical-align: middle;
+}
+
+/* Bootstrap alerts mapped to theme colors */
+.admin-shell .alert-primary { background: color-mix(in srgb, var(--primary-color) 12%, #fff); border-color: color-mix(in srgb, var(--primary-color) 30%, #fff); color: color-mix(in srgb, var(--primary-color) 75%, #000); }
+.admin-shell .alert-success { background: color-mix(in srgb, var(--success-color) 12%, #fff); border-color: color-mix(in srgb, var(--success-color) 30%, #fff); color: color-mix(in srgb, var(--success-color) 75%, #000); }
+.admin-shell .alert-warning { background: color-mix(in srgb, var(--warning-color) 16%, #fff); border-color: color-mix(in srgb, var(--warning-color) 34%, #fff); color: color-mix(in srgb, var(--warning-color) 72%, #000); }
+.admin-shell .alert-danger { background: color-mix(in srgb, var(--danger-color) 12%, #fff); border-color: color-mix(in srgb, var(--danger-color) 30%, #fff); color: color-mix(in srgb, var(--danger-color) 75%, #000); }
+.admin-shell .alert-info { background: color-mix(in srgb, var(--info-color) 12%, #fff); border-color: color-mix(in srgb, var(--info-color) 30%, #fff); color: color-mix(in srgb, var(--info-color) 75%, #000); }
