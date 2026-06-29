@@ -38,6 +38,11 @@
                     <span class="small fw-medium">Permissions</span>
                 </a>
 
+                <a href="{{ route('admin.products.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
+                    <span class="me-3"><i class="fa-solid fa-box-open"></i></span>
+                    <span class="small fw-medium">Products</span>
+                </a>
+
                 <a href="{{ route('admin.categories.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
                     <span class="me-3"><i class="fa-solid fa-layer-group"></i></span>
                     <span class="small fw-medium">Categories</span>

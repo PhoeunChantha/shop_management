@@ -6,6 +6,7 @@ use App\Http\Controllers\Backend\RoleController;
 use App\Http\Controllers\Backend\SettingController;
 use App\Http\Controllers\Backend\UserController;
 use App\Http\Controllers\Backend\CategoryController;
+use App\Http\Controllers\Backend\ProductController;
 use App\Http\Controllers\Backend\SizeController;
 use App\Http\Controllers\Backend\ColorController;
 use App\Http\Controllers\Frontend\AccountController;
@@ -99,6 +100,16 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/{id}/edit', [UserController::class, 'edit'])->name('edit');
         Route::put('/{id}', [UserController::class, 'update'])->name('update');
         Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('products')->name('products.')->group(function () {
+        Route::get('/', [ProductController::class, 'index'])->name('index');
+        Route::get('/create', [ProductController::class, 'create'])->name('create');
+        Route::post('/', [ProductController::class, 'store'])->name('store');
+        Route::get('/{id}', [ProductController::class, 'show'])->whereNumber('id')->name('show');
+        Route::get('/{id}/edit', [ProductController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [ProductController::class, 'update'])->name('update');
+        Route::delete('/{id}', [ProductController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('categories')->name('categories.')->group(function () {

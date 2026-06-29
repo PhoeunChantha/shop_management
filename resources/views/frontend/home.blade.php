@@ -36,23 +36,35 @@
 @section('content')
     <div class="anim-up">
 
-        {{-- HERO --}}
-        <section class="ut-hero" aria-label="Featured collections" style="display:block;height:590px;min-height:590px">
+        {{-- HERO SLIDER — fully data-driven. Edit the $heroSlides array below to add /
+             reorder slides, or pass $heroSlides (e.g. DB banners) from a controller to
+             override it. Each slide: image, kicker, title, copy, primary, secondary, trust. --}}
+        @php
+            $heroSlides = $heroSlides ?? [
+                ['kicker' => '01 / New arrivals', 'title' => 'Premium oversized<br>t-shirts.', 'copy' => 'Built for comfort. Designed for style. Garment-dyed heavyweight cotton with the relaxed structure you reach for every day.', 'primary' => 'Shop new arrivals', 'secondary' => 'Explore the edit', 'trust' => '240gsm organic cotton', 'image' => 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=1800&q=88'],
+                ['kicker' => '02 / Best sellers', 'title' => 'The tees<br>everyone loves.', 'copy' => 'The most-reordered fits in our collection. Proven weight, precise proportions, and color that only gets better with time.', 'primary' => 'Shop best sellers', 'secondary' => 'See the reviews', 'trust' => '12k+ five-star reviews', 'image' => 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=1800&q=88'],
+                ['kicker' => '03 / Graphic collection', 'title' => 'Bold designs.<br>Everyday wear.', 'copy' => 'Limited-run artwork meets our signature heavyweight base. Made to be noticed, built to stay in rotation.', 'primary' => 'Shop graphic tees', 'secondary' => 'View lookbook', 'trust' => 'Limited edition print runs', 'image' => 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=1800&q=88'],
+                ['kicker' => '04 / Flash sale', 'title' => 'Up to 40% off.<br>Last call.', 'copy' => 'Final sizes from past drops. Once a color or size is gone, it is gone. Move fast on the pieces you missed.', 'primary' => 'Shop the sale', 'secondary' => 'View all offers', 'trust' => 'Ends Sunday at midnight', 'image' => 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1800&q=88'],
+            ];
+        @endphp
+        <section class="ut-hero" aria-label="Featured collections" aria-roledescription="carousel"
+            style="display:block;height:590px;min-height:590px">
             <div id="utHeroCarousel" class="ut-hero-carousel" style="display:block;height:590px;min-height:590px">
-                <div class="ut-hero-dots"><button type="button" data-hero-slide="0" class="active" aria-current="true"
-                        aria-label="New arrivals"></button><button type="button" data-hero-slide="1"
-                        aria-label="Best sellers"></button><button type="button" data-hero-slide="2"
-                        aria-label="Graphic collection"></button><button type="button" data-hero-slide="3"
-                        aria-label="Flash sale"></button></div>
+                <div class="ut-hero-dots" role="tablist" aria-label="Choose hero slide">
+                    @foreach ($heroSlides as $i => $s)
+                        <button type="button" data-hero-slide="{{ $i }}" class="{{ $i === 0 ? 'active' : '' }}"
+                            @if ($i === 0) aria-current="true" @endif
+                            aria-label="Show slide {{ $i + 1 }}: {{ strip_tags($s['kicker']) }}"><i></i></button>
+                    @endforeach
+                </div>
                 <div class="ut-hero-track">
-                    @foreach ([
-            ['kicker' => '01 / New arrivals', 'title' => 'Premium oversized<br>t-shirts.', 'copy' => 'Built for comfort. Designed for style. Garment-dyed heavyweight cotton with the relaxed structure you reach for every day.', 'primary' => 'Shop new arrivals', 'secondary' => 'Explore the edit', 'class' => 'ut-hero-new', 'trust' => '240gsm organic cotton'],
-            ['kicker' => '02 / Best sellers', 'title' => 'The tees<br>everyone loves.', 'copy' => 'The most-reordered fits in our collection. Proven weight, precise proportions, and color that only gets better with time.', 'primary' => 'Shop best sellers', 'secondary' => 'See the reviews', 'class' => 'ut-hero-best', 'trust' => '12k+ five-star reviews'],
-            ['kicker' => '03 / Graphic collection', 'title' => 'Bold designs.<br>Everyday wear.', 'copy' => 'Limited-run artwork meets our signature heavyweight base. Made to be noticed, built to stay in rotation.', 'primary' => 'Shop graphic tees', 'secondary' => 'View lookbook', 'class' => 'ut-hero-graphic', 'trust' => 'Limited edition print runs'],
-            ['kicker' => '04 / Flash sale', 'title' => 'Up to 40% off.<br>Last call.', 'copy' => 'Final sizes from past drops. Once a color or size is gone, it is gone. Move fast on the pieces you missed.', 'primary' => 'Shop the sale', 'secondary' => 'View all offers', 'class' => 'ut-hero-sale', 'trust' => 'Ends Sunday at midnight'],
-        ] as $index => $slide)
-                        <div class="ut-hero-item {{ $index === 0 ? 'active' : '' }}">
-                            <div class="ut-hero-slide {{ $slide['class'] }}">
+                    @foreach ($heroSlides as $index => $slide)
+                        <div class="ut-hero-item {{ $index === 0 ? 'active' : '' }}" aria-roledescription="slide"
+                            aria-label="{{ $index + 1 }} of {{ count($heroSlides) }}">
+                            <div class="ut-hero-slide">
+                                <div class="ut-hero-media" role="img"
+                                    aria-label="{{ strip_tags($slide['kicker']) }}"
+                                    style="background-image:url('{{ $slide['image'] }}')"></div>
                                 <div class="ut-wrap ut-hero-layout">
                                     <div class="ut-hero-copy"><span class="ut-hero-kicker">{{ $slide['kicker'] }}</span>
                                         <h1>{!! $slide['title'] !!}</h1>

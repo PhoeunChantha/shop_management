@@ -1518,6 +1518,16 @@ body.admin-shell {
     transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 
+.table-action--view {
+    color: var(--info-color);
+    border-color: color-mix(in srgb, var(--info-color) 35%, #fff);
+}
+
+.table-action--view:hover {
+    color: color-mix(in srgb, var(--info-color) 82%, #000);
+    background: color-mix(in srgb, var(--info-color) 10%, #fff);
+}
+
 .table-action--edit {
     color: color-mix(in srgb, var(--warning-color) 72%, #000);
     border-color: color-mix(in srgb, var(--warning-color) 38%, #fff);
