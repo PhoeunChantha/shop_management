@@ -44,15 +44,61 @@
             </aside>
 
             <div class="settings-content">
-                <form method="POST" action="{{ route('admin.settings.update') }}">
+                <form method="POST" action="{{ route('admin.settings.update') }}" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
 
                     @foreach ($schema as $groupKey => $group)
+                        @if ($groupKey === 'appearance')
+                            @php
+                                $colorDefaults = [];
+                                $colorState = [];
+                                foreach ($group['fields'] as $fk => $f) {
+                                    $colorDefaults[$fk] = $f['default'] ?? '#000000';
+                                    $colorState[$fk] = old($fk, $values[$fk] ?? ($f['default'] ?? '#000000'));
+                                }
+                            @endphp
+                            <div class="form-panel-body grid-cols-1 sm:grid-cols-2 gap-x-5"
+                                x-show="tab === '{{ $groupKey }}'" x-cloak
+                                x-data="{
+                                    colors: @js($colorState),
+                                    defaults: @js($colorDefaults),
+                                    reset() { this.colors = Object.assign({}, this.defaults); }
+                                }">
+                                @foreach ($group['fields'] as $fieldKey => $field)
+                                    <div class="form-field">
+                                        <label for="{{ $fieldKey }}">{{ $field['label'] }}</label>
+                                        <div class="color-field">
+                                            <input type="color" class="color-field__picker"
+                                                x-model="colors['{{ $fieldKey }}']"
+                                                aria-label="{{ $field['label'] }} color picker">
+                                            <input type="text" name="{{ $fieldKey }}" id="{{ $fieldKey }}"
+                                                class="form-input color-field__hex" x-model="colors['{{ $fieldKey }}']"
+                                                maxlength="7" spellcheck="false" placeholder="#000000">
+                                        </div>
+                                        @if (!empty($field['hint']))
+                                            <p class="color-field__hint">{{ $field['hint'] }}</p>
+                                        @endif
+                                        @error($fieldKey)
+                                            <p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                @endforeach
+
+                                <div class="sm:col-span-2 color-reset-row">
+                                    <button type="button" class="form-cancel-button" @click="reset()">
+                                        <i class="fa-solid fa-rotate-left"></i> Reset to defaults
+                                    </button>
+                                    <span class="color-reset-hint">Resets the colors above — click “Save changes” to apply.</span>
+                                </div>
+                            </div>
+                        @else
                         <div class="form-panel-body {{ ($group['type'] ?? 'fields') === 'fields' ? 'grid-cols-1 sm:grid-cols-2 gap-x-5' : '' }}"
                             x-show="tab === '{{ $groupKey }}'" x-cloak>
                             @if (($group['type'] ?? 'fields') === 'fields')
                                 @foreach ($group['fields'] as $fieldKey => $field)
+                                    {{-- Image fields are grouped into their own row below. --}}
+                                    @continue(($field['type'] ?? 'text') === 'image')
                                     <div class="form-field {{ ($field['type'] ?? 'text') === 'textarea' ? 'sm:col-span-2' : '' }}">
                                         <label for="{{ $fieldKey }}">{{ $field['label'] }}</label>
 
@@ -70,6 +116,18 @@
                                         @enderror
                                     </div>
                                 @endforeach
+
+                                @php($imageFields = collect($group['fields'])->filter(fn ($f) => ($f['type'] ?? '') === 'image'))
+                                @if ($imageFields->isNotEmpty())
+                                    <div class="sm:col-span-2 settings-upload-row">
+                                        @foreach ($imageFields as $fieldKey => $field)
+                                            <x-image-upload :name="$fieldKey" :label="$field['label']"
+                                                :value="\App\Helpers\ImageManager::path($values[$fieldKey] ?? null, $field['folder'] ?? 'settings')"
+                                                :accept="$field['accept'] ?? 'image/*'"
+                                                :help="$field['help'] ?? 'PNG, JPG, GIF or SVG — up to 2MB'" />
+                                        @endforeach
+                                    </div>
+                                @endif
                             @elseif (($group['type'] ?? '') === 'repeater')
                                 {{-- Dynamic social links: icon + title + url, add/remove rows. --}}
                                 <div class="form-field" x-data="{
@@ -156,6 +214,7 @@
                                 </div>
                             @endif
                         </div>
+                        @endif
                     @endforeach
 
                     <div class="form-panel-footer">

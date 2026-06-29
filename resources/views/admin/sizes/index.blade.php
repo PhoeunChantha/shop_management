@@ -20,8 +20,6 @@
             </a>
         </div>
 
-        <x-message />
-
         <section class="premium-card">
             <form method="GET" action="{{ route('admin.sizes.index') }}" class="table-toolbar">
                 <div class="table-toolbar__left">
@@ -67,21 +65,21 @@
                                 <span class="muted-id">#{{ $size->id }}</span>
                             </td>
                             <td>
-                                <strong class="text-gray-900">{{ $size->name }}</strong>
+                                <strong class="text-gray-900 dark:text-slate-100">{{ $size->name }}</strong>
                             </td>
                             <td>
-                                <span class="text-sm text-gray-700 font-mono bg-gray-100 px-2 py-0.5 rounded border border-gray-200 font-bold">{{ $size->code }}</span>
+                                <span class="text-sm text-gray-700 font-mono bg-gray-100 px-2 py-0.5 rounded border border-gray-200 font-bold dark:text-slate-200 dark:bg-white/10 dark:border-white/10">{{ $size->code }}</span>
                             </td>
                             <td>
-                                <span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded border border-gray-200">
+                                <span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded border border-gray-200 dark:bg-white/10 dark:text-slate-200 dark:border-white/10">
                                     {{ $size->sort_order }}
                                 </span>
                             </td>
                             <td>
                                 @if($size->status)
-                                <span class="text-green-600 bg-green-50 px-2 py-1 rounded text-xs font-medium border border-green-200">Enabled</span>
+                                <span class="text-green-600 bg-green-50 px-2 py-1 rounded text-xs font-medium border border-green-200 dark:text-emerald-300 dark:bg-emerald-500/10 dark:border-emerald-500/20">Enabled</span>
                                 @else
-                                <span class="text-red-600 bg-red-50 px-2 py-1 rounded text-xs font-medium border border-red-200">Disabled</span>
+                                <span class="text-red-600 bg-red-50 px-2 py-1 rounded text-xs font-medium border border-red-200 dark:text-red-300 dark:bg-red-500/10 dark:border-red-500/20">Disabled</span>
                                 @endif
                             </td>
                             <td>

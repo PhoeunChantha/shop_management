@@ -5,11 +5,46 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\SettingGroup;
+use App\Helpers\ImageManager;
 use App\Models\Setting;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 
 final class SettingService
 {
+    /**
+     * Admin theme colour keys mapped to their factory-default hex values.
+     * Single source of truth for field defaults, reset, and global output.
+     *
+     * @var array<string, string>
+     */
+    private const THEME_DEFAULTS = [
+        'admin_primary_color' => '#101928',
+        'admin_secondary_color' => '#526178',
+        'admin_success_color' => '#0f766e',
+        'admin_warning_color' => '#c9a227',
+        'admin_danger_color' => '#dc2626',
+        'admin_info_color' => '#2563eb',
+        'admin_light_color' => '#eef2f7',
+        'admin_dark_color' => '#101827',
+    ];
+
+    /**
+     * Human labels + helper text for each semantic colour, in display order.
+     *
+     * @var array<string, array{label: string, hint: string}>
+     */
+    private const THEME_LABELS = [
+        'admin_primary_color' => ['label' => 'Primary', 'hint' => 'Save, New, Apply, primary actions'],
+        'admin_secondary_color' => ['label' => 'Secondary', 'hint' => 'Cancel, Close, Back, Reset'],
+        'admin_success_color' => ['label' => 'Success', 'hint' => 'Approve, Complete, Publish, Active'],
+        'admin_warning_color' => ['label' => 'Warning', 'hint' => 'Edit, Update, Pending, Archive'],
+        'admin_danger_color' => ['label' => 'Danger', 'hint' => 'Delete, Remove, Reject'],
+        'admin_info_color' => ['label' => 'Info', 'hint' => 'View, Details, Preview, Export'],
+        'admin_light_color' => ['label' => 'Light', 'hint' => 'Neutral surfaces, table headers'],
+        'admin_dark_color' => ['label' => 'Dark', 'hint' => 'Emphasis / high-contrast accents'],
+    ];
+
     /**
      * Fixed field definitions, keyed by the group they belong to.
      *
@@ -23,6 +58,8 @@ final class SettingService
                 'site_tagline' => ['label' => 'Tagline', 'type' => 'text', 'placeholder' => 'Wear your story', 'rules' => 'nullable|string|max:255'],
                 'site_description' => ['label' => 'Description', 'type' => 'textarea', 'placeholder' => 'Short description of your store', 'rules' => 'nullable|string|max:1000'],
                 'site_copyright' => ['label' => 'Copyright text', 'type' => 'text', 'placeholder' => '© 2026 T-Shirt Shop', 'rules' => 'nullable|string|max:255'],
+                'site_logo' => ['label' => 'Logo', 'type' => 'image', 'folder' => 'settings', 'accept' => 'image/png,image/jpeg,image/svg+xml,image/webp', 'help' => 'PNG, JPG, SVG or WebP — up to 2MB', 'rules' => 'nullable|image|mimes:png,jpg,jpeg,svg,webp|max:2048'],
+                'site_favicon' => ['label' => 'Favicon', 'type' => 'image', 'folder' => 'settings', 'accept' => 'image/png,image/x-icon,image/svg+xml', 'help' => 'ICO, PNG or SVG — square, up to 1MB', 'rules' => 'nullable|mimes:png,ico,svg,jpg,jpeg|max:1024'],
             ],
             SettingGroup::Contact->value => [
                 'contact_email' => ['label' => 'Email address', 'type' => 'email', 'placeholder' => 'help@tshirtshop.com', 'rules' => 'nullable|email|max:255'],
@@ -33,7 +70,63 @@ final class SettingService
                 'contact_address' => ['label' => 'Store address', 'type' => 'textarea', 'placeholder' => '211 Wythe Ave, Brooklyn, NY', 'rules' => 'nullable|string|max:500'],
                 'contact_map_url' => ['label' => 'Map embed URL', 'type' => 'url', 'placeholder' => 'https://www.google.com/maps/embed?...', 'rules' => 'nullable|url|max:2000'],
             ],
+            SettingGroup::Appearance->value => $this->themeFieldDefinitions(),
         ];
+    }
+
+    /**
+     * Build the admin theme colour fields (all type "color") from the
+     * default + label maps so the three stay in sync.
+     *
+     * @return array<string, array<string, string>>
+     */
+    private function themeFieldDefinitions(): array
+    {
+        $fields = [];
+
+        foreach (self::THEME_DEFAULTS as $key => $default) {
+            $fields[$key] = [
+                'label' => self::THEME_LABELS[$key]['label'] ?? $key,
+                'hint' => self::THEME_LABELS[$key]['hint'] ?? '',
+                'type' => 'color',
+                'default' => $default,
+                'rules' => 'nullable|regex:/^#[0-9a-fA-F]{6}$/',
+            ];
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Factory-default theme colours.
+     *
+     * @return array<string, string>
+     */
+    public function themeColorDefaults(): array
+    {
+        return self::THEME_DEFAULTS;
+    }
+
+    /**
+     * Effective admin theme colours: saved values merged over defaults,
+     * sanitised to valid 6-digit hex so they are safe to print into a
+     * <style> block. Used to apply the theme globally.
+     *
+     * @return array<string, string>
+     */
+    public function themeColors(): array
+    {
+        $saved = Setting::map();
+        $colors = [];
+
+        foreach (self::THEME_DEFAULTS as $key => $default) {
+            $value = $saved[$key] ?? null;
+            $colors[$key] = (is_string($value) && preg_match('/^#[0-9a-fA-F]{6}$/', $value))
+                ? $value
+                : $default;
+        }
+
+        return $colors;
     }
 
     /**
@@ -107,6 +200,32 @@ final class SettingService
     }
 
     /**
+     * Public URL of the uploaded site logo, or null when none is set.
+     */
+    public function logoUrl(): ?string
+    {
+        return ImageManager::url(Setting::get('site_logo'), 'settings');
+    }
+
+    /**
+     * Public URL of the uploaded favicon, or null when none is set.
+     */
+    public function faviconUrl(): ?string
+    {
+        return ImageManager::url(Setting::get('site_favicon'), 'settings');
+    }
+
+    /**
+     * Configured site name, falling back to the app name.
+     */
+    public function siteName(): string
+    {
+        $name = Setting::get('site_name');
+
+        return filled($name) ? $name : (string) config('app.name', 'T-Shirt Shop');
+    }
+
+    /**
      * Persist all settings from the validated request payload.
      *
      * @param  array<string, mixed>  $validated
@@ -114,7 +233,20 @@ final class SettingService
     public function save(array $validated): void
     {
         foreach ($this->fieldDefinitions() as $groupValue => $fields) {
-            foreach (array_keys($fields) as $key) {
+            foreach ($fields as $key => $field) {
+                // Image fields: only replace when a new file is uploaded, otherwise
+                // keep the existing file. Stores the filename (ImageManager convention).
+                if (($field['type'] ?? '') === 'image') {
+                    $file = $validated[$key] ?? null;
+
+                    if ($file instanceof UploadedFile) {
+                        $newName = ImageManager::update($file, Setting::get($key), $field['folder'] ?? 'settings');
+                        Setting::set($key, $newName, $groupValue);
+                    }
+
+                    continue;
+                }
+
                 Setting::set($key, $validated[$key] ?? null, $groupValue);
             }
         }

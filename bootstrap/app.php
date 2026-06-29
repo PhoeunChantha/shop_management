@@ -19,6 +19,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         ]);
 
+        // Apply the locale stored in the session on every web request.
+        $middleware->appendToGroup('web', \App\Http\Middleware\SetLocale::class);
+
         // Send unauthenticated visitors of the admin area to the admin login page.
         $middleware->redirectGuestsTo(
             fn (Request $request) => $request->is('admin', 'admin/*')

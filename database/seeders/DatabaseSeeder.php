@@ -30,6 +30,15 @@ class DatabaseSeeder extends Seeder
         if (!$admin->hasRole('admin')) {
         $admin->assignRole('admin');
     }
+
+        // Feature demo data
+        $this->call([
+            UserSeeder::class,
+            CategorySeeder::class,
+            SizeSeeder::class,
+            ColorSeeder::class,
+            SettingSeeder::class,
+        ]);
     }
 }
 

@@ -126,10 +126,21 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/{id}/edit', [ColorController::class, 'edit'])->name('edit');
         Route::put('/{id}', [ColorController::class, 'update'])->name('update');
         Route::delete('/{id}', [ColorController::class, 'destroy'])->name('destroy');
+    });
+
     Route::prefix('settings')->name('settings.')->group(function () {
         Route::get('/', [SettingController::class, 'index'])->name('index');
         Route::put('/', [SettingController::class, 'update'])->name('update');
     });
 });
+
+// ---- Locale switch (shared) ----
+Route::get('/lang/{locale}', function (string $locale) {
+    if (in_array($locale, \App\Http\Middleware\SetLocale::SUPPORTED, true)) {
+        session(['locale' => $locale]);
+    }
+
+    return redirect()->back();
+})->name('lang.switch');
 
 require __DIR__ . '/auth.php';

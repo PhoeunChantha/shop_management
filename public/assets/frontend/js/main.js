@@ -475,6 +475,82 @@
     restart();
   }
 
+  /* ============================================================
+     SCROLL REVEAL — IntersectionObserver, GPU transforms only.
+     Targets [data-reveal] (authored hooks) + every .ut-pcard (so all
+     product grids animate site-wide). Hidden-states live in CSS behind
+     html.ut-anim, which the <head> sets only when motion is allowed.
+     ============================================================ */
+  (function initReveal() {
+    const root = document.documentElement;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // We're alive: cancel the head failsafe that would force-reveal everything.
+    if (window.__utRevealFailsafe) { clearTimeout(window.__utRevealFailsafe); window.__utRevealFailsafe = null; }
+
+    if (reduce || !root.classList.contains('ut-anim') || !('IntersectionObserver' in window)) {
+      root.classList.add('ut-no-anim'); // reveal all, no motion
+      return;
+    }
+
+    const targets = Array.from(document.querySelectorAll('[data-reveal], .ut-pcard'))
+      // Shop listing cards have their own reveal animation — don't observe them twice.
+      .filter((el) => !(el.classList.contains('ut-pcard') && el.closest('.product-cell')));
+    if (!targets.length) return;
+
+    // Stagger siblings that share a parent so grids/rows cascade.
+    const byParent = new Map();
+    targets.forEach((el) => {
+      const p = el.parentElement;
+      if (!byParent.has(p)) byParent.set(p, []);
+      byParent.get(p).push(el);
+    });
+    byParent.forEach((els) => {
+      els.forEach((el, i) => { el.style.transitionDelay = Math.min(i * 65, 320) + 'ms'; });
+    });
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const el = entry.target;
+        el.classList.add('is-visible');
+        io.unobserve(el);
+        // Drop will-change + the stagger delay once settled (keeps compositor lean,
+        // and prevents the delay from lingering on later hover transitions).
+        const done = () => { el.classList.add('reveal-done'); el.style.transitionDelay = ''; el.removeEventListener('transitionend', done); };
+        el.addEventListener('transitionend', done);
+        setTimeout(done, 1200);
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
+
+    targets.forEach((el) => io.observe(el));
+  })();
+
+  /* ---------- magnetic / press micro-interaction on primary CTAs ---------- */
+  (function initPressFeedback() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // Ripple-free, transform-only press cue is handled in CSS (:active).
+    // Here we add a subtle pointer-tracked tilt to hero product card only.
+    const card = document.querySelector('.ut-hero-product-card');
+    if (!card || !window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+    const wrap = card.closest('.ut-hero-product') || card.parentElement;
+    if (!wrap) return;
+    let raf = 0;
+    wrap.addEventListener('pointermove', (e) => {
+      const r = wrap.getBoundingClientRect();
+      const dx = ((e.clientX - r.left) / r.width - 0.5) * 8;
+      const dy = ((e.clientY - r.top) / r.height - 0.5) * 8;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => { card.style.transform = 'rotate(4deg) translate(' + dx + 'px,' + dy + 'px)'; });
+    });
+    wrap.addEventListener('pointerleave', () => {
+      cancelAnimationFrame(raf);
+      card.style.transition = 'transform .5s cubic-bezier(.22,1,.36,1)';
+      card.style.transform = 'rotate(4deg)';
+      setTimeout(() => { card.style.transition = ''; }, 520);
+    });
+  })();
+
   /* ---------- init ---------- */
   syncBadges();
   syncWishButtons();

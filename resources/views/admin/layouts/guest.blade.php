@@ -5,7 +5,12 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        @php($brandingService = app(\App\Services\SettingService::class))
+        <title>{{ $brandingService->siteName() }}</title>
+
+        @if ($favicon = $brandingService->faviconUrl())
+            <link rel="icon" href="{{ $favicon }}">
+        @endif
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
