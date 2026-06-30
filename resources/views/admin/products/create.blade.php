@@ -8,7 +8,7 @@
         </div>
     </x-slot>
 
-    <div class="admin-page admin-form-page">
+    <div class="admin-page">
         <div class="page-section-header">
             <div>
                 <p class="section-kicker">Product setup</p>
@@ -22,23 +22,10 @@
 
         <x-message />
 
-        <section class="premium-card form-panel">
-            <div class="form-panel-header">
-                <div class="form-panel-icon">
-                    <i class="fa-solid fa-box-open"></i>
-                </div>
-                <div>
-                    <p class="section-kicker">Create product</p>
-                    <h3>Product details</h3>
-                    <p>Add a product with images, variants, stock, pricing and discount.</p>
-                </div>
-            </div>
-
-            @include('admin.products._form', [
-                'mode' => 'create',
-                'action' => route('admin.products.store'),
-                'submitText' => __('Create Product'),
-            ])
-        </section>
+        @include('admin.products._form', [
+            'mode' => 'create',
+            'action' => route('admin.products.store'),
+            'submitText' => __('Create Product'),
+        ])
     </div>
 </x-app-layout>

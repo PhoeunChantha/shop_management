@@ -9,6 +9,7 @@ enum SettingGroup: string
     case General = 'general';
     case Contact = 'contact';
     case Social = 'social';
+    case Localization = 'localization';
     case Appearance = 'appearance';
 
     /**
@@ -20,6 +21,7 @@ enum SettingGroup: string
             self::General => 'General',
             self::Contact => 'Contact',
             self::Social => 'Social links',
+            self::Localization => 'Languages',
             self::Appearance => 'Theme Colors',
         };
     }
@@ -33,6 +35,7 @@ enum SettingGroup: string
             self::General => 'fa-sliders',
             self::Contact => 'fa-address-book',
             self::Social => 'fa-share-nodes',
+            self::Localization => 'fa-language',
             self::Appearance => 'fa-palette',
         };
     }

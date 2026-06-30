@@ -12,13 +12,22 @@ class ProductVariant extends Model
         'size_id',
         'color_id',
         'sku',
+        'barcode',
         'stock',
+        'low_stock_alert',
         'price',
+        'cost_price',
+        'weight',
+        'status',
     ];
 
     protected $casts = [
         'stock' => 'integer',
+        'low_stock_alert' => 'integer',
         'price' => 'decimal:2',
+        'cost_price' => 'decimal:2',
+        'weight' => 'decimal:2',
+        'status' => 'boolean',
     ];
 
     public function product(): BelongsTo
@@ -34,5 +43,10 @@ class ProductVariant extends Model
     public function color(): BelongsTo
     {
         return $this->belongsTo(Color::class);
+    }
+
+    public function getIsLowStockAttribute(): bool
+    {
+        return $this->low_stock_alert > 0 && $this->stock <= $this->low_stock_alert;
     }
 }

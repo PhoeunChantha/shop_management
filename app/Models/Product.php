@@ -2,31 +2,70 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Translatable\HasTranslations;
 
 class Product extends Model
 {
     use HasFactory;
+    use HasTranslations;
+
+    /**
+     * Fields stored per language (JSON). Reading them returns the value for
+     * the current app locale (with fallback handled by spatie).
+     *
+     * @var array<int, string>
+     */
+    public array $translatable = [
+        'name',
+        'short_description',
+        'description',
+        'seo_title',
+        'seo_description',
+    ];
 
     protected $fillable = [
         'category_id',
         'sub_category_id',
+        'brand_id',
         'name',
         'slug',
+        'short_description',
         'description',
+        'thumbnail',
         'price',
+        'cost_price',
         'discount_type',
         'discount_amount',
+        'weight',
         'status',
+        'is_featured',
+        'is_new',
+        'is_best_seller',
+        'is_on_sale',
+        'sort_order',
+        'seo_title',
+        'seo_description',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
+        'cost_price' => 'decimal:2',
         'discount_amount' => 'decimal:2',
+        'weight' => 'decimal:2',
+        'is_featured' => 'boolean',
+        'is_new' => 'boolean',
+        'is_best_seller' => 'boolean',
+        'is_on_sale' => 'boolean',
+        'sort_order' => 'integer',
     ];
+
+    /* ---------------- Relationships ---------------- */
 
     public function category(): BelongsTo
     {
@@ -38,15 +77,39 @@ class Product extends Model
         return $this->belongsTo(Category::class, 'sub_category_id');
     }
 
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class);
+    }
+
     public function images(): HasMany
     {
-        return $this->hasMany(ProductImage::class);
+        return $this->hasMany(ProductImage::class)->orderBy('sort_order');
     }
 
     public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::class);
     }
+
+    public function specifications(): HasMany
+    {
+        return $this->hasMany(ProductSpecification::class)->orderBy('sort_order');
+    }
+
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(ProductTag::class, 'product_product_tag')->withTimestamps();
+    }
+
+    /* ---------------- Scopes ---------------- */
+
+    public function scopeStatus(Builder $query, string $status): Builder
+    {
+        return $query->where('status', $status);
+    }
+
+    /* ---------------- Accessors ---------------- */
 
     /**
      * Final price after applying the discount (never below zero).
@@ -65,17 +128,25 @@ class Product extends Model
         return max(0, round($final, 2));
     }
 
-    /**
-     * Whether the product actually carries a discount.
-     */
     public function getHasDiscountAttribute(): bool
     {
         return in_array($this->discount_type, ['fixed', 'percentage'], true)
             && (float) $this->discount_amount > 0;
     }
 
-    public function getIsActiveAttribute(): bool
+    /**
+     * Public URL of the product thumbnail (or the primary gallery image).
+     */
+    public function getThumbnailUrlAttribute(): ?string
     {
-        return $this->status === 'active';
+        if ($this->thumbnail) {
+            return Imageurl($this->thumbnail, 'products');
+        }
+
+        $primary = $this->relationLoaded('images')
+            ? $this->images->firstWhere('is_primary', true) ?? $this->images->first()
+            : $this->images()->orderByDesc('is_primary')->first();
+
+        return $primary ? Imageurl($primary->image, 'products') : null;
     }
 }

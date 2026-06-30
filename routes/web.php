@@ -109,6 +109,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/{id}', [ProductController::class, 'show'])->whereNumber('id')->name('show');
         Route::get('/{id}/edit', [ProductController::class, 'edit'])->name('edit');
         Route::put('/{id}', [ProductController::class, 'update'])->name('update');
+        Route::patch('/{id}/status', [ProductController::class, 'updateStatus'])->name('status');
+        Route::delete('/images/{image}', [ProductController::class, 'destroyImage'])->whereNumber('image')->name('images.destroy');
         Route::delete('/{id}', [ProductController::class, 'destroy'])->name('destroy');
     });
 
