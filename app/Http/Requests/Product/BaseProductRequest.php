@@ -79,7 +79,7 @@ abstract class BaseProductRequest extends FormRequest
             'variants' => ['nullable', 'array'],
             'variants.*.size_id' => ['required', 'exists:sizes,id'],
             'variants.*.color_id' => ['required', 'exists:colors,id'],
-            'variants.*.sku' => ['required', 'string', 'max:100', 'distinct'],
+            'variants.*.sku' => ['nullable', 'string', 'max:100'],
             'variants.*.barcode' => ['nullable', 'string', 'max:100'],
             'variants.*.stock' => ['required', 'integer', 'min:0'],
             'variants.*.low_stock_alert' => ['nullable', 'integer', 'min:0'],
@@ -101,8 +101,6 @@ abstract class BaseProductRequest extends FormRequest
         return [
             'variants.*.size_id.required' => 'Select a size for each variant.',
             'variants.*.color_id.required' => 'Select a color for each variant.',
-            'variants.*.sku.required' => 'SKU is required for each variant.',
-            'variants.*.sku.distinct' => 'Duplicate SKU in the variant list.',
             'variants.*.stock.required' => 'Stock is required for each variant.',
             'images.*.image' => 'Each gallery file must be an image.',
         ];
@@ -116,13 +114,21 @@ abstract class BaseProductRequest extends FormRequest
                 $validator->errors()->add('discount_amount', 'Percentage discount cannot exceed 100%.');
             }
 
-            // SKUs must be unique across all OTHER products.
+            // Provided SKUs must be unique within the form and across other
+            // products. Blank SKUs are auto-generated later, so they're skipped.
+            $seen = [];
+
             foreach ((array) $this->input('variants', []) as $i => $variant) {
                 $sku = trim($variant['sku'] ?? '');
 
                 if ($sku === '') {
                     continue;
                 }
+
+                if (isset($seen[$sku])) {
+                    $validator->errors()->add("variants.{$i}.sku", "Duplicate SKU \"{$sku}\" in the variant list.");
+                }
+                $seen[$sku] = true;
 
                 $exists = DB::table('product_variants')
                     ->where('sku', $sku)

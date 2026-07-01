@@ -28,11 +28,7 @@
 @endphp
 
 <form action="{{ $action }}" method="POST" enctype="multipart/form-data" class="product-form"
-    x-data="{
-        lang: '{{ $primaryLang }}',
-        slug: @js(old('slug', $product->slug ?? '')),
-        slugify(s) { return (s || '').toString().toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
-    }">
+    x-data="{ lang: '{{ $primaryLang }}' }">
     @csrf
     @if ($isEdit)
         @method('PUT')
@@ -45,20 +41,27 @@
 
             {{-- Language tabs — drive all translatable fields (Settings → Languages) --}}
             <div class="lang-tabs">
-                @foreach ($locales as $code => $label)
-                    <button type="button" class="lang-tab" :class="{ 'is-active': lang === '{{ $code }}' }"
-                        @click="lang = '{{ $code }}'">{{ $label }}</button>
-                @endforeach
+                <span class="lang-tabs__label">Content language</span>
+                <div class="lang-tabs__buttons">
+                    @foreach ($locales as $code => $label)
+                        <button type="button" class="lang-tab" :class="{ 'is-active': lang === '{{ $code }}' }"
+                            @click="lang = '{{ $code }}'">
+                            <span>{{ $label }}</span>
+                            <small>{{ strtoupper($code) }}</small>
+                        </button>
+                    @endforeach
+                </div>
             </div>
 
             {{-- A. Basic Information --}}
             <section class="form-section">
                 <div class="form-section__head">
                     <span class="form-section__icon"><i class="fa-solid fa-circle-info"></i></span>
-                    <div><h4>Basic Information</h4><p>Thumbnail, name and description.</p></div>
+                    <div><h4>Basic Information</h4><p>Customer-facing content and primary merchandising image.</p></div>
+                    <span class="form-section__badge">Required</span>
                 </div>
                 <div class="form-section__body grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="md:col-span-1">
+                    <div class="md:col-span-1 product-thumbnail-upload">
                         <x-image-upload name="thumbnail" label="Thumbnail"
                             :value="\App\Helpers\ImageManager::path($product->thumbnail ?? null, 'products')"
                             accept="image/*" help="Main image · up to 2MB" />
@@ -70,16 +73,12 @@
                                 <label>Product Name ({{ strtoupper($code) }}) @if ($code === $primaryLang)<span class="text-red-500">*</span>@endif</label>
                                 <input type="text" name="name[{{ $code }}]" class="form-input"
                                     value="{{ old("name.$code", $isEdit ? $product->getTranslation('name', $code, false) : '') }}"
-                                    @if ($code === $primaryLang) @input="slug = slugify($event.target.value)" required @endif
+                                    @if ($code === $primaryLang) required @endif
                                     placeholder="e.g. Heavyweight Oversized Tee">
+                                <p class="form-help">Keep it short and searchable. The primary language is required.</p>
                                 @error("name.$code")<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                             </div>
                         @endforeach
-
-                        <div class="form-field">
-                            <label>Slug <span class="text-gray-400 font-normal">(auto from {{ strtoupper($primaryLang) }} name)</span></label>
-                            <input type="text" class="form-input" :value="slug" readonly placeholder="auto-generated" style="opacity:.75;">
-                        </div>
 
                         {{-- Short Description (per language) --}}
                         @foreach ($locales as $code => $label)
@@ -88,6 +87,7 @@
                                 <input type="text" name="short_description[{{ $code }}]" class="form-input" maxlength="500"
                                     value="{{ old("short_description.$code", $isEdit ? $product->getTranslation('short_description', $code, false) : '') }}"
                                     placeholder="One-line summary shown on listings">
+                                <p class="form-help">Useful for collection cards, quick previews and search snippets.</p>
                                 @error("short_description.$code")<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                             </div>
                         @endforeach
@@ -99,6 +99,7 @@
                             <label>Description ({{ strtoupper($code) }})</label>
                             <textarea name="description[{{ $code }}]" class="form-input" rows="5"
                                 placeholder="Full product description...">{{ old("description.$code", $isEdit ? $product->getTranslation('description', $code, false) : '') }}</textarea>
+                            <p class="form-help">Include fit, materials, care, and what makes this product different.</p>
                             @error("description.$code")<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                     @endforeach
@@ -109,7 +110,7 @@
             <section class="form-section">
                 <div class="form-section__head">
                     <span class="form-section__icon"><i class="fa-solid fa-images"></i></span>
-                    <div><h4>Product Gallery</h4><p>Upload multiple images. Pick one as primary.</p></div>
+                    <div><h4>Product Gallery</h4><p>Upload alternate angles, detail shots and campaign images.</p></div>
                 </div>
                 <div class="form-section__body">
                     <x-admin::multiple-image-upload name="images" :existing="$product->images ?? null" />
@@ -121,7 +122,8 @@
             <section class="form-section">
                 <div class="form-section__head">
                     <span class="form-section__icon"><i class="fa-solid fa-tags"></i></span>
-                    <div><h4>Pricing</h4><p>Selling price, cost and discount.</p></div>
+                    <div><h4>Pricing</h4><p>Selling price, margin inputs and optional promotion.</p></div>
+                    <span class="form-section__badge">Storefront</span>
                 </div>
                 <div class="form-section__body"
                     x-data="{
@@ -140,12 +142,14 @@
                             <label for="price">Selling Price ($) <span class="text-red-500">*</span></label>
                             <input type="number" step="0.01" min="0" name="price" id="price" class="form-input"
                                 x-model="price" value="{{ old('price', $product->price ?? '') }}" required>
+                            <p class="form-help">Base price used when a variant does not override it.</p>
                             @error('price')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-field">
                             <label for="cost_price">Cost Price ($)</label>
                             <input type="number" step="0.01" min="0" name="cost_price" id="cost_price" class="form-input"
                                 value="{{ old('cost_price', $product->cost_price ?? '') }}" placeholder="0.00">
+                            <p class="form-help">Internal cost for margin tracking.</p>
                             @error('cost_price')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-field">
@@ -180,16 +184,21 @@
                 }">
                 <div class="form-section__head">
                     <span class="form-section__icon"><i class="fa-solid fa-layer-group"></i></span>
-                    <div><h4>Variants &amp; Stock</h4><p>Size, color, SKU, barcode, stock and pricing per variant.</p></div>
+                    <div><h4>Variants &amp; Stock</h4><p>Size, color, optional SKU, barcode, stock and pricing per variant.</p></div>
+                    <span class="form-section__badge">Inventory</span>
                     <button type="button" class="dynamic-add-button ms-auto" @click="add()"><i class="fa-solid fa-plus"></i> Add variant</button>
                 </div>
                 <div class="form-section__body">
                     <template x-if="variants.length === 0">
-                        <p class="text-sm text-gray-400 dark:text-slate-500">No variants yet — click “Add variant”. SKU must be unique across all products.</p>
+                        <p class="text-sm text-gray-400 dark:text-slate-500">No variants yet — click “Add variant”. Leave SKU blank to auto-generate one.</p>
                     </template>
                     <div class="d-flex flex-column gap-3">
                         <template x-for="(row, i) in variants" :key="i">
                             <div class="variant-card">
+                                <div class="variant-card__top">
+                                    <span>Variant <strong x-text="i + 1"></strong></span>
+                                    <small>Leave SKU blank to auto-generate during save.</small>
+                                </div>
                                 <div class="variant-card__grid">
                                     <div class="form-field">
                                         <label>Size</label>
@@ -211,7 +220,8 @@
                                     </div>
                                     <div class="form-field">
                                         <label>SKU</label>
-                                        <input type="text" class="form-input" x-model="row.sku" :name="`variants[${i}][sku]`" placeholder="SKU-001">
+                                        <input type="text" class="form-input" x-model="row.sku" :name="`variants[${i}][sku]`" placeholder="Auto-generate if blank">
+                                        <p class="form-help">Optional, must be unique if entered.</p>
                                     </div>
                                     <div class="form-field">
                                         <label>Barcode</label>
@@ -257,31 +267,39 @@
                 </div>
             </section>
 
-            {{-- F. Shipping + G. Specifications --}}
+            {{-- F. Specifications --}}
             <section class="form-section"
                 x-data="{ specs: @js($specRows), add() { this.specs.push({ name: '', value: '' }); }, remove(i) { this.specs.splice(i, 1); if (this.specs.length === 0) this.add(); } }">
                 <div class="form-section__head">
                     <span class="form-section__icon"><i class="fa-solid fa-list-check"></i></span>
-                    <div><h4>Shipping &amp; Specifications</h4><p>Product weight and key spec rows.</p></div>
+                    <div><h4>Specifications</h4><p>Shipping weight and structured product attributes.</p></div>
                 </div>
                 <div class="form-section__body">
-                    <div class="form-field" style="max-width:220px;">
-                        <label for="weight">Product Weight (kg)</label>
-                        <input type="number" step="0.01" min="0" name="weight" id="weight" class="form-input"
-                            value="{{ old('weight', $product->weight ?? '') }}" placeholder="0.00">
-                        @error('weight')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
+                    <div class="spec-grid">
+                        <div class="form-field">
+                            <label for="weight">Product Weight (kg)</label>
+                            <input type="number" step="0.01" min="0" name="weight" id="weight" class="form-input"
+                                value="{{ old('weight', $product->weight ?? '') }}" placeholder="0.00">
+                            <p class="form-help">Optional shipping weight for fulfillment and carrier estimates.</p>
+                            @error('weight')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
+                        </div>
+
+                        <div class="spec-note">
+                            <strong>Recommended specs</strong>
+                            <span>Material, fit, care instructions, origin, package contents.</span>
+                        </div>
                     </div>
 
                     <div class="dynamic-field-header mt-4">
                         <label>Specifications <span class="text-gray-400 font-normal">(e.g. Material → 100% Cotton)</span></label>
                         <button type="button" class="dynamic-add-button" @click="add()"><i class="fa-solid fa-plus"></i> Add row</button>
                     </div>
-                    <div class="d-flex flex-column gap-2 mt-2">
+                    <div class="spec-row-list mt-2">
                         <template x-for="(row, i) in specs" :key="i">
-                            <div class="grid grid-cols-12 gap-2">
-                                <input type="text" class="form-input col-span-5" x-model="row.name" :name="`specifications[${i}][name]`" placeholder="Name (e.g. Material)">
-                                <input type="text" class="form-input col-span-6" x-model="row.value" :name="`specifications[${i}][value]`" placeholder="Value (e.g. 100% Cotton)">
-                                <button type="button" class="dynamic-remove-button col-span-1" @click="remove(i)"><i class="fa-solid fa-trash"></i></button>
+                            <div class="spec-row">
+                                <input type="text" class="form-input" x-model="row.name" :name="`specifications[${i}][name]`" placeholder="Name (e.g. Material)">
+                                <input type="text" class="form-input" x-model="row.value" :name="`specifications[${i}][value]`" placeholder="Value (e.g. 100% Cotton)">
+                                <button type="button" class="dynamic-remove-button" @click="remove(i)"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </template>
                     </div>
@@ -292,24 +310,24 @@
             <section class="form-section">
                 <div class="form-section__head">
                     <span class="form-section__icon"><i class="fa-solid fa-magnifying-glass-chart"></i></span>
-                    <div><h4>SEO</h4><p>Search engine title and description.</p></div>
+                    <div><h4>SEO</h4><p>Search engine title and description per language.</p></div>
                 </div>
                 <div class="form-section__body d-flex flex-column gap-3">
                     @foreach ($locales as $code => $label)
-                        <div x-show="lang === '{{ $code }}'" x-cloak class="d-flex flex-column gap-3">
-                            <div class="form-field">
-                                <label>SEO Title ({{ strtoupper($code) }})</label>
-                                <input type="text" name="seo_title[{{ $code }}]" class="form-input" maxlength="255"
-                                    value="{{ old("seo_title.$code", $isEdit ? $product->getTranslation('seo_title', $code, false) : '') }}"
-                                    placeholder="Meta title">
-                                @error("seo_title.$code")<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
-                            </div>
-                            <div class="form-field">
-                                <label>SEO Description ({{ strtoupper($code) }})</label>
-                                <textarea name="seo_description[{{ $code }}]" class="form-input" rows="2" maxlength="500"
-                                    placeholder="Meta description">{{ old("seo_description.$code", $isEdit ? $product->getTranslation('seo_description', $code, false) : '') }}</textarea>
-                                @error("seo_description.$code")<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
-                            </div>
+                        <div class="form-field" x-show="lang === '{{ $code }}'" x-cloak>
+                            <label>SEO Title ({{ strtoupper($code) }})</label>
+                            <input type="text" name="seo_title[{{ $code }}]" class="form-input" maxlength="255"
+                                value="{{ old("seo_title.$code", $isEdit ? $product->getTranslation('seo_title', $code, false) : '') }}"
+                                placeholder="Meta title">
+                            <p class="form-help">Aim for 50-60 characters. Leave blank to let the product name carry search.</p>
+                            @error("seo_title.$code")<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="form-field" x-show="lang === '{{ $code }}'" x-cloak>
+                            <label>SEO Description ({{ strtoupper($code) }})</label>
+                            <textarea name="seo_description[{{ $code }}]" class="form-input" rows="2" maxlength="500"
+                                placeholder="Meta description">{{ old("seo_description.$code", $isEdit ? $product->getTranslation('seo_description', $code, false) : '') }}</textarea>
+                            <p class="form-help">Summarize benefits, material and audience in one concise sentence.</p>
+                            @error("seo_description.$code")<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                     @endforeach
                 </div>
@@ -320,10 +338,10 @@
         <aside class="product-form-side">
 
             {{-- I. Publishing --}}
-            <section class="form-section">
+            <section class="form-section form-section--side">
                 <div class="form-section__head">
                     <span class="form-section__icon"><i class="fa-solid fa-rocket"></i></span>
-                    <div><h4>Publishing</h4></div>
+                    <div><h4>Publishing</h4><p>Control availability and merchandising flags.</p></div>
                 </div>
                 <div class="form-section__body d-flex flex-column gap-3">
                     <div class="form-field">
@@ -333,6 +351,7 @@
                                 <option value="{{ $val }}" @selected(old('status', $product->status ?? 'draft') === $val)>{{ $label }}</option>
                             @endforeach
                         </select>
+                        <p class="form-help">Draft products stay hidden until published.</p>
                     </div>
 
                     @php($flags = ['is_featured' => 'Featured', 'is_new' => 'New Arrival', 'is_best_seller' => 'Best Seller', 'is_on_sale' => 'On Sale'])
@@ -355,10 +374,10 @@
             </section>
 
             {{-- C. Organization --}}
-            <section class="form-section">
+            <section class="form-section form-section--side">
                 <div class="form-section__head">
                     <span class="form-section__icon"><i class="fa-solid fa-sitemap"></i></span>
-                    <div><h4>Organization</h4></div>
+                    <div><h4>Organization</h4><p>Catalog placement, brand and tags.</p></div>
                 </div>
                 <div class="form-section__body d-flex flex-column gap-3">
                     <div class="form-field">
@@ -369,6 +388,7 @@
                                 <option value="{{ $category->id }}" @selected(old('category_id', $product->category_id ?? '') == $category->id)>{{ $category->name }}</option>
                             @endforeach
                         </select>
+                        <p class="form-help">Required for storefront navigation and filters.</p>
                         @error('category_id')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                     </div>
                     <div class="form-field">
@@ -401,6 +421,7 @@
                         </div>
                         <input type="text" name="new_tags" class="form-input mt-2" placeholder="Add new tags, comma separated"
                             value="{{ old('new_tags') }}">
+                        <p class="form-help">Tags improve admin search, campaigns and product grouping.</p>
                     </div>
                 </div>
             </section>

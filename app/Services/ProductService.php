@@ -212,16 +212,24 @@ class ProductService
     private function syncVariants(Product $product, BaseProductRequest $request): void
     {
         $product->variants()->delete();
+        $usedSkus = [];
 
         foreach ((array) $request->input('variants', []) as $variant) {
-            if (empty($variant['sku']) || empty($variant['size_id']) || empty($variant['color_id'])) {
+            if (empty($variant['size_id']) || empty($variant['color_id'])) {
                 continue;
             }
+
+            // Auto-generate a unique SKU when the admin leaves it blank.
+            $sku = trim($variant['sku'] ?? '');
+            if ($sku === '') {
+                $sku = $this->generateSku($product, $variant, $usedSkus);
+            }
+            $usedSkus[] = $sku;
 
             $product->variants()->create([
                 'size_id' => $variant['size_id'],
                 'color_id' => $variant['color_id'],
-                'sku' => trim($variant['sku']),
+                'sku' => $sku,
                 'barcode' => $variant['barcode'] ?? null,
                 'stock' => $variant['stock'] ?? 0,
                 'low_stock_alert' => $variant['low_stock_alert'] ?? 0,
@@ -231,6 +239,25 @@ class ProductService
                 'status' => (bool) ($variant['status'] ?? true),
             ]);
         }
+    }
+
+    /**
+     * Build a unique SKU (e.g. SKU-12-3-4) that collides with neither the
+     * batch being saved nor any existing variant.
+     *
+     * @param  array<int, string>  $used
+     */
+    private function generateSku(Product $product, array $variant, array $used): string
+    {
+        $base = 'SKU-'.$product->id.'-'.($variant['size_id'] ?? 'X').'-'.($variant['color_id'] ?? 'X');
+        $sku = $base;
+        $n = 1;
+
+        while (in_array($sku, $used, true) || DB::table('product_variants')->where('sku', $sku)->exists()) {
+            $sku = $base.'-'.$n++;
+        }
+
+        return $sku;
     }
 
     private function syncSpecifications(Product $product, BaseProductRequest $request): void

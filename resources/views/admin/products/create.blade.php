@@ -20,8 +20,6 @@
             </a>
         </div>
 
-        <x-message />
-
         @include('admin.products._form', [
             'mode' => 'create',
             'action' => route('admin.products.store'),

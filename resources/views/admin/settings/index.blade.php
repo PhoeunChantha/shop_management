@@ -100,16 +100,47 @@
                                     {{-- Image fields are grouped into their own row below. --}}
                                     @continue(($field['type'] ?? 'text') === 'image')
 
-                                    {{-- Multiselect (select2): stores an array of keys --}}
+                                    {{-- Multiselect (Alpine chips picker): stores an array of keys --}}
                                     @if (($field['type'] ?? 'text') === 'multiselect')
                                         @php($selectedVals = old($fieldKey, json_decode($values[$fieldKey] ?? '[]', true) ?: ($field['default'] ?? [])))
-                                        <div class="form-field sm:col-span-2">
-                                            <label for="{{ $fieldKey }}">{{ $field['label'] }}</label>
-                                            <select name="{{ $fieldKey }}[]" id="{{ $fieldKey }}" class="form-input select2-multi" multiple data-placeholder="Select languages…">
-                                                @foreach ($field['options'] ?? [] as $code => $label)
-                                                    <option value="{{ $code }}" @selected(in_array($code, (array) $selectedVals))>{{ $label }}</option>
-                                                @endforeach
-                                            </select>
+                                        <div class="form-field sm:col-span-2"
+                                            x-data="{
+                                                open: false,
+                                                options: @js($field['options'] ?? []),
+                                                selected: @js(array_values((array) $selectedVals)),
+                                                toggle(code) { this.selected.includes(code) ? (this.selected = this.selected.filter(c => c !== code)) : this.selected.push(code); },
+                                                remove(code) { this.selected = this.selected.filter(c => c !== code); },
+                                                label(code) { return this.options[code] ?? code; }
+                                            }"
+                                            @click.outside="open = false">
+                                            <label>{{ $field['label'] }}</label>
+
+                                            <div class="ms-select" :class="{ 'is-open': open }" @click="open = !open">
+                                                <div class="ms-select__tags">
+                                                    <template x-for="code in selected" :key="code">
+                                                        <span class="ms-tag" @click.stop>
+                                                            <span x-text="label(code)"></span>
+                                                            <button type="button" @click="remove(code)" aria-label="Remove">&times;</button>
+                                                        </span>
+                                                    </template>
+                                                    <span class="ms-select__placeholder" x-show="selected.length === 0">Select languages…</span>
+                                                </div>
+                                                <i class="fa-solid fa-chevron-down ms-select__caret"></i>
+                                            </div>
+
+                                            <div class="ms-select__menu" x-show="open" x-cloak @click.stop>
+                                                <template x-for="(lbl, code) in options" :key="code">
+                                                    <button type="button" class="ms-option" :class="{ 'is-selected': selected.includes(code) }" @click="toggle(code)">
+                                                        <span x-text="lbl"></span>
+                                                        <i class="fa-solid fa-check" x-show="selected.includes(code)"></i>
+                                                    </button>
+                                                </template>
+                                            </div>
+
+                                            <template x-for="code in selected" :key="'hidden-' + code">
+                                                <input type="hidden" name="{{ $fieldKey }}[]" :value="code">
+                                            </template>
+
                                             @if (!empty($field['hint']))
                                                 <p class="color-field__hint">{{ $field['hint'] }}</p>
                                             @endif
@@ -247,55 +278,4 @@
         </section>
     </div>
 
-    @push('js')
-        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-        <script>
-            (function () {
-                function initSelect2() {
-                    if (!window.jQuery || !jQuery.fn.select2) { return setTimeout(initSelect2, 50); }
-                    jQuery('.select2-multi').each(function () {
-                        jQuery(this).select2({
-                            width: '100%',
-                            placeholder: this.dataset.placeholder || 'Select…',
-                            closeOnSelect: false,
-                        });
-                    });
-                }
-                document.addEventListener('DOMContentLoaded', initSelect2);
-            })();
-        </script>
-        <style>
-            /* Match select2 to the admin form-input look */
-            .select2-container--default .select2-selection--multiple {
-                border: 1px solid var(--admin-line);
-                border-radius: 11px;
-                min-height: 46px;
-                padding: 4px 6px;
-                background: #fff;
-            }
-            .select2-container--default.select2-container--focus .select2-selection--multiple {
-                border-color: var(--primary-color);
-                box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-color) 18%, transparent);
-            }
-            .select2-container--default .select2-selection--multiple .select2-selection__choice {
-                background: var(--primary-color);
-                border: 0;
-                color: var(--on-primary);
-                border-radius: 8px;
-                padding: 3px 9px;
-                font-size: 12.5px;
-                font-weight: 600;
-            }
-            .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
-                color: var(--on-primary);
-                margin-right: 5px;
-            }
-            .select2-container--default .select2-results__option--highlighted[aria-selected] {
-                background: var(--primary-color);
-            }
-            .select2-dropdown { border-color: var(--admin-line); border-radius: 12px; }
-        </style>
-    @endpush
 </x-app-layout>
