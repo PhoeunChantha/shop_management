@@ -10,6 +10,6 @@
     </p>
 
     <div class="pagination-shell">
-        {{ $paginator->links() }}
+        {{ $paginator->links('pagination::table') }}
     </div>
 </div>

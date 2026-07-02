@@ -1158,6 +1158,19 @@ body.admin-shell {
     gap: 12px;
 }
 
+.table-toolbar__right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-left: auto;
+    min-width: min(360px, 100%);
+}
+
+/* Toolbar search / per-page are standalone GET forms; keep them out of the flex flow. */
+.toolbar-form {
+    display: contents;
+}
+
 .result-badge {
     display: inline-flex;
     align-items: center;
@@ -1546,6 +1559,120 @@ body.admin-shell {
 .table-action--delete:hover {
     color: color-mix(in srgb, var(--danger-color) 82%, #000);
     background: color-mix(in srgb, var(--danger-color) 10%, #fff);
+}
+
+/* Row actions dropdown */
+.table-actions {
+    display: inline-flex;
+}
+
+.table-actions__toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--admin-line);
+    border-radius: 10px;
+    color: #475467;
+    background: #ffffff;
+    cursor: pointer;
+    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.table-actions__toggle:hover,
+.table-actions__toggle.is-open {
+    color: var(--admin-ink);
+    border-color: color-mix(in srgb, var(--primary-color) 40%, var(--admin-line));
+    background: #f5f8fb;
+}
+
+.table-actions__menu {
+    position: fixed;
+    z-index: 1200;
+    display: flex;
+    flex-direction: column;
+    padding: 6px;
+    border: 1px solid var(--admin-line);
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 18px 40px rgba(16, 24, 40, 0.16);
+}
+
+.table-actions__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 11px;
+    border: 0;
+    border-radius: 10px;
+    color: #344054;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 140ms ease, color 140ms ease;
+}
+
+.table-actions__item i {
+    width: 16px;
+    text-align: center;
+    color: #8a96aa;
+}
+
+.table-actions__item:hover {
+    color: var(--admin-ink);
+    background: #f2f6fa;
+}
+
+.table-actions__item:hover i {
+    color: var(--primary-color);
+}
+
+.table-actions__item--danger {
+    color: var(--danger-color);
+}
+
+.table-actions__item--danger i {
+    color: color-mix(in srgb, var(--danger-color) 60%, #fff);
+}
+
+.table-actions__item--danger:hover {
+    color: color-mix(in srgb, var(--danger-color) 82%, #000);
+    background: color-mix(in srgb, var(--danger-color) 10%, #fff);
+}
+
+.table-actions__item--danger:hover i {
+    color: var(--danger-color);
+}
+
+html.dark .table-actions__toggle {
+    color: var(--admin-muted);
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+html.dark .table-actions__toggle:hover,
+html.dark .table-actions__toggle.is-open {
+    color: var(--admin-ink);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .table-actions__menu {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: var(--admin-panel);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+}
+
+html.dark .table-actions__item {
+    color: var(--admin-muted);
+}
+
+html.dark .table-actions__item:hover {
+    color: var(--admin-ink);
+    background: rgba(255, 255, 255, 0.06);
 }
 
 .empty-state {
@@ -2737,31 +2864,54 @@ html.dark .st-draft { background: rgba(255, 255, 255, 0.06); color: #cbd5e1; bor
 }
 
 /* Language tab strip (translatable product fields) */
+/* Language switcher — simple underline tabs */
 .lang-tabs {
     display: flex;
-    gap: 4px;
     flex-wrap: wrap;
+    align-items: center;
+    gap: 26px;
     border-bottom: 1px solid var(--admin-line);
-    background: var(--admin-panel);
-    border-radius: 14px 14px 0 0;
-    padding: 6px 10px 0;
+}
+
+.lang-tabs__label {
+    display: none;
+}
+
+.lang-tabs__buttons {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 26px;
 }
 
 .lang-tab {
-    padding: 10px 16px;
-    border: 0;
-    background: none;
-    font-size: 13.5px;
-    font-weight: 700;
-    color: var(--admin-muted);
-    border-bottom: 2px solid transparent;
+    padding: 10px 2px;
     margin-bottom: -1px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: none;
+    color: var(--admin-muted);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
     transition: color 0.16s ease, border-color 0.16s ease;
 }
-.lang-tab:hover { color: var(--admin-ink); }
-.lang-tab.is-active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
 
-html.dark .lang-tabs { background: #121c31; }
+.lang-tab small {
+    display: none;
+}
+
+.lang-tab:hover {
+    color: var(--admin-ink);
+}
+
+.lang-tab.is-active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+html.dark .lang-tabs {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
 
 /* Product form refinements */
 .product-form-grid {
@@ -2985,59 +3135,13 @@ html.dark .lang-tabs { background: #121c31; }
     min-height: 42px;
 }
 
-.lang-tabs {
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 10px 12px;
-    border: 1px solid var(--admin-line);
-    border-radius: 16px;
-}
-
-.lang-tabs__label {
-    color: var(--admin-muted);
-    font-size: 12px;
-    font-weight: 800;
-    text-transform: uppercase;
-}
-
-.lang-tabs__buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-.lang-tab {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 38px;
-    padding: 0 12px;
-    border: 1px solid transparent;
-    border-radius: 999px;
-    margin-bottom: 0;
-}
-
-.lang-tab small {
-    color: inherit;
-    opacity: 0.62;
-    font-size: 10px;
-    font-weight: 900;
-}
-
-.lang-tab.is-active {
-    border-color: color-mix(in srgb, var(--primary-color) 24%, #fff);
-    background: color-mix(in srgb, var(--primary-color) 9%, #fff);
-}
-
 html.dark .form-section:hover {
     border-color: color-mix(in srgb, var(--primary-color) 30%, var(--admin-line));
     box-shadow: 0 18px 44px rgba(0, 0, 0, 0.22);
 }
 
 html.dark .form-section__badge,
-html.dark .product-thumbnail-upload .image-upload-field > label:first-of-type::after,
-html.dark .lang-tab.is-active {
+html.dark .product-thumbnail-upload .image-upload-field > label:first-of-type::after {
     border-color: color-mix(in srgb, var(--primary-color) 35%, transparent);
     background: color-mix(in srgb, var(--primary-color) 16%, transparent);
 }
@@ -3059,17 +3163,19 @@ html.dark .variant-card:hover {
     }
 
     .lang-tabs {
-        align-items: flex-start;
-        flex-direction: column;
+        gap: 16px;
     }
 
-    .lang-tabs__buttons,
-    .lang-tab {
+    .lang-tabs__buttons {
+        gap: 16px;
         width: 100%;
+        overflow-x: auto;
+        flex-wrap: nowrap;
     }
 
     .lang-tab {
-        justify-content: space-between;
+        flex: 0 0 auto;
+        white-space: nowrap;
     }
 
     .variant-card__grid,

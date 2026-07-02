@@ -21,13 +21,14 @@
         </div>
 
         {{-- Filters --}}
-        <form method="GET" action="{{ route('admin.products.index') }}" class="premium-card filter-card product-filters">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <label class="search-control lg:col-span-2">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="search" name="search" value="{{ request('search') }}" placeholder="Search name, SKU or barcode..." autocomplete="off">
-                </label>
-                <select name="category_id" class="form-input">
+        <x-filter-card :action="route('admin.products.index')">
+            {{-- Search & per page live in the table toolbar; keep their values when applying filters. --}}
+            <x-slot:hidden>
+                <input type="hidden" name="search" value="{{ request('search') }}">
+                <input type="hidden" name="per_page" value="{{ $perPage }}">
+            </x-slot:hidden>
+
+            <select name="category_id" class="form-input">
                     <option value="">All categories</option>
                     @foreach ($categories as $c)
                         <option value="{{ $c->id }}" @selected(request('category_id') == $c->id)>{{ $c->name }}</option>
@@ -58,37 +59,28 @@
                     <option value="best_seller" @selected(request('flag') === 'best_seller')>Best Seller</option>
                     <option value="on_sale" @selected(request('flag') === 'on_sale')>On Sale</option>
                 </select>
-                <div class="d-flex gap-2">
-                    <input type="number" step="0.01" name="min_price" value="{{ request('min_price') }}" class="form-input" placeholder="Min $">
-                    <input type="number" step="0.01" name="max_price" value="{{ request('max_price') }}" class="form-input" placeholder="Max $">
-                </div>
-            </div>
-            <div class="d-flex align-items-center gap-2 mt-3">
-                <button type="submit" class="filter-button"><i class="fa-solid fa-sliders"></i> Apply Filters</button>
-                <a href="{{ route('admin.products.index') }}" class="ghost-button"><i class="fa-solid fa-rotate-left"></i> Reset</a>
-                <label class="per-page-control ms-auto">
-                    <span>Show</span>
-                    <select name="per_page" onchange="this.form.submit()">
-                        @foreach ([5, 10, 25, 50] as $size)
-                            <option value="{{ $size }}" @selected($perPage === $size)>{{ $size }}</option>
-                        @endforeach
-                    </select>
-                </label>
-            </div>
-        </form>
+        </x-filter-card>
 
         <section class="premium-card mt-3">
-            <div class="table-toolbar">
-                <div class="result-badge">
-                    <i class="fa-solid fa-box-open"></i>
-                    <span>{{ $products->total() }} result{{ $products->total() === 1 ? '' : 's' }}</span>
-                </div>
-            </div>
+            <x-table-toolbar>
+                <x-slot:left>
+                    <div class="result-badge">
+                        <i class="fa-solid fa-box-open"></i>
+                        <span>{{ $products->total() }} result{{ $products->total() === 1 ? '' : 's' }}</span>
+                    </div>
+                    <x-per-page-selector :current="$perPage" />
+                </x-slot:left>
+                <x-slot:right>
+                    <x-search-input name="search" placeholder="Search name, SKU or barcode..." />
+                </x-slot:right>
+            </x-table-toolbar>
 
             <div class="premium-table-wrap">
                 <table class="premium-table">
                     <thead>
                         <tr>
+                            <th class="text-center" style="width:56px;">#</th>
+                            <th>Image</th>
                             <th>Product</th>
                             <th>Category</th>
                             <th>Brand</th>
@@ -103,18 +95,19 @@
                     <tbody>
                         @forelse ($products as $product)
                             <tr>
+                                <td class="text-center text-sm text-gray-500 dark:text-slate-400">{{ ($products->firstItem() ?? 0) + $loop->index }}</td>
                                 <td>
-                                    <div class="d-flex align-items-center gap-3">
-                                        @php($thumb = $product->thumbnail_url)
-                                        @if ($thumb)
-                                            <img src="{{ $thumb }}" alt="{{ $product->name }}" class="w-11 h-11 object-cover rounded-lg border dark:border-white/10" style="width:44px;height:44px;">
-                                        @else
-                                            <span class="d-inline-flex align-items-center justify-content-center rounded-lg bg-gray-100 text-gray-300 dark:bg-white/10" style="width:44px;height:44px;"><i class="fa-regular fa-image"></i></span>
-                                        @endif
-                                        <div>
-                                            <strong class="text-gray-900 dark:text-slate-100">{{ $product->name }}</strong>
-                                            <div class="text-xs text-gray-400 dark:text-slate-500 font-mono">{{ $product->slug }}</div>
-                                        </div>
+                                    @if ($product->thumbnail)
+                                        <img src="{{ Imageurl($product->thumbnail, 'products') }}" alt="{{ $product->name }}"
+                                            class="w-11 h-11 object-cover rounded-lg border dark:border-white/10" style="width:44px;height:44px;">
+                                    @else
+                                        <span class="d-inline-flex align-items-center justify-content-center rounded-lg bg-gray-100 text-gray-300 dark:bg-white/10" style="width:44px;height:44px;"><i class="fa-regular fa-image"></i></span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <div>
+                                        <strong class="text-gray-900 dark:text-slate-100">{{ $product->name }}</strong>
+                                        <div class="text-xs text-gray-400 dark:text-slate-500 font-mono">{{ $product->slug }}</div>
                                     </div>
                                 </td>
                                 <td><span class="text-sm text-gray-600 dark:text-slate-300">{{ $product->category->name ?? '—' }}</span></td>
@@ -143,20 +136,26 @@
                                 <td><span class="text-xs text-gray-500 dark:text-slate-400">{{ $product->created_at?->format('M d, Y') }}</span></td>
                                 <td>
                                     <div class="action-group">
-                                        <a href="{{ route('admin.products.show', $product->id) }}" class="table-action table-action--view"><i class="fa-solid fa-eye"></i><span>View</span></a>
-                                        <a href="{{ route('admin.products.edit', $product->id) }}" class="table-action table-action--edit"><i class="fa-solid fa-pen"></i><span>Edit</span></a>
-                                        <button type="button" class="table-action table-action--delete"
-                                            data-delete-modal-target="deleteProductModal"
-                                            data-delete-action="{{ route('admin.products.destroy', $product->id) }}"
-                                            data-delete-name="{{ $product->name }}">
-                                            <i class="fa-solid fa-trash"></i><span>Delete</span>
-                                        </button>
+                                        <x-table-actions>
+                                            <a href="{{ route('admin.products.show', $product->id) }}" class="table-actions__item" role="menuitem">
+                                                <i class="fa-solid fa-eye"></i><span>View</span>
+                                            </a>
+                                            <a href="{{ route('admin.products.edit', $product->id) }}" class="table-actions__item" role="menuitem">
+                                                <i class="fa-solid fa-pen"></i><span>Edit</span>
+                                            </a>
+                                            <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
+                                                data-delete-modal-target="deleteProductModal"
+                                                data-delete-action="{{ route('admin.products.destroy', $product->id) }}"
+                                                data-delete-name="{{ $product->name }}">
+                                                <i class="fa-solid fa-trash"></i><span>Delete</span>
+                                            </button>
+                                        </x-table-actions>
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9">
+                                <td colspan="11">
                                     <div class="empty-state">
                                         <i class="fa-solid fa-box-open"></i>
                                         <strong>No products found</strong>
