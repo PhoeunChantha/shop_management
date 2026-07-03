@@ -28,37 +28,20 @@
                 <input type="hidden" name="per_page" value="{{ $perPage }}">
             </x-slot:hidden>
 
-            <select name="category_id" class="form-input">
-                    <option value="">All categories</option>
-                    @foreach ($categories as $c)
-                        <option value="{{ $c->id }}" @selected(request('category_id') == $c->id)>{{ $c->name }}</option>
-                    @endforeach
-                </select>
-                <select name="brand_id" class="form-input">
-                    <option value="">All brands</option>
-                    @foreach ($brands as $b)
-                        <option value="{{ $b->id }}" @selected(request('brand_id') == $b->id)>{{ $b->name }}</option>
-                    @endforeach
-                </select>
-                <select name="status" class="form-input">
-                    <option value="">Any status</option>
-                    @foreach (['draft', 'active', 'inactive', 'archived'] as $s)
-                        <option value="{{ $s }}" @selected(request('status') === $s)>{{ ucfirst($s) }}</option>
-                    @endforeach
-                </select>
-                <select name="stock" class="form-input">
-                    <option value="">Any stock</option>
-                    <option value="in_stock" @selected(request('stock') === 'in_stock')>In stock</option>
-                    <option value="low_stock" @selected(request('stock') === 'low_stock')>Low stock</option>
-                    <option value="out_of_stock" @selected(request('stock') === 'out_of_stock')>Out of stock</option>
-                </select>
-                <select name="flag" class="form-input">
-                    <option value="">Any flag</option>
-                    <option value="featured" @selected(request('flag') === 'featured')>Featured</option>
-                    <option value="new" @selected(request('flag') === 'new')>New Arrival</option>
-                    <option value="best_seller" @selected(request('flag') === 'best_seller')>Best Seller</option>
-                    <option value="on_sale" @selected(request('flag') === 'on_sale')>On Sale</option>
-                </select>
+            <x-select name="category_id" size="sm" :options="$categories" :value="request('category_id')"
+                placeholder="All categories" searchable />
+
+            <x-select name="brand_id" size="sm" :options="$brands" :value="request('brand_id')"
+                placeholder="All brands" searchable />
+
+            <x-select name="status" size="sm" :value="request('status')" placeholder="Any status"
+                :options="['draft' => 'Draft', 'active' => 'Active', 'inactive' => 'Inactive', 'archived' => 'Archived']" />
+
+            <x-select name="stock" size="sm" :value="request('stock')" placeholder="Any stock"
+                :options="['in_stock' => 'In stock', 'low_stock' => 'Low stock', 'out_of_stock' => 'Out of stock']" />
+
+            <x-select name="flag" size="sm" :value="request('flag')" placeholder="Any flag"
+                :options="['featured' => 'Featured', 'new' => 'New Arrival', 'best_seller' => 'Best Seller', 'on_sale' => 'On Sale']" />
         </x-filter-card>
 
         <section class="premium-card mt-3">
