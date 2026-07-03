@@ -1453,6 +1453,32 @@ input[type=number]::-webkit-inner-spin-button {
   z-index: -1
 }
 
+/* Background image layer — sits behind the gradient + content so it can
+   Ken Burns zoom/pan without scaling the copy. Image comes from the slide. */
+.ut-hero-media {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-position: center;
+  background-size: cover;
+  transform: scale(1.05);
+  will-change: transform;
+}
+
+.ut-hero-item.active .ut-hero-media {
+  animation: heroKenBurns 6.5s var(--ease-out);
+}
+
+@keyframes heroKenBurns {
+  from { transform: scale(1.04) translate3d(0, 0, 0); }
+  to   { transform: scale(1.16) translate3d(-1.6%, 1.2%, 0); }
+}
+
+/* Pause the zoom while paused on hover (matches autoplay pause) */
+.ut-hero-carousel:hover .ut-hero-item.active .ut-hero-media {
+  animation-play-state: paused;
+}
+
 .ut-hero-new {
   background-image: url('https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=1800&q=88')
 }
@@ -1556,7 +1582,13 @@ input[type=number]::-webkit-inner-spin-button {
   flex-direction: column;
   justify-content: space-between;
   transform: rotate(4deg);
-  box-shadow: 0 24px 44px rgba(0, 0, 0, .32)
+  box-shadow: 0 24px 44px rgba(0, 0, 0, .32);
+  will-change: transform;
+}
+
+@keyframes heroFloat {
+  0%, 100% { transform: translateY(0) rotate(4deg); }
+  50%      { transform: translateY(-12px) rotate(2.2deg); }
 }
 
 .ut-hero-product-card span {
@@ -1638,18 +1670,41 @@ input[type=number]::-webkit-inner-spin-button {
 }
 
 .ut-hero-dots [data-hero-slide] {
-  width: 26px;
-  height: 2px;
+  position: relative;
+  width: 34px;
+  height: 3px;
   border: 0;
   margin: 0;
   padding: 0;
-  background: #fff;
-  opacity: .32;
-  transition: opacity var(--dur) var(--ease-out)
+  background: rgba(255, 255, 255, .28);
+  border-radius: 2px;
+  overflow: hidden;
+  cursor: pointer;
 }
 
-.ut-hero-dots .active {
-  opacity: 1
+/* Inner fill = progress bar. Animates left→right over the autoplay window
+   on the active slide (GPU transform, not width). */
+.ut-hero-dots [data-hero-slide] i {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  border-radius: 2px;
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+.ut-hero-dots .active i {
+  animation: heroProgress var(--hero-autoplay, 5s) linear both;
+}
+
+/* Pause the progress fill while hovered (autoplay is paused too) */
+.ut-hero-carousel:hover .ut-hero-dots .active i {
+  animation-play-state: paused;
+}
+
+@keyframes heroProgress {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
 }
 
 /* Product card */
@@ -2240,18 +2295,39 @@ input[type=number]::-webkit-inner-spin-button {
 .ut-hero-carousel {
   position: relative;
   overflow: hidden;
+  /* Autoplay window — keep in sync with the 5000ms interval in main.js */
+  --hero-autoplay: 5s;
+}
+
+/* Slides are stacked and crossfade via opacity (GPU-friendly). The outgoing
+   slide fades out as the incoming fades in — no hard image swap. */
+.ut-hero-track {
+  position: relative;
+  height: 100%;
 }
 
 .ut-hero-item {
-  display: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .85s var(--ease-out), visibility 0s linear .85s;
 }
 
 .ut-hero-item.active {
-  display: block;
+  opacity: 1;
+  visibility: visible;
+  z-index: 1;
+  transition: opacity .85s var(--ease-out);
 }
 
 .ut-hero-item.active .ut-hero-copy>* {
   animation: fadeUp .7s var(--ease-out) both;
+}
+
+/* Float only the visible card (saves work + restarts the motion per slide) */
+.ut-hero-item.active .ut-hero-product-card {
+  animation: heroFloat 5.5s ease-in-out infinite;
 }
 
 .ut-hero-item.active .ut-hero-kicker {
@@ -2268,6 +2344,12 @@ input[type=number]::-webkit-inner-spin-button {
 
 .ut-hero-item.active .ut-hero-ctas {
   animation-delay: .29s;
+}
+
+/* Floating card wrapper fades in on slide change (opacity only — the inner
+   card owns the transform via heroFloat, so the two never fight). */
+.ut-hero-item.active .ut-hero-product {
+  animation: fadeIn .8s var(--ease-out) .34s both;
 }
 
 .ut-hero-dots {

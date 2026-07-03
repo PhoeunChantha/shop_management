@@ -526,30 +526,8 @@
     targets.forEach((el) => io.observe(el));
   })();
 
-  /* ---------- magnetic / press micro-interaction on primary CTAs ---------- */
-  (function initPressFeedback() {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    // Ripple-free, transform-only press cue is handled in CSS (:active).
-    // Here we add a subtle pointer-tracked tilt to hero product card only.
-    const card = document.querySelector('.ut-hero-product-card');
-    if (!card || !window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
-    const wrap = card.closest('.ut-hero-product') || card.parentElement;
-    if (!wrap) return;
-    let raf = 0;
-    wrap.addEventListener('pointermove', (e) => {
-      const r = wrap.getBoundingClientRect();
-      const dx = ((e.clientX - r.left) / r.width - 0.5) * 8;
-      const dy = ((e.clientY - r.top) / r.height - 0.5) * 8;
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => { card.style.transform = 'rotate(4deg) translate(' + dx + 'px,' + dy + 'px)'; });
-    });
-    wrap.addEventListener('pointerleave', () => {
-      cancelAnimationFrame(raf);
-      card.style.transition = 'transform .5s cubic-bezier(.22,1,.36,1)';
-      card.style.transform = 'rotate(4deg)';
-      setTimeout(() => { card.style.transition = ''; }, 520);
-    });
-  })();
+  /* Hero product card now floats via CSS (heroFloat keyframes) so no JS tilt
+     is needed — a JS transform would fight the CSS animation. */
 
   /* ---------- init ---------- */
   syncBadges();

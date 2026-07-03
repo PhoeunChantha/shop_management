@@ -19,81 +19,50 @@
                 <span>New User</span>
             </a>
         </div>
-        <form method="GET" action="{{ route('admin.users.index') }}" class="filter-card">
-            <div class="filter-card__header">
-                <div>
-                    <p class="section-kicker">Filters</p>
-                    <h3>Refine user records</h3>
-                </div>
-                <a href="{{ route('admin.users.index') }}" class="ghost-button">
-                    <i class="fa-solid fa-rotate-left"></i>
-                    <span>Reset</span>
-                </a>
-            </div>
-
-            <div class="filter-grid">
-                <label class="filter-field">
-                    <span>Role</span>
-                    <select name="role">
-                        <option value="">All roles</option>
-                        @foreach ($roles as $role)
-                            <option value="{{ $role->name }}" @selected(request('role') === $role->name)>
-                                {{ ucfirst($role->name) }}
-                            </option>
-                        @endforeach
-                    </select>
-                </label>
-
-                <label class="filter-field">
-                    <span>Created from</span>
-                    <input type="date" name="date_from" value="{{ request('date_from') }}">
-                </label>
-
-                <label class="filter-field">
-                    <span>Created to</span>
-                    <input type="date" name="date_to" value="{{ request('date_to') }}">
-                </label>
-
+        {{-- Filters --}}
+        <x-filter-card :action="route('admin.users.index')" grid="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {{-- Search & per page live in the table toolbar; keep their values when applying filters. --}}
+            <x-slot:hidden>
                 <input type="hidden" name="search" value="{{ request('search') }}">
                 <input type="hidden" name="per_page" value="{{ $perPage }}">
+            </x-slot:hidden>
 
-                <button type="submit" class="filter-button">
-                    <i class="fa-solid fa-sliders"></i>
-                    <span>Apply Filters</span>
-                </button>
-            </div>
-        </form>
+            <label class="filter-field">
+                <span>Role</span>
+                <select name="role">
+                    <option value="">All roles</option>
+                    @foreach ($roles as $role)
+                        <option value="{{ $role->name }}" @selected(request('role') === $role->name)>
+                            {{ ucfirst($role->name) }}
+                        </option>
+                    @endforeach
+                </select>
+            </label>
 
-        <section class="premium-card">
-            <form method="GET" action="{{ route('admin.users.index') }}" class="table-toolbar">
-                <input type="hidden" name="role" value="{{ request('role') }}">
-                <input type="hidden" name="date_from" value="{{ request('date_from') }}">
-                <input type="hidden" name="date_to" value="{{ request('date_to') }}">
+            <label class="filter-field">
+                <span>Created from</span>
+                <input type="date" name="date_from" value="{{ request('date_from') }}">
+            </label>
 
-                <div class="table-toolbar__left">
+            <label class="filter-field">
+                <span>Created to</span>
+                <input type="date" name="date_to" value="{{ request('date_to') }}">
+            </label>
+        </x-filter-card>
+
+        <section class="premium-card mt-3">
+            <x-table-toolbar>
+                <x-slot:left>
                     <div class="result-badge">
                         <i class="fa-solid fa-users"></i>
                         <span>{{ $users->total() }} result{{ $users->total() === 1 ? '' : 's' }}</span>
                     </div>
-
-                    <label class="per-page-control">
-                        <span>Show</span>
-                        <select name="per_page" onchange="this.form.submit()">
-                            @foreach ([5, 10, 25, 50] as $size)
-                                <option value="{{ $size }}" @selected($perPage === $size)>{{ $size }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <span>per page</span>
-                    </label>
-                </div>
-
-                <label class="search-control">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="search" name="search" value="{{ request('search') }}" placeholder="Search users..."
-                        autocomplete="off" data-auto-search>
-                </label>
-            </form>
+                    <x-per-page-selector :current="$perPage" />
+                </x-slot:left>
+                <x-slot:right>
+                    <x-search-input name="search" placeholder="Search users..." />
+                </x-slot:right>
+            </x-table-toolbar>
 
             <div class="premium-table-wrap">
                 <table class="premium-table">
@@ -181,7 +150,7 @@
                 </table>
             </div>
 
-            <x-table-footer :paginator="$users" />
+            <x-table-footer :paginator="$users" label="users" />
         </section>
 
         <x-delete-confirm-modal

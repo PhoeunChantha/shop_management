@@ -99,6 +99,56 @@
                                 @foreach ($group['fields'] as $fieldKey => $field)
                                     {{-- Image fields are grouped into their own row below. --}}
                                     @continue(($field['type'] ?? 'text') === 'image')
+
+                                    {{-- Multiselect (Alpine chips picker): stores an array of keys --}}
+                                    @if (($field['type'] ?? 'text') === 'multiselect')
+                                        @php($selectedVals = old($fieldKey, json_decode($values[$fieldKey] ?? '[]', true) ?: ($field['default'] ?? [])))
+                                        <div class="form-field sm:col-span-2"
+                                            x-data="{
+                                                open: false,
+                                                options: @js($field['options'] ?? []),
+                                                selected: @js(array_values((array) $selectedVals)),
+                                                toggle(code) { this.selected.includes(code) ? (this.selected = this.selected.filter(c => c !== code)) : this.selected.push(code); },
+                                                remove(code) { this.selected = this.selected.filter(c => c !== code); },
+                                                label(code) { return this.options[code] ?? code; }
+                                            }"
+                                            @click.outside="open = false">
+                                            <label>{{ $field['label'] }}</label>
+
+                                            <div class="ms-select" :class="{ 'is-open': open }" @click="open = !open">
+                                                <div class="ms-select__tags">
+                                                    <template x-for="code in selected" :key="code">
+                                                        <span class="ms-tag" @click.stop>
+                                                            <span x-text="label(code)"></span>
+                                                            <button type="button" @click="remove(code)" aria-label="Remove">&times;</button>
+                                                        </span>
+                                                    </template>
+                                                    <span class="ms-select__placeholder" x-show="selected.length === 0">Select languages…</span>
+                                                </div>
+                                                <i class="fa-solid fa-chevron-down ms-select__caret"></i>
+                                            </div>
+
+                                            <div class="ms-select__menu" x-show="open" x-cloak @click.stop>
+                                                <template x-for="(lbl, code) in options" :key="code">
+                                                    <button type="button" class="ms-option" :class="{ 'is-selected': selected.includes(code) }" @click="toggle(code)">
+                                                        <span x-text="lbl"></span>
+                                                        <i class="fa-solid fa-check" x-show="selected.includes(code)"></i>
+                                                    </button>
+                                                </template>
+                                            </div>
+
+                                            <template x-for="code in selected" :key="'hidden-' + code">
+                                                <input type="hidden" name="{{ $fieldKey }}[]" :value="code">
+                                            </template>
+
+                                            @if (!empty($field['hint']))
+                                                <p class="color-field__hint">{{ $field['hint'] }}</p>
+                                            @endif
+                                            @error($fieldKey)<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
+                                        </div>
+                                        @continue
+                                    @endif
+
                                     <div class="form-field {{ ($field['type'] ?? 'text') === 'textarea' ? 'sm:col-span-2' : '' }}">
                                         <label for="{{ $fieldKey }}">{{ $field['label'] }}</label>
 
@@ -227,4 +277,5 @@
             </div>
         </section>
     </div>
+
 </x-app-layout>

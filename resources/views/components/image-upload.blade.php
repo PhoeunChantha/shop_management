@@ -12,7 +12,7 @@
     $existing = $value ? asset($value) : null;
 @endphp
 
-<div class="form-field"
+<div {{ $attributes->merge(['class' => 'form-field image-upload-field']) }}
     x-data="{
         existing: @js($existing),
         preview: @js($existing),

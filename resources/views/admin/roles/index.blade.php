@@ -21,30 +21,18 @@
         </div>
 
         <section class="premium-card">
-            <form method="GET" action="{{ route('admin.roles.index') }}" class="table-toolbar">
-                <div class="table-toolbar__left">
+            <x-table-toolbar>
+                <x-slot:left>
                     <div class="result-badge">
                         <i class="fa-solid fa-shield-halved"></i>
                         <span>{{ $roles->total() }} result{{ $roles->total() === 1 ? '' : 's' }}</span>
                     </div>
-
-                    <label class="per-page-control">
-                        <span>Show</span>
-                        <select name="per_page" onchange="this.form.submit()">
-                            @foreach ([5, 10, 25, 50] as $size)
-                                <option value="{{ $size }}" @selected($perPage === $size)>{{ $size }}</option>
-                            @endforeach
-                        </select>
-                        <span>per page</span>
-                    </label>
-                </div>
-
-                <label class="search-control">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="search" name="search" value="{{ request('search') }}" placeholder="Search roles..."
-                        autocomplete="off" data-auto-search>
-                </label>
-            </form>
+                    <x-per-page-selector :current="$perPage" />
+                </x-slot:left>
+                <x-slot:right>
+                    <x-search-input name="search" placeholder="Search roles..." />
+                </x-slot:right>
+            </x-table-toolbar>
 
             <div class="premium-table-wrap">
                 <table class="premium-table">

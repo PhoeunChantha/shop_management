@@ -46,6 +46,25 @@ final class SettingService
     ];
 
     /**
+     * Master list of languages the store can offer (code => label).
+     * The admin picks a subset in Settings → Languages; everything that is
+     * multilingual reads the chosen subset from here.
+     *
+     * @var array<string, string>
+     */
+    private const LANGUAGE_OPTIONS = [
+        'en' => 'English (EN)',
+        'km' => 'Khmer · ខ្មែរ (KM)',
+        'zh' => 'Chinese · 中文 (ZH)',
+        'th' => 'Thai · ไทย (TH)',
+        'vi' => 'Vietnamese · Tiếng Việt (VI)',
+        'fr' => 'French · Français (FR)',
+        'es' => 'Spanish · Español (ES)',
+        'ja' => 'Japanese · 日本語 (JA)',
+        'ko' => 'Korean · 한국어 (KO)',
+    ];
+
+    /**
      * Fixed field definitions, keyed by the group they belong to.
      *
      * @return array<string, array<string, array<string, string>>>
@@ -70,8 +89,54 @@ final class SettingService
                 'contact_address' => ['label' => 'Store address', 'type' => 'textarea', 'placeholder' => '211 Wythe Ave, Brooklyn, NY', 'rules' => 'nullable|string|max:500'],
                 'contact_map_url' => ['label' => 'Map embed URL', 'type' => 'url', 'placeholder' => 'https://www.google.com/maps/embed?...', 'rules' => 'nullable|url|max:2000'],
             ],
+            SettingGroup::Localization->value => [
+                'languages' => [
+                    'label' => 'Store languages',
+                    'hint' => 'Pick the languages your store supports. Product content can then be entered per selected language.',
+                    'type' => 'multiselect',
+                    'options' => self::LANGUAGE_OPTIONS,
+                    'default' => ['en'],
+                ],
+            ],
             SettingGroup::Appearance->value => $this->themeFieldDefinitions(),
         ];
+    }
+
+    /**
+     * Selected store language codes (e.g. ['en','km','zh']), always non-empty.
+     *
+     * @return array<int, string>
+     */
+    public function languages(): array
+    {
+        $stored = json_decode((string) Setting::get('languages', '[]'), true);
+        $stored = is_array($stored)
+            ? array_values(array_filter($stored, fn ($code) => isset(self::LANGUAGE_OPTIONS[$code])))
+            : [];
+
+        return $stored ?: ['en'];
+    }
+
+    /**
+     * Selected languages as code => label, in master-list order (for tabs).
+     *
+     * @return array<string, string>
+     */
+    public function activeLanguages(): array
+    {
+        $selected = $this->languages();
+
+        return collect(self::LANGUAGE_OPTIONS)
+            ->only($selected)
+            ->all();
+    }
+
+    /**
+     * The primary (default) language code — the first selected one.
+     */
+    public function primaryLanguage(): string
+    {
+        return $this->languages()[0] ?? 'en';
     }
 
     /**
@@ -172,6 +237,13 @@ final class SettingService
 
         foreach ($this->fieldDefinitions() as $fields) {
             foreach ($fields as $key => $field) {
+                if (($field['type'] ?? '') === 'multiselect') {
+                    $rules[$key] = ['nullable', 'array'];
+                    $rules[$key.'.*'] = ['in:'.implode(',', array_keys($field['options'] ?? []))];
+
+                    continue;
+                }
+
                 $rules[$key] = $field['rules'] ?? 'nullable|string|max:255';
             }
         }
@@ -243,6 +315,17 @@ final class SettingService
                         $newName = ImageManager::update($file, Setting::get($key), $field['folder'] ?? 'settings');
                         Setting::set($key, $newName, $groupValue);
                     }
+
+                    continue;
+                }
+
+                // Multiselect: store only the valid keys, as a JSON array.
+                if (($field['type'] ?? '') === 'multiselect') {
+                    $selected = array_values(array_intersect(
+                        array_keys($field['options'] ?? []),
+                        (array) ($validated[$key] ?? []),
+                    ));
+                    Setting::set($key, json_encode($selected), $groupValue);
 
                     continue;
                 }
