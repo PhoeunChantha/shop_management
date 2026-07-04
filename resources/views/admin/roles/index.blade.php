@@ -21,6 +21,8 @@
         </div>
 
         <section class="premium-card">
+            <x-table-loader />
+
             <x-table-toolbar>
                 <x-slot:left>
                     <div class="result-badge">

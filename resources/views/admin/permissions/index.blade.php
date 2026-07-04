@@ -21,6 +21,8 @@
         </div>
 
         <section class="premium-card">
+            <x-table-loader />
+
             <form method="GET" action="{{ route('admin.permissions.index') }}" class="table-toolbar">
                 <div class="table-toolbar__left">
                     <div class="result-badge">
@@ -30,7 +32,7 @@
 
                     <label class="per-page-control">
                         <span>Show</span>
-                        <select name="per_page" onchange="this.form.submit()">
+                        <select name="per_page" onchange="this.form.requestSubmit()">
                             @foreach ([5, 10, 25, 50] as $size)
                                 <option value="{{ $size }}" @selected($perPage === $size)>{{ $size }}</option>
                             @endforeach

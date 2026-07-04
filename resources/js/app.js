@@ -28,7 +28,15 @@ $(function () {
 
         searchTimer = setTimeout(function () {
             if (query.length === 0 || query.length >= 2) {
-                $input.closest('form').trigger('submit');
+                const form = $input.closest('form').get(0);
+                if (!form) return;
+                // requestSubmit() actually navigates AND fires the `submit`
+                // event, so <x-table-loader> can show its overlay.
+                if (typeof form.requestSubmit === 'function') {
+                    form.requestSubmit();
+                } else {
+                    form.submit();
+                }
             }
         }, 500);
     });

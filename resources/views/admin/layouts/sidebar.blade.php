@@ -14,55 +14,123 @@
         </div>
     </div>
 
-    <div class="flex-grow-1 p-2 overflow-auto" style="scrollbar-width: thin;">
+    <div class="admin-nav-scroll flex-grow-1 p-2 overflow-auto">
 
-        <div class="mb-2 mt-2">
-            <!-- <p class="px-3 text-secondary text-uppercase fw-bold tracking-wider mb-2" style="font-size: 10px; letter-spacing: 0.05em;">Main</p> -->
-
-            <div class="nav flex-column nav-pills admin-nav">
-                <a href="{{ route('admin.dashboard') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                    <span class="me-3"><i class="fa-solid fa-home"></i></span>
+        {{-- General --}}
+        <div class="admin-nav-section">
+            <p class="admin-nav-heading">General</p>
+            <div class="nav flex-column admin-nav">
+                <a href="{{ route('admin.dashboard') }}"
+                    class="nav-link d-flex align-items-center {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                    <span class="nav-ico"><i class="fa-solid fa-gauge-high"></i></span>
                     <span class="small fw-medium">Dashboard</span>
                 </a>
-                <a href="{{ route('admin.users.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                    <span class="me-3"><i class="fa-solid fa-users"></i></span>
-                    <span class="small fw-medium">Users</span>
-                </a>
-                <a href="{{ route('admin.roles.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
-                    <span class="me-3"><i class="fa-solid fa-shield-halved"></i></span>
-                    <span class="small fw-medium">Roles</span>
-                </a>
+            </div>
+        </div>
 
-                <a href="{{ route('admin.permissions.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
-                    <span class="me-3"><i class="fa-solid fa-user-group"></i></span>
-                    <span class="small fw-medium">Permissions</span>
-                </a>
+        {{-- Catalog (collapsible) --}}
+        @php($catalogActive = request()->routeIs('admin.products.*', 'admin.brands.*', 'admin.categories.*', 'admin.sizes.*', 'admin.colors.*'))
+        <div class="admin-nav-section">
+            <p class="admin-nav-heading">Catalog</p>
+            <div class="nav flex-column admin-nav">
+                <div class="admin-nav-group" x-data="{ open: {{ $catalogActive ? 'true' : 'false' }} }"
+                    :class="{ 'is-open': open }">
+                    <button type="button" class="nav-link admin-nav-toggle d-flex align-items-center {{ $catalogActive ? 'has-active' : '' }}"
+                        @click="open = !open" :aria-expanded="open ? 'true' : 'false'">
+                        <span class="nav-ico"><i class="fa-solid fa-store"></i></span>
+                        <span class="small fw-medium flex-grow-1 text-start">Catalog</span>
+                        <i class="fa-solid fa-chevron-down admin-nav-caret"></i>
+                    </button>
+                    <div class="admin-nav-sub">
+                        <div class="admin-nav-sub-inner">
+                            <a href="{{ route('admin.products.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-box-open"></i></span>
+                                <span class="small fw-medium">Products</span>
+                            </a>
+                            <a href="{{ route('admin.brands.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.brands.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-tags"></i></span>
+                                <span class="small fw-medium">Brands</span>
+                            </a>
+                            <a href="{{ route('admin.categories.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-layer-group"></i></span>
+                                <span class="small fw-medium">Categories</span>
+                            </a>
+                            <a href="{{ route('admin.sizes.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.sizes.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-ruler-combined"></i></span>
+                                <span class="small fw-medium">Sizes</span>
+                            </a>
+                            <a href="{{ route('admin.colors.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.colors.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-palette"></i></span>
+                                <span class="small fw-medium">Colors</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                <a href="{{ route('admin.products.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
-                    <span class="me-3"><i class="fa-solid fa-box-open"></i></span>
-                    <span class="small fw-medium">Products</span>
-                </a>
+        {{-- Access Control (collapsible) --}}
+        @php($accessActive = request()->routeIs('admin.users.*', 'admin.roles.*', 'admin.permissions.*'))
+        <div class="admin-nav-section">
+            <p class="admin-nav-heading">Access Control</p>
+            <div class="nav flex-column admin-nav">
+                <div class="admin-nav-group" x-data="{ open: {{ $accessActive ? 'true' : 'false' }} }"
+                    :class="{ 'is-open': open }">
+                    <button type="button" class="nav-link admin-nav-toggle d-flex align-items-center {{ $accessActive ? 'has-active' : '' }}"
+                        @click="open = !open" :aria-expanded="open ? 'true' : 'false'">
+                        <span class="nav-ico"><i class="fa-solid fa-shield-halved"></i></span>
+                        <span class="small fw-medium flex-grow-1 text-start">Access Control</span>
+                        <i class="fa-solid fa-chevron-down admin-nav-caret"></i>
+                    </button>
+                    <div class="admin-nav-sub">
+                        <div class="admin-nav-sub-inner">
+                            <a href="{{ route('admin.users.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-users"></i></span>
+                                <span class="small fw-medium">Users</span>
+                            </a>
+                            <a href="{{ route('admin.roles.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-user-shield"></i></span>
+                                <span class="small fw-medium">Roles</span>
+                            </a>
+                            <a href="{{ route('admin.permissions.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-key"></i></span>
+                                <span class="small fw-medium">Permissions</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                <a href="{{ route('admin.categories.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
-                    <span class="me-3"><i class="fa-solid fa-layer-group"></i></span>
-                    <span class="small fw-medium">Categories</span>
+        {{-- Marketing --}}
+        <div class="admin-nav-section">
+            <p class="admin-nav-heading">Marketing</p>
+            <div class="nav flex-column admin-nav">
+                <a href="{{ route('admin.coupons.index') }}"
+                    class="nav-link d-flex align-items-center {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
+                    <span class="nav-ico"><i class="fa-solid fa-ticket"></i></span>
+                    <span class="small fw-medium">Coupons</span>
                 </a>
+            </div>
+        </div>
 
-                <a href="{{ route('admin.sizes.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('admin.sizes.*') ? 'active' : '' }}">
-                    <span class="me-3"><i class="fa-solid fa-ruler-combined"></i></span>
-                    <span class="small fw-medium">Sizes</span>
-                </a>
-
-                <a href="{{ route('admin.colors.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('admin.colors.*') ? 'active' : '' }}">
-                    <span class="me-3"><i class="fa-solid fa-palette"></i></span>
-                    <span class="small fw-medium">Colors</span>
-                </a>
-
-                <a href="{{ route('admin.settings.index') }}" class="nav-link d-flex align-items-center {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
-                    <span class="me-3"><i class="fa-solid fa-gear"></i></span>
+        {{-- System --}}
+        <div class="admin-nav-section">
+            <p class="admin-nav-heading">System</p>
+            <div class="nav flex-column admin-nav">
+                <a href="{{ route('admin.settings.index') }}"
+                    class="nav-link d-flex align-items-center {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
+                    <span class="nav-ico"><i class="fa-solid fa-gear"></i></span>
                     <span class="small fw-medium">Settings</span>
                 </a>
-
             </div>
         </div>
 

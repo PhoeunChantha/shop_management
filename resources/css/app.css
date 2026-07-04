@@ -178,25 +178,58 @@ body.admin-shell {
     font-size: 9px;
 }
 
+/* ---------- Sidebar sections ---------- */
+.admin-nav-scroll { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.16) transparent; }
+.admin-nav-scroll::-webkit-scrollbar { width: 7px; }
+.admin-nav-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.14); border-radius: 8px; }
+
+.admin-nav-section { margin-bottom: 6px; }
+.admin-nav-section + .admin-nav-section { margin-top: 4px; }
+
+.admin-nav-heading {
+    margin: 12px 0 6px;
+    padding: 0 12px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: #5b6b85;
+}
+
 .admin-nav {
     gap: 3px;
 }
 
 .admin-nav .nav-link {
-    min-height: 38px;
-    border-radius: 10px;
+    position: relative;
+    min-height: 40px;
+    border-radius: 11px;
     color: #aeb9ca;
     padding: 8px 12px;
     font-size: 13.5px;
-    transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
+    width: 100%;
+    background: transparent;
+    border: 0;
+    transition: background-color 160ms ease, color 160ms ease;
 }
 
-.admin-nav .nav-link .me-3 {
-    margin-right: 11px !important;
+/* Icon chip — gives every item a consistent leading glyph box. */
+.admin-nav .nav-ico {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    margin-right: 11px;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #9fb0c9;
+    flex-shrink: 0;
+    transition: background-color 160ms ease, color 160ms ease;
 }
 
 .admin-nav .nav-link i {
-    width: 17px;
+    width: auto;
     font-size: 14px;
     text-align: center;
 }
@@ -205,16 +238,82 @@ body.admin-shell {
     font-size: 13px;
 }
 
-.admin-nav .nav-link:hover,
+.admin-nav .nav-link:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.06);
+}
+.admin-nav .nav-link:hover .nav-ico { color: #ffffff; }
+
+/* Active leaf item — filled accent chip + soft highlight. */
 .admin-nav .nav-link.active {
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateX(2px);
+    background: rgba(255, 255, 255, 0.09);
+}
+.admin-nav .nav-link.active::before {
+    content: '';
+    position: absolute;
+    left: 4px; top: 50%;
+    width: 3px; height: 18px;
+    transform: translateY(-50%);
+    border-radius: 3px;
+    background: var(--primary-color);
+}
+.admin-nav .nav-link.active .nav-ico {
+    background: var(--primary-color);
+    color: #fff;
+    box-shadow: 0 6px 16px color-mix(in srgb, var(--primary-color) 45%, transparent);
 }
 
-.admin-nav .nav-link.active {
-    box-shadow: inset 3px 0 0 var(--primary-color);
+/* ---------- Collapsible groups ---------- */
+.admin-nav-group { display: flex; flex-direction: column; }
+
+.admin-nav-toggle { cursor: pointer; text-align: left; }
+.admin-nav-toggle.has-active { color: #eaf0fb; }
+.admin-nav-toggle.has-active .nav-ico { color: #ffffff; }
+
+.admin-nav-caret {
+    font-size: 11px !important;
+    color: #6b7a94;
+    transition: transform 240ms cubic-bezier(.16, 1, .3, 1);
 }
+.admin-nav-group.is-open .admin-nav-caret { transform: rotate(180deg); color: #aeb9ca; }
+
+/* Height animation via grid-template-rows (no plugin needed). */
+.admin-nav-sub {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 280ms cubic-bezier(.16, 1, .3, 1);
+}
+.admin-nav-group.is-open .admin-nav-sub { grid-template-rows: 1fr; }
+.admin-nav-sub-inner {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-left: 16px;
+    margin: 3px 0 2px;
+    position: relative;
+}
+/* Guide rail connecting sub-items. */
+.admin-nav-sub-inner::before {
+    content: '';
+    position: absolute;
+    left: 20px; top: 4px; bottom: 4px;
+    width: 1.5px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+}
+.admin-nav-group.is-open .admin-nav-sub-inner { padding-top: 2px; }
+
+.admin-nav .nav-sublink { min-height: 36px; }
+.admin-nav .nav-sublink .nav-ico {
+    width: 26px; height: 26px;
+    margin-right: 10px;
+    background: transparent;
+    font-size: 12px;
+}
+.admin-nav .nav-sublink .nav-ico i { font-size: 12.5px; }
+.admin-nav .nav-sublink.active .nav-ico { background: var(--primary-color); }
 
 .admin-sidebar-user {
     padding: 13px 16px;
@@ -1139,6 +1238,11 @@ body.admin-shell {
     overflow: hidden;
 }
 
+/* Filter cards host <x-select> dropdowns that must escape the card bounds. */
+.filter-card.premium-card {
+    overflow: visible;
+}
+
 .table-titlebar {
     padding: 24px 28px 16px;
 }
@@ -1787,6 +1891,71 @@ html.dark .table-actions__item:hover {
     background: var(--danger-color);
 }
 
+/* ---------- Form modal (create / edit in a popup) ---------- */
+.form-modal {
+    width: min(480px, 100%);
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 28px 80px rgba(15, 23, 42, 0.28);
+}
+.form-modal.fm-enter { transition: opacity .25s ease, transform .32s cubic-bezier(.34, 1.56, .64, 1); }
+.form-modal.fm-leave { transition: opacity .15s ease, transform .15s ease; }
+.form-modal.fm-from { opacity: 0; transform: translateY(16px) scale(.94); }
+.form-modal.fm-to { opacity: 1; transform: translateY(0) scale(1); }
+
+.form-modal__head {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    padding: 20px 22px 16px;
+    border-bottom: 1px solid var(--admin-line);
+}
+.form-modal__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 13px;
+    font-size: 17px;
+    color: var(--primary-color);
+    background: color-mix(in srgb, var(--primary-color) 12%, #fff);
+}
+.form-modal__head h3 { margin: 0 0 3px; color: var(--admin-ink); font-size: 17px; font-weight: 900; }
+.form-modal__head p { margin: 0; color: #667085; font-size: 13px; line-height: 1.5; }
+.form-modal__close {
+    flex-shrink: 0;
+    width: 32px; height: 32px;
+    border: 0; border-radius: 9px;
+    background: transparent; color: #98a2b3;
+    font-size: 15px; cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
+}
+.form-modal__close:hover { background: #f2f4f7; color: #101827; }
+
+.form-modal__body {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px 22px;
+}
+.form-modal__foot {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+html.dark .form-modal { background: #121c31; border-color: rgba(255, 255, 255, 0.08); }
+html.dark .form-modal__head { border-color: rgba(255, 255, 255, 0.08); }
+html.dark .form-modal__head h3 { color: var(--admin-ink); }
+html.dark .form-modal__close:hover { background: rgba(255, 255, 255, 0.08); color: #e6ecf7; }
+
 @media (max-width: 991.98px) {
     body.admin-shell {
         height: auto !important;
@@ -1809,15 +1978,23 @@ html.dark .table-actions__item:hover {
     .admin-brand .ms-3,
     .admin-sidebar-user .ms-3,
     .admin-nav .small,
-    .admin-sidebar-user form {
+    .admin-sidebar-user form,
+    .admin-nav-heading,
+    .admin-nav-caret,
+    .admin-nav-sub-inner::before {
         display: none;
     }
+
+    /* Collapse groups into a flat icon rail: drop the toggle, show sub-items. */
+    .admin-nav-toggle { display: none; }
+    .admin-nav-sub { grid-template-rows: 1fr; }
+    .admin-nav-sub-inner { padding-left: 0; margin: 3px 0; gap: 3px; }
 
     .admin-nav .nav-link {
         justify-content: center;
     }
 
-    .admin-nav .nav-link .me-3 {
+    .admin-nav .nav-ico {
         margin-right: 0 !important;
     }
 

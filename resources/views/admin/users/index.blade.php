@@ -51,6 +51,8 @@
         </x-filter-card>
 
         <section class="premium-card mt-3">
+            <x-table-loader />
+
             <x-table-toolbar>
                 <x-slot:left>
                     <div class="result-badge">

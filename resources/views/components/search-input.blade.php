@@ -50,8 +50,8 @@
             autocomplete="off"
             @if ($auto)
                 x-ref="field"
-                @input.debounce.{{ (int) $debounce }}ms="$el.form.submit()"
-                @search="$el.form.submit()"
+                @input.debounce.{{ (int) $debounce }}ms="$el.form.requestSubmit()"
+                @search="$el.form.requestSubmit()"
             @endif
         >
     </label>

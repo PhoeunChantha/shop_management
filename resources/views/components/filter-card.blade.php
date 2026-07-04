@@ -39,7 +39,7 @@
         {{ $slot }}
     </div>
 
-    <div class="d-flex align-items-center gap-2 mt-3">
+    <div class="d-flex align-items-center justify-content-end gap-2 mt-3">
         <button type="submit" class="filter-button">
             <i class="fa-solid fa-sliders"></i> {{ $applyLabel }}
         </button>
