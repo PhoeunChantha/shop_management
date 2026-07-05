@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -38,12 +39,7 @@ class BrandController extends Controller implements HasMiddleware
 
         $brands = Brand::query()
             ->withCount('products')
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('slug', 'like', "%{$search}%");
-                });
-            })
+            ->search($search)
             ->orderBy('name', 'asc')
             ->paginate($perPage)
             ->withQueryString();
@@ -61,19 +57,29 @@ class BrandController extends Controller implements HasMiddleware
 
     public function store(StoreBrandRequest $request): RedirectResponse
     {
-        $brand = new Brand;
-        $brand->name = $request->validated('name');
-        $brand->status = $request->validated('status');
-        $brand->slug = $this->uniqueSlug($request->validated('name'));
+        try {
+            $validated = $request->safe()->except('image');
+            $validated['slug'] = $this->uniqueSlug($validated['name']);
 
-        if ($request->hasFile('image')) {
-            $brand->image = ImageManager::upload($request->file('image'), 'brands');
+            $brand = Brand::create($validated);
+
+            if ($request->hasFile('image')) {
+                $brand->image = ImageManager::upload($request->file('image'), 'brands');
+                $brand->save();
+            }
+
+            return to_route('admin.brands.index')
+                ->with('success', 'Brand created successfully!');
+        } catch (\Exception $e) {
+            Log::error('Error creating brand: '.$e->getMessage(), [
+                'exception' => $e,
+                'request_data' => $request->except('image'),
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => 'An error occurred while creating the brand.']);
         }
-
-        $brand->save();
-
-        return redirect()->route('admin.brands.index')
-            ->with('success', 'Brand created successfully!');
     }
 
     public function edit(string $id): View
@@ -87,29 +93,53 @@ class BrandController extends Controller implements HasMiddleware
 
     public function update(UpdateBrandRequest $request, string $id): RedirectResponse
     {
-        $brand = Brand::findOrFail($id);
+        try {
+            $brand = Brand::findOrFail($id);
 
-        $brand->name = $request->validated('name');
-        $brand->status = $request->validated('status');
-        $brand->slug = $this->uniqueSlug($request->validated('name'), $brand->id);
+            $validated = $request->safe()->except('image');
+            $validated['slug'] = $this->uniqueSlug($validated['name'], $brand->id);
 
-        $brand->image = ImageManager::update($request->file('image'), $brand->image, 'brands');
+            $brand->update($validated);
 
-        $brand->save();
+            if ($request->hasFile('image')) {
+                $brand->image = ImageManager::update($request->file('image'), $brand->image, 'brands');
+                $brand->save();
+            }
 
-        return redirect()->route('admin.brands.index')
-            ->with('success', 'Brand updated successfully!');
+            return to_route('admin.brands.index')
+                ->with('success', 'Brand updated successfully!');
+        } catch (\Exception $e) {
+            Log::error('Error updating brand: '.$e->getMessage(), [
+                'exception' => $e,
+                'request_data' => $request->except('image'),
+                'brand_id' => $id,
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => 'An error occurred while updating the brand.']);
+        }
     }
 
     public function destroy(string $id): RedirectResponse
     {
-        $brand = Brand::findOrFail($id);
+        try {
+            $brand = Brand::findOrFail($id);
 
-        ImageManager::delete($brand->image, 'brands');
+            ImageManager::delete($brand->image, 'brands');
 
-        $brand->delete();
+            $brand->delete();
+        } catch (\Exception $e) {
+            Log::error('Error deleting brand: '.$e->getMessage(), [
+                'exception' => $e,
+                'brand_id' => $id,
+            ]);
 
-        return redirect()->route('admin.brands.index')
+            return back()
+                ->withErrors(['error' => 'An error occurred while deleting the brand.']);
+        }
+
+        return to_route('admin.brands.index')
             ->with('success', 'Brand deleted successfully!');
     }
 

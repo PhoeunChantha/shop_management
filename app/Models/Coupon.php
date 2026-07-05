@@ -53,6 +53,15 @@ class Coupon extends Model
         return $query->whereRaw('LOWER(code) = ?', [mb_strtolower(trim($code))]);
     }
 
+    /** Filter coupons by a search term against the code. Skips filtering when blank. */
+    public function scopeSearch(Builder $query, ?string $term): Builder
+    {
+        return $query->when(
+            filled($term),
+            fn (Builder $query) => $query->where('code', 'like', "%{$term}%")
+        );
+    }
+
     /* -------------------------------------------------------------------------
      | Domain helpers
      |-----------------------------------------------------------------------*/

@@ -4,11 +4,14 @@ namespace App\Http\Controllers\Backend;
 
 use App\Helpers\ImageManager;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Category\StoreCategoryRequest;
+use App\Http\Requests\Category\UpdateCategoryRequest;
 use App\Models\Category;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -35,12 +38,7 @@ class CategoryController extends Controller implements HasMiddleware
         $search = trim($filters['search'] ?? '');
 
         $categories = Category::query()
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('slug', 'like', "%{$search}%");
-                });
-            })
+            ->search($search)
             ->orderBy('sort_order', 'asc')
             ->paginate($perPage)
             ->withQueryString();
@@ -51,47 +49,39 @@ class CategoryController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function create()
+    public function create(): View
     {
         return view('admin.categories.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreCategoryRequest $request): RedirectResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|min:2|max:255',
-            'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'icon' => 'nullable|string|max:255',
-            'sort_order' => 'nullable|integer',
-            'status' => 'required|boolean',
-        ]);
+        try {
+            $validated = $request->safe()->except('image');
+            $validated['slug'] = $this->uniqueSlug($validated['name']);
 
-        if ($validator->fails()) {
-            return redirect()->route('admin.categories.create')
-                ->withErrors($validator)
-                ->withInput();
+            $category = Category::create($validated);
+
+            if ($request->hasFile('image')) {
+                $category->image = ImageManager::upload($request->file('image'), 'categories');
+                $category->save();
+            }
+
+            return to_route('admin.categories.index')
+                ->with('success', 'Category created successfully!');
+        } catch (\Exception $e) {
+            Log::error('Error creating category: '.$e->getMessage(), [
+                'exception' => $e,
+                'request_data' => $request->except('image'),
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => 'An error occurred while creating the category.']);
         }
-
-        $category = new Category;
-        $category->name = $request->name;
-        $category->description = $request->description;
-        $category->sort_order = $request->sort_order ?? 0;
-        $category->status = $request->status;
-        $category->icon = $request->icon;
-        $category->slug = $this->uniqueSlug($request->name);
-
-        if ($request->hasFile('image')) {
-            $category->image = ImageManager::upload($request->file('image'), 'categories');
-        }
-
-        $category->save();
-
-        return redirect()->route('admin.categories.index')
-            ->with('success', 'Category created successfully!');
     }
 
-    public function edit(string $id)
+    public function edit(string $id): View
     {
         $category = Category::findOrFail($id);
 
@@ -100,49 +90,54 @@ class CategoryController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function update(Request $request, string $id)
+    public function update(UpdateCategoryRequest $request, string $id): RedirectResponse
     {
-        $category = Category::findOrFail($id);
+        try {
+            $category = Category::findOrFail($id);
+            $validated = $request->safe()->except('image');
+            $validated['slug'] = $this->uniqueSlug($validated['name'], $category->id);
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|min:2|max:255',
-            'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'icon' => 'nullable|string|max:255',
-            'sort_order' => 'nullable|integer',
-            'status' => 'required|boolean',
-        ]);
+            $category->update($validated);
 
-        if ($validator->fails()) {
-            return redirect()->route('admin.categories.edit', $id)
-                ->withErrors($validator)
-                ->withInput();
+            if ($request->hasFile('image')) {
+                $category->image = ImageManager::update($request->file('image'), $category->image, 'categories');
+                $category->save();
+            }
+
+            return to_route('admin.categories.index')
+                ->with('success', 'Category updated successfully!');
+        } catch (\Exception $e) {
+            Log::error('Error updating category: '.$e->getMessage(), [
+                'exception' => $e,
+                'request_data' => $request->except('image'),
+                'category_id' => $id,
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => 'An error occurred while updating the category.']);
         }
-
-        $category->name = $request->name;
-        $category->description = $request->description;
-        $category->sort_order = $request->sort_order ?? 0;
-        $category->status = $request->status;
-        $category->icon = $request->icon;
-        $category->slug = $this->uniqueSlug($request->name, $category->id);
-
-        $category->image = ImageManager::update($request->file('image'), $category->image, 'categories');
-
-        $category->save();
-
-        return redirect()->route('admin.categories.index')
-            ->with('success', 'Category updated successfully!');
     }
 
-    public function destroy(string $id)
+    public function destroy(string $id): RedirectResponse
     {
-        $category = Category::findOrFail($id);
+        try {
+            $category = Category::findOrFail($id);
 
-        ImageManager::delete($category->image, 'categories');
+            ImageManager::delete($category->image, 'categories');
 
-        $category->delete();
+            $category->delete();
+        } catch (\Exception $e) {
+            Log::error('Error deleting category: '.$e->getMessage(), [
+                'exception' => $e,
+                'category_id' => $id,
+            ]);
 
-        return redirect()->route('admin.categories.index')
+            return back()
+                ->withErrors(['error' => 'An error occurred while deleting the category.']);
+        }
+
+        return to_route('admin.categories.index')
             ->with('success', 'Category deleted successfully!');
     }
 

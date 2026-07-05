@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class CouponController extends Controller implements HasMiddleware
@@ -35,7 +36,7 @@ class CouponController extends Controller implements HasMiddleware
         $search = trim($filters['search'] ?? '');
 
         $coupons = Coupon::query()
-            ->when($search !== '', fn ($query) => $query->where('code', 'like', "%{$search}%"))
+            ->search($search)
             ->latest()
             ->paginate($perPage)
             ->withQueryString();
@@ -53,10 +54,21 @@ class CouponController extends Controller implements HasMiddleware
 
     public function store(StoreCouponRequest $request): RedirectResponse
     {
-        Coupon::create($request->validated());
+        try {
+            Coupon::create($request->validated());
 
-        return redirect()->route('admin.coupons.index')
-            ->with('success', 'Coupon created successfully!');
+            return to_route('admin.coupons.index')
+                ->with('success', 'Coupon created successfully!');
+        } catch (\Exception $e) {
+            Log::error('Error creating coupon: '.$e->getMessage(), [
+                'exception' => $e,
+                'request_data' => $request->all(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => 'An error occurred while creating the coupon.']);
+        }
     }
 
     public function edit(string $id): View
@@ -70,20 +82,42 @@ class CouponController extends Controller implements HasMiddleware
 
     public function update(UpdateCouponRequest $request, string $id): RedirectResponse
     {
-        $coupon = Coupon::findOrFail($id);
+        try {
+            $coupon = Coupon::findOrFail($id);
 
-        $coupon->update($request->validated());
+            $coupon->update($request->validated());
 
-        return redirect()->route('admin.coupons.index')
-            ->with('success', 'Coupon updated successfully!');
+            return to_route('admin.coupons.index')
+                ->with('success', 'Coupon updated successfully!');
+        } catch (\Exception $e) {
+            Log::error('Error updating coupon: '.$e->getMessage(), [
+                'exception' => $e,
+                'request_data' => $request->all(),
+                'coupon_id' => $id,
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => 'An error occurred while updating the coupon.']);
+        }
     }
 
     public function destroy(string $id): RedirectResponse
     {
-        $coupon = Coupon::findOrFail($id);
-        $coupon->delete();
+        try {
+            $coupon = Coupon::findOrFail($id);
+            $coupon->delete();
+        } catch (\Exception $e) {
+            Log::error('Error deleting coupon: '.$e->getMessage(), [
+                'exception' => $e,
+                'coupon_id' => $id,
+            ]);
 
-        return redirect()->route('admin.coupons.index')
+            return back()
+                ->withErrors(['error' => 'An error occurred while deleting the coupon.']);
+        }
+
+        return to_route('admin.coupons.index')
             ->with('success', 'Coupon deleted successfully!');
     }
 }
