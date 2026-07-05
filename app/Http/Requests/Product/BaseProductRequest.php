@@ -5,6 +5,7 @@ namespace App\Http\Requests\Product;
 use App\Services\SettingService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 abstract class BaseProductRequest extends FormRequest
@@ -52,6 +53,17 @@ abstract class BaseProductRequest extends FormRequest
             'removed_images.*' => ['integer'],
             'primary_image_id' => ['nullable', 'integer'],
 
+            // Type
+            'product_type' => ['required', 'in:single,variable'],
+
+            // Single-product stock/identity (only when product_type = single)
+            'sku' => [
+                'nullable', 'string', 'max:100',
+                Rule::unique('products', 'sku')->ignore($this->productId()),
+            ],
+            'stock' => ['required_if:product_type,single', 'nullable', 'integer', 'min:0'],
+            'low_stock_alert' => ['nullable', 'integer', 'min:0'],
+
             // Pricing
             'price' => ['required', 'numeric', 'min:0'],
             'cost_price' => ['nullable', 'numeric', 'min:0'],
@@ -75,10 +87,13 @@ abstract class BaseProductRequest extends FormRequest
             'seo_description' => ['nullable', 'array'],
             'seo_description.*' => ['nullable', 'string', 'max:500'],
 
-            // Variants
-            'variants' => ['nullable', 'array'],
-            'variants.*.size_id' => ['required', 'exists:sizes,id'],
-            'variants.*.color_id' => ['required', 'exists:colors,id'],
+            // Variants (required when product_type = variable) — a variant is defined
+            // by its set of attribute value IDs.
+            'variants' => ['required_if:product_type,variable', 'array'],
+            'variants.*.value_ids' => ['required', 'array', 'min:1'],
+            'variants.*.value_ids.*' => ['integer', 'exists:attribute_values,id'],
+            'variants.*.image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
+            'variants.*.image_existing' => ['nullable', 'string', 'max:255'],
             'variants.*.sku' => ['nullable', 'string', 'max:100'],
             'variants.*.barcode' => ['nullable', 'string', 'max:100'],
             'variants.*.stock' => ['required', 'integer', 'min:0'],
@@ -99,9 +114,10 @@ abstract class BaseProductRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'variants.*.size_id.required' => 'Select a size for each variant.',
-            'variants.*.color_id.required' => 'Select a color for each variant.',
+            'variants.required_if' => 'Add attributes and generate at least one variant for a variable product.',
+            'variants.*.value_ids.required' => 'Each variant must map to at least one attribute value.',
             'variants.*.stock.required' => 'Stock is required for each variant.',
+            'stock.required_if' => 'Stock is required for a single product.',
             'images.*.image' => 'Each gallery file must be an image.',
         ];
     }

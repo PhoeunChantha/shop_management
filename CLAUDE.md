@@ -49,9 +49,9 @@ need no build.
 
 ### RBAC
 spatie/laravel-permission. Middleware aliases `role`, `permission`,
-`role_or_permission` are registered in `bootstrap/app.php`. Admin controllers gate
-themselves by implementing `HasMiddleware` and returning
-`new Middleware('role:admin|manager', only: [...])`.
+`role_or_permission` are registered in `bootstrap/app.php`. Apply access control on
+admin routes/groups and in Form Request `authorize()` methods. Do not add
+controller-level middleware (`HasMiddleware` / static `middleware()` methods).
 
 ### Admin CRUD convention (the dominant pattern — follow it for new resources)
 **Full house pattern with copy-paste templates: `docs/ADMIN-CRUD-GUIDELINE.md` —
@@ -59,10 +59,20 @@ read it before adding or refactoring any admin resource.** `Brand` is the canoni
 reference implementation. In short, each resource (Product, Brand, Category, Color,
 Size, Coupon, User, Role, Permission) is built the same way:
 
-1. **Controller** `Backend\{Resource}Controller implements HasMiddleware` — a
-   `middleware()` role gate, thin actions using `$request->validated()`, typed
-   returns (`View` / `RedirectResponse`). `index()` validates `search`/`per_page`
-   inline and paginates with `->withQueryString()`.
+1. **Controller** `Backend\{Resource}Controller` — no controller middleware, thin
+   actions using `$request->validated()`, typed returns (`View` /
+   `RedirectResponse`). `index()` validates `search`/`per_page` inline and
+   paginates with `->withQueryString()`.
+   - **Resource methods only.** A CRUD controller exposes *only* the standard
+     RESTful actions and nothing else: `index`, `create`, `store`, `show`, `edit`,
+     `update`, `destroy` (use the subset you need — `show` only when the resource
+     has a detail page; most admin CRUDs use the 6 without it). **No other public
+     methods.** Anything extra — status toggles, image deletes, exports, bulk
+     actions, quick-updates — puts its **logic in a service** (`app/Services`),
+     exposed through a **thin single-action (invokable) controller** whose
+     `__invoke()` just validates and delegates to the service (a route needs a
+     controller target; the work lives in the service). Private helpers
+     (`uniqueSlug`, `syncValues`) are fine; keep them `private`.
 2. **Form Requests** in `app/Http/Requests/{Resource}/` as `Base*` + `Store*` +
    `Update*`. `Base*` holds `authorize()` (`$this->user()?->hasAnyRole([...])`) and
    shared `rules()`; `Update*` overrides a protected `{resource}Id()` accessor

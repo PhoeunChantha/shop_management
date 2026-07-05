@@ -105,7 +105,7 @@
                                         <strong class="text-gray-900 dark:text-slate-100">${{ number_format($product->price, 2) }}</strong>
                                     @endif
                                 </td>
-                                <td><span class="text-sm text-gray-600 dark:text-slate-300">{{ (int) $product->variants_sum_stock }}</span></td>
+                                <td><span class="text-sm text-gray-600 dark:text-slate-300">{{ $product->total_stock }}</span></td>
                                 <td>
                                     <div class="d-flex flex-wrap gap-1">
                                         @if ($product->is_featured)<span class="pill-badge pill-featured">Featured</span>@endif

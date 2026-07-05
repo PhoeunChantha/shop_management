@@ -19,10 +19,10 @@ Other resources following this: `Category`, `Color`, `Size`, `Coupon`, `Product`
    with `label()` / `options()`; cast it on the model.
 4. **Form Requests** — `app/Http/Requests/Foo/` → `BaseFooRequest`, `StoreFooRequest`,
    `UpdateFooRequest`.
-5. **Controller** — `app/Http/Controllers/Backend/FooController.php` implementing
-   `HasMiddleware`.
-6. **Routes** — a `Route::prefix('foos')->name('foos.')` group inside the
-   `admin` group in `routes/web.php` (index/create/store/edit/update/destroy).
+5. **Controller** — `app/Http/Controllers/Backend/FooController.php` with no
+   controller-level middleware.
+6. **Routes** — a `Route::prefix('foos')->name('foos.')->middleware(...)` group
+   inside the `admin` group in `routes/web.php` (index/create/store/edit/update/destroy).
 7. **Views** — `resources/views/admin/foos/`: `index`, `create`, `edit`, `_form`.
    (Use a `_modal` instead of create/edit pages only when the form is ~3 fields —
    see Brand.)
@@ -135,16 +135,8 @@ class UpdateFooRequest extends BaseFooRequest
 ## Controller
 
 ```php
-class FooController extends Controller implements HasMiddleware
+class FooController extends Controller
 {
-    public static function middleware(): array
-    {
-        return [
-            new Middleware('role:admin|manager',
-                only: ['index', 'edit', 'create', 'update', 'store', 'destroy']),
-        ];
-    }
-
     public function index(Request $request): View
     {
         $filters = $request->validate([
@@ -248,6 +240,16 @@ class FooController extends Controller implements HasMiddleware
 ```
 
 Non-negotiables:
+- **Resource methods only.** A CRUD controller has *only* the standard RESTful
+  actions: `index`, `create`, `store`, `show`, `edit`, `update`, `destroy` (use the
+  subset needed — `show` only for resources with a detail page; most use the 6
+  without it). **No other public methods.** For anything extra (status toggles,
+  image deletes, exports, bulk actions): put the **logic in a service**
+  (`app/Services`) and expose it via a **thin single-action / invokable controller**
+  that validates and delegates to the service — the resource controller stays
+  untouched. `private` helpers (`uniqueSlug`, `syncValues`) are fine.
+- **No controller-level middleware.** Put role/permission middleware on the route
+  group/routes in `routes/web.php`, and keep write authorization in Form Requests.
 - **Type-hint the Form Request**; validation/authorization live there, not in the controller.
 - **`try/catch` + `Log::error`** on `store`/`update`/`destroy`; on failure return
   `back()->withInput()->withErrors(['error' => '…'])`. Never dump the image file into

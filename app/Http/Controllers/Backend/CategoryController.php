@@ -9,24 +9,12 @@ use App\Http\Requests\Category\UpdateCategoryRequest;
 use App\Models\Category;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controllers\HasMiddleware;
-use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
-class CategoryController extends Controller implements HasMiddleware
+class CategoryController extends Controller
 {
-    public static function middleware(): array
-    {
-        return [
-            new Middleware(
-                'role:admin|manager',
-                only: ['index', 'edit', 'create', 'update', 'store', 'destroy']
-            ),
-        ];
-    }
-
     public function index(Request $request): View
     {
         $filters = $request->validate([

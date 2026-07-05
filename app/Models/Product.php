@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ProductType;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -33,11 +34,15 @@ class Product extends Model
         'category_id',
         'sub_category_id',
         'brand_id',
+        'product_type',
         'name',
         'slug',
         'short_description',
         'description',
         'thumbnail',
+        'sku',
+        'stock',
+        'low_stock_alert',
         'price',
         'cost_price',
         'discount_type',
@@ -54,6 +59,9 @@ class Product extends Model
     ];
 
     protected $casts = [
+        'product_type' => ProductType::class,
+        'stock' => 'integer',
+        'low_stock_alert' => 'integer',
         'price' => 'decimal:2',
         'cost_price' => 'decimal:2',
         'discount_amount' => 'decimal:2',
@@ -132,6 +140,29 @@ class Product extends Model
     {
         return in_array($this->discount_type, ['fixed', 'percentage'], true)
             && (float) $this->discount_amount > 0;
+    }
+
+    public function isSingle(): bool
+    {
+        return $this->product_type === ProductType::Single;
+    }
+
+    public function isVariable(): bool
+    {
+        return $this->product_type === ProductType::Variable;
+    }
+
+    /**
+     * Total stock across the product: its own stock (single) or the sum of
+     * variant stock (variable). Uses the eager-loaded sum when available.
+     */
+    public function getTotalStockAttribute(): int
+    {
+        if ($this->isSingle()) {
+            return (int) $this->stock;
+        }
+
+        return (int) ($this->variants_sum_stock ?? $this->variants()->sum('stock'));
     }
 
     /**

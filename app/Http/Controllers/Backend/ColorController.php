@@ -8,23 +8,11 @@ use App\Http\Requests\Color\UpdateColorRequest;
 use App\Models\Color;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controllers\HasMiddleware;
-use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
-class ColorController extends Controller implements HasMiddleware
+class ColorController extends Controller
 {
-    public static function middleware(): array
-    {
-        return [
-            new Middleware(
-                'role:admin|manager',
-                only: ['index', 'edit', 'create', 'update', 'store', 'destroy']
-            ),
-        ];
-    }
-
     public function index(Request $request): View
     {
         $filters = $request->validate([

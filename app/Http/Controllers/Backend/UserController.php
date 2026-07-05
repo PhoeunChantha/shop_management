@@ -11,22 +11,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Routing\Controllers\HasMiddleware;
-use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\View\View;
 
-class UserController extends Controller implements HasMiddleware
+class UserController extends Controller
 {
-    public static function middleware(): array
-    {
-        return [
-            new Middleware(
-                'role:admin|manager',
-                only: ['index', 'edit', 'create', 'update', 'store', 'destroy']
-            ),
-        ];
-    }
-
     public function index(Request $request): View
     {
         $filters = $request->validate([

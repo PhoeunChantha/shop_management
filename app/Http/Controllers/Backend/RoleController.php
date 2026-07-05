@@ -8,26 +8,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
-use Illuminate\Routing\Controllers\HasMiddleware;
-use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\View\View;
 
-class RoleController extends Controller implements HasMiddleware
+class RoleController extends Controller
 {
-    public static function middleware(): array
-    {
-        return [
-            new Middleware(
-                'role:admin|manager',
-                only: ['index', 'edit', 'create', 'destroy']
-            ),
-            new Middleware(
-                'role:admin|manager|staff',
-                only: ['index']
-            )
-        ];
-    }
-
     public function index(Request $request): View
     {
         $filters = $request->validate([
