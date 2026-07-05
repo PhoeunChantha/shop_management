@@ -47,11 +47,21 @@ need no build.
   unauthenticated visitors to `admin.login` vs `frontend.login` based on the URL,
   and sends logged-in users to `admin.dashboard`.
 
-### RBAC
-spatie/laravel-permission. Middleware aliases `role`, `permission`,
-`role_or_permission` are registered in `bootstrap/app.php`. Apply access control on
-admin routes/groups and in Form Request `authorize()` methods. Do not add
-controller-level middleware (`HasMiddleware` / static `middleware()` methods).
+### RBAC (Policy-based)
+spatie/laravel-permission. Authorization lives in **Policies**, not middleware or
+Form Requests. Each resource has a thin `App\Policies\{Model}Policy extends
+AdminRolePolicy` with `protected string $subject` (e.g. `'products'`); the base maps
+abilities to granular permissions — `viewAny`/`view` → `view {subject}`, `create` →
+`create {subject}`, `update` → `edit {subject}`, `delete` → `delete {subject}` — via
+`hasPermissionTo`. Controllers call `$this->authorize('viewAny|create|view|update|
+delete', Model::class)` as the first line of each action (base `Controller` uses
+`AuthorizesRequests`); admin routes carry only `auth`; Form Request `authorize()`
+returns `true`. Permissions are generated in `database/seeders/RolePermissionSeeder`
+(add the resource to `$subjects`, then `db:seed --class=RolePermissionSeeder` +
+`permission:cache-reset`); `admin` role gets all, `user` role (customers) gets none.
+The `role`/`permission`/`role_or_permission` middleware aliases still exist
+(`bootstrap/app.php`) and are used by the Roles/Permissions routes, but new CRUDs
+gate via Policy. Do not add controller-level middleware (`HasMiddleware`).
 
 ### Admin CRUD convention (the dominant pattern — follow it for new resources)
 **Full house pattern with copy-paste templates: `docs/ADMIN-CRUD-GUIDELINE.md` —
@@ -61,7 +71,8 @@ Size, Coupon, User, Role, Permission) is built the same way:
 
 1. **Controller** `Backend\{Resource}Controller` — no controller middleware, thin
    actions using `$request->validated()`, typed returns (`View` /
-   `RedirectResponse`). `index()` validates `search`/`per_page` inline and
+   `RedirectResponse`). Each action's first line is `$this->authorize(<ability>,
+   Model::class)` (Policy gate). `index()` validates `search`/`per_page` inline and
    paginates with `->withQueryString()`.
    - **Resource methods only.** A CRUD controller exposes *only* the standard
      RESTful actions and nothing else: `index`, `create`, `store`, `show`, `edit`,
@@ -74,12 +85,16 @@ Size, Coupon, User, Role, Permission) is built the same way:
      controller target; the work lives in the service). Private helpers
      (`uniqueSlug`, `syncValues`) are fine; keep them `private`.
 2. **Form Requests** in `app/Http/Requests/{Resource}/` as `Base*` + `Store*` +
-   `Update*`. `Base*` holds `authorize()` (`$this->user()?->hasAnyRole([...])`) and
+   `Update*`. `Base*` holds `authorize()` (returns `true` — the Policy gates) and
    shared `rules()`; `Update*` overrides a protected `{resource}Id()` accessor
    (from `$this->route('id')`) so `Rule::unique(...)->ignore()` skips itself.
    Normalize input in `prepareForValidation()`; cross-field checks in
    `withValidator()`.
-3. **Views** under `resources/views/admin/{resource}/`: `index`, `create`, `edit`,
+3. **Policy** `App\Policies\{Model}Policy extends AdminRolePolicy` with
+   `protected string $subject` — auto-discovered, gates every action against the
+   `{action} {subject}` permission (seed it in `RolePermissionSeeder`). See
+   *RBAC* above.
+4. **Views** under `resources/views/admin/{resource}/`: `index`, `create`, `edit`,
    and a shared `_form` partial (`@include`d by create/edit with `mode`/`action`/
    `submitText`). Brand additionally uses a `_modal` popup instead of full pages.
 

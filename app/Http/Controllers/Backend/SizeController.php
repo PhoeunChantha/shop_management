@@ -15,6 +15,8 @@ class SizeController extends Controller
 {
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', Size::class);
+
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
             'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
@@ -37,11 +39,15 @@ class SizeController extends Controller
 
     public function create(): View
     {
+        $this->authorize('create', Size::class);
+
         return view('admin.sizes.create');
     }
 
     public function store(StoreSizeRequest $request): RedirectResponse
     {
+        $this->authorize('create', Size::class);
+
         try {
             $validated = $request->validated();
             $validated['sort_order'] ??= 0;
@@ -64,6 +70,8 @@ class SizeController extends Controller
 
     public function edit(string $id): View
     {
+        $this->authorize('update', Size::class);
+
         $size = Size::findOrFail($id);
 
         return view('admin.sizes.edit', [
@@ -73,6 +81,8 @@ class SizeController extends Controller
 
     public function update(UpdateSizeRequest $request, string $id): RedirectResponse
     {
+        $this->authorize('update', Size::class);
+
         try {
             $size = Size::findOrFail($id);
 
@@ -98,6 +108,8 @@ class SizeController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
+        $this->authorize('delete', Size::class);
+
         try {
             $size = Size::findOrFail($id);
             $size->delete();

@@ -17,6 +17,8 @@ class CategoryController extends Controller
 {
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', Category::class);
+
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
             'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
@@ -39,11 +41,15 @@ class CategoryController extends Controller
 
     public function create(): View
     {
+        $this->authorize('create', Category::class);
+
         return view('admin.categories.create');
     }
 
     public function store(StoreCategoryRequest $request): RedirectResponse
     {
+        $this->authorize('create', Category::class);
+
         try {
             $validated = $request->safe()->except('image');
             $validated['slug'] = $this->uniqueSlug($validated['name']);
@@ -71,6 +77,8 @@ class CategoryController extends Controller
 
     public function edit(string $id): View
     {
+        $this->authorize('update', Category::class);
+
         $category = Category::findOrFail($id);
 
         return view('admin.categories.edit', [
@@ -80,6 +88,8 @@ class CategoryController extends Controller
 
     public function update(UpdateCategoryRequest $request, string $id): RedirectResponse
     {
+        $this->authorize('update', Category::class);
+
         try {
             $category = Category::findOrFail($id);
             $validated = $request->safe()->except('image');
@@ -109,6 +119,8 @@ class CategoryController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
+        $this->authorize('delete', Category::class);
+
         try {
             $category = Category::findOrFail($id);
 

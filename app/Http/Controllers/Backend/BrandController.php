@@ -17,6 +17,8 @@ class BrandController extends Controller
 {
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', Brand::class);
+
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
             'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
@@ -40,11 +42,15 @@ class BrandController extends Controller
 
     public function create(): View
     {
+        $this->authorize('create', Brand::class);
+
         return view('admin.brands.create');
     }
 
     public function store(StoreBrandRequest $request): RedirectResponse
     {
+        $this->authorize('create', Brand::class);
+
         try {
             $validated = $request->safe()->except('image');
             $validated['slug'] = $this->uniqueSlug($validated['name']);
@@ -72,6 +78,8 @@ class BrandController extends Controller
 
     public function edit(string $id): View
     {
+        $this->authorize('update', Brand::class);
+
         $brand = Brand::findOrFail($id);
 
         return view('admin.brands.edit', [
@@ -81,6 +89,8 @@ class BrandController extends Controller
 
     public function update(UpdateBrandRequest $request, string $id): RedirectResponse
     {
+        $this->authorize('update', Brand::class);
+
         try {
             $brand = Brand::findOrFail($id);
 
@@ -111,6 +121,8 @@ class BrandController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
+        $this->authorize('delete', Brand::class);
+
         try {
             $brand = Brand::findOrFail($id);
 

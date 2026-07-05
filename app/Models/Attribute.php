@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AttributeType;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,11 +12,13 @@ class Attribute extends Model
     protected $fillable = [
         'name',
         'slug',
+        'type',
         'status',
         'sort_order',
     ];
 
     protected $casts = [
+        'type' => AttributeType::class,
         'status' => 'boolean',
         'sort_order' => 'integer',
     ];

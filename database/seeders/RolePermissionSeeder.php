@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -14,21 +13,20 @@ class RolePermissionSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create permissions
-        $permissions = [
-            'view role',
-            'edit role',
-            'create role',
-            'delete role',
-            'view users',
-            'edit users',
-            'create users',
-            'delete users',
-            'view permission',
-            'edit permission',
-            'create permission',
-            'delete permission',
+        // Granular resource permissions, matching the "{action} {subject}" convention
+        // the policies check (e.g. AdminRolePolicy → "edit products").
+        $subjects = [
+            'products', 'brands', 'attributes', 'categories', 'sizes',
+            'colors', 'coupons', 'users', 'settings', 'role', 'permission',
         ];
+        $actions = ['view', 'create', 'edit', 'delete'];
+
+        $permissions = [];
+        foreach ($subjects as $subject) {
+            foreach ($actions as $action) {
+                $permissions[] = "{$action} {$subject}";
+            }
+        }
 
         foreach ($permissions as $permission) {
             Permission::firstOrCreate([
@@ -37,25 +35,14 @@ class RolePermissionSeeder extends Seeder
             ]);
         }
 
-        // Create roles
-        $adminRole = Role::firstOrCreate([
-            'name' => 'admin',
-            'guard_name' => 'web',
-        ]);
+        // Roles
+        $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $userRole = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
 
-        $userRole = Role::firstOrCreate([
-            'name' => 'user',
-            'guard_name' => 'web',
-        ]);
-
-        // Assign all permissions to admin role
+        // Admin gets every admin-panel permission.
         $adminRole->syncPermissions(Permission::all());
 
-        // Assign limited permissions to user role
-        $userRole->syncPermissions([
-            'view role',
-            'view users',
-            'view permission',
-        ]);
+        // The 'user' role is for storefront customers — no admin-panel permissions.
+        $userRole->syncPermissions([]);
     }
 }

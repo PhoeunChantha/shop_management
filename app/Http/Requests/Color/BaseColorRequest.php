@@ -9,7 +9,8 @@ abstract class BaseColorRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasAnyRole(['admin', 'manager']) ?? false;
+        // Authorization is enforced by the resource Policy in the controller.
+        return true;
     }
 
     /**

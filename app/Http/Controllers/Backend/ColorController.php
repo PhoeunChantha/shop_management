@@ -15,6 +15,8 @@ class ColorController extends Controller
 {
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', Color::class);
+
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
             'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
@@ -37,11 +39,15 @@ class ColorController extends Controller
 
     public function create(): View
     {
+        $this->authorize('create', Color::class);
+
         return view('admin.colors.create');
     }
 
     public function store(StoreColorRequest $request): RedirectResponse
     {
+        $this->authorize('create', Color::class);
+
         try {
             $validated = $request->validated();
             $validated['hex_code'] = $validated['code'];
@@ -65,6 +71,8 @@ class ColorController extends Controller
 
     public function edit(string $id): View
     {
+        $this->authorize('update', Color::class);
+
         $color = Color::findOrFail($id);
 
         return view('admin.colors.edit', [
@@ -74,6 +82,8 @@ class ColorController extends Controller
 
     public function update(UpdateColorRequest $request, string $id): RedirectResponse
     {
+        $this->authorize('update', Color::class);
+
         try {
             $color = Color::findOrFail($id);
 
@@ -100,6 +110,8 @@ class ColorController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
+        $this->authorize('delete', Color::class);
+
         try {
             $color = Color::findOrFail($id);
             $color->delete();

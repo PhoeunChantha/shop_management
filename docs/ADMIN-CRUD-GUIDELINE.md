@@ -18,17 +18,22 @@ Other resources following this: `Category`, `Color`, `Size`, `Coupon`, `Product`
 3. **Enum** (if the model has a fixed set field) — `app/Enums/FooType.php`, backed,
    with `label()` / `options()`; cast it on the model.
 4. **Form Requests** — `app/Http/Requests/Foo/` → `BaseFooRequest`, `StoreFooRequest`,
-   `UpdateFooRequest`.
-5. **Controller** — `app/Http/Controllers/Backend/FooController.php` with no
-   controller-level middleware.
-6. **Routes** — a `Route::prefix('foos')->name('foos.')->middleware(...)` group
-   inside the `admin` group in `routes/web.php` (index/create/store/edit/update/destroy).
-7. **Views** — `resources/views/admin/foos/`: `index`, `create`, `edit`, `_form`.
+   `UpdateFooRequest`. `authorize()` returns `true` — the **Policy** is the gate.
+5. **Policy + permissions** — `app/Policies/FooPolicy.php` extends `AdminRolePolicy`
+   with `protected string $subject = 'foos';` (auto-discovered by Laravel). Add `foos`
+   to the `$subjects` array in `database/seeders/RolePermissionSeeder.php`, then
+   `php artisan db:seed --class=RolePermissionSeeder` and `php artisan permission:cache-reset`.
+6. **Controller** — `app/Http/Controllers/Backend/FooController.php`; call
+   `$this->authorize(...)` at the top of every action (no controller-level middleware).
+7. **Routes** — a `Route::prefix('foos')->name('foos.')->group(...)` inside the
+   `admin` (`auth`) group in `routes/web.php`. **No role/permission middleware** —
+   the Policy authorizes (index/create/store/edit/update/destroy).
+8. **Views** — `resources/views/admin/foos/`: `index`, `create`, `edit`, `_form`.
    (Use a `_modal` instead of create/edit pages only when the form is ~3 fields —
    see Brand.)
-8. **Sidebar** — add a link in `resources/views/admin/layouts/sidebar.blade.php`,
+9. **Sidebar** — add a link in `resources/views/admin/layouts/sidebar.blade.php`,
    include the route in its section's active-state check.
-9. **Run** — `php artisan migrate` and verify `php artisan route:list --name=admin.foos`.
+10. **Run** — `php artisan migrate` and verify `php artisan route:list --name=admin.foos`.
 
 ---
 
@@ -79,15 +84,17 @@ Rules:
 
 ## Form Requests
 
-`BaseFooRequest` holds `authorize()` + shared `rules()`. `Store`/`Update` extend it;
-`Update` overrides `fooId()` to ignore its own row on unique checks.
+`BaseFooRequest` holds shared `rules()`. `Store`/`Update` extend it; `Update`
+overrides `fooId()` to ignore its own row on unique checks. **`authorize()` returns
+`true`** — authorization lives in the Policy (see *Authorization* below), not here.
 
 ```php
 abstract class BaseFooRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasAnyRole(['admin', 'manager']) ?? false;
+        // Authorization is enforced by the resource Policy in the controller.
+        return true;
     }
 
     protected function fooId(): ?int
@@ -139,6 +146,8 @@ class FooController extends Controller
 {
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', Foo::class);
+
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
             'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
@@ -159,11 +168,15 @@ class FooController extends Controller
 
     public function create(): View
     {
+        $this->authorize('create', Foo::class);
+
         return view('admin.foos.create');
     }
 
     public function store(StoreFooRequest $request): RedirectResponse
     {
+        $this->authorize('create', Foo::class);
+
         try {
             $validated = $request->safe()->except('image');   // image handled separately
             $validated['slug'] = $this->uniqueSlug($validated['name']);
@@ -189,11 +202,15 @@ class FooController extends Controller
 
     public function edit(string $id): View
     {
+        $this->authorize('update', Foo::class);
+
         return view('admin.foos.edit', ['foo' => Foo::findOrFail($id)]);
     }
 
     public function update(UpdateFooRequest $request, string $id): RedirectResponse
     {
+        $this->authorize('update', Foo::class);
+
         try {
             $foo = Foo::findOrFail($id);
 
@@ -222,6 +239,8 @@ class FooController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
+        $this->authorize('delete', Foo::class);
+
         try {
             $foo = Foo::findOrFail($id);
             ImageManager::delete($foo->image, 'foos');
@@ -248,9 +267,11 @@ Non-negotiables:
   (`app/Services`) and expose it via a **thin single-action / invokable controller**
   that validates and delegates to the service — the resource controller stays
   untouched. `private` helpers (`uniqueSlug`, `syncValues`) are fine.
-- **No controller-level middleware.** Put role/permission middleware on the route
-  group/routes in `routes/web.php`, and keep write authorization in Form Requests.
-- **Type-hint the Form Request**; validation/authorization live there, not in the controller.
+- **Authorize every action via the Policy.** Call `$this->authorize('viewAny|create|
+  view|update|delete', Foo::class)` as the first line of each action. **No
+  controller-level middleware and no role/permission middleware on the routes** — the
+  Policy is the single gate. Form Request `authorize()` returns `true`.
+- **Type-hint the Form Request**; it owns validation only (authorization is the Policy's).
 - **`try/catch` + `Log::error`** on `store`/`update`/`destroy`; on failure return
   `back()->withInput()->withErrors(['error' => '…'])`. Never dump the image file into
   logs — use `$request->except('image')`.
@@ -259,6 +280,47 @@ Non-negotiables:
   `image`), **exclude it** (`$request->safe()->except('image')`) and let
   `ImageManager` own that column; guard writes with `hasFile()`.
 - **`index()`** validates `search` + `per_page` inline and uses `->search($search)`.
+
+---
+
+## Authorization (Policies + spatie permissions)
+
+Authorization is **Policy-based**. Each resource has a thin Policy extending
+`AdminRolePolicy`, whose abilities map to granular spatie permissions built from a
+`$subject`: `view {subject}`, `create {subject}`, `edit {subject}`, `delete {subject}`.
+
+```php
+// app/Policies/FooPolicy.php  — auto-discovered as the policy for App\Models\Foo
+class FooPolicy extends AdminRolePolicy
+{
+    protected string $subject = 'foos';
+}
+```
+
+`AdminRolePolicy` (the base) checks `hasPermissionTo("… {$subject}")`:
+`viewAny`/`view` → `view`, `create` → `create`, `update` → `edit`, `delete` → `delete`.
+Override a method in the concrete policy for special cases.
+
+**Wiring:**
+- The base `Controller` uses the `AuthorizesRequests` trait, so `$this->authorize(...)`
+  works in every controller.
+- Controllers call `$this->authorize(ability, Foo::class)` per action; routes carry
+  only `auth`; Form Requests `authorize()` return `true`.
+
+**Permissions live in `RolePermissionSeeder`** — add the new resource to the
+`$subjects` array (it generates `view/create/edit/delete {subject}`), then:
+
+```bash
+php artisan db:seed --class=RolePermissionSeeder   # admin gets every permission
+php artisan permission:cache-reset                 # spatie caches permissions
+```
+
+Notes:
+- The `admin` role is granted **all** permissions; the `user` role (storefront
+  customers) gets **none** — so only admins reach the panel. New granular roles
+  (e.g. `manager`) can be given a subset.
+- `hasPermissionTo` throws if a permission doesn't exist, so always seed the new
+  `{subject}` permissions before shipping a resource.
 
 ---
 

@@ -15,6 +15,8 @@ class CouponController extends Controller
 {
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', Coupon::class);
+
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
             'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
@@ -37,11 +39,15 @@ class CouponController extends Controller
 
     public function create(): View
     {
+        $this->authorize('create', Coupon::class);
+
         return view('admin.coupons.create');
     }
 
     public function store(StoreCouponRequest $request): RedirectResponse
     {
+        $this->authorize('create', Coupon::class);
+
         try {
             Coupon::create($request->validated());
 
@@ -61,6 +67,8 @@ class CouponController extends Controller
 
     public function edit(string $id): View
     {
+        $this->authorize('update', Coupon::class);
+
         $coupon = Coupon::findOrFail($id);
 
         return view('admin.coupons.edit', [
@@ -70,6 +78,8 @@ class CouponController extends Controller
 
     public function update(UpdateCouponRequest $request, string $id): RedirectResponse
     {
+        $this->authorize('update', Coupon::class);
+
         try {
             $coupon = Coupon::findOrFail($id);
 
@@ -92,6 +102,8 @@ class CouponController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
+        $this->authorize('delete', Coupon::class);
+
         try {
             $coupon = Coupon::findOrFail($id);
             $coupon->delete();

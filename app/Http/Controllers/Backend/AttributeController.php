@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Attribute\StoreAttributeRequest;
 use App\Http\Requests\Attribute\UpdateAttributeRequest;
 use App\Models\Attribute;
+use App\Models\Color;
+use App\Models\Size;
 use App\Services\AttributeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,6 +20,8 @@ class AttributeController extends Controller
 
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', Attribute::class);
+
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
             'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
@@ -33,11 +37,15 @@ class AttributeController extends Controller
 
     public function create(): View
     {
-        return view('admin.attributes.create');
+        $this->authorize('create', Attribute::class);
+
+        return view('admin.attributes.create', $this->sourceData());
     }
 
     public function store(StoreAttributeRequest $request): RedirectResponse
     {
+        $this->authorize('create', Attribute::class);
+
         try {
             $this->attributes->create($request->validated());
 
@@ -56,15 +64,19 @@ class AttributeController extends Controller
 
     public function edit(string $id): View
     {
+        $this->authorize('update', Attribute::class);
+
         $attribute = Attribute::with('values')->findOrFail($id);
 
-        return view('admin.attributes.edit', [
+        return view('admin.attributes.edit', array_merge($this->sourceData(), [
             'attribute' => $attribute,
-        ]);
+        ]));
     }
 
     public function update(UpdateAttributeRequest $request, string $id): RedirectResponse
     {
+        $this->authorize('update', Attribute::class);
+
         try {
             $attribute = Attribute::findOrFail($id);
 
@@ -86,6 +98,8 @@ class AttributeController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
+        $this->authorize('delete', Attribute::class);
+
         try {
             Attribute::findOrFail($id)->delete(); // cascades values + pivot
         } catch (\Exception $e) {
@@ -100,4 +114,18 @@ class AttributeController extends Controller
         return to_route('admin.attributes.index')
             ->with('success', 'Attribute deleted successfully!');
     }
+
+    /**
+     * Source master lists for the size/color-typed attribute pickers.
+     *
+     * @return array<string, mixed>
+     */
+    private function sourceData(): array
+    {
+        return [
+            'sizes' => Size::orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'code']),
+            'colors' => Color::orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'hex_code']),
+        ];
+    }
 }
+

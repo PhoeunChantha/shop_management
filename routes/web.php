@@ -112,7 +112,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         });
     });
 
-    Route::prefix('users')->name('users.')->middleware('role:admin|manager')->group(function () {
+    Route::prefix('users')->name('users.')->group(function () {
         Route::get('/', [UserController::class, 'index'])->name('index');
         Route::get('/create', [UserController::class, 'create'])->name('create');
         Route::post('/', [UserController::class, 'store'])->name('store');
@@ -121,7 +121,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy');
     });
 
-    Route::prefix('products')->name('products.')->middleware('role:admin|manager')->group(function () {
+    Route::prefix('products')->name('products.')->group(function () {
         Route::get('/', [ProductController::class, 'index'])->name('index');
         Route::get('/create', [ProductController::class, 'create'])->name('create');
         Route::post('/', [ProductController::class, 'store'])->name('store');
@@ -131,7 +131,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::delete('/{id}', [ProductController::class, 'destroy'])->name('destroy');
     });
 
-    Route::prefix('brands')->name('brands.')->middleware('role:admin|manager')->group(function () {
+    Route::prefix('brands')->name('brands.')->group(function () {
         Route::get('/', [BrandController::class, 'index'])->name('index');
         Route::get('/create', [BrandController::class, 'create'])->name('create');
         Route::post('/', [BrandController::class, 'store'])->name('store');
@@ -140,7 +140,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::delete('/{id}', [BrandController::class, 'destroy'])->name('destroy');
     });
 
-    Route::prefix('attributes')->name('attributes.')->middleware('role:admin|manager')->group(function () {
+    Route::prefix('attributes')->name('attributes.')->group(function () {
         Route::get('/', [AttributeController::class, 'index'])->name('index');
         Route::get('/create', [AttributeController::class, 'create'])->name('create');
         Route::post('/', [AttributeController::class, 'store'])->name('store');
@@ -149,7 +149,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::delete('/{id}', [AttributeController::class, 'destroy'])->name('destroy');
     });
 
-    Route::prefix('categories')->name('categories.')->middleware('role:admin|manager')->group(function () {
+    Route::prefix('categories')->name('categories.')->group(function () {
         Route::get('/', [CategoryController::class, 'index'])->name('index');
         Route::get('/create', [CategoryController::class, 'create'])->name('create');
         Route::post('/', [CategoryController::class, 'store'])->name('store');
@@ -158,7 +158,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::delete('/{id}', [CategoryController::class, 'destroy'])->name('destroy');
     });
 
-    Route::prefix('sizes')->name('sizes.')->middleware('role:admin|manager')->group(function () {
+    Route::prefix('sizes')->name('sizes.')->group(function () {
         Route::get('/', [SizeController::class, 'index'])->name('index');
         Route::get('/create', [SizeController::class, 'create'])->name('create');
         Route::post('/', [SizeController::class, 'store'])->name('store');
@@ -167,7 +167,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::delete('/{id}', [SizeController::class, 'destroy'])->name('destroy');
     });
 
-    Route::prefix('colors')->name('colors.')->middleware('role:admin|manager')->group(function () {
+    Route::prefix('colors')->name('colors.')->group(function () {
         Route::get('/', [ColorController::class, 'index'])->name('index');
         Route::get('/create', [ColorController::class, 'create'])->name('create');
         Route::post('/', [ColorController::class, 'store'])->name('store');
@@ -176,7 +176,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::delete('/{id}', [ColorController::class, 'destroy'])->name('destroy');
     });
 
-    Route::prefix('coupons')->name('coupons.')->middleware('role:admin|manager')->group(function () {
+    Route::prefix('coupons')->name('coupons.')->group(function () {
         Route::get('/', [CouponController::class, 'index'])->name('index');
         Route::get('/create', [CouponController::class, 'create'])->name('create');
         Route::post('/', [CouponController::class, 'store'])->name('store');
@@ -185,7 +185,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::delete('/{id}', [CouponController::class, 'destroy'])->name('destroy');
     });
 
-    Route::prefix('settings')->name('settings.')->middleware('role:admin|manager')->group(function () {
+    Route::prefix('settings')->name('settings.')->group(function () {
         Route::get('/', [SettingController::class, 'index'])->name('index');
         Route::put('/', [SettingController::class, 'update'])->name('update');
     });

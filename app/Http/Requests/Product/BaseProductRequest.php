@@ -12,7 +12,8 @@ abstract class BaseProductRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasAnyRole(['admin', 'manager']) ?? false;
+        // Authorization is enforced by the ProductPolicy in the controller.
+        return true;
     }
 
     /**

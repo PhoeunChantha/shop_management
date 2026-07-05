@@ -17,6 +17,8 @@ class UserController extends Controller
 {
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', User::class);
+
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
             'role' => ['nullable', 'string', 'exists:roles,name'],
@@ -62,6 +64,8 @@ class UserController extends Controller
 
     public function create()
     {
+        $this->authorize('create', User::class);
+
         return view('admin.users.create', [
             'roles' => Role::orderBy('name', 'asc')->get(),
         ]);
@@ -69,6 +73,8 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create', User::class);
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|min:3',
             'email' => 'required|email|unique:users,email',
@@ -103,6 +109,8 @@ class UserController extends Controller
 
     public function edit(string $id)
     {
+        $this->authorize('update', User::class);
+
         $user = User::findOrFail($id);
         $roles = Role::orderBy('id', 'asc')->get();
         $hasRoles = $user->roles->pluck('name');
@@ -116,6 +124,8 @@ class UserController extends Controller
 
     public function update(Request $request, string $id)
     {
+        $this->authorize('update', User::class);
+
         $user = User::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
@@ -148,6 +158,8 @@ class UserController extends Controller
 
     public function destroy(string $id)
     {
+        $this->authorize('delete', User::class);
+
         $user = User::findOrFail($id);
 
         if (Auth::id() === $user->id) {

@@ -19,6 +19,8 @@ class ProductController extends Controller
 
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', Product::class);
+
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
             'category_id' => ['nullable', 'integer'],
@@ -43,11 +45,15 @@ class ProductController extends Controller
 
     public function create(): View
     {
+        $this->authorize('create', Product::class);
+
         return view('admin.products.create', $this->products->formData());
     }
 
     public function store(StoreProductRequest $request): RedirectResponse
     {
+        $this->authorize('create', Product::class);
+
         $product = $this->products->create($request);
 
         return to_route('admin.products.index')
@@ -56,6 +62,8 @@ class ProductController extends Controller
 
     public function show(string $id): View
     {
+        $this->authorize('view', Product::class);
+
         $product = Product::with([
             'category', 'subCategory', 'brand', 'tags',
             'images', 'specifications', 'variants.values.attribute',
@@ -66,6 +74,8 @@ class ProductController extends Controller
 
     public function edit(string $id): View
     {
+        $this->authorize('update', Product::class);
+
         $product = Product::with(['images', 'variants.values', 'specifications', 'tags'])->findOrFail($id);
 
         return view('admin.products.edit', array_merge($this->products->formData(), [
@@ -75,6 +85,8 @@ class ProductController extends Controller
 
     public function update(UpdateProductRequest $request, string $id): RedirectResponse
     {
+        $this->authorize('update', Product::class);
+
         $product = Product::findOrFail($id);
         $this->products->update($request, $product);
 
@@ -84,6 +96,8 @@ class ProductController extends Controller
 
     public function destroy(string $id): RedirectResponse
     {
+        $this->authorize('delete', Product::class);
+
         $product = Product::with('images')->findOrFail($id);
         $this->products->delete($product);
 

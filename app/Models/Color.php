@@ -2,11 +2,20 @@
 
 namespace App\Models;
 
+use App\Observers\ColorObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
+#[ObservedBy(ColorObserver::class)]
 class Color extends Model
 {
+    public function attributeValues(): MorphMany
+    {
+        return $this->morphMany(AttributeValue::class, 'source');
+    }
+
     protected $fillable = [
         'name',
         'code',
