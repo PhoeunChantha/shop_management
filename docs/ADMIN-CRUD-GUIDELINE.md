@@ -259,14 +259,14 @@ class FooController extends Controller
 ```
 
 Non-negotiables:
-- **Resource methods only.** A CRUD controller has *only* the standard RESTful
-  actions: `index`, `create`, `store`, `show`, `edit`, `update`, `destroy` (use the
-  subset needed — `show` only for resources with a detail page; most use the 6
-  without it). **No other public methods.** For anything extra (status toggles,
-  image deletes, exports, bulk actions): put the **logic in a service**
-  (`app/Services`) and expose it via a **thin single-action / invokable controller**
-  that validates and delegates to the service — the resource controller stays
-  untouched. `private` helpers (`uniqueSlug`, `syncValues`) are fine.
+- **A route action is a controller method.** Prefer the standard RESTful actions
+  (`index`, `create`, `store`, `show`, `edit`, `update`, `destroy` — use the subset
+  needed; `show` only for a detail page). When a route needs an **extra** action
+  (e.g. `updateStatus`, `destroyImage`, `export`), add it as **another method on the
+  same controller** — *don't* create a separate single-action/invokable controller
+  for it. Keep it thin: the method **validates and delegates to a service**; the
+  business logic lives in `app/Services`. `private` helpers (`uniqueSlug`,
+  `syncValues`) are fine.
 - **Authorize every action via the Policy.** Call `$this->authorize('viewAny|create|
   view|update|delete', Foo::class)` as the first line of each action. **No
   controller-level middleware and no role/permission middleware on the routes** — the

@@ -13,8 +13,12 @@ the **admin/backend** can be finished before touching the **storefront/frontend*
 
 ## ✅ Already built (admin)
 - ✅ Products (variants, images, specifications, tags)
+- ✅ **Attributes** (generic EAV: Size/Color/Custom, values linked to Size/Color masters
+  with live sync) — powers the product variant builder (ERP matrix + generate)
 - ✅ Categories · Sizes · Colors · **Brands**
-- ✅ Users · Roles · Permissions (RBAC)
+- ✅ **Coupons** (code, %/fixed, min-spend, cap, usage limit, validity window)
+- ✅ Users · Roles · Permissions — **Policy-based authorization** (per-resource
+  policies + granular spatie permissions; see `docs/ADMIN-CRUD-GUIDELINE.md`)
 - ✅ Settings · Profile
 - ✅ Admin UI kit: sectioned sidebar, data tables (search / per-page / pagination),
   table loader, custom select, image upload, form modal, delete modal
@@ -34,9 +38,9 @@ the **admin/backend** can be finished before touching the **storefront/frontend*
 - ⬜ `[A]` Bulk actions on tables (bulk delete / enable / disable)
 
 ### 1.2 Coupons & Discounts
-- ⬜ `[B]` `coupons` migration + `Coupon` model (code, type %/fixed, value, min_spend, starts_at, expires_at, usage_limit, used_count, status)
-- ⬜ `[A]` Coupon admin CRUD (list, create/edit modal, toggle, delete)
-- ⬜ `[B]` Coupon validation service (validity, expiry, min-spend, usage limit)
+- ✅ `[B]` `coupons` migration + `Coupon` model (code, type %/fixed, value, min_spend, starts_at, expires_at, usage_limit, used_count, status)
+- ✅ `[A]` Coupon admin CRUD (list, create/edit, toggle, delete)
+- ✅ `[B]` Coupon domain logic (`isValid()`, `discountFor()`, scopes) — *not yet wired into checkout*
 
 ### 1.3 Orders (admin side of the data model)
 - ⬜ `[B]` Migrations + models: `Order`, `OrderItem`, `orders`↔`users`, price snapshots
@@ -59,8 +63,22 @@ the **admin/backend** can be finished before touching the **storefront/frontend*
 - ⬜ `[B]` `Address` model + migration (shared, used by checkout later)
 - ⬜ `[A]` Shipping methods & rates (zones, flat/weight based)
 - ⬜ `[A]` Tax rules (rate, inclusive/exclusive)
-- ⬜ `[A]` CMS pages (about/faq/privacy/terms) backed by DB
+- ⬜ `[A]` CMS pages (about/faq/privacy/terms) backed by DB + **FAQ manager** (Q&A by category)
 - ⬜ `[A]` Email templates / notification settings
+
+### 1.7 Content & merchandising (discovered from the storefront review)
+The **entire home page is hardcoded** today — a shop owner can't change it. Needs admin.
+- ⬜ `[A]` **Banners / hero slides** — image, kicker, title, copy, CTA text + link, sort, active
+- ⬜ `[A]` **Collections** — curated groups (name, image, linked products/category), shown on home + mega-menu
+- ⬜ `[A]` **Homepage sections** config — which product rails show (best sellers / new / trending / flash sale + countdown)
+- ⬜ `[A]` **Announcement bar** messages
+- ⬜ `[B]` **Newsletter subscribers** — capture signups + admin list/export
+- ⬜ `[A]` Payment method toggles (Card / Apple / Google / COD) + free-ship threshold in Settings
+
+### 1.8 Reviews (admin side — storefront shows ratings everywhere)
+- ⬜ `[B]` `Review` model (product, user, rating, title, body, status, verified-purchase)
+- ⬜ `[A]` Admin **moderation** (approve/reject), product **rating aggregation** (avg + count)
+- ⬜ `[F]` (later) storefront submit-review + display (Phase 4)
 
 ---
 

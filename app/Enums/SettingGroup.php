@@ -7,6 +7,7 @@ namespace App\Enums;
 enum SettingGroup: string
 {
     case General = 'general';
+    case Orders = 'orders';
     case Contact = 'contact';
     case Social = 'social';
     case Localization = 'localization';
@@ -19,6 +20,7 @@ enum SettingGroup: string
     {
         return match ($this) {
             self::General => 'General',
+            self::Orders => 'Orders',
             self::Contact => 'Contact',
             self::Social => 'Social links',
             self::Localization => 'Languages',
@@ -33,6 +35,7 @@ enum SettingGroup: string
     {
         return match ($this) {
             self::General => 'fa-sliders',
+            self::Orders => 'fa-receipt',
             self::Contact => 'fa-address-book',
             self::Social => 'fa-share-nodes',
             self::Localization => 'fa-language',

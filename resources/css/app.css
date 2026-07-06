@@ -2804,6 +2804,23 @@ html.dark .delete-modal h3 {
     background: rgba(248, 250, 252, 0.6);
 }
 
+/* ---------- Order detail money summary ---------- */
+.order-money {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 16px 28px 20px;
+    border-top: 1px solid var(--admin-line);
+    max-width: 340px; margin-left: auto;
+}
+.order-money > div { display: flex; justify-content: space-between; font-size: 14px; color: var(--admin-muted); }
+.order-money > div span:last-child { font-weight: 600; color: var(--admin-ink); }
+.order-money__total {
+    margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--admin-line);
+    font-size: 16px !important;
+}
+.order-money__total span { font-weight: 800 !important; }
+.order-money__total span:last-child { font-size: 18px; }
+html.dark .order-money, html.dark .order-money__total { border-color: rgba(255,255,255,0.08); }
+
 /* ---------- Attributes (index pills + values editor) ---------- */
 .attr-value-pill {
     display: inline-flex; align-items: center; gap: 6px;

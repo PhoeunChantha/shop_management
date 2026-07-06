@@ -74,16 +74,14 @@ Size, Coupon, User, Role, Permission) is built the same way:
    `RedirectResponse`). Each action's first line is `$this->authorize(<ability>,
    Model::class)` (Policy gate). `index()` validates `search`/`per_page` inline and
    paginates with `->withQueryString()`.
-   - **Resource methods only.** A CRUD controller exposes *only* the standard
-     RESTful actions and nothing else: `index`, `create`, `store`, `show`, `edit`,
-     `update`, `destroy` (use the subset you need — `show` only when the resource
-     has a detail page; most admin CRUDs use the 6 without it). **No other public
-     methods.** Anything extra — status toggles, image deletes, exports, bulk
-     actions, quick-updates — puts its **logic in a service** (`app/Services`),
-     exposed through a **thin single-action (invokable) controller** whose
-     `__invoke()` just validates and delegates to the service (a route needs a
-     controller target; the work lives in the service). Private helpers
-     (`uniqueSlug`, `syncValues`) are fine; keep them `private`.
+   - **A route action is a controller method.** Prefer the standard RESTful
+     actions (`index`, `create`, `store`, `show`, `edit`, `update`, `destroy` — use
+     the subset you need; `show` only for a detail page). When a route needs an
+     **extra** action (status toggle, image delete, export, quick-update), add it as
+     **another method on the same controller** — not a separate invokable
+     controller. Keep it thin: validate + delegate to a **service** (`app/Services`),
+     where the business logic lives. Private helpers (`uniqueSlug`, `syncValues`)
+     stay `private`.
 2. **Form Requests** in `app/Http/Requests/{Resource}/` as `Base*` + `Store*` +
    `Update*`. `Base*` holds `authorize()` (returns `true` — the Policy gates) and
    shared `rules()`; `Update*` overrides a protected `{resource}Id()` accessor

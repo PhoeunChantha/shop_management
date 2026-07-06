@@ -28,6 +28,18 @@
             </div>
         </div>
 
+        {{-- Sales --}}
+        <div class="admin-nav-section">
+            <p class="admin-nav-heading">Sales</p>
+            <div class="nav flex-column admin-nav">
+                <a href="{{ route('admin.orders.index') }}"
+                    class="nav-link d-flex align-items-center {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
+                    <span class="nav-ico"><i class="fa-solid fa-receipt"></i></span>
+                    <span class="small fw-medium">Orders</span>
+                </a>
+            </div>
+        </div>
+
         {{-- Catalog (collapsible) --}}
         @php($catalogActive = request()->routeIs('admin.products.*', 'admin.brands.*', 'admin.categories.*', 'admin.attributes.*', 'admin.sizes.*', 'admin.colors.*'))
         <div class="admin-nav-section">

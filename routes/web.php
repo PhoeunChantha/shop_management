@@ -9,6 +9,7 @@ use App\Http\Controllers\Backend\AttributeController;
 use App\Http\Controllers\Backend\BrandController;
 use App\Http\Controllers\Backend\CategoryController;
 use App\Http\Controllers\Backend\CouponController;
+use App\Http\Controllers\Backend\OrderController;
 use App\Http\Controllers\Backend\ProductController;
 use App\Http\Controllers\Backend\SizeController;
 use App\Http\Controllers\Backend\ColorController;
@@ -174,6 +175,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/{id}/edit', [ColorController::class, 'edit'])->name('edit');
         Route::put('/{id}', [ColorController::class, 'update'])->name('update');
         Route::delete('/{id}', [ColorController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('orders')->name('orders.')->group(function () {
+        Route::get('/', [OrderController::class, 'index'])->name('index');
+        Route::get('/{id}', [OrderController::class, 'show'])->whereNumber('id')->name('show');
+        Route::patch('/{id}', [OrderController::class, 'update'])->whereNumber('id')->name('update');
     });
 
     Route::prefix('coupons')->name('coupons.')->group(function () {

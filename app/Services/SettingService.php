@@ -80,6 +80,9 @@ final class SettingService
                 'site_logo' => ['label' => 'Logo', 'type' => 'image', 'folder' => 'settings', 'accept' => 'image/png,image/jpeg,image/svg+xml,image/webp', 'help' => 'PNG, JPG, SVG or WebP — up to 2MB', 'rules' => 'nullable|image|mimes:png,jpg,jpeg,svg,webp|max:2048'],
                 'site_favicon' => ['label' => 'Favicon', 'type' => 'image', 'folder' => 'settings', 'accept' => 'image/png,image/x-icon,image/svg+xml', 'help' => 'ICO, PNG or SVG — square, up to 1MB', 'rules' => 'nullable|mimes:png,ico,svg,jpg,jpeg|max:1024'],
             ],
+            SettingGroup::Orders->value => [
+                'order_prefix' => ['label' => 'Order number prefix', 'type' => 'text', 'placeholder' => 'UT-', 'help' => 'Prepended to every order number — e.g. UT-2026-000123', 'rules' => 'nullable|string|max:20'],
+            ],
             SettingGroup::Contact->value => [
                 'contact_email' => ['label' => 'Email address', 'type' => 'email', 'placeholder' => 'help@tshirtshop.com', 'rules' => 'nullable|email|max:255'],
                 'contact_email_note' => ['label' => 'Email note', 'type' => 'text', 'placeholder' => 'We reply within 24 hours', 'rules' => 'nullable|string|max:255'],
@@ -295,6 +298,16 @@ final class SettingService
         $name = Setting::get('site_name');
 
         return filled($name) ? $name : (string) config('app.name', 'T-Shirt Shop');
+    }
+
+    /**
+     * Configured order-number prefix (Settings → Orders), defaulting to 'UT-'.
+     */
+    public function orderPrefix(): string
+    {
+        $prefix = Setting::get('order_prefix');
+
+        return filled($prefix) ? trim($prefix) : 'UT-';
     }
 
     /**
