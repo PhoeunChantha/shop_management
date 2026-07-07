@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Order;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Enum;
 
@@ -20,6 +21,7 @@ final class UpdateOrderRequest extends FormRequest
     {
         return [
             'status' => ['required', new Enum(OrderStatus::class)],
+            'payment_status' => ['nullable', new Enum(PaymentStatus::class)],
             'tracking_number' => ['nullable', 'string', 'max:100'],
             'admin_note' => ['nullable', 'string', 'max:2000'],
         ];

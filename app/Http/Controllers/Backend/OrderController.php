@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Backend;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Order\UpdateOrderRequest;
 use App\Models\Order;
+use App\Models\User;
 use App\Services\OrderService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,6 +23,8 @@ class OrderController extends Controller
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', 'string'],
+            'customer' => ['nullable', 'integer'],
+            'price' => ['nullable', 'string', 'in:'.implode(',', array_keys(OrderService::priceRanges()))],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
             'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
@@ -32,6 +35,11 @@ class OrderController extends Controller
         return view('admin.orders.index', [
             'orders' => $this->orders->paginate($filters, $perPage),
             'perPage' => $perPage,
+            'stats' => $this->orders->stats(),
+            'customers' => User::whereHas('roles', fn ($q) => $q->where('name', 'customer'))
+                ->orderBy('name')->get(['id', 'name', 'email'])
+                ->mapWithKeys(fn (User $u) => [$u->id => $u->name.' — '.$u->email]),
+            'priceRanges' => OrderService::priceRanges(),
         ]);
     }
 
@@ -39,9 +47,16 @@ class OrderController extends Controller
     {
         $this->authorize('view', Order::class);
 
-        $order = Order::with(['details', 'user', 'coupon'])->findOrFail($id);
+        $order = Order::with(['details', 'user', 'coupon', 'events.actor'])->findOrFail($id);
 
-        return view('admin.orders.show', ['order' => $order]);
+        $customerStats = $order->user_id
+            ? Order::where('user_id', $order->user_id)->selectRaw('count(*) as orders, coalesce(sum(grand_total),0) as spent')->first()
+            : null;
+
+        return view('admin.orders.show', [
+            'order' => $order,
+            'customerStats' => $customerStats,
+        ]);
     }
 
     public function update(UpdateOrderRequest $request, string $id): RedirectResponse

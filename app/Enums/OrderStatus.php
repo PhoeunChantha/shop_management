@@ -57,6 +57,29 @@ enum OrderStatus: string
         return ! in_array($this, [self::Delivered, self::Cancelled, self::Refunded], true);
     }
 
+    public function isTerminal(): bool
+    {
+        return in_array($this, [self::Cancelled, self::Refunded], true);
+    }
+
+    /**
+     * Ordered happy-path stages rendered by the fulfilment stepper.
+     *
+     * @return array<int, self>
+     */
+    public static function flow(): array
+    {
+        return [self::Pending, self::Paid, self::Processing, self::Shipped, self::Delivered];
+    }
+
+    /** Zero-based position of this status in the happy-path flow (‑1 if off-path). */
+    public function flowIndex(): int
+    {
+        $pos = array_search($this, self::flow(), true);
+
+        return $pos === false ? -1 : $pos;
+    }
+
     /**
      * @return array<string, string>
      */

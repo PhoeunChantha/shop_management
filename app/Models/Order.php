@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use App\Services\SettingService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -63,6 +64,7 @@ final class Order extends Model
         'shipping_method',
         'tracking_number',
         'payment_method',
+        'payment_status',
         'paid_at',
         'customer_note',
         'admin_note',
@@ -73,6 +75,7 @@ final class Order extends Model
     {
         return [
             'status' => OrderStatus::class,
+            'payment_status' => PaymentStatus::class,
             'subtotal' => 'decimal:2',
             'discount_total' => 'decimal:2',
             'shipping_total' => 'decimal:2',
@@ -98,6 +101,24 @@ final class Order extends Model
     public function coupon(): BelongsTo
     {
         return $this->belongsTo(Coupon::class);
+    }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(OrderEvent::class)->latest();
+    }
+
+    /**
+     * Append an entry to the order's activity log.
+     */
+    public function logEvent(string $type, string $title, ?string $body = null, ?int $userId = null): OrderEvent
+    {
+        return $this->events()->create([
+            'user_id' => $userId ?? auth()->id(),
+            'type' => $type,
+            'title' => $title,
+            'body' => $body,
+        ]);
     }
 
     /* ---------------- Scopes ---------------- */

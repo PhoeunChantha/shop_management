@@ -49,10 +49,6 @@
 
             <x-table-toolbar>
                 <x-slot:left>
-                    <div class="result-badge">
-                        <i class="fa-solid fa-box-open"></i>
-                        <span>{{ $products->total() }} result{{ $products->total() === 1 ? '' : 's' }}</span>
-                    </div>
                     <x-per-page-selector :current="$perPage" />
                 </x-slot:left>
                 <x-slot:right>
@@ -91,8 +87,8 @@
                                 </td>
                                 <td>
                                     <div>
-                                        <strong class="text-gray-900 dark:text-slate-100">{{ $product->name }}</strong>
-                                        <div class="text-xs text-gray-400 dark:text-slate-500 font-mono">{{ $product->slug }}</div>
+                                        <strong class="text-sm text-gray-800 dark:text-slate-200">{{ $product->name }}</strong>
+                                        <div class="text-xs text-gray-400 dark:text-slate-500">{{ $product->slug }}</div>
                                     </div>
                                 </td>
                                 <td><span class="text-sm text-gray-600 dark:text-slate-300">{{ $product->category->name ?? '—' }}</span></td>

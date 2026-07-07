@@ -23,31 +23,14 @@
         <section class="premium-card">
             <x-table-loader />
 
-            <form method="GET" action="{{ route('admin.categories.index') }}" class="table-toolbar">
-                <div class="table-toolbar__left">
-                    <div class="result-badge">
-                        <i class="fa-solid fa-layer-group"></i>
-                        <span>{{ $categories->total() }} result{{ $categories->total() === 1 ? '' : 's' }}</span>
-                    </div>
-
-                    <label class="per-page-control">
-                        <span>Show</span>
-                        <select name="per_page" onchange="this.form.requestSubmit()">
-                            @foreach ([5, 10, 25, 50] as $size)
-                                <option value="{{ $size }}" @selected($perPage === $size)>{{ $size }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <span>per page</span>
-                    </label>
-                </div>
-
-                <label class="search-control">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="search" name="search" value="{{ request('search') }}"
-                        placeholder="Search categories..." autocomplete="off" data-auto-search>
-                </label>
-            </form>
+            <x-table-toolbar>
+                <x-slot:left>
+                    <x-per-page-selector :current="$perPage" />
+                </x-slot:left>
+                <x-slot:right>
+                    <x-search-input name="search" placeholder="Search categories..." />
+                </x-slot:right>
+            </x-table-toolbar>
 
             <div class="premium-table-wrap">
                 <table class="premium-table">
@@ -123,19 +106,22 @@
                                 </td>
                                 <td>
                                     <div class="action-group">
-                                        <a href="{{ route('admin.categories.edit', $category->id) }}"
-                                            class="table-action table-action--edit">
-                                            <i class="fa-solid fa-pen"></i>
-                                            <span>Edit</span>
-                                        </a>
+                                        <x-table-actions>
+                                            <a href="{{ route('admin.categories.edit', $category->id) }}"
+                                                class="table-actions__item table-actions__item--edit" role="menuitem">
+                                                <i class="fa-solid fa-pen"></i>
+                                                <span>Edit</span>
+                                            </a>
 
-                                        <button type="button" class="table-action table-action--delete"
-                                            data-delete-modal-target="deleteCategoryModal"
-                                            data-delete-action="{{ route('admin.categories.destroy', $category->id) }}"
-                                            data-delete-name="{{ $category->name }}">
-                                            <i class="fa-solid fa-trash"></i>
-                                            <span>Delete</span>
-                                        </button>
+                                            <button type="button" class="table-actions__item table-actions__item--danger"
+                                                role="menuitem"
+                                                data-delete-modal-target="deleteCategoryModal"
+                                                data-delete-action="{{ route('admin.categories.destroy', $category->id) }}"
+                                                data-delete-name="{{ $category->name }}">
+                                                <i class="fa-solid fa-trash"></i>
+                                                <span>Delete</span>
+                                            </button>
+                                        </x-table-actions>
                                     </div>
                                 </td>
                             </tr>
