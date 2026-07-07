@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Backend;
 
+use App\Http\Controllers\Backend\Concerns\HandlesBulkActions;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Size\StoreSizeRequest;
 use App\Http\Requests\Size\UpdateSizeRequest;
 use App\Models\Size;
+use App\Services\BulkActionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -13,6 +15,8 @@ use Illuminate\View\View;
 
 class SizeController extends Controller
 {
+    use HandlesBulkActions;
+
     public function index(Request $request): View
     {
         $this->authorize('viewAny', Size::class);
@@ -112,6 +116,11 @@ class SizeController extends Controller
 
         try {
             $size = Size::findOrFail($id);
+
+            if ($size->isInUse()) {
+                return back()->with('error', "Cannot delete “{$size->name}” because it is used by one or more product variants.");
+            }
+
             $size->delete();
         } catch (\Exception $e) {
             Log::error('Error deleting size: '.$e->getMessage(), [
@@ -125,5 +134,25 @@ class SizeController extends Controller
 
         return to_route('admin.sizes.index')
             ->with('success', 'Size deleted successfully!');
+    }
+
+    public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse
+    {
+        $this->authorize('delete', Size::class);
+
+        $ids = $this->validatedIds($request);
+        $result = $bulk->destroy(Size::class, $ids);
+
+        return back()->with($this->bulkFlash($result, 'size', 'used by variants'));
+    }
+
+    public function bulkStatus(Request $request, BulkActionService $bulk): RedirectResponse
+    {
+        $this->authorize('update', Size::class);
+
+        [$ids, $status] = $this->validatedStatus($request);
+        $count = $bulk->setStatus(Size::class, $ids, $status);
+
+        return back()->with('success', $count.' size(s) '.($status ? 'enabled' : 'disabled').'.');
     }
 }

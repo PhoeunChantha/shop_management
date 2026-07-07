@@ -3,8 +3,9 @@
 The house pattern for every admin resource in this project. Follow it verbatim when
 adding or refactoring an admin CRUD so all resources stay consistent.
 
-**Canonical reference implementation:** `Brand` (model, controller, requests, views).
-Other resources following this: `Category`, `Color`, `Size`, `Coupon`, `Product`.
+**Canonical reference implementation:** `Brand` (model, controller, requests, views) —
+including the delete guard + bulk actions. Other resources following this: `Category`,
+`Color`, `Size`, `Coupon`, `Product`, `Attribute`.
 
 ---
 
@@ -34,6 +35,9 @@ Other resources following this: `Category`, `Color`, `Size`, `Coupon`, `Product`
 9. **Sidebar** — add a link in `resources/views/admin/layouts/sidebar.blade.php`,
    include the route in its section's active-state check.
 10. **Run** — `php artisan migrate` and verify `php artisan route:list --name=admin.foos`.
+11. **(Optional) Bulk actions & delete guard** — for catalog tables, add
+    `Model::isInUse()`, the `bulkDestroy`/`bulkStatus` methods + routes, and the
+    checkbox column + `<x-bulk-bar>`. See *Bulk actions & delete guards* below.
 
 ---
 
@@ -56,6 +60,15 @@ class Foo extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
+    }
+
+    /**
+     * Whether this record is referenced elsewhere (blocks deletion). The bulk
+     * delete + single destroy both honour this. Return false if never guarded.
+     */
+    public function isInUse(): bool
+    {
+        return $this->products()->exists();
     }
 
     /**
@@ -243,6 +256,13 @@ class FooController extends Controller
 
         try {
             $foo = Foo::findOrFail($id);
+
+            if ($foo->isInUse()) {
+                // Flash to session('error') — NOT withErrors — so <x-toastr> shows it
+                // (the error bag isn't rendered on index pages).
+                return back()->with('error', "Cannot delete “{$foo->name}” because it is still in use.");
+            }
+
             ImageManager::delete($foo->image, 'foos');
             $foo->delete();
         } catch (\Exception $e) {
@@ -252,6 +272,28 @@ class FooController extends Controller
         }
 
         return to_route('admin.foos.index')->with('success', 'Foo deleted successfully!');
+    }
+
+    // ---- Bulk actions (see the "Bulk actions & delete guards" section) ----
+
+    public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse
+    {
+        $this->authorize('delete', Foo::class);
+
+        $ids = $this->validatedIds($request);            // from HandlesBulkActions trait
+        $result = $bulk->destroy(Foo::class, $ids, 'foos');   // 'foos' = image folder (or null)
+
+        return back()->with($this->bulkFlash($result, 'foo', 'in use'));
+    }
+
+    public function bulkStatus(Request $request, BulkActionService $bulk): RedirectResponse
+    {
+        $this->authorize('update', Foo::class);
+
+        [$ids, $status] = $this->validatedStatus($request);
+        $count = $bulk->setStatus(Foo::class, $ids, $status);
+
+        return back()->with('success', $count.' foo(s) '.($status ? 'enabled' : 'disabled').'.');
     }
 
     private function uniqueSlug(string $name, ?int $ignoreId = null): string { /* … */ }
@@ -331,11 +373,69 @@ Notes:
 - Reuse the shared Blade components — never hand-roll table/filter chrome:
   `x-table-loader`, `x-table-toolbar`, `x-table-footer`, `x-search-input`,
   `x-per-page-selector`, `x-select`, `x-image-upload`, `x-filter-card`,
-  `x-delete-confirm-modal`.
+  `x-delete-confirm-modal`, `x-table-actions` (row action dropdown), `x-bulk-bar`
+  (bulk action bar — see *Bulk actions & delete guards*).
 - Table search/per-page/filter are **GET** forms that submit via
   `form.requestSubmit()` (so the `submit` event fires for `x-table-loader`).
   Search inputs opt in with `<x-search-input>` or `data-auto-search`.
 - Images render with the global `Imageurl($model->image, 'foos')` helper.
+
+---
+
+## Bulk actions & delete guards
+
+Catalog tables support **row selection + bulk delete / enable / disable**, and both
+single and bulk delete honour a `isInUse()` guard so referenced records can't be
+orphaned. The moving parts (all reusable — wire them up, don't re-implement):
+
+**Backend**
+- **`Model::isInUse(): bool`** — returns whether the record is referenced (products,
+  variants, …). Add it to any model that should be protected; omit for models that
+  are always safe to delete.
+- **`App\Services\BulkActionService`** — `destroy($modelClass, $ids, $imageFolder = null)`
+  (skips + reports anything whose `isInUse()` is true, deletes images when a folder is
+  given) and `setStatus($modelClass, $ids, bool)`.
+- **`App\Http\Controllers\Backend\Concerns\HandlesBulkActions`** — `use` it in the
+  controller. Provides `validatedIds()`, `validatedStatus()` and `bulkFlash($result,
+  $noun, $reason)` (builds the success / “skipped N still …” toast payload).
+- **Controller** gets `bulkDestroy()` + `bulkStatus()` (see the controller example),
+  each `authorize()`-d and delegating to the service.
+- **Routes** — add **before** the `/{id}` routes in the group so `/bulk` isn't
+  captured as an id:
+  ```php
+  Route::delete('/bulk', [FooController::class, 'bulkDestroy'])->name('bulk-destroy');
+  Route::patch('/bulk-status', [FooController::class, 'bulkStatus'])->name('bulk-status');
+  ```
+  Omit `bulk-status` for resources with no `status` column.
+
+**Frontend**
+- Wrap the table `<section class="premium-card">` in `x-data="bulkSelect()"` (Alpine
+  factory registered in `app.js` — shared `selected` array + select-all state).
+- First `<th>`/`<td>` is a checkbox column:
+  ```blade
+  <th class="bulk-check-col">
+      <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
+          :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+  </th>
+  {{-- per row --}}
+  <td class="bulk-check-col">
+      <input type="checkbox" class="bulk-check" data-row-check value="{{ $foo->id }}"
+          x-model="selected" aria-label="Select row">
+  </td>
+  ```
+  Row checkboxes **must** carry `data-row-check` + `value="{id}"`; bump the empty-state
+  `colspan` by 1.
+- Drop `<x-bulk-bar>` directly inside the `x-data` section (e.g. right after
+  `<x-table-loader />`) — **not** in the toolbar. It renders as a `position: fixed`
+  popup pinned to the bottom-centre of the page, plus the confirm modal, shown only
+  when rows are selected:
+  ```blade
+  <x-bulk-bar :destroy="route('admin.foos.bulk-destroy')"
+      :status="route('admin.foos.bulk-status')" noun="foo" />
+  ```
+
+Delete/guard messages flash via **`session('error'|'success'|'warning'|'info')`** so
+`<x-toastr>` surfaces them (the `$errors` bag is not rendered on index pages).
 
 ---
 

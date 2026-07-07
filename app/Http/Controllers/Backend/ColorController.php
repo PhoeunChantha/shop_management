@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Backend;
 
+use App\Http\Controllers\Backend\Concerns\HandlesBulkActions;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Color\StoreColorRequest;
 use App\Http\Requests\Color\UpdateColorRequest;
 use App\Models\Color;
+use App\Services\BulkActionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -13,6 +15,8 @@ use Illuminate\View\View;
 
 class ColorController extends Controller
 {
+    use HandlesBulkActions;
+
     public function index(Request $request): View
     {
         $this->authorize('viewAny', Color::class);
@@ -114,6 +118,11 @@ class ColorController extends Controller
 
         try {
             $color = Color::findOrFail($id);
+
+            if ($color->isInUse()) {
+                return back()->with('error', "Cannot delete “{$color->name}” because it is used by one or more product variants.");
+            }
+
             $color->delete();
         } catch (\Exception $e) {
             Log::error('Error deleting color: '.$e->getMessage(), [
@@ -127,5 +136,25 @@ class ColorController extends Controller
 
         return to_route('admin.colors.index')
             ->with('success', 'Color deleted successfully!');
+    }
+
+    public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse
+    {
+        $this->authorize('delete', Color::class);
+
+        $ids = $this->validatedIds($request);
+        $result = $bulk->destroy(Color::class, $ids);
+
+        return back()->with($this->bulkFlash($result, 'color', 'used by variants'));
+    }
+
+    public function bulkStatus(Request $request, BulkActionService $bulk): RedirectResponse
+    {
+        $this->authorize('update', Color::class);
+
+        [$ids, $status] = $this->validatedStatus($request);
+        $count = $bulk->setStatus(Color::class, $ids, $status);
+
+        return back()->with('success', $count.' color(s) '.($status ? 'enabled' : 'disabled').'.');
     }
 }

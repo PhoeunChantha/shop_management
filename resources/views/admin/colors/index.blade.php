@@ -20,8 +20,9 @@
             </a>
         </div>
 
-        <section class="premium-card">
+        <section class="premium-card" x-data="bulkSelect()">
             <x-table-loader />
+            <x-bulk-bar :destroy="route('admin.colors.bulk-destroy')" :status="route('admin.colors.bulk-status')" noun="color" />
 
             <x-table-toolbar>
                 <x-slot:left>
@@ -36,6 +37,10 @@
                 <table class="premium-table">
                     <thead>
                         <tr>
+                            <th class="bulk-check-col">
+                                <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
+                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+                            </th>
                             <th>ID</th>
                             <th>Preview</th>
                             <th>Color Name</th>
@@ -48,6 +53,10 @@
                     <tbody>
                         @forelse ($colors as $color)
                         <tr>
+                            <td class="bulk-check-col">
+                                <input type="checkbox" class="bulk-check" data-row-check value="{{ $color->id }}"
+                                    x-model="selected" aria-label="Select row">
+                            </td>
                             <td>
                                 <span class="muted-id">#{{ $color->id }}</span>
                             </td>
@@ -93,7 +102,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7">
+                            <td colspan="8">
                                 <div class="empty-state">
                                     <i class="fa-solid fa-palette"></i>
                                     <strong>No colors found</strong>

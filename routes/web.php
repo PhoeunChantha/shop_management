@@ -124,6 +124,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::prefix('products')->name('products.')->group(function () {
         Route::get('/', [ProductController::class, 'index'])->name('index');
+        Route::delete('/bulk', [ProductController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [ProductController::class, 'bulkStatus'])->name('bulk-status');
+        Route::get('/export', [ProductController::class, 'export'])->name('export');
+        Route::get('/template', [ProductController::class, 'template'])->name('template');
+        Route::post('/import', [ProductController::class, 'import'])->name('import');
         Route::get('/create', [ProductController::class, 'create'])->name('create');
         Route::post('/', [ProductController::class, 'store'])->name('store');
         Route::get('/{id}', [ProductController::class, 'show'])->whereNumber('id')->name('show');
@@ -134,6 +139,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::prefix('brands')->name('brands.')->group(function () {
         Route::get('/', [BrandController::class, 'index'])->name('index');
+        Route::delete('/bulk', [BrandController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [BrandController::class, 'bulkStatus'])->name('bulk-status');
         Route::get('/create', [BrandController::class, 'create'])->name('create');
         Route::post('/', [BrandController::class, 'store'])->name('store');
         Route::get('/{id}/edit', [BrandController::class, 'edit'])->name('edit');
@@ -143,6 +150,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::prefix('attributes')->name('attributes.')->group(function () {
         Route::get('/', [AttributeController::class, 'index'])->name('index');
+        Route::delete('/bulk', [AttributeController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [AttributeController::class, 'bulkStatus'])->name('bulk-status');
         Route::get('/create', [AttributeController::class, 'create'])->name('create');
         Route::post('/', [AttributeController::class, 'store'])->name('store');
         Route::get('/{id}/edit', [AttributeController::class, 'edit'])->name('edit');
@@ -152,6 +161,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::prefix('categories')->name('categories.')->group(function () {
         Route::get('/', [CategoryController::class, 'index'])->name('index');
+        Route::delete('/bulk', [CategoryController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [CategoryController::class, 'bulkStatus'])->name('bulk-status');
         Route::get('/create', [CategoryController::class, 'create'])->name('create');
         Route::post('/', [CategoryController::class, 'store'])->name('store');
         Route::get('/{id}/edit', [CategoryController::class, 'edit'])->name('edit');
@@ -161,6 +172,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::prefix('sizes')->name('sizes.')->group(function () {
         Route::get('/', [SizeController::class, 'index'])->name('index');
+        Route::delete('/bulk', [SizeController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [SizeController::class, 'bulkStatus'])->name('bulk-status');
         Route::get('/create', [SizeController::class, 'create'])->name('create');
         Route::post('/', [SizeController::class, 'store'])->name('store');
         Route::get('/{id}/edit', [SizeController::class, 'edit'])->name('edit');
@@ -170,6 +183,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::prefix('colors')->name('colors.')->group(function () {
         Route::get('/', [ColorController::class, 'index'])->name('index');
+        Route::delete('/bulk', [ColorController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [ColorController::class, 'bulkStatus'])->name('bulk-status');
         Route::get('/create', [ColorController::class, 'create'])->name('create');
         Route::post('/', [ColorController::class, 'store'])->name('store');
         Route::get('/{id}/edit', [ColorController::class, 'edit'])->name('edit');
@@ -185,6 +200,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::prefix('coupons')->name('coupons.')->group(function () {
         Route::get('/', [CouponController::class, 'index'])->name('index');
+        Route::delete('/bulk', [CouponController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [CouponController::class, 'bulkStatus'])->name('bulk-status');
         Route::get('/create', [CouponController::class, 'create'])->name('create');
         Route::post('/', [CouponController::class, 'store'])->name('store');
         Route::get('/{id}/edit', [CouponController::class, 'edit'])->name('edit');

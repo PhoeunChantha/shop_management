@@ -37,12 +37,25 @@ class ProductService
      */
     public function paginate(array $filters, int $perPage): LengthAwarePaginator
     {
-        $search = trim($filters['search'] ?? '');
-
-        return Product::query()
+        return $this->filteredQuery($filters)
             ->with(['category', 'brand', 'images'])
             ->withCount('variants')
             ->withSum('variants', 'stock')
+            ->paginate($perPage)
+            ->withQueryString();
+    }
+
+    /**
+     * The filtered/sorted product query (no eager loads or pagination) — shared
+     * by the index list and the export so both honour the same filters.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    public function filteredQuery(array $filters): \Illuminate\Database\Eloquent\Builder
+    {
+        $search = trim($filters['search'] ?? '');
+
+        return Product::query()
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('name', 'like', "%{$search}%")
@@ -65,9 +78,7 @@ class ProductService
             ->when(($filters['flag'] ?? null) === 'new', fn ($q) => $q->where('is_new', true))
             ->when(($filters['flag'] ?? null) === 'best_seller', fn ($q) => $q->where('is_best_seller', true))
             ->when(($filters['flag'] ?? null) === 'on_sale', fn ($q) => $q->where('is_on_sale', true))
-            ->orderByDesc('id')
-            ->paginate($perPage)
-            ->withQueryString();
+            ->orderByDesc('id');
     }
 
     public function create(BaseProductRequest $request): Product
@@ -165,7 +176,11 @@ class ProductService
 
         // Single products carry their own sku/stock; variable products use variants.
         if ($product->product_type === 'single') {
-            $product->sku = $request->filled('sku') ? trim((string) $request->input('sku')) : null;
+            // Auto-generate a unique SKU when the admin leaves it blank (keep the
+            // existing one on edit so it stays stable).
+            $product->sku = $request->filled('sku')
+                ? trim((string) $request->input('sku'))
+                : ($product->sku ?: $this->generateProductSku());
             $product->stock = (int) ($request->input('stock') ?? 0);
             $product->low_stock_alert = (int) ($request->input('low_stock_alert') ?? 0);
         } else {
@@ -315,6 +330,24 @@ class ProductService
 
             $created->values()->sync($valueIds);
         }
+    }
+
+    /**
+     * A unique product-level SKU for single products left blank by the admin.
+     * Checks both the products and product_variants tables so codes never clash.
+     */
+    private function generateProductSku(): string
+    {
+        $prefix = $this->settings->productSkuPrefix();
+
+        do {
+            $sku = $prefix.strtoupper(Str::random(8));
+        } while (
+            Product::query()->where('sku', $sku)->exists()
+            || DB::table('product_variants')->where('sku', $sku)->exists()
+        );
+
+        return $sku;
     }
 
     /**

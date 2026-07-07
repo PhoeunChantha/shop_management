@@ -20,8 +20,9 @@
             </a>
         </div>
 
-        <section class="premium-card">
+        <section class="premium-card" x-data="bulkSelect()">
             <x-table-loader />
+            <x-bulk-bar :destroy="route('admin.sizes.bulk-destroy')" :status="route('admin.sizes.bulk-status')" noun="size" />
 
             <x-table-toolbar>
                 <x-slot:left>
@@ -36,6 +37,10 @@
                 <table class="premium-table">
                     <thead>
                         <tr>
+                            <th class="bulk-check-col">
+                                <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
+                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+                            </th>
                             <th>ID</th>
                             <th>Name</th>
                             <th>Code</th>
@@ -47,6 +52,10 @@
                     <tbody>
                         @forelse ($sizes as $size)
                         <tr>
+                            <td class="bulk-check-col">
+                                <input type="checkbox" class="bulk-check" data-row-check value="{{ $size->id }}"
+                                    x-model="selected" aria-label="Select row">
+                            </td>
                             <td>
                                 <span class="muted-id">#{{ $size->id }}</span>
                             </td>
@@ -89,7 +98,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6">
+                            <td colspan="7">
                                 <div class="empty-state">
                                     <i class="fa-solid fa-ruler-combined"></i>
                                     <strong>No sizes found</strong>

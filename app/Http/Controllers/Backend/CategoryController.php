@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Helpers\ImageManager;
+use App\Http\Controllers\Backend\Concerns\HandlesBulkActions;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Category\StoreCategoryRequest;
 use App\Http\Requests\Category\UpdateCategoryRequest;
 use App\Models\Category;
+use App\Services\BulkActionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -15,6 +17,8 @@ use Illuminate\View\View;
 
 class CategoryController extends Controller
 {
+    use HandlesBulkActions;
+
     public function index(Request $request): View
     {
         $this->authorize('viewAny', Category::class);
@@ -124,6 +128,10 @@ class CategoryController extends Controller
         try {
             $category = Category::findOrFail($id);
 
+            if ($category->isInUse()) {
+                return back()->with('error', "Cannot delete “{$category->name}” because it is assigned to one or more products.");
+            }
+
             ImageManager::delete($category->image, 'categories');
 
             $category->delete();
@@ -139,6 +147,26 @@ class CategoryController extends Controller
 
         return to_route('admin.categories.index')
             ->with('success', 'Category deleted successfully!');
+    }
+
+    public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse
+    {
+        $this->authorize('delete', Category::class);
+
+        $ids = $this->validatedIds($request);
+        $result = $bulk->destroy(Category::class, $ids, 'categories');
+
+        return back()->with($this->bulkFlash($result, 'category', 'assigned to products'));
+    }
+
+    public function bulkStatus(Request $request, BulkActionService $bulk): RedirectResponse
+    {
+        $this->authorize('update', Category::class);
+
+        [$ids, $status] = $this->validatedStatus($request);
+        $count = $bulk->setStatus(Category::class, $ids, $status);
+
+        return back()->with('success', $count.' category(s) '.($status ? 'enabled' : 'disabled').'.');
     }
 
     /**

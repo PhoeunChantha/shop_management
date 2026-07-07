@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Helpers\ImageManager;
+use App\Http\Controllers\Backend\Concerns\HandlesBulkActions;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Brand\StoreBrandRequest;
 use App\Http\Requests\Brand\UpdateBrandRequest;
 use App\Models\Brand;
+use App\Services\BulkActionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -15,6 +17,8 @@ use Illuminate\View\View;
 
 class BrandController extends Controller
 {
+    use HandlesBulkActions;
+
     public function index(Request $request): View
     {
         $this->authorize('viewAny', Brand::class);
@@ -126,6 +130,10 @@ class BrandController extends Controller
         try {
             $brand = Brand::findOrFail($id);
 
+            if ($brand->isInUse()) {
+                return back()->with('error', "Cannot delete “{$brand->name}” because it is assigned to one or more products.");
+            }
+
             ImageManager::delete($brand->image, 'brands');
 
             $brand->delete();
@@ -141,6 +149,26 @@ class BrandController extends Controller
 
         return to_route('admin.brands.index')
             ->with('success', 'Brand deleted successfully!');
+    }
+
+    public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse
+    {
+        $this->authorize('delete', Brand::class);
+
+        $ids = $this->validatedIds($request);
+        $result = $bulk->destroy(Brand::class, $ids, 'brands');
+
+        return back()->with($this->bulkFlash($result, 'brand', 'assigned to products'));
+    }
+
+    public function bulkStatus(Request $request, BulkActionService $bulk): RedirectResponse
+    {
+        $this->authorize('update', Brand::class);
+
+        [$ids, $status] = $this->validatedStatus($request);
+        $count = $bulk->setStatus(Brand::class, $ids, $status);
+
+        return back()->with('success', $count.' brand(s) '.($status ? 'enabled' : 'disabled').'.');
     }
 
     /**

@@ -20,8 +20,9 @@
             </a>
         </div>
 
-        <section class="premium-card">
+        <section class="premium-card" x-data="bulkSelect()">
             <x-table-loader />
+            <x-bulk-bar :destroy="route('admin.coupons.bulk-destroy')" :status="route('admin.coupons.bulk-status')" noun="coupon" />
 
             <x-table-toolbar>
                 <x-slot:left>
@@ -36,6 +37,10 @@
                 <table class="premium-table">
                     <thead>
                         <tr>
+                            <th class="bulk-check-col">
+                                <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
+                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+                            </th>
                             <th style="width:70px;">ID</th>
                             <th>Code</th>
                             <th>Discount</th>
@@ -49,6 +54,10 @@
                     <tbody>
                         @forelse ($coupons as $coupon)
                         <tr>
+                            <td class="bulk-check-col">
+                                <input type="checkbox" class="bulk-check" data-row-check value="{{ $coupon->id }}"
+                                    x-model="selected" aria-label="Select row">
+                            </td>
                             <td>
                                 <span class="muted-id">#{{ $coupon->id }}</span>
                             </td>
@@ -119,7 +128,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="8">
+                            <td colspan="9">
                                 <div class="empty-state">
                                     <i class="fa-solid fa-ticket"></i>
                                     <strong>No coupons found</strong>

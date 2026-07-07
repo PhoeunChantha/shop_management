@@ -20,8 +20,9 @@
             </a>
         </div>
 
-        <section class="premium-card">
+        <section class="premium-card" x-data="bulkSelect()">
             <x-table-loader />
+            <x-bulk-bar :destroy="route('admin.categories.bulk-destroy')" :status="route('admin.categories.bulk-status')" noun="category" />
 
             <x-table-toolbar>
                 <x-slot:left>
@@ -36,6 +37,10 @@
                 <table class="premium-table">
                     <thead>
                         <tr>
+                            <th class="bulk-check-col">
+                                <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
+                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+                            </th>
                             <th>ID</th>
                             <th>Image</th>
                             <th>Icon</th>
@@ -50,6 +55,10 @@
                     <tbody>
                         @forelse ($categories as $category)
                             <tr>
+                                <td class="bulk-check-col">
+                                    <input type="checkbox" class="bulk-check" data-row-check value="{{ $category->id }}"
+                                        x-model="selected" aria-label="Select row">
+                                </td>
                                 <td>
                                     <span class="muted-id">#{{ $category->id }}</span>
                                 </td>

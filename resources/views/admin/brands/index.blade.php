@@ -21,8 +21,9 @@
             </button>
         </div>
 
-        <section class="premium-card">
+        <section class="premium-card" x-data="bulkSelect()">
             <x-table-loader />
+            <x-bulk-bar :destroy="route('admin.brands.bulk-destroy')" :status="route('admin.brands.bulk-status')" noun="brand" />
 
             <x-table-toolbar>
                 <x-slot:left>
@@ -37,6 +38,10 @@
                 <table class="premium-table">
                     <thead>
                         <tr>
+                            <th class="bulk-check-col">
+                                <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
+                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+                            </th>
                             <th style="width:70px;">ID</th>
                             <th style="width:80px;">Logo</th>
                             <th style="width:26%;">Brand Name</th>
@@ -49,6 +54,10 @@
                     <tbody>
                         @forelse ($brands as $brand)
                             <tr>
+                                <td class="bulk-check-col">
+                                    <input type="checkbox" class="bulk-check" data-row-check value="{{ $brand->id }}"
+                                        x-model="selected" aria-label="Select row">
+                                </td>
                                 <td>
                                     <span class="muted-id">#{{ $brand->id }}</span>
                                 </td>
@@ -110,7 +119,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7">
+                                <td colspan="8">
                                     <div class="empty-state">
                                         <i class="fa-solid fa-tags"></i>
                                         <strong>No brands found</strong>

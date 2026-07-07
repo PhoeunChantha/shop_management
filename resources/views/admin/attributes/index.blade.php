@@ -20,8 +20,9 @@
             </a>
         </div>
 
-        <section class="premium-card">
+        <section class="premium-card" x-data="bulkSelect()">
             <x-table-loader />
+            <x-bulk-bar :destroy="route('admin.attributes.bulk-destroy')" :status="route('admin.attributes.bulk-status')" noun="attribute" />
 
             <x-table-toolbar>
                 <x-slot:left>
@@ -36,6 +37,10 @@
                 <table class="premium-table">
                     <thead>
                         <tr>
+                            <th class="bulk-check-col">
+                                <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
+                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+                            </th>
                             <th style="width:70px;">ID</th>
                             <th>Attribute</th>
                             <th>Values</th>
@@ -47,6 +52,10 @@
                     <tbody>
                         @forelse ($attributes as $attribute)
                         <tr>
+                            <td class="bulk-check-col">
+                                <input type="checkbox" class="bulk-check" data-row-check value="{{ $attribute->id }}"
+                                    x-model="selected" aria-label="Select row">
+                            </td>
                             <td><span class="muted-id">#{{ $attribute->id }}</span></td>
                             <td><strong class="text-gray-900 dark:text-slate-100">{{ $attribute->name }}</strong></td>
                             <td>
@@ -94,7 +103,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6">
+                            <td colspan="7">
                                 <div class="empty-state">
                                     <i class="fa-solid fa-tags"></i>
                                     <strong>No attributes found</strong>

@@ -8,16 +8,77 @@
         </div>
     </x-slot>
 
-    <div class="admin-page">
+    <div class="admin-page" x-data="{ importOpen: false }">
         <div class="page-section-header">
             <div>
                 <p class="section-kicker">Product table</p>
                 <h3>All Products</h3>
             </div>
-            <a href="{{ route('admin.products.create') }}" class="premium-button premium-button--dark">
-                <i class="fa-solid fa-plus"></i>
-                <span>New Product</span>
-            </a>
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <a href="{{ route('admin.products.template') }}" class="ghost-button">
+                    <i class="fa-solid fa-file-arrow-down"></i><span>Template</span>
+                </a>
+                <a href="{{ route('admin.products.export', request()->query()) }}" class="ghost-button">
+                    <i class="fa-solid fa-file-export"></i><span>Export</span>
+                </a>
+                <button type="button" class="ghost-button" @click="importOpen = true">
+                    <i class="fa-solid fa-file-import"></i><span>Import</span>
+                </button>
+                <a href="{{ route('admin.products.create') }}" class="premium-button premium-button--dark">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>New Product</span>
+                </a>
+            </div>
+        </div>
+
+        {{-- Skipped rows from the last import --}}
+        @if (session('import_errors'))
+            <div class="premium-card p-4 mt-3" style="border-left: 3px solid var(--danger-color);">
+                <p class="section-kicker mb-2" style="color: var(--danger-color);">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Skipped rows from last import
+                </p>
+                <ul class="text-sm text-gray-600 dark:text-slate-300 mb-0 ps-3" style="max-height:220px; overflow:auto; list-style:disc;">
+                    @foreach (session('import_errors') as $err)
+                        <li><strong>Row {{ $err['row'] }}:</strong> {{ implode(' ', $err['messages']) }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        {{-- Import modal --}}
+        <div class="modal-backdrop-premium" x-show="importOpen" x-cloak style="display:none;"
+            @keydown.escape.window="importOpen = false" @click.self="importOpen = false">
+            <div class="form-modal">
+                <div class="form-modal__head">
+                    <div class="form-modal__icon"><i class="fa-solid fa-file-import"></i></div>
+                    <div class="flex-grow-1">
+                        <h3>Import Products</h3>
+                        <p>Upload a filled-in template. Rows are matched by SKU (upsert).</p>
+                    </div>
+                    <button type="button" class="form-modal__close" @click="importOpen = false" aria-label="Close">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <form action="{{ route('admin.products.import') }}" method="POST" enctype="multipart/form-data" class="form-modal__body">
+                    @csrf
+                    <div class="form-field">
+                        <label for="import_file">Spreadsheet file <span class="text-red-500">*</span></label>
+                        <input type="file" name="file" id="import_file" accept=".xlsx,.xls,.csv" class="form-input" required>
+                        @error('file')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
+                        <small class="text-gray-400 dark:text-slate-500 d-block mt-1">
+                            .xlsx or .csv, up to 10MB. Need the format?
+                            <a href="{{ route('admin.products.template') }}" class="text-blue-500">Download the template</a>.
+                        </small>
+                    </div>
+                    <div class="form-modal__foot">
+                        <button type="button" class="modal-cancel" @click="importOpen = false">Cancel</button>
+                        <button type="submit" class="form-submit-button">
+                            <i class="fa-solid fa-upload"></i>
+                            <span>Import products</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         {{-- Filters --}}
@@ -44,8 +105,9 @@
                 :options="['featured' => 'Featured', 'new' => 'New Arrival', 'best_seller' => 'Best Seller', 'on_sale' => 'On Sale']" />
         </x-filter-card>
 
-        <section class="premium-card mt-3">
+        <section class="premium-card mt-3" x-data="bulkSelect()">
             <x-table-loader />
+            <x-bulk-bar :destroy="route('admin.products.bulk-destroy')" :status="route('admin.products.bulk-status')" noun="product" />
 
             <x-table-toolbar>
                 <x-slot:left>
@@ -60,6 +122,10 @@
                 <table class="premium-table">
                     <thead>
                         <tr>
+                            <th class="bulk-check-col">
+                                <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
+                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+                            </th>
                             <th class="text-center" style="width:56px;">#</th>
                             <th>Image</th>
                             <th>Product</th>
@@ -76,6 +142,10 @@
                     <tbody>
                         @forelse ($products as $product)
                             <tr>
+                                <td class="bulk-check-col">
+                                    <input type="checkbox" class="bulk-check" data-row-check value="{{ $product->id }}"
+                                        x-model="selected" aria-label="Select row">
+                                </td>
                                 <td class="text-center text-sm text-gray-500 dark:text-slate-400">{{ ($products->firstItem() ?? 0) + $loop->index }}</td>
                                 <td>
                                     @if ($product->thumbnail)
@@ -136,7 +206,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11">
+                                <td colspan="12">
                                     <div class="empty-state">
                                         <i class="fa-solid fa-box-open"></i>
                                         <strong>No products found</strong>

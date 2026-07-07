@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Backend;
 
+use App\Http\Controllers\Backend\Concerns\HandlesBulkActions;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Coupon\StoreCouponRequest;
 use App\Http\Requests\Coupon\UpdateCouponRequest;
 use App\Models\Coupon;
+use App\Services\BulkActionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -13,6 +15,8 @@ use Illuminate\View\View;
 
 class CouponController extends Controller
 {
+    use HandlesBulkActions;
+
     public function index(Request $request): View
     {
         $this->authorize('viewAny', Coupon::class);
@@ -119,5 +123,25 @@ class CouponController extends Controller
 
         return to_route('admin.coupons.index')
             ->with('success', 'Coupon deleted successfully!');
+    }
+
+    public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse
+    {
+        $this->authorize('delete', Coupon::class);
+
+        $ids = $this->validatedIds($request);
+        $result = $bulk->destroy(Coupon::class, $ids);
+
+        return back()->with($this->bulkFlash($result, 'coupon', 'in use'));
+    }
+
+    public function bulkStatus(Request $request, BulkActionService $bulk): RedirectResponse
+    {
+        $this->authorize('update', Coupon::class);
+
+        [$ids, $status] = $this->validatedStatus($request);
+        $count = $bulk->setStatus(Coupon::class, $ids, $status);
+
+        return back()->with('success', $count.' coupon(s) '.($status ? 'enabled' : 'disabled').'.');
     }
 }

@@ -25,6 +25,14 @@ class Brand extends Model
     }
 
     /**
+     * Whether this brand is referenced by any product (blocks deletion).
+     */
+    public function isInUse(): bool
+    {
+        return $this->products()->exists();
+    }
+
+    /**
      * Filter brands by a search term against name/slug. Skips filtering when blank.
      */
     public function scopeSearch(Builder $query, ?string $term): Builder

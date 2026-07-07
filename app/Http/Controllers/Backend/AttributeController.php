@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Backend;
 
+use App\Http\Controllers\Backend\Concerns\HandlesBulkActions;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Attribute\StoreAttributeRequest;
 use App\Http\Requests\Attribute\UpdateAttributeRequest;
@@ -9,6 +10,7 @@ use App\Models\Attribute;
 use App\Models\Color;
 use App\Models\Size;
 use App\Services\AttributeService;
+use App\Services\BulkActionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -16,6 +18,8 @@ use Illuminate\View\View;
 
 class AttributeController extends Controller
 {
+    use HandlesBulkActions;
+
     public function __construct(private readonly AttributeService $attributes) {}
 
     public function index(Request $request): View
@@ -113,6 +117,26 @@ class AttributeController extends Controller
 
         return to_route('admin.attributes.index')
             ->with('success', 'Attribute deleted successfully!');
+    }
+
+    public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse
+    {
+        $this->authorize('delete', Attribute::class);
+
+        $ids = $this->validatedIds($request);
+        $result = $bulk->destroy(Attribute::class, $ids); // cascades values + pivot
+
+        return back()->with($this->bulkFlash($result, 'attribute', 'in use'));
+    }
+
+    public function bulkStatus(Request $request, BulkActionService $bulk): RedirectResponse
+    {
+        $this->authorize('update', Attribute::class);
+
+        [$ids, $status] = $this->validatedStatus($request);
+        $count = $bulk->setStatus(Attribute::class, $ids, $status);
+
+        return back()->with('success', $count.' attribute(s) '.($status ? 'enabled' : 'disabled').'.');
     }
 
     /**

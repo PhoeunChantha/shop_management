@@ -179,4 +179,33 @@ $(function () {
     });
 });
 
+// Row-selection state for admin tables with bulk actions.
+// Row checkboxes carry `data-row-check` and `value="{id}"`; the header
+// select-all and the <x-bulk-bar> read/write this shared `selected` array.
+Alpine.data('bulkSelect', () => ({
+    selected: [],
+    confirmingDelete: false,
+
+    rowIds() {
+        return Array.from(this.$root.querySelectorAll('input[data-row-check]')).map((b) => b.value);
+    },
+    get count() {
+        return this.selected.length;
+    },
+    get allChecked() {
+        const ids = this.rowIds();
+        return ids.length > 0 && ids.every((id) => this.selected.includes(id));
+    },
+    get someChecked() {
+        return this.count > 0 && !this.allChecked;
+    },
+    toggleAll(event) {
+        this.selected = event.target.checked ? this.rowIds() : [];
+    },
+    clear() {
+        this.selected = [];
+        this.confirmingDelete = false;
+    },
+}));
+
 Alpine.start();

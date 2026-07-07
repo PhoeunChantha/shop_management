@@ -16,6 +16,14 @@ class Color extends Model
         return $this->morphMany(AttributeValue::class, 'source');
     }
 
+    /**
+     * Whether this color is used by any product variant (blocks deletion).
+     */
+    public function isInUse(): bool
+    {
+        return $this->attributeValues()->whereHas('variants')->exists();
+    }
+
     protected $fillable = [
         'name',
         'code',
