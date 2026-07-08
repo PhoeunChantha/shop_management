@@ -2,37 +2,37 @@
 
 namespace App\Http\Controllers\Backend;
 
+use App\Exports\ProductsExport;
+use App\Exports\ProductTemplateExport;
+use App\Http\Controllers\Backend\Concerns\HandlesBulkActions;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Product\StoreProductRequest;
 use App\Http\Requests\Product\UpdateProductRequest;
+use App\Imports\ProductsImport;
 use App\Models\Brand;
 use App\Models\Category;
-use App\Models\Color;
 use App\Models\Product;
-use App\Models\ProductImage;
-use App\Models\ProductTag;
-use App\Models\Size;
 use App\Services\ProductService;
 use App\Services\SettingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controllers\HasMiddleware;
-use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\View\View;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
-class ProductController extends Controller implements HasMiddleware
+class ProductController extends Controller
 {
-    public function __construct(private readonly ProductService $products) {}
+    use HandlesBulkActions;
 
-    public static function middleware(): array
-    {
-        return [
-            new Middleware('role:admin|manager'),
-        ];
-    }
+    public function __construct(
+        private readonly ProductService $products,
+        private readonly SettingService $settings,
+    ) {}
 
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', Product::class);
+
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
             'category_id' => ['nullable', 'integer'],
@@ -46,40 +46,9 @@ class ProductController extends Controller implements HasMiddleware
         ]);
 
         $perPage = (int) ($filters['per_page'] ?? 10);
-        $search = trim($filters['search'] ?? '');
-
-        $products = Product::query()
-            ->with(['category', 'brand', 'images'])
-            ->withCount('variants')
-            ->withSum('variants', 'stock')
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('slug', 'like', "%{$search}%")
-                        ->orWhereHas('variants', function ($q) use ($search) {
-                            $q->where('sku', 'like', "%{$search}%")
-                                ->orWhere('barcode', 'like', "%{$search}%");
-                        });
-                });
-            })
-            ->when($filters['category_id'] ?? null, fn ($q, $v) => $q->where('category_id', $v))
-            ->when($filters['brand_id'] ?? null, fn ($q, $v) => $q->where('brand_id', $v))
-            ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
-            ->when(($filters['min_price'] ?? null) !== null, fn ($q) => $q->where('price', '>=', $filters['min_price']))
-            ->when(($filters['max_price'] ?? null) !== null, fn ($q) => $q->where('price', '<=', $filters['max_price']))
-            ->when(($filters['stock'] ?? null) === 'in_stock', fn ($q) => $q->whereHas('variants', fn ($v) => $v->where('stock', '>', 0)))
-            ->when(($filters['stock'] ?? null) === 'out_of_stock', fn ($q) => $q->whereDoesntHave('variants', fn ($v) => $v->where('stock', '>', 0)))
-            ->when(($filters['stock'] ?? null) === 'low_stock', fn ($q) => $q->whereHas('variants', fn ($v) => $v->whereColumn('stock', '<=', 'low_stock_alert')->where('low_stock_alert', '>', 0)))
-            ->when(($filters['flag'] ?? null) === 'featured', fn ($q) => $q->where('is_featured', true))
-            ->when(($filters['flag'] ?? null) === 'new', fn ($q) => $q->where('is_new', true))
-            ->when(($filters['flag'] ?? null) === 'best_seller', fn ($q) => $q->where('is_best_seller', true))
-            ->when(($filters['flag'] ?? null) === 'on_sale', fn ($q) => $q->where('is_on_sale', true))
-            ->orderByDesc('id')
-            ->paginate($perPage)
-            ->withQueryString();
 
         return view('admin.products.index', [
-            'products' => $products,
+            'products' => $this->products->paginate($filters, $perPage),
             'perPage' => $perPage,
             'categories' => Category::orderBy('name')->get(['id', 'name']),
             'brands' => Brand::orderBy('name')->get(['id', 'name']),
@@ -88,23 +57,28 @@ class ProductController extends Controller implements HasMiddleware
 
     public function create(): View
     {
-        return view('admin.products.create', $this->formData());
+        $this->authorize('create', Product::class);
+
+        return view('admin.products.create', $this->products->formData());
     }
 
     public function store(StoreProductRequest $request): RedirectResponse
     {
+        $this->authorize('create', Product::class);
+
         $product = $this->products->create($request);
 
-        return redirect()
-            ->route('admin.products.index')
+        return to_route('admin.products.index')
             ->with('success', "Product \"{$product->name}\" created successfully!");
     }
 
     public function show(string $id): View
     {
+        $this->authorize('view', Product::class);
+
         $product = Product::with([
             'category', 'subCategory', 'brand', 'tags',
-            'images', 'specifications', 'variants.size', 'variants.color',
+            'images', 'specifications', 'variants.values.attribute',
         ])->findOrFail($id);
 
         return view('admin.products.show', ['product' => $product]);
@@ -112,73 +86,122 @@ class ProductController extends Controller implements HasMiddleware
 
     public function edit(string $id): View
     {
-        $product = Product::with(['images', 'variants', 'specifications', 'tags'])->findOrFail($id);
+        $this->authorize('update', Product::class);
 
-        return view('admin.products.edit', array_merge($this->formData(), [
+        $product = Product::with(['images', 'variants.values', 'specifications', 'tags'])->findOrFail($id);
+
+        return view('admin.products.edit', array_merge($this->products->formData(), [
             'product' => $product,
         ]));
     }
 
     public function update(UpdateProductRequest $request, string $id): RedirectResponse
     {
+        $this->authorize('update', Product::class);
+
         $product = Product::findOrFail($id);
         $this->products->update($request, $product);
 
-        return redirect()
-            ->route('admin.products.index')
+        return to_route('admin.products.index')
             ->with('success', "Product \"{$product->name}\" updated successfully!");
     }
 
     public function destroy(string $id): RedirectResponse
     {
+        $this->authorize('delete', Product::class);
+
         $product = Product::with('images')->findOrFail($id);
         $this->products->delete($product);
 
-        return redirect()
-            ->route('admin.products.index')
+        return to_route('admin.products.index')
             ->with('success', 'Product deleted successfully!');
     }
 
-    /**
-     * Quick status change from the list / detail view.
-     */
-    public function updateStatus(Request $request, string $id): RedirectResponse
+    public function bulkDestroy(Request $request): RedirectResponse
     {
-        $data = $request->validate([
-            'status' => ['required', 'in:draft,active,inactive,archived'],
+        $this->authorize('delete', Product::class);
+
+        $ids = $this->validatedIds($request);
+
+        // Delegate to the service per product so images + variants are cleaned up.
+        $products = Product::with('images')->whereKey($ids)->get();
+        $products->each(fn (Product $product) => $this->products->delete($product));
+
+        return back()->with('success', $products->count().' product(s) deleted successfully!');
+    }
+
+    public function bulkStatus(Request $request): RedirectResponse
+    {
+        $this->authorize('update', Product::class);
+
+        [$ids, $status] = $this->validatedStatus($request);
+
+        // Product status is a string enum — map Enable/Disable to active/inactive.
+        $value = $status ? 'active' : 'inactive';
+        $count = Product::whereKey($ids)->update(['status' => $value]);
+
+        return back()->with('success', $count.' product(s) '.($status ? 'activated' : 'deactivated').'.');
+    }
+
+    /* ---------------- Import / Export ---------------- */
+
+    public function export(Request $request): BinaryFileResponse
+    {
+        $this->authorize('viewAny', Product::class);
+
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'category_id' => ['nullable', 'integer'],
+            'brand_id' => ['nullable', 'integer'],
+            'status' => ['nullable', 'in:draft,active,inactive,archived'],
+            'stock' => ['nullable', 'in:in_stock,out_of_stock,low_stock'],
+            'flag' => ['nullable', 'in:featured,new,best_seller,on_sale'],
+            'min_price' => ['nullable', 'numeric', 'min:0'],
+            'max_price' => ['nullable', 'numeric', 'min:0'],
         ]);
 
-        $product = Product::findOrFail($id);
-        $this->products->updateStatus($product, $data['status']);
+        $languages = array_keys($this->settings->activeLanguages());
+        $export = new ProductsExport($this->products, $filters, $languages, $this->settings->primaryLanguage());
 
-        return back()->with('success', 'Product status updated.');
+        return Excel::download($export, 'products-'.now()->format('Y-m-d_His').'.xlsx');
     }
 
-    /**
-     * Delete a single gallery image (used from the edit form).
-     */
-    public function destroyImage(string $image): RedirectResponse
+    public function template(): BinaryFileResponse
     {
-        $this->products->deleteImage(ProductImage::findOrFail($image));
+        $this->authorize('create', Product::class);
 
-        return back()->with('success', 'Image removed.');
+        $export = new ProductTemplateExport(
+            array_keys($this->settings->activeLanguages()),
+            Category::orderBy('name')->pluck('name')->all(),
+            Brand::orderBy('name')->pluck('name')->all(),
+        );
+
+        return Excel::download($export, 'product-import-template.xlsx');
     }
 
-    /**
-     * Shared dropdown data for create/edit forms.
-     */
-    private function formData(): array
+    public function import(Request $request): RedirectResponse
     {
-        $settings = app(SettingService::class);
+        $this->authorize('create', Product::class);
 
-        return [
-            'categories' => Category::orderBy('name')->get(['id', 'name']),
-            'brands' => Brand::orderBy('name')->get(['id', 'name']),
-            'sizes' => Size::orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'code']),
-            'colors' => Color::orderBy('sort_order')->orderBy('name')->get(['id', 'name', 'hex_code']),
-            'tags' => ProductTag::orderBy('name')->get(['id', 'name']),
-            'locales' => $settings->activeLanguages(),   // code => label
-            'primaryLang' => $settings->primaryLanguage(),
-        ];
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:xlsx,xls,csv,txt', 'max:10240'],
+        ]);
+
+        $import = new ProductsImport($this->settings);
+
+        try {
+            Excel::import($import, $request->file('file'));
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Could not read the file. Make sure it matches the template.');
+        }
+
+        $redirect = back()->with('success', "Import finished — {$import->created} created, {$import->updated} updated.");
+
+        if (! empty($import->errors)) {
+            $redirect->with('warning', count($import->errors).' row(s) were skipped. See the details below.');
+            session()->flash('import_errors', $import->errors);
+        }
+
+        return $redirect;
     }
 }

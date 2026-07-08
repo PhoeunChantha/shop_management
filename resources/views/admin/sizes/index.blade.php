@@ -20,36 +20,27 @@
             </a>
         </div>
 
-        <section class="premium-card">
-            <form method="GET" action="{{ route('admin.sizes.index') }}" class="table-toolbar">
-                <div class="table-toolbar__left">
-                    <div class="result-badge">
-                        <i class="fa-solid fa-ruler-combined"></i>
-                        <span>{{ $sizes->total() }} result{{ $sizes->total() === 1 ? '' : 's' }}</span>
-                    </div>
+        <section class="premium-card" x-data="bulkSelect()">
+            <x-table-loader />
+            <x-bulk-bar :destroy="route('admin.sizes.bulk-destroy')" :status="route('admin.sizes.bulk-status')" noun="size" />
 
-                    <label class="per-page-control">
-                        <span>Show</span>
-                        <select name="per_page" onchange="this.form.submit()">
-                            @foreach ([5, 10, 25, 50] as $sizeOption)
-                            <option value="{{ $sizeOption }}" @selected($perPage===$sizeOption)>{{ $sizeOption }}</option>
-                            @endforeach
-                        </select>
-                        <span>per page</span>
-                    </label>
-                </div>
-
-                <label class="search-control">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="search" name="search" value="{{ request('search') }}" placeholder="Search sizes..."
-                        autocomplete="off" data-auto-search>
-                </label>
-            </form>
+            <x-table-toolbar>
+                <x-slot:left>
+                    <x-per-page-selector :current="$perPage" />
+                </x-slot:left>
+                <x-slot:right>
+                    <x-search-input name="search" placeholder="Search sizes..." />
+                </x-slot:right>
+            </x-table-toolbar>
 
             <div class="premium-table-wrap">
                 <table class="premium-table">
                     <thead>
                         <tr>
+                            <th class="bulk-check-col">
+                                <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
+                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+                            </th>
                             <th>ID</th>
                             <th>Name</th>
                             <th>Code</th>
@@ -61,6 +52,10 @@
                     <tbody>
                         @forelse ($sizes as $size)
                         <tr>
+                            <td class="bulk-check-col">
+                                <input type="checkbox" class="bulk-check" data-row-check value="{{ $size->id }}"
+                                    x-model="selected" aria-label="Select row">
+                            </td>
                             <td>
                                 <span class="muted-id">#{{ $size->id }}</span>
                             </td>
@@ -84,24 +79,26 @@
                             </td>
                             <td>
                                 <div class="action-group">
-                                    <a href="{{ route('admin.sizes.edit', $size->id) }}" class="table-action table-action--edit">
-                                        <i class="fa-solid fa-pen"></i>
-                                        <span>Edit</span>
-                                    </a>
+                                    <x-table-actions>
+                                        <a href="{{ route('admin.sizes.edit', $size->id) }}" class="table-actions__item table-actions__item--edit" role="menuitem">
+                                            <i class="fa-solid fa-pen"></i>
+                                            <span>Edit</span>
+                                        </a>
 
-                                    <button type="button" class="table-action table-action--delete"
-                                        data-delete-modal-target="deleteSizeModal"
-                                        data-delete-action="{{ route('admin.sizes.destroy', $size->id) }}"
-                                        data-delete-name="{{ $size->name }}">
-                                        <i class="fa-solid fa-trash"></i>
-                                        <span>Delete</span>
-                                    </button>
+                                        <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
+                                            data-delete-modal-target="deleteSizeModal"
+                                            data-delete-action="{{ route('admin.sizes.destroy', $size->id) }}"
+                                            data-delete-name="{{ $size->name }}">
+                                            <i class="fa-solid fa-trash"></i>
+                                            <span>Delete</span>
+                                        </button>
+                                    </x-table-actions>
                                 </div>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6">
+                            <td colspan="7">
                                 <div class="empty-state">
                                     <i class="fa-solid fa-ruler-combined"></i>
                                     <strong>No sizes found</strong>

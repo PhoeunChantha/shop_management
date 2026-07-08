@@ -6,27 +6,21 @@ namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateSettingsRequest;
+use App\Models\Setting;
 use App\Services\SettingService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Routing\Controllers\HasMiddleware;
-use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\View\View;
 
-final class SettingController extends Controller implements HasMiddleware
+final class SettingController extends Controller
 {
     public function __construct(
         private readonly SettingService $settings,
     ) {}
 
-    public static function middleware(): array
-    {
-        return [
-            new Middleware('role:admin|manager'),
-        ];
-    }
-
     public function index(): View
     {
+        $this->authorize('viewAny', Setting::class);
+
         // Re-populate from old input on validation failure, else from saved value.
         $rows = old('social_links', $this->settings->socialLinks());
 
@@ -44,6 +38,8 @@ final class SettingController extends Controller implements HasMiddleware
 
     public function update(UpdateSettingsRequest $request): RedirectResponse
     {
+        $this->authorize('update', Setting::class);
+
         $this->settings->save($request->validated());
 
         return redirect()

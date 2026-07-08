@@ -8,249 +8,265 @@
 
     @php
         $admin = Auth::user();
+        $hour = (int) now()->format('G');
+        $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good evening');
 
-        $kpis = [
-            ['label' => 'Total Sales', 'value' => '$48,260', 'trend' => '+12.5%', 'up' => true, 'icon' => 'fa-sack-dollar', 'tone' => 'blue', 'spark' => [40, 55, 45, 70, 60, 82, 65, 90, 76, 95, 84, 100]],
-            ['label' => 'Total Orders', 'value' => '1,840', 'trend' => '+8.2%', 'up' => true, 'icon' => 'fa-bag-shopping', 'tone' => 'orange', 'spark' => [30, 42, 38, 55, 50, 62, 58, 70, 66, 78, 74, 88]],
-            ['label' => 'Total Products', 'value' => '326', 'trend' => '+3.1%', 'up' => true, 'icon' => 'fa-shirt', 'tone' => 'violet', 'spark' => [60, 55, 62, 58, 64, 60, 68, 64, 70, 66, 72, 70]],
-            ['label' => 'Total Customers', 'value' => '2,415', 'trend' => '-1.4%', 'up' => false, 'icon' => 'fa-users', 'tone' => 'green', 'spark' => [80, 70, 75, 65, 72, 60, 66, 58, 62, 55, 60, 52]],
+        // Compact payload consumed by ApexCharts (rendered client-side).
+        $dashData = [
+            'kpis' => collect($kpis)->map(fn ($k) => ['color' => $k['color'], 'series' => $k['series']])->all(),
+            'revenue' => ['labels' => $chart['labels'], 'values' => $chart['values']],
+            'status' => [
+                'labels' => collect($statusBreakdown)->pluck('label')->all(),
+                'values' => collect($statusBreakdown)->pluck('count')->all(),
+                'colors' => collect($statusBreakdown)->pluck('color')->all(),
+            ],
         ];
-
-        $toneIcon = [
-            'blue' => 'text-blue-600 bg-blue-50 dark:bg-blue-500/15',
-            'orange' => 'text-orange-500 bg-orange-50 dark:bg-orange-500/15',
-            'violet' => 'text-violet-600 bg-violet-50 dark:bg-violet-500/15',
-            'green' => 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/15',
-        ];
-
-        $chart = [
-            ['m' => 'Jan', 'v' => 42], ['m' => 'Feb', 'v' => 55], ['m' => 'Mar', 'v' => 48],
-            ['m' => 'Apr', 'v' => 67], ['m' => 'May', 'v' => 60], ['m' => 'Jun', 'v' => 78],
-            ['m' => 'Jul', 'v' => 64], ['m' => 'Aug', 'v' => 88], ['m' => 'Sep', 'v' => 72],
-            ['m' => 'Oct', 'v' => 95], ['m' => 'Nov', 'v' => 83], ['m' => 'Dec', 'v' => 100],
-        ];
-
-        $orders = [
-            ['id' => '#3201', 'cust' => 'Alex Rivera', 'status' => 'paid', 'total' => '$128.00', 'date' => '26 Jun'],
-            ['id' => '#3200', 'cust' => 'Mia Chen', 'status' => 'shipped', 'total' => '$74.50', 'date' => '26 Jun'],
-            ['id' => '#3199', 'cust' => 'Daniel Cole', 'status' => 'pending', 'total' => '$240.00', 'date' => '25 Jun'],
-            ['id' => '#3198', 'cust' => 'Sara Kim', 'status' => 'paid', 'total' => '$56.00', 'date' => '25 Jun'],
-            ['id' => '#3197', 'cust' => 'Liam Osei', 'status' => 'cancelled', 'total' => '$98.00', 'date' => '24 Jun'],
-        ];
-
-        $statusChip = [
-            'paid' => 'text-emerald-700 bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-500/15',
-            'pending' => 'text-amber-700 bg-amber-100 dark:text-amber-300 dark:bg-amber-500/15',
-            'shipped' => 'text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-500/15',
-            'cancelled' => 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-500/15',
-        ];
-
-        $lowStock = [
-            ['name' => 'Classic White Tee', 'sku' => 'TS-001', 'stock' => 4, 'pct' => 12],
-            ['name' => 'Vintage Black Hoodie', 'sku' => 'HD-014', 'stock' => 6, 'pct' => 18],
-            ['name' => 'Sunset Graphic Tee', 'sku' => 'TS-052', 'stock' => 3, 'pct' => 9],
-            ['name' => 'Oversized Beige Crew', 'sku' => 'CR-008', 'stock' => 8, 'pct' => 24],
-        ];
-
-        $quick = [
-            ['label' => 'New User', 'icon' => 'fa-user-plus', 'url' => route('admin.users.create')],
-            ['label' => 'New Category', 'icon' => 'fa-layer-group', 'url' => route('admin.categories.create')],
-            ['label' => 'New Color', 'icon' => 'fa-palette', 'url' => route('admin.colors.create')],
-            ['label' => 'Settings', 'icon' => 'fa-gear', 'url' => route('admin.settings.index')],
-        ];
-
-        $card = 'rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#121c31]';
-        $headBorder = 'border-slate-100 dark:border-white/10';
     @endphp
 
-    <div x-data="{ shown: false }" x-init="$nextTick(() => shown = true)" class="space-y-5">
+    <div class="dash" x-data="{ shown: false }" x-init="$nextTick(() => shown = true)"
+        :class="shown ? 'dash--in' : ''">
 
-        {{-- ============ Hero ============ --}}
-        <section class="transition-all duration-500 ease-out"
-            :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'">
-            <div class="relative overflow-hidden rounded-3xl px-7 py-8 text-white shadow-xl"
-                style="background: linear-gradient(135deg, #0f766e 0%, #101928 60%, #0b1220 100%);">
-                <div class="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-white/5"></div>
-                <div class="absolute -right-24 bottom-[-7rem] h-72 w-72 rotate-12 rounded-3xl border border-white/10"></div>
-
-                <div class="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                        <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-300/90">
-                            {{ now()->format('l, d M Y') }}
-                        </p>
-                        <h1 class="mt-2 text-3xl font-extrabold leading-tight">
-                            Welcome back, {{ $admin->name }} 👋
-                        </h1>
-                        <p class="mt-2 max-w-xl text-sm text-white/70">
-                            Here's what's happening in your store today. Sales are up and orders keep rolling in.
-                        </p>
-                    </div>
-
-                    <div class="flex flex-wrap gap-3">
-                        <a href="{{ route('admin.categories.create') }}"
-                            class="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-5 py-2.5 text-sm font-extrabold text-slate-900 shadow-lg shadow-amber-500/30 transition hover:-translate-y-0.5 hover:bg-amber-300">
-                            <i class="fa-solid fa-plus"></i> Add product
-                        </a>
-                        <a href="{{ route('admin.users.index') }}"
-                            class="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-white/20">
-                            <i class="fa-regular fa-eye"></i> View customers
-                        </a>
-                    </div>
-                </div>
+        {{-- ============ Control bar ============ --}}
+        <div class="dash-bar">
+            <div>
+                <h1 class="dash-greeting">{{ $greeting }}, {{ $admin->name }}</h1>
+                <p class="dash-date">{{ now()->format('l, F j, Y') }}</p>
             </div>
-        </section>
+            <div class="dash-bar__actions">
+                <div class="dash-segment" role="tablist" aria-label="Period">
+                    @foreach ($ranges as $key => $label)
+                        <a href="{{ route('admin.dashboard', ['range' => $key]) }}"
+                            class="dash-segment__item {{ $range === $key ? 'is-active' : '' }}">{{ $label }}</a>
+                    @endforeach
+                </div>
+                <a href="{{ route('admin.products.create') }}" class="premium-button premium-button--dark">
+                    <i class="fa-solid fa-plus"></i><span>New product</span>
+                </a>
+            </div>
+        </div>
 
         {{-- ============ KPI cards ============ --}}
-        <section class="grid grid-cols-1 gap-5 transition-all delay-100 duration-500 ease-out sm:grid-cols-2 xl:grid-cols-4"
-            :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'">
+        <div class="dash-kpis">
             @foreach ($kpis as $kpi)
-                <div class="group {{ $card }} p-5 transition duration-200 hover:-translate-y-1 hover:shadow-xl">
-                    <div class="flex items-start justify-between">
-                        <span class="inline-flex h-12 w-12 items-center justify-center rounded-xl text-lg {{ $toneIcon[$kpi['tone']] }}">
-                            <i class="fa-solid {{ $kpi['icon'] }}"></i>
-                        </span>
-                        <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold {{ $kpi['up'] ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' : 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300' }}">
+                <div class="dash-kpi" style="--acc: {{ $kpi['color'] }};">
+                    <div class="dash-kpi__top">
+                        <span class="dash-kpi__icon"><i class="fa-solid {{ $kpi['icon'] }}"></i></span>
+                        <span class="dash-trend {{ $kpi['up'] ? 'is-up' : 'is-down' }}">
                             <i class="fa-solid {{ $kpi['up'] ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }}"></i>
                             {{ $kpi['trend'] }}
                         </span>
                     </div>
-                    <p class="mt-4 text-2xl font-black tracking-tight text-slate-900 dark:text-slate-100">{{ $kpi['value'] }}</p>
-                    <p class="mt-0.5 text-sm font-medium text-slate-500 dark:text-slate-400">{{ $kpi['label'] }}</p>
-
-                    <div class="mt-4 flex h-9 items-end gap-1 {{ explode(' ', $toneIcon[$kpi['tone']])[0] }}">
-                        @foreach ($kpi['spark'] as $h)
-                            <span class="flex-1 rounded-sm bg-current {{ $loop->last ? 'opacity-60' : 'opacity-20' }}"
-                                style="height: {{ $h }}%"></span>
-                        @endforeach
-                    </div>
+                    <div class="dash-kpi__value" data-count="{{ $kpi['raw'] }}" data-prefix="{{ $kpi['prefix'] }}">{{ $kpi['value'] }}</div>
+                    <div class="dash-kpi__label">{{ $kpi['label'] }} <span>· {{ $kpi['sub'] }}</span></div>
+                    <div class="dash-kpi__spark" id="kpiSpark{{ $loop->index }}"></div>
                 </div>
             @endforeach
-        </section>
+        </div>
 
-        {{-- ============ Main grid ============ --}}
-        <section class="grid grid-cols-1 gap-5 transition-all delay-200 duration-500 ease-out xl:grid-cols-3"
-            :class="shown ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'">
-
-            {{-- Left column --}}
-            <div class="space-y-5 xl:col-span-2">
-
-                {{-- Sales chart --}}
-                <div class="{{ $card }}">
-                    <div class="flex items-center justify-between gap-3 border-b {{ $headBorder }} px-6 py-4">
-                        <div>
-                            <h3 class="text-sm font-black text-slate-900 dark:text-slate-100">Sales overview</h3>
-                            <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Revenue across the last 12 months</p>
-                        </div>
-                        <span class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400">
-                            <span class="h-2 w-2 rounded-full bg-slate-800 dark:bg-teal-400"></span> Revenue
-                        </span>
+        {{-- ============ Chart + status ============ --}}
+        <div class="dash-grid dash-grid--chart">
+            {{-- Revenue area chart --}}
+            <section class="dash-panel">
+                <div class="dash-panel__head">
+                    <div>
+                        <h3>Revenue</h3>
+                        <p>Last {{ $rangeLabel }}</p>
                     </div>
-                    <div class="px-6 py-5">
-                        <div class="flex h-52 items-end gap-2 pt-2">
-                            @foreach ($chart as $bar)
-                                <div class="flex h-full flex-1 flex-col items-center justify-end gap-2">
-                                    <div class="w-full max-w-[28px] rounded-t-lg transition hover:brightness-110 {{ $loop->last ? 'bg-gradient-to-b from-teal-500 to-teal-700' : 'bg-gradient-to-b from-slate-600 to-slate-900 dark:from-slate-500 dark:to-slate-700' }}"
-                                        style="height: {{ $bar['v'] }}%" title="{{ $bar['m'] }}"></div>
-                                    <span class="text-[11px] font-semibold text-slate-400 dark:text-slate-500">{{ $bar['m'] }}</span>
-                                </div>
-                            @endforeach
-                        </div>
+                    <div class="dash-panel__metric">
+                        <strong>{{ $chart['total'] }}</strong>
+                        <span>total · peak {{ $chart['peak'] }}</span>
                     </div>
                 </div>
+                <div id="revChart" class="dash-apex"></div>
+            </section>
 
-                {{-- Recent orders --}}
-                <div class="overflow-hidden {{ $card }}">
-                    <div class="flex items-center justify-between gap-3 border-b {{ $headBorder }} px-6 py-4">
-                        <div>
-                            <h3 class="text-sm font-black text-slate-900 dark:text-slate-100">Recent orders</h3>
-                            <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Latest activity from your store</p>
-                        </div>
-                        <a href="#" class="text-xs font-extrabold text-teal-700 hover:text-teal-800 dark:text-teal-400">View all</a>
+            {{-- Orders by status --}}
+            <section class="dash-panel">
+                <div class="dash-panel__head">
+                    <div>
+                        <h3>Orders by status</h3>
+                        <p>All time</p>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm">
-                            <thead>
-                                <tr class="border-b {{ $headBorder }} bg-slate-50/70 text-left text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:bg-white/5 dark:text-slate-400">
-                                    <th class="px-6 py-3">Order</th>
-                                    <th class="px-6 py-3">Customer</th>
-                                    <th class="px-6 py-3">Status</th>
-                                    <th class="px-6 py-3 text-right">Total</th>
-                                    <th class="px-6 py-3 text-right">Date</th>
+                </div>
+                @if (count($statusBreakdown))
+                    <div id="statusChart" class="dash-apex dash-apex--donut"></div>
+                    <ul class="dash-legend">
+                        @foreach ($statusBreakdown as $s)
+                            <li>
+                                <span class="dash-legend__dot" style="background: {{ $s['color'] }};"></span>
+                                <span class="dash-legend__label">{{ $s['label'] }}</span>
+                                <span class="dash-legend__count">{{ $s['count'] }}</span>
+                                <span class="dash-legend__pct">{{ $s['pct'] }}%</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @else
+                    <div class="dash-empty"><i class="fa-solid fa-receipt"></i><p>No orders yet.</p></div>
+                @endif
+            </section>
+        </div>
+
+        {{-- ============ Recent orders + low stock ============ --}}
+        <div class="dash-grid dash-grid--feeds">
+            {{-- Recent orders --}}
+            <section class="dash-panel">
+                <div class="dash-panel__head">
+                    <div>
+                        <h3>Recent orders</h3>
+                        <p>Latest activity</p>
+                    </div>
+                    <a href="{{ route('admin.orders.index') }}" class="dash-link">View all <i class="fa-solid fa-arrow-right"></i></a>
+                </div>
+                <div class="dash-table-wrap">
+                    <table class="dash-table">
+                        <thead>
+                            <tr><th>Order</th><th>Customer</th><th>Status</th><th class="text-end">Total</th><th class="text-end">Date</th></tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($recentOrders as $order)
+                                <tr>
+                                    <td>
+                                        <a href="{{ route('admin.orders.show', $order->id) }}" class="dash-table__id">{{ $order->order_number }}</a>
+                                    </td>
+                                    <td>{{ $order->customer_name }}</td>
+                                    <td><span class="status-chip {{ $order->status->badge() }}">{{ $order->status->label() }}</span></td>
+                                    <td class="text-end dash-table__amt">${{ number_format($order->grand_total, 2) }}</td>
+                                    <td class="text-end dash-table__date">{{ ($order->placed_at ?? $order->created_at)?->format('d M') }}</td>
                                 </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 dark:divide-white/10">
-                                @foreach ($orders as $order)
-                                    <tr class="transition hover:bg-slate-50 dark:hover:bg-white/5">
-                                        <td class="px-6 py-3.5 font-bold text-slate-900 dark:text-slate-100">{{ $order['id'] }}</td>
-                                        <td class="px-6 py-3.5 text-slate-600 dark:text-slate-300">{{ $order['cust'] }}</td>
-                                        <td class="px-6 py-3.5">
-                                            <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-extrabold capitalize {{ $statusChip[$order['status']] }}">
-                                                <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
-                                                {{ $order['status'] }}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-3.5 text-right font-bold text-slate-900 dark:text-slate-100">{{ $order['total'] }}</td>
-                                        <td class="px-6 py-3.5 text-right text-slate-500 dark:text-slate-400">{{ $order['date'] }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                            @empty
+                                <tr><td colspan="5"><div class="dash-empty"><i class="fa-solid fa-receipt"></i><p>No orders yet.</p></div></td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
-            </div>
+            </section>
 
-            {{-- Right column --}}
-            <div class="space-y-5">
-
-                {{-- Low stock --}}
-                <div class="{{ $card }}">
-                    <div class="flex items-center justify-between gap-3 border-b {{ $headBorder }} px-6 py-4">
-                        <div>
-                            <h3 class="text-sm font-black text-slate-900 dark:text-slate-100">Low stock</h3>
-                            <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Products running out soon</p>
-                        </div>
-                        <span class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-500/15">
-                            <i class="fa-solid fa-triangle-exclamation text-xs"></i>
-                        </span>
+            {{-- Low stock --}}
+            <section class="dash-panel">
+                <div class="dash-panel__head">
+                    <div>
+                        <h3>Low stock</h3>
+                        <p>Running out soon</p>
                     </div>
-                    <div class="px-6 py-2">
-                        @foreach ($lowStock as $item)
-                            <div class="flex items-center gap-3.5 border-b border-dashed {{ $headBorder }} py-3 last:border-0">
-                                <span class="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400">
-                                    <i class="fa-solid fa-shirt"></i>
-                                </span>
-                                <div class="min-w-0 flex-1">
-                                    <p class="truncate text-[13px] font-extrabold text-slate-900 dark:text-slate-100">{{ $item['name'] }}</p>
-                                    <p class="text-xs text-slate-400 dark:text-slate-500">{{ $item['sku'] }}</p>
-                                    <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
-                                        <div class="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500" style="width: {{ $item['pct'] }}%"></div>
-                                    </div>
-                                </div>
-                                <span class="flex-shrink-0 text-sm font-black text-red-500">{{ $item['stock'] }}</span>
+                    <span class="dash-panel__badge"><i class="fa-solid fa-triangle-exclamation"></i></span>
+                </div>
+                <div class="dash-lowstock">
+                    @forelse ($lowStock as $item)
+                        <div class="dash-lowstock__row">
+                            <span class="dash-lowstock__icon"><i class="fa-solid fa-shirt"></i></span>
+                            <div class="dash-lowstock__body">
+                                <p class="dash-lowstock__name">{{ $item['name'] }}</p>
+                                <p class="dash-lowstock__sku">{{ $item['sku'] }}</p>
+                                <div class="dash-lowstock__track"><span style="width: {{ $item['pct'] }}%;"></span></div>
                             </div>
-                        @endforeach
-                    </div>
+                            <span class="dash-lowstock__qty">{{ $item['stock'] }}</span>
+                        </div>
+                    @empty
+                        <div class="dash-empty dash-empty--ok">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <p>All stock levels are healthy.</p>
+                        </div>
+                    @endforelse
                 </div>
-
-                {{-- Quick actions --}}
-                <div class="{{ $card }}">
-                    <div class="border-b {{ $headBorder }} px-6 py-4">
-                        <h3 class="text-sm font-black text-slate-900 dark:text-slate-100">Quick actions</h3>
-                        <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Jump straight to common tasks</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3 p-5">
-                        @foreach ($quick as $action)
-                            <a href="{{ $action['url'] }}"
-                                class="group flex flex-col gap-2.5 rounded-xl border border-slate-200 bg-slate-50/60 p-4 transition hover:-translate-y-0.5 hover:border-teal-200 hover:bg-white hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:hover:border-teal-500/40 dark:hover:bg-white/10">
-                                <span class="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-teal-700 transition group-hover:bg-teal-600 group-hover:text-white dark:bg-teal-500/15 dark:text-teal-300">
-                                    <i class="fa-solid {{ $action['icon'] }} text-sm"></i>
-                                </span>
-                                <span class="text-[13px] font-extrabold text-slate-800 dark:text-slate-200">{{ $action['label'] }}</span>
-                            </a>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
-        </section>
+            </section>
+        </div>
     </div>
+
+    <script type="application/json" id="dash-data">@json($dashData)</script>
+
+    @push('js')
+        <script>
+            (function () {
+                const data = JSON.parse(document.getElementById('dash-data').textContent);
+
+                // Count-up animation on the KPI card values (runs on page load).
+                document.querySelectorAll('.dash-kpi__value[data-count]').forEach((el) => {
+                    const target = parseFloat(el.dataset.count) || 0;
+                    const prefix = el.dataset.prefix || '';
+                    const fmt = (n) => prefix + Math.round(n).toLocaleString();
+                    if (target <= 0) { el.textContent = fmt(0); return; }
+                    const duration = 1000;
+                    const start = performance.now();
+                    (function tick(now) {
+                        const t = Math.min(1, (now - start) / duration);
+                        const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+                        el.textContent = fmt(target * eased);
+                        if (t < 1) requestAnimationFrame(tick);
+                        else el.textContent = fmt(target);
+                    })(start);
+                });
+
+                // Wait for the deferred ApexCharts CDN script to be ready.
+                (function whenReady(tries) {
+                    if (window.ApexCharts) { initDashboardCharts(data); }
+                    else if (tries < 60) { setTimeout(() => whenReady(tries + 1), 100); }
+                    else { console.error('ApexCharts failed to load from CDN.'); }
+                })(0);
+
+                function initDashboardCharts(data) {
+                    const css = getComputedStyle(document.documentElement);
+                    const dark = document.documentElement.classList.contains('dark');
+                    const accent = (css.getPropertyValue('--admin-accent') || '#0f766e').trim();
+                    const muted = dark ? '#94a3b8' : '#667085';
+                    const grid = dark ? 'rgba(255,255,255,0.06)' : '#eef1f5';
+                    const font = 'Manrope, ui-sans-serif, sans-serif';
+
+                    // KPI sparklines
+                    data.kpis.forEach((kpi, i) => {
+                        const el = document.getElementById('kpiSpark' + i);
+                        if (!el) return;
+                        new ApexCharts(el, {
+                            chart: { type: 'area', height: 42, sparkline: { enabled: true }, fontFamily: font },
+                            series: [{ name: '', data: kpi.series }],
+                            stroke: { width: 2, curve: 'smooth' },
+                            fill: { type: 'gradient', gradient: { opacityFrom: 0.35, opacityTo: 0 } },
+                            colors: [kpi.color],
+                            tooltip: { enabled: false },
+                        }).render();
+                    });
+
+                    // Revenue area chart
+                    const rev = document.getElementById('revChart');
+                    if (rev) {
+                        new ApexCharts(rev, {
+                            chart: { type: 'area', height: 330, fontFamily: font, toolbar: { show: false }, zoom: { enabled: false },
+                                animations: { enabled: true, easing: 'easeinout', speed: 800 } },
+                            series: [{ name: 'Revenue', data: data.revenue.values }],
+                            colors: [accent],
+                            stroke: { width: 3, curve: 'smooth' },
+                            fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.02, stops: [0, 92] } },
+                            dataLabels: { enabled: false },
+                            grid: { borderColor: grid, strokeDashArray: 4, xaxis: { lines: { show: false } }, padding: { left: 6, right: 6 } },
+                            xaxis: { categories: data.revenue.labels, tickAmount: 6,
+                                axisBorder: { show: false }, axisTicks: { show: false },
+                                labels: { rotate: 0, hideOverlappingLabels: true, style: { colors: muted, fontSize: '11px' } } },
+                            yaxis: { labels: { style: { colors: muted, fontSize: '11px' },
+                                formatter: (v) => v >= 1000 ? '$' + (v / 1000).toFixed(1) + 'k' : '$' + Math.round(v) } },
+                            tooltip: { theme: dark ? 'dark' : 'light', y: { formatter: (v) => '$' + Number(v).toLocaleString() } },
+                        }).render();
+                    }
+
+                    // Orders-by-status donut
+                    const donut = document.getElementById('statusChart');
+                    if (donut && data.status.values.length) {
+                        const total = data.status.values.reduce((a, b) => a + b, 0);
+                        new ApexCharts(donut, {
+                            chart: { type: 'donut', height: 210, fontFamily: font },
+                            series: data.status.values,
+                            labels: data.status.labels,
+                            colors: data.status.colors,
+                            stroke: { width: 2, colors: [dark ? '#121c31' : '#fff'] },
+                            legend: { show: false },
+                            dataLabels: { enabled: false },
+                            plotOptions: { pie: { donut: { size: '72%', labels: { show: true,
+                                name: { color: muted },
+                                value: { color: dark ? '#e2e8f0' : '#101827', fontSize: '22px', fontWeight: 800 },
+                                total: { show: true, label: 'Orders', color: muted, formatter: () => total } } } } },
+                            tooltip: { theme: dark ? 'dark' : 'light' },
+                        }).render();
+                    }
+                }
+            })();
+        </script>
+    @endpush
 </x-app-layout>

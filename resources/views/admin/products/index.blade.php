@@ -8,16 +8,77 @@
         </div>
     </x-slot>
 
-    <div class="admin-page">
+    <div class="admin-page" x-data="{ importOpen: false }">
         <div class="page-section-header">
             <div>
                 <p class="section-kicker">Product table</p>
                 <h3>All Products</h3>
             </div>
-            <a href="{{ route('admin.products.create') }}" class="premium-button premium-button--dark">
-                <i class="fa-solid fa-plus"></i>
-                <span>New Product</span>
-            </a>
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <a href="{{ route('admin.products.template') }}" class="ghost-button">
+                    <i class="fa-solid fa-file-arrow-down"></i><span>Template</span>
+                </a>
+                <a href="{{ route('admin.products.export', request()->query()) }}" class="ghost-button">
+                    <i class="fa-solid fa-file-export"></i><span>Export</span>
+                </a>
+                <button type="button" class="ghost-button" @click="importOpen = true">
+                    <i class="fa-solid fa-file-import"></i><span>Import</span>
+                </button>
+                <a href="{{ route('admin.products.create') }}" class="premium-button premium-button--dark">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>New Product</span>
+                </a>
+            </div>
+        </div>
+
+        {{-- Skipped rows from the last import --}}
+        @if (session('import_errors'))
+            <div class="premium-card p-4 mt-3" style="border-left: 3px solid var(--danger-color);">
+                <p class="section-kicker mb-2" style="color: var(--danger-color);">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Skipped rows from last import
+                </p>
+                <ul class="text-sm text-gray-600 dark:text-slate-300 mb-0 ps-3" style="max-height:220px; overflow:auto; list-style:disc;">
+                    @foreach (session('import_errors') as $err)
+                        <li><strong>Row {{ $err['row'] }}:</strong> {{ implode(' ', $err['messages']) }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        {{-- Import modal --}}
+        <div class="modal-backdrop-premium" x-show="importOpen" x-cloak style="display:none;"
+            @keydown.escape.window="importOpen = false" @click.self="importOpen = false">
+            <div class="form-modal">
+                <div class="form-modal__head">
+                    <div class="form-modal__icon"><i class="fa-solid fa-file-import"></i></div>
+                    <div class="flex-grow-1">
+                        <h3>Import Products</h3>
+                        <p>Upload a filled-in template. Rows are matched by SKU (upsert).</p>
+                    </div>
+                    <button type="button" class="form-modal__close" @click="importOpen = false" aria-label="Close">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <form action="{{ route('admin.products.import') }}" method="POST" enctype="multipart/form-data" class="form-modal__body">
+                    @csrf
+                    <div class="form-field">
+                        <label for="import_file">Spreadsheet file <span class="text-red-500">*</span></label>
+                        <input type="file" name="file" id="import_file" accept=".xlsx,.xls,.csv" class="form-input" required>
+                        @error('file')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
+                        <small class="text-gray-400 dark:text-slate-500 d-block mt-1">
+                            .xlsx or .csv, up to 10MB. Need the format?
+                            <a href="{{ route('admin.products.template') }}" class="text-blue-500">Download the template</a>.
+                        </small>
+                    </div>
+                    <div class="form-modal__foot">
+                        <button type="button" class="modal-cancel" @click="importOpen = false">Cancel</button>
+                        <button type="submit" class="form-submit-button">
+                            <i class="fa-solid fa-upload"></i>
+                            <span>Import products</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         {{-- Filters --}}
@@ -28,46 +89,28 @@
                 <input type="hidden" name="per_page" value="{{ $perPage }}">
             </x-slot:hidden>
 
-            <select name="category_id" class="form-input">
-                    <option value="">All categories</option>
-                    @foreach ($categories as $c)
-                        <option value="{{ $c->id }}" @selected(request('category_id') == $c->id)>{{ $c->name }}</option>
-                    @endforeach
-                </select>
-                <select name="brand_id" class="form-input">
-                    <option value="">All brands</option>
-                    @foreach ($brands as $b)
-                        <option value="{{ $b->id }}" @selected(request('brand_id') == $b->id)>{{ $b->name }}</option>
-                    @endforeach
-                </select>
-                <select name="status" class="form-input">
-                    <option value="">Any status</option>
-                    @foreach (['draft', 'active', 'inactive', 'archived'] as $s)
-                        <option value="{{ $s }}" @selected(request('status') === $s)>{{ ucfirst($s) }}</option>
-                    @endforeach
-                </select>
-                <select name="stock" class="form-input">
-                    <option value="">Any stock</option>
-                    <option value="in_stock" @selected(request('stock') === 'in_stock')>In stock</option>
-                    <option value="low_stock" @selected(request('stock') === 'low_stock')>Low stock</option>
-                    <option value="out_of_stock" @selected(request('stock') === 'out_of_stock')>Out of stock</option>
-                </select>
-                <select name="flag" class="form-input">
-                    <option value="">Any flag</option>
-                    <option value="featured" @selected(request('flag') === 'featured')>Featured</option>
-                    <option value="new" @selected(request('flag') === 'new')>New Arrival</option>
-                    <option value="best_seller" @selected(request('flag') === 'best_seller')>Best Seller</option>
-                    <option value="on_sale" @selected(request('flag') === 'on_sale')>On Sale</option>
-                </select>
+            <x-select name="category_id" size="sm" :options="$categories" :value="request('category_id')"
+                placeholder="All categories" searchable />
+
+            <x-select name="brand_id" size="sm" :options="$brands" :value="request('brand_id')"
+                placeholder="All brands" searchable />
+
+            <x-select name="status" size="sm" :value="request('status')" placeholder="Any status"
+                :options="['draft' => 'Draft', 'active' => 'Active', 'inactive' => 'Inactive', 'archived' => 'Archived']" />
+
+            <x-select name="stock" size="sm" :value="request('stock')" placeholder="Any stock"
+                :options="['in_stock' => 'In stock', 'low_stock' => 'Low stock', 'out_of_stock' => 'Out of stock']" />
+
+            <x-select name="flag" size="sm" :value="request('flag')" placeholder="Any flag"
+                :options="['featured' => 'Featured', 'new' => 'New Arrival', 'best_seller' => 'Best Seller', 'on_sale' => 'On Sale']" />
         </x-filter-card>
 
-        <section class="premium-card mt-3">
+        <section class="premium-card mt-3" x-data="bulkSelect()">
+            <x-table-loader />
+            <x-bulk-bar :destroy="route('admin.products.bulk-destroy')" :status="route('admin.products.bulk-status')" noun="product" />
+
             <x-table-toolbar>
                 <x-slot:left>
-                    <div class="result-badge">
-                        <i class="fa-solid fa-box-open"></i>
-                        <span>{{ $products->total() }} result{{ $products->total() === 1 ? '' : 's' }}</span>
-                    </div>
                     <x-per-page-selector :current="$perPage" />
                 </x-slot:left>
                 <x-slot:right>
@@ -79,6 +122,10 @@
                 <table class="premium-table">
                     <thead>
                         <tr>
+                            <th class="bulk-check-col">
+                                <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
+                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+                            </th>
                             <th class="text-center" style="width:56px;">#</th>
                             <th>Image</th>
                             <th>Product</th>
@@ -95,6 +142,10 @@
                     <tbody>
                         @forelse ($products as $product)
                             <tr>
+                                <td class="bulk-check-col">
+                                    <input type="checkbox" class="bulk-check" data-row-check value="{{ $product->id }}"
+                                        x-model="selected" aria-label="Select row">
+                                </td>
                                 <td class="text-center text-sm text-gray-500 dark:text-slate-400">{{ ($products->firstItem() ?? 0) + $loop->index }}</td>
                                 <td>
                                     @if ($product->thumbnail)
@@ -106,8 +157,8 @@
                                 </td>
                                 <td>
                                     <div>
-                                        <strong class="text-gray-900 dark:text-slate-100">{{ $product->name }}</strong>
-                                        <div class="text-xs text-gray-400 dark:text-slate-500 font-mono">{{ $product->slug }}</div>
+                                        <strong class="text-sm text-gray-800 dark:text-slate-200">{{ $product->name }}</strong>
+                                        <div class="text-xs text-gray-400 dark:text-slate-500">{{ $product->slug }}</div>
                                     </div>
                                 </td>
                                 <td><span class="text-sm text-gray-600 dark:text-slate-300">{{ $product->category->name ?? '—' }}</span></td>
@@ -120,7 +171,7 @@
                                         <strong class="text-gray-900 dark:text-slate-100">${{ number_format($product->price, 2) }}</strong>
                                     @endif
                                 </td>
-                                <td><span class="text-sm text-gray-600 dark:text-slate-300">{{ (int) $product->variants_sum_stock }}</span></td>
+                                <td><span class="text-sm text-gray-600 dark:text-slate-300">{{ $product->total_stock }}</span></td>
                                 <td>
                                     <div class="d-flex flex-wrap gap-1">
                                         @if ($product->is_featured)<span class="pill-badge pill-featured">Featured</span>@endif
@@ -155,7 +206,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11">
+                                <td colspan="12">
                                     <div class="empty-state">
                                         <i class="fa-solid fa-box-open"></i>
                                         <strong>No products found</strong>

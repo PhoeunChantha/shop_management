@@ -28,10 +28,81 @@ $(function () {
 
         searchTimer = setTimeout(function () {
             if (query.length === 0 || query.length >= 2) {
-                $input.closest('form').trigger('submit');
+                const form = $input.closest('form').get(0);
+                if (!form) return;
+                // requestSubmit() actually navigates AND fires the `submit`
+                // event, so <x-table-loader> can show its overlay.
+                if (typeof form.requestSubmit === 'function') {
+                    form.requestSubmit();
+                } else {
+                    form.submit();
+                }
             }
         }, 500);
     });
+
+    // Date-range filter — daterangepicker + moment come from the CDN <script> tags
+    // in the admin layout. They may finish loading just after DOMContentLoaded, so
+    // wait until both are ready before initializing.
+    function initDateRanges() {
+        const moment = window.moment;
+        const format = 'MMMM D, YYYY';
+        const label = (s, e) => s.format(format) + ' - ' + e.format(format);
+
+        $('[data-daterange]').each(function () {
+            const $input = $(this);
+            const $form = $input.closest('form');
+            const $from = $form.find('input[name="date_from"]');
+            const $to = $form.find('input[name="date_to"]');
+            const start = $from.val() ? moment($from.val(), 'YYYY-MM-DD') : null;
+            const end = $to.val() ? moment($to.val(), 'YYYY-MM-DD') : null;
+
+            $input.daterangepicker({
+                autoUpdateInput: false,
+                opens: 'left',
+                locale: { format: format, cancelLabel: 'Clear', separator: ' - ' },
+                ranges: {
+                    'Today': [moment(), moment()],
+                    'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                    'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                    'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                    'This Month': [moment().startOf('month'), moment().endOf('month')],
+                    'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+                },
+                ...(start && end ? { startDate: start, endDate: end } : {}),
+            });
+
+            // Show the picked range in the input (autoUpdateInput is off so it stays
+            // empty until the admin actually chooses a range).
+            if (start && end) {
+                $input.val(label(start, end));
+            }
+
+            $input.on('apply.daterangepicker', function (ev, picker) {
+                $input.val(label(picker.startDate, picker.endDate));
+                $from.val(picker.startDate.format('YYYY-MM-DD'));
+                $to.val(picker.endDate.format('YYYY-MM-DD'));
+            });
+
+            $input.on('cancel.daterangepicker', function () {
+                $input.val('');
+                $from.val('');
+                $to.val('');
+            });
+        });
+    }
+
+    if ($('[data-daterange]').length) {
+        (function whenReady(tries) {
+            if (window.moment && $.fn.daterangepicker) {
+                initDateRanges();
+            } else if (tries < 60) {
+                setTimeout(function () { whenReady(tries + 1); }, 100);
+            } else {
+                console.error('Date-range picker failed to load from CDN.');
+            }
+        })(0);
+    }
 
     $('[data-avatar-input]').on('change', function () {
         const file = this.files && this.files[0];
@@ -107,5 +178,34 @@ $(function () {
         $(this).closest('.dynamic-input-row').remove();
     });
 });
+
+// Row-selection state for admin tables with bulk actions.
+// Row checkboxes carry `data-row-check` and `value="{id}"`; the header
+// select-all and the <x-bulk-bar> read/write this shared `selected` array.
+Alpine.data('bulkSelect', () => ({
+    selected: [],
+    confirmingDelete: false,
+
+    rowIds() {
+        return Array.from(this.$root.querySelectorAll('input[data-row-check]')).map((b) => b.value);
+    },
+    get count() {
+        return this.selected.length;
+    },
+    get allChecked() {
+        const ids = this.rowIds();
+        return ids.length > 0 && ids.every((id) => this.selected.includes(id));
+    },
+    get someChecked() {
+        return this.count > 0 && !this.allChecked;
+    },
+    toggleAll(event) {
+        this.selected = event.target.checked ? this.rowIds() : [];
+    },
+    clear() {
+        this.selected = [];
+        this.confirmingDelete = false;
+    },
+}));
 
 Alpine.start();

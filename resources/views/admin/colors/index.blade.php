@@ -20,36 +20,27 @@
             </a>
         </div>
 
-        <section class="premium-card">
-            <form method="GET" action="{{ route('admin.colors.index') }}" class="table-toolbar">
-                <div class="table-toolbar__left">
-                    <div class="result-badge">
-                        <i class="fa-solid fa-palette"></i>
-                        <span>{{ $colors->total() }} result{{ $colors->total() === 1 ? '' : 's' }}</span>
-                    </div>
+        <section class="premium-card" x-data="bulkSelect()">
+            <x-table-loader />
+            <x-bulk-bar :destroy="route('admin.colors.bulk-destroy')" :status="route('admin.colors.bulk-status')" noun="color" />
 
-                    <label class="per-page-control">
-                        <span>Show</span>
-                        <select name="per_page" onchange="this.form.submit()">
-                            @foreach ([5, 10, 25, 50] as $size)
-                            <option value="{{ $size }}" @selected($perPage===$size)>{{ $size }}</option>
-                            @endforeach
-                        </select>
-                        <span>per page</span>
-                    </label>
-                </div>
-
-                <label class="search-control">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="search" name="search" value="{{ request('search') }}" placeholder="Search colors..."
-                        autocomplete="off" data-auto-search>
-                </label>
-            </form>
+            <x-table-toolbar>
+                <x-slot:left>
+                    <x-per-page-selector :current="$perPage" />
+                </x-slot:left>
+                <x-slot:right>
+                    <x-search-input name="search" placeholder="Search colors..." />
+                </x-slot:right>
+            </x-table-toolbar>
 
             <div class="premium-table-wrap">
                 <table class="premium-table">
                     <thead>
                         <tr>
+                            <th class="bulk-check-col">
+                                <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
+                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+                            </th>
                             <th>ID</th>
                             <th>Preview</th>
                             <th>Color Name</th>
@@ -62,6 +53,10 @@
                     <tbody>
                         @forelse ($colors as $color)
                         <tr>
+                            <td class="bulk-check-col">
+                                <input type="checkbox" class="bulk-check" data-row-check value="{{ $color->id }}"
+                                    x-model="selected" aria-label="Select row">
+                            </td>
                             <td>
                                 <span class="muted-id">#{{ $color->id }}</span>
                             </td>
@@ -88,24 +83,26 @@
                             </td>
                             <td>
                                 <div class="action-group">
-                                    <a href="{{ route('admin.colors.edit', $color->id) }}" class="table-action table-action--edit">
-                                        <i class="fa-solid fa-pen"></i>
-                                        <span>Edit</span>
-                                    </a>
+                                    <x-table-actions>
+                                        <a href="{{ route('admin.colors.edit', $color->id) }}" class="table-actions__item table-actions__item--edit" role="menuitem">
+                                            <i class="fa-solid fa-pen"></i>
+                                            <span>Edit</span>
+                                        </a>
 
-                                    <button type="button" class="table-action table-action--delete"
-                                        data-delete-modal-target="deleteColorModal"
-                                        data-delete-action="{{ route('admin.colors.destroy', $color->id) }}"
-                                        data-delete-name="{{ $color->name }}">
-                                        <i class="fa-solid fa-trash"></i>
-                                        <span>Delete</span>
-                                    </button>
+                                        <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
+                                            data-delete-modal-target="deleteColorModal"
+                                            data-delete-action="{{ route('admin.colors.destroy', $color->id) }}"
+                                            data-delete-name="{{ $color->name }}">
+                                            <i class="fa-solid fa-trash"></i>
+                                            <span>Delete</span>
+                                        </button>
+                                    </x-table-actions>
                                 </div>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7">
+                            <td colspan="8">
                                 <div class="empty-state">
                                     <i class="fa-solid fa-palette"></i>
                                     <strong>No colors found</strong>

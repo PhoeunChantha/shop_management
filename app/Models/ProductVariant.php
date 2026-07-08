@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class ProductVariant extends Model
 {
@@ -13,6 +14,7 @@ class ProductVariant extends Model
         'color_id',
         'sku',
         'barcode',
+        'image',
         'stock',
         'low_stock_alert',
         'price',
@@ -45,8 +47,32 @@ class ProductVariant extends Model
         return $this->belongsTo(Color::class);
     }
 
+    /**
+     * The generic attribute values that define this variant (Color=Black, Size=M …).
+     * Supersedes the legacy size()/color() relations.
+     */
+    public function values(): BelongsToMany
+    {
+        return $this->belongsToMany(AttributeValue::class, 'product_variant_value');
+    }
+
+    /**
+     * Human label built from the variant's attribute values, e.g. "Black / Medium".
+     */
+    public function getVariantLabelAttribute(): string
+    {
+        return $this->relationLoaded('values')
+            ? $this->values->pluck('value')->join(' / ')
+            : $this->values()->pluck('value')->join(' / ');
+    }
+
     public function getIsLowStockAttribute(): bool
     {
         return $this->low_stock_alert > 0 && $this->stock <= $this->low_stock_alert;
+    }
+
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->image ? Imageurl($this->image, 'variants') : null;
     }
 }

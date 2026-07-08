@@ -21,12 +21,10 @@
         </div>
 
         <section class="premium-card">
+            <x-table-loader />
+
             <x-table-toolbar>
                 <x-slot:left>
-                    <div class="result-badge">
-                        <i class="fa-solid fa-shield-halved"></i>
-                        <span>{{ $roles->total() }} result{{ $roles->total() === 1 ? '' : 's' }}</span>
-                    </div>
                     <x-per-page-selector :current="$perPage" />
                 </x-slot:left>
                 <x-slot:right>
@@ -71,18 +69,20 @@
                                 </td>
                                 <td>
                                     <div class="action-group">
-                                        <a href="{{ route('admin.roles.edit', $role->id) }}" class="table-action table-action--edit">
-                                            <i class="fa-solid fa-pen"></i>
-                                            <span>Edit</span>
-                                        </a>
+                                        <x-table-actions>
+                                            <a href="{{ route('admin.roles.edit', $role->id) }}" class="table-actions__item table-actions__item--edit" role="menuitem">
+                                                <i class="fa-solid fa-pen"></i>
+                                                <span>Edit</span>
+                                            </a>
 
-                                        <button type="button" class="table-action table-action--delete"
-                                            data-delete-modal-target="deleteRoleModal"
-                                            data-delete-action="{{ route('admin.roles.destroy', $role->id) }}"
-                                            data-delete-name="{{ $role->name }}">
-                                            <i class="fa-solid fa-trash"></i>
-                                            <span>Delete</span>
-                                        </button>
+                                            <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
+                                                data-delete-modal-target="deleteRoleModal"
+                                                data-delete-action="{{ route('admin.roles.destroy', $role->id) }}"
+                                                data-delete-name="{{ $role->name }}">
+                                                <i class="fa-solid fa-trash"></i>
+                                                <span>Delete</span>
+                                            </button>
+                                        </x-table-actions>
                                     </div>
                                 </td>
                             </tr>

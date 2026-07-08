@@ -1,11 +1,16 @@
 <?php
 
+use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\PermissionController;
 use App\Http\Controllers\Backend\ProfileController;
 use App\Http\Controllers\Backend\RoleController;
 use App\Http\Controllers\Backend\SettingController;
 use App\Http\Controllers\Backend\UserController;
+use App\Http\Controllers\Backend\AttributeController;
+use App\Http\Controllers\Backend\BrandController;
 use App\Http\Controllers\Backend\CategoryController;
+use App\Http\Controllers\Backend\CouponController;
+use App\Http\Controllers\Backend\OrderController;
 use App\Http\Controllers\Backend\ProductController;
 use App\Http\Controllers\Backend\SizeController;
 use App\Http\Controllers\Backend\ColorController;
@@ -67,30 +72,44 @@ Route::get('admin/login', function () {
 })->middleware('guest')->name('admin.login');
 
 Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::prefix('permissions')->name('permissions.')->group(function () {
-        Route::get('/', [PermissionController::class, 'index'])->name('index');
-        Route::get('/create', [PermissionController::class, 'create'])->name('create');
-        Route::post('/', [PermissionController::class, 'store'])->name('store');
-        Route::get('/{id}/edit', [PermissionController::class, 'edit'])->name('edit');
-        Route::put('/{id}', [PermissionController::class, 'update'])->name('update');
-        Route::delete('/{id}', [PermissionController::class, 'destroy'])->name('destroy');
+        Route::get('/', [PermissionController::class, 'index'])
+            ->middleware('permission:view permission')
+            ->name('index');
+        Route::get('/create', [PermissionController::class, 'create'])
+            ->middleware('permission:create permission')
+            ->name('create');
+        Route::post('/', [PermissionController::class, 'store'])
+            ->middleware('permission:create permission')
+            ->name('store');
+        Route::get('/{id}/edit', [PermissionController::class, 'edit'])
+            ->middleware('permission:edit permission')
+            ->name('edit');
+        Route::put('/{id}', [PermissionController::class, 'update'])
+            ->middleware('permission:edit permission')
+            ->name('update');
+        Route::delete('/{id}', [PermissionController::class, 'destroy'])
+            ->middleware('permission:delete permission')
+            ->name('destroy');
     });
 
     Route::prefix('roles')->name('roles.')->group(function () {
-        Route::get('/', [RoleController::class, 'index'])->name('index');
-        Route::get('/create', [RoleController::class, 'create'])->name('create');
-        Route::post('/', [RoleController::class, 'store'])->name('store');
-        Route::get('/{id}/edit', [RoleController::class, 'edit'])->name('edit');
-        Route::put('/{id}', [RoleController::class, 'update'])->name('update');
-        Route::delete('/{id}', [RoleController::class, 'destroy'])->name('destroy');
+        Route::get('/', [RoleController::class, 'index'])
+            ->middleware('role:admin|manager|staff')
+            ->name('index');
+        Route::middleware('role:admin|manager')->group(function () {
+            Route::get('/create', [RoleController::class, 'create'])->name('create');
+            Route::post('/', [RoleController::class, 'store'])->name('store');
+            Route::get('/{id}/edit', [RoleController::class, 'edit'])->name('edit');
+            Route::put('/{id}', [RoleController::class, 'update'])->name('update');
+            Route::delete('/{id}', [RoleController::class, 'destroy'])->name('destroy');
+        });
     });
 
     Route::prefix('users')->name('users.')->group(function () {
@@ -104,18 +123,45 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::prefix('products')->name('products.')->group(function () {
         Route::get('/', [ProductController::class, 'index'])->name('index');
+        Route::delete('/bulk', [ProductController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [ProductController::class, 'bulkStatus'])->name('bulk-status');
+        Route::get('/export', [ProductController::class, 'export'])->name('export');
+        Route::get('/template', [ProductController::class, 'template'])->name('template');
+        Route::post('/import', [ProductController::class, 'import'])->name('import');
         Route::get('/create', [ProductController::class, 'create'])->name('create');
         Route::post('/', [ProductController::class, 'store'])->name('store');
         Route::get('/{id}', [ProductController::class, 'show'])->whereNumber('id')->name('show');
         Route::get('/{id}/edit', [ProductController::class, 'edit'])->name('edit');
         Route::put('/{id}', [ProductController::class, 'update'])->name('update');
-        Route::patch('/{id}/status', [ProductController::class, 'updateStatus'])->name('status');
-        Route::delete('/images/{image}', [ProductController::class, 'destroyImage'])->whereNumber('image')->name('images.destroy');
         Route::delete('/{id}', [ProductController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('brands')->name('brands.')->group(function () {
+        Route::get('/', [BrandController::class, 'index'])->name('index');
+        Route::delete('/bulk', [BrandController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [BrandController::class, 'bulkStatus'])->name('bulk-status');
+        Route::get('/create', [BrandController::class, 'create'])->name('create');
+        Route::post('/', [BrandController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [BrandController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [BrandController::class, 'update'])->name('update');
+        Route::delete('/{id}', [BrandController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('attributes')->name('attributes.')->group(function () {
+        Route::get('/', [AttributeController::class, 'index'])->name('index');
+        Route::delete('/bulk', [AttributeController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [AttributeController::class, 'bulkStatus'])->name('bulk-status');
+        Route::get('/create', [AttributeController::class, 'create'])->name('create');
+        Route::post('/', [AttributeController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [AttributeController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [AttributeController::class, 'update'])->name('update');
+        Route::delete('/{id}', [AttributeController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('categories')->name('categories.')->group(function () {
         Route::get('/', [CategoryController::class, 'index'])->name('index');
+        Route::delete('/bulk', [CategoryController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [CategoryController::class, 'bulkStatus'])->name('bulk-status');
         Route::get('/create', [CategoryController::class, 'create'])->name('create');
         Route::post('/', [CategoryController::class, 'store'])->name('store');
         Route::get('/{id}/edit', [CategoryController::class, 'edit'])->name('edit');
@@ -125,6 +171,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::prefix('sizes')->name('sizes.')->group(function () {
         Route::get('/', [SizeController::class, 'index'])->name('index');
+        Route::delete('/bulk', [SizeController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [SizeController::class, 'bulkStatus'])->name('bulk-status');
         Route::get('/create', [SizeController::class, 'create'])->name('create');
         Route::post('/', [SizeController::class, 'store'])->name('store');
         Route::get('/{id}/edit', [SizeController::class, 'edit'])->name('edit');
@@ -134,11 +182,30 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::prefix('colors')->name('colors.')->group(function () {
         Route::get('/', [ColorController::class, 'index'])->name('index');
+        Route::delete('/bulk', [ColorController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [ColorController::class, 'bulkStatus'])->name('bulk-status');
         Route::get('/create', [ColorController::class, 'create'])->name('create');
         Route::post('/', [ColorController::class, 'store'])->name('store');
         Route::get('/{id}/edit', [ColorController::class, 'edit'])->name('edit');
         Route::put('/{id}', [ColorController::class, 'update'])->name('update');
         Route::delete('/{id}', [ColorController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('orders')->name('orders.')->group(function () {
+        Route::get('/', [OrderController::class, 'index'])->name('index');
+        Route::get('/{id}', [OrderController::class, 'show'])->whereNumber('id')->name('show');
+        Route::patch('/{id}', [OrderController::class, 'update'])->whereNumber('id')->name('update');
+    });
+
+    Route::prefix('coupons')->name('coupons.')->group(function () {
+        Route::get('/', [CouponController::class, 'index'])->name('index');
+        Route::delete('/bulk', [CouponController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [CouponController::class, 'bulkStatus'])->name('bulk-status');
+        Route::get('/create', [CouponController::class, 'create'])->name('create');
+        Route::post('/', [CouponController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [CouponController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [CouponController::class, 'update'])->name('update');
+        Route::delete('/{id}', [CouponController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('settings')->name('settings.')->group(function () {

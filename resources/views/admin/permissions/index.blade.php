@@ -21,30 +21,16 @@
         </div>
 
         <section class="premium-card">
-            <form method="GET" action="{{ route('admin.permissions.index') }}" class="table-toolbar">
-                <div class="table-toolbar__left">
-                    <div class="result-badge">
-                        <i class="fa-solid fa-key"></i>
-                        <span>{{ $permissions->total() }} result{{ $permissions->total() === 1 ? '' : 's' }}</span>
-                    </div>
+            <x-table-loader />
 
-                    <label class="per-page-control">
-                        <span>Show</span>
-                        <select name="per_page" onchange="this.form.submit()">
-                            @foreach ([5, 10, 25, 50] as $size)
-                                <option value="{{ $size }}" @selected($perPage === $size)>{{ $size }}</option>
-                            @endforeach
-                        </select>
-                        <span>per page</span>
-                    </label>
-                </div>
-
-                <label class="search-control">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="search" name="search" value="{{ request('search') }}" placeholder="Search permissions..."
-                        autocomplete="off" data-auto-search>
-                </label>
-            </form>
+            <x-table-toolbar>
+                <x-slot:left>
+                    <x-per-page-selector :current="$perPage" />
+                </x-slot:left>
+                <x-slot:right>
+                    <x-search-input name="search" placeholder="Search permissions..." />
+                </x-slot:right>
+            </x-table-toolbar>
 
             <div class="premium-table-wrap">
                 <table class="premium-table">
@@ -73,20 +59,22 @@
                                 </td>
                                 <td>
                                     <div class="action-group">
-                                        <a href="{{ route('admin.permissions.edit', $permission->id) }}" class="table-action table-action--edit">
-                                            <i class="fa-solid fa-pen"></i>
-                                            <span>Edit</span>
-                                        </a>
+                                        <x-table-actions>
+                                            <a href="{{ route('admin.permissions.edit', $permission->id) }}" class="table-actions__item table-actions__item--edit" role="menuitem">
+                                                <i class="fa-solid fa-pen"></i>
+                                                <span>Edit</span>
+                                            </a>
 
-                                        @can('delete permission')
-                                            <button type="button" class="table-action table-action--delete"
-                                                data-delete-modal-target="deletePermissionModal"
-                                                data-delete-action="{{ route('admin.permissions.destroy', $permission->id) }}"
-                                                data-delete-name="{{ $permission->name }}">
-                                                <i class="fa-solid fa-trash"></i>
-                                                <span>Delete</span>
-                                            </button>
-                                        @endcan
+                                            @can('delete permission')
+                                                <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
+                                                    data-delete-modal-target="deletePermissionModal"
+                                                    data-delete-action="{{ route('admin.permissions.destroy', $permission->id) }}"
+                                                    data-delete-name="{{ $permission->name }}">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                    <span>Delete</span>
+                                                </button>
+                                            @endcan
+                                        </x-table-actions>
                                     </div>
                                 </td>
                             </tr>

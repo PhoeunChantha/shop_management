@@ -39,13 +39,14 @@
         {{ $slot }}
     </div>
 
-    <div class="d-flex align-items-center gap-2 mt-3">
-        <button type="submit" class="filter-button">
-            <i class="fa-solid fa-sliders"></i> {{ $applyLabel }}
-        </button>
+    <div class="d-flex align-items-center justify-content-end gap-2 mt-3">
         <a href="{{ $reset ?? $action }}" class="ghost-button">
             <i class="fa-solid fa-rotate-left"></i> {{ $resetLabel }}
         </a>
+        
+        <button type="submit" class="filter-button">
+            <i class="fa-solid fa-sliders"></i> {{ $applyLabel }}
+        </button>
 
         @isset($actions)
             {{ $actions }}

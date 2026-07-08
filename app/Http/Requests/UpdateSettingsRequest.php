@@ -11,7 +11,8 @@ final class UpdateSettingsRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->hasAnyRole(['admin', 'manager']) ?? false;
+        // Authorization is enforced by the SettingPolicy in the controller.
+        return true;
     }
 
     /**

@@ -27,9 +27,12 @@ return new class extends Migration
             $table->index('brand_id');
         });
 
-        // Expand status to the publishing lifecycle (MySQL). Existing
-        // active/inactive values are preserved.
-        DB::statement("ALTER TABLE products MODIFY status VARCHAR(20) NOT NULL DEFAULT 'draft'");
+        // Expand status to the publishing lifecycle. SQLite does not support
+        // MySQL's MODIFY syntax, and the existing string column is sufficient
+        // for the test database.
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE products MODIFY status VARCHAR(20) NOT NULL DEFAULT 'draft'");
+        }
     }
 
     public function down(): void
@@ -44,6 +47,8 @@ return new class extends Migration
             ]);
         });
 
-        DB::statement("ALTER TABLE products MODIFY status ENUM('active','inactive') NOT NULL DEFAULT 'active'");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE products MODIFY status ENUM('active','inactive') NOT NULL DEFAULT 'active'");
+        }
     }
 };

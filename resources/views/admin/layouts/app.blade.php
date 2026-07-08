@@ -17,16 +17,21 @@
 
         // Tab title: "<Page> · <Site name>". Page is an explicit $title if a view
         // sets one, otherwise derived from the current route (admin.users.index → Users).
-        $pageTitle = $title
-            ?? \Illuminate\Support\Str::of((string) \Illuminate\Support\Facades\Route::currentRouteName())
-                ->after('admin.')->before('.')->replace(['-', '_'], ' ')->headline()->value();
+        $pageTitle =
+            $title ??
+            \Illuminate\Support\Str::of((string) \Illuminate\Support\Facades\Route::currentRouteName())
+                ->after('admin.')
+                ->before('.')
+                ->replace(['-', '_'], ' ')
+                ->headline()
+                ->value();
     @endphp
 
     <title>{{ filled($pageTitle) ? $pageTitle : $adminSiteName }}</title>
 
     {{-- Apply saved theme before paint to avoid a flash --}}
     <script>
-        (function () {
+        (function() {
             try {
                 var t = localStorage.getItem('admin-theme');
                 if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -41,10 +46,21 @@
     <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700,800&display=swap" rel="stylesheet" /> --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    {{-- Date-range picker (CDN). `defer` runs after app.js, so it attaches to the
+         same jQuery instance before app.js's DOM-ready handler initializes it. --}}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/moment/min/moment.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+
+    {{-- ApexCharts (CDN) — dashboard charts. Loaded standalone (no jQuery dep). --}}
+    <script defer src="https://cdn.jsdelivr.net/npm/apexcharts@3.54.1/dist/apexcharts.min.js"></script>
 
     @if ($adminFavicon)
         <link rel="icon" href="{{ $adminFavicon }}">
@@ -73,9 +89,9 @@
         <div class="d-flex flex-column flex-grow-1 h-100 overflow-auto admin-workspace">
 
             @isset($header)
-            <header class="admin-topbar sticky-top">
-                @include('admin.layouts.header')
-            </header>
+                <header class="admin-topbar sticky-top">
+                    @include('admin.layouts.header')
+                </header>
             @endisset
 
             <main class="flex-grow-1 admin-main">
@@ -92,4 +108,5 @@
 
     @stack('js')
 </body>
+
 </html>

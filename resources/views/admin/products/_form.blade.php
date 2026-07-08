@@ -2,14 +2,40 @@
     $isEdit = ($mode ?? 'create') === 'edit';
     $selectedTagIds = old('tags', $isEdit ? $product->tags->pluck('id')->all() : []);
 
-    // Seed Alpine repeaters from old input (after validation) or the saved model.
-    $variantRows = old('variants');
-    if ($variantRows === null && $isEdit) {
-        $variantRows = $product->variants->map(fn ($v) => [
-            'size_id' => (string) $v->size_id,
-            'color_id' => (string) $v->color_id,
+    // Product type + single-product fields.
+    $productType = old('product_type', $isEdit ? $product->product_type->value : 'single');
+    $singleSku = old('sku', $isEdit ? $product->sku : '');
+    $singleStock = old('stock', $isEdit ? (string) $product->stock : '0');
+    $singleLowStock = old('low_stock_alert', $isEdit ? (string) $product->low_stock_alert : '0');
+
+    // Available attributes + values for the picker.
+    $attributesJs = $attributes->map(fn ($attr) => [
+        'id' => (string) $attr->id,
+        'name' => $attr->name,
+        'values' => $attr->values->map(fn ($v) => [
+            'id' => (string) $v->id,
+            'value' => $v->value,
+            'color_hex' => $v->color_hex,
+        ])->values(),
+    ])->values();
+
+    // value id => attribute id (to group selected values back under their attribute).
+    $valueToAttr = [];
+    foreach ($attributes as $attr) {
+        foreach ($attr->values as $val) {
+            $valueToAttr[(string) $val->id] = (string) $attr->id;
+        }
+    }
+
+    // Seed variants from old() (after validation) or the saved model.
+    $variantsSeed = old('variants');
+    if ($variantsSeed === null && $isEdit) {
+        $variantsSeed = $product->variants->map(fn ($v) => [
+            'value_ids' => $v->values->pluck('id')->map(fn ($id) => (string) $id)->all(),
             'sku' => $v->sku,
             'barcode' => $v->barcode,
+            'image' => $v->image,
+            'image_url' => $v->image_url,
             'stock' => (string) $v->stock,
             'low_stock_alert' => (string) $v->low_stock_alert,
             'price' => $v->price !== null ? (string) $v->price : '',
@@ -18,7 +44,23 @@
             'status' => $v->status ? '1' : '0',
         ])->values()->all();
     }
-    $variantRows = $variantRows ?: [];
+    $variantsSeed = $variantsSeed ?: [];
+
+    // Reconstruct the selected attributes + values from the variant value ids.
+    $selectedGroups = [];
+    foreach ($variantsSeed as $row) {
+        foreach ((array) ($row['value_ids'] ?? []) as $vid) {
+            $vid = (string) $vid;
+            $aid = $valueToAttr[$vid] ?? null;
+            if ($aid !== null) {
+                $selectedGroups[$aid][$vid] = $vid;
+            }
+        }
+    }
+    $selectedSeed = [];
+    foreach ($selectedGroups as $aid => $vids) {
+        $selectedSeed[] = ['attributeId' => (string) $aid, 'valueIds' => array_values($vids)];
+    }
 
     $specRows = old('specifications');
     if ($specRows === null && $isEdit) {
@@ -175,95 +217,270 @@
                 </div>
             </section>
 
-            {{-- E. Variants & Stock --}}
+            {{-- E. Variants & Stock (ERP attribute workflow) --}}
             <section class="form-section"
-                x-data="{
-                    variants: @js($variantRows),
-                    add() { this.variants.push({ size_id: '', color_id: '', sku: '', barcode: '', stock: '0', low_stock_alert: '0', price: '', cost_price: '', weight: '', status: '1' }); },
-                    remove(i) { this.variants.splice(i, 1); }
-                }">
+                x-data="productVariants({
+                    type: @js($productType),
+                    attributes: @js($attributesJs),
+                    selected: @js($selectedSeed),
+                    variants: @js($variantsSeed),
+                    single: {
+                        sku: @js($singleSku),
+                        stock: @js($singleStock),
+                        low_stock_alert: @js($singleLowStock),
+                    },
+                })">
                 <div class="form-section__head">
                     <span class="form-section__icon"><i class="fa-solid fa-layer-group"></i></span>
-                    <div><h4>Variants &amp; Stock</h4><p>Size, color, optional SKU, barcode, stock and pricing per variant.</p></div>
+                    <div><h4>Variants &amp; Stock</h4><p>Choose a product type, then define stock — a single SKU or attribute-based variants.</p></div>
                     <span class="form-section__badge">Inventory</span>
-                    <button type="button" class="dynamic-add-button ms-auto" @click="add()"><i class="fa-solid fa-plus"></i> Add variant</button>
                 </div>
-                <div class="form-section__body">
-                    <template x-if="variants.length === 0">
-                        <p class="text-sm text-gray-400 dark:text-slate-500">No variants yet — click “Add variant”. Leave SKU blank to auto-generate one.</p>
-                    </template>
-                    <div class="d-flex flex-column gap-3">
-                        <template x-for="(row, i) in variants" :key="i">
-                            <div class="variant-card">
-                                <div class="variant-card__top">
-                                    <span>Variant <strong x-text="i + 1"></strong></span>
-                                    <small>Leave SKU blank to auto-generate during save.</small>
-                                </div>
-                                <div class="variant-card__grid">
-                                    <div class="form-field">
-                                        <label>Size</label>
-                                        <select class="form-input" x-model="row.size_id" :name="`variants[${i}][size_id]`">
-                                            <option value="">Size</option>
-                                            @foreach ($sizes as $size)
-                                                <option value="{{ $size->id }}">{{ $size->name }}{{ $size->code ? " ({$size->code})" : '' }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="form-field">
-                                        <label>Color</label>
-                                        <select class="form-input" x-model="row.color_id" :name="`variants[${i}][color_id]`">
-                                            <option value="">Color</option>
-                                            @foreach ($colors as $color)
-                                                <option value="{{ $color->id }}">{{ $color->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="form-field">
-                                        <label>SKU</label>
-                                        <input type="text" class="form-input" x-model="row.sku" :name="`variants[${i}][sku]`" placeholder="Auto-generate if blank">
-                                        <p class="form-help">Optional, must be unique if entered.</p>
-                                    </div>
-                                    <div class="form-field">
-                                        <label>Barcode</label>
-                                        <input type="text" class="form-input" x-model="row.barcode" :name="`variants[${i}][barcode]`" placeholder="Barcode">
-                                    </div>
-                                    <div class="form-field">
-                                        <label>Stock</label>
-                                        <input type="number" min="0" class="form-input" x-model="row.stock" :name="`variants[${i}][stock]`">
-                                    </div>
-                                    <div class="form-field">
-                                        <label>Low Stock Alert</label>
-                                        <input type="number" min="0" class="form-input" x-model="row.low_stock_alert" :name="`variants[${i}][low_stock_alert]`">
-                                    </div>
-                                    <div class="form-field">
-                                        <label>Price ($)</label>
-                                        <input type="number" step="0.01" min="0" class="form-input" x-model="row.price" :name="`variants[${i}][price]`" placeholder="Product price">
-                                    </div>
-                                    <div class="form-field">
-                                        <label>Cost Price ($)</label>
-                                        <input type="number" step="0.01" min="0" class="form-input" x-model="row.cost_price" :name="`variants[${i}][cost_price]`">
-                                    </div>
-                                    <div class="form-field">
-                                        <label>Weight (kg)</label>
-                                        <input type="number" step="0.01" min="0" class="form-input" x-model="row.weight" :name="`variants[${i}][weight]`">
-                                    </div>
-                                    <div class="form-field">
-                                        <label>Status</label>
-                                        <select class="form-input" x-model="row.status" :name="`variants[${i}][status]`">
-                                            <option value="1">Active</option>
-                                            <option value="0">Inactive</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <button type="button" class="variant-card__remove" @click="remove(i)" title="Remove variant"><i class="fa-solid fa-trash"></i></button>
-                            </div>
-                        </template>
+                <div class="form-section__body d-flex flex-column gap-4">
+
+                    {{-- Product type --}}
+                    <div class="form-field" style="max-width: 340px;">
+                        <label>Product Type <span class="text-red-500">*</span></label>
+                        <select class="form-input" name="product_type" x-model="type">
+                            @foreach (\App\Enums\ProductType::options() as $val => $label)
+                                <option value="{{ $val }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                        @error('product_type')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                     </div>
+
+                    {{-- Single product --}}
+                    <div class="variant-single-grid" x-show="type === 'single'" x-cloak>
+                        <div class="form-field">
+                            <label>SKU</label>
+                            <input type="text" class="form-input" name="sku" x-model="single.sku"
+                                :disabled="type !== 'single'" placeholder="Optional, must be unique">
+                            @error('sku')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="form-field">
+                            <label>Stock <span class="text-red-500">*</span></label>
+                            <input type="number" min="0" class="form-input" name="stock" x-model="single.stock" :disabled="type !== 'single'">
+                            @error('stock')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="form-field">
+                            <label>Low Stock Alert</label>
+                            <input type="number" min="0" class="form-input" name="low_stock_alert" x-model="single.low_stock_alert" :disabled="type !== 'single'">
+                            @error('low_stock_alert')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
+                        </div>
+                    </div>
+
+                    {{-- Variable product --}}
+                    <div x-show="type === 'variable'" x-cloak class="flex-column gap-4" style="display:flex;">
+
+                        {{-- Attributes panel --}}
+                        <div class="attr-panel">
+                            <div class="attr-panel__head">
+                                <div>
+                                    <h5>Attributes</h5>
+                                    <p>Add attributes like Size or Color, choose their values, then generate variants.</p>
+                                </div>
+                                <button type="button" class="attr-add-btn" @click="openAdd()">
+                                    <i class="fa-solid fa-plus"></i> Add Attribute
+                                </button>
+                            </div>
+
+                            <template x-if="selected.length === 0">
+                                <div class="attr-empty">
+                                    <i class="fa-solid fa-diagram-project"></i>
+                                    <strong>No attributes selected</strong>
+                                    <span>Add your first attribute to start building variants.</span>
+                                </div>
+                            </template>
+
+                            <div class="attr-selected-list" x-show="selected.length > 0">
+                                <template x-for="sel in selected" :key="sel.attributeId">
+                                    <div class="attr-selected-card">
+                                        <div class="attr-selected-card__main">
+                                            <span class="attr-selected-card__name" x-text="attrName(sel.attributeId)"></span>
+                                            <div class="attr-selected-card__values">
+                                                <template x-for="vid in sel.valueIds" :key="vid">
+                                                    <span class="attr-value-pill">
+                                                        <template x-if="valueHex(vid)">
+                                                            <span class="attr-swatch" :style="`background:${valueHex(vid)}`"></span>
+                                                        </template>
+                                                        <span x-text="valueName(vid)"></span>
+                                                    </span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                        <div class="attr-selected-card__actions">
+                                            <button type="button" class="attr-mini-btn" @click="openEdit(sel)"><i class="fa-solid fa-pen"></i> Edit</button>
+                                            <button type="button" class="attr-mini-btn attr-mini-btn--danger" @click="removeAttribute(sel.attributeId)"><i class="fa-solid fa-xmark"></i> Remove</button>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        {{-- Generate --}}
+                        <div class="attr-generate-bar" x-show="selected.length > 0">
+                            <button type="button" class="attr-generate-btn" :disabled="!canGenerate()" @click="generate()">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                <span x-text="variants.length ? 'Regenerate Variants' : 'Generate Variants'"></span>
+                            </button>
+                            <span class="attr-generate-hint" x-show="dirty && variants.length" x-cloak>
+                                <i class="fa-solid fa-triangle-exclamation"></i> Attributes changed — regenerate to update the table.
+                            </span>
+                        </div>
+
+                        {{-- Variant table / matrix --}}
+                        <div x-show="variants.length > 0" x-cloak class="flex-column gap-2" style="display:flex;">
+                            <div class="variant-view-bar">
+                                <span class="variant-count"><strong x-text="variants.length"></strong> variant<span x-text="variants.length === 1 ? '' : 's'"></span></span>
+                                <div class="variant-view-toggle" x-show="canMatrix()">
+                                    <button type="button" :class="{ 'is-on': view === 'table' }" @click="view = 'table'"><i class="fa-solid fa-table-list"></i> Table</button>
+                                    <button type="button" :class="{ 'is-on': view === 'matrix' }" @click="view = 'matrix'"><i class="fa-solid fa-table-cells"></i> Matrix</button>
+                                </div>
+                            </div>
+
+                            {{-- TABLE VIEW (holds the authoritative submit inputs) --}}
+                            <div class="erp-table-wrap" x-show="view === 'table' || !canMatrix()">
+                                <table class="erp-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Image</th><th>Variant</th><th>SKU</th><th>Barcode</th><th>Price</th>
+                                            <th>Cost</th><th>Stock</th><th>Low</th><th>Status</th><th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="(v, i) in variants" :key="v.value_ids.join('-')">
+                                            <tr>
+                                                <td>
+                                                    <input type="hidden" :name="`variants[${i}][image_existing]`" :value="v.image" :disabled="type !== 'variable'">
+                                                    <label class="erp-img" title="Upload variant image">
+                                                        <template x-if="v.preview"><img :src="v.preview" alt=""></template>
+                                                        <template x-if="!v.preview"><i class="fa-regular fa-image"></i></template>
+                                                        <input type="file" accept="image/*" class="visually-hidden"
+                                                            :name="`variants[${i}][image]`" @change="pickVariantImage($event, v)" :disabled="type !== 'variable'">
+                                                    </label>
+                                                </td>
+                                                <td class="erp-variant-cell">
+                                                    <template x-for="vid in v.value_ids" :key="vid">
+                                                        <input type="hidden" :name="`variants[${i}][value_ids][]`" :value="vid" :disabled="type !== 'variable'">
+                                                    </template>
+                                                    <input type="hidden" :name="`variants[${i}][weight]`" :value="v.weight" :disabled="type !== 'variable'">
+                                                    <span class="erp-variant-badge" x-text="variantLabel(v)"></span>
+                                                </td>
+                                                <td><input type="text" class="form-input" placeholder="Auto" :name="`variants[${i}][sku]`" x-model="v.sku" :disabled="type !== 'variable'"></td>
+                                                <td><input type="text" class="form-input" placeholder="—" :name="`variants[${i}][barcode]`" x-model="v.barcode" :disabled="type !== 'variable'"></td>
+                                                <td><input type="number" step="0.01" min="0" class="form-input" placeholder="Base" :name="`variants[${i}][price]`" x-model="v.price" :disabled="type !== 'variable'"></td>
+                                                <td><input type="number" step="0.01" min="0" class="form-input" placeholder="—" :name="`variants[${i}][cost_price]`" x-model="v.cost_price" :disabled="type !== 'variable'"></td>
+                                                <td><input type="number" min="0" class="form-input" :name="`variants[${i}][stock]`" x-model="v.stock" :disabled="type !== 'variable'"></td>
+                                                <td><input type="number" min="0" class="form-input" :name="`variants[${i}][low_stock_alert]`" x-model="v.low_stock_alert" :disabled="type !== 'variable'"></td>
+                                                <td>
+                                                    <select class="form-input" :name="`variants[${i}][status]`" x-model="v.status" :disabled="type !== 'variable'">
+                                                        <option value="1">Active</option>
+                                                        <option value="0">Inactive</option>
+                                                    </select>
+                                                </td>
+                                                <td><button type="button" class="erp-row-del" @click="removeVariant(i)" title="Remove"><i class="fa-solid fa-trash"></i></button></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {{-- MATRIX VIEW (edits the same variant objects; stock only) --}}
+                            <div class="erp-matrix-wrap" x-show="view === 'matrix' && canMatrix()" x-cloak>
+                                <table class="erp-matrix">
+                                    <thead>
+                                        <tr>
+                                            <th class="erp-matrix__corner">
+                                                <span x-text="attrName(selected[1].attributeId)"></span>
+                                                <i class="fa-solid fa-arrow-right-long"></i>
+                                            </th>
+                                            <template x-for="colId in colValues()" :key="colId">
+                                                <th><span x-text="valueName(colId)"></span></th>
+                                            </template>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="rowId in rowValues()" :key="rowId">
+                                            <tr>
+                                                <th class="erp-matrix__rowhead" x-text="valueName(rowId)"></th>
+                                                <template x-for="colId in colValues()" :key="colId">
+                                                    <td>
+                                                        <template x-if="matrixVariant(rowId, colId)">
+                                                            <input type="number" min="0" class="form-input erp-matrix__cell"
+                                                                x-model="matrixVariant(rowId, colId).stock">
+                                                        </template>
+                                                    </td>
+                                                </template>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                                <p class="form-help mt-2">Matrix edits stock only. Switch to Table for SKU, price and status.</p>
+                            </div>
+                        </div>
+                    </div>
+
                     @foreach ($errors->keys() as $key)
-                        @if (str_starts_with($key, 'variants.'))
+                        @if (str_starts_with($key, 'variants') || in_array($key, ['stock', 'sku', 'product_type', 'low_stock_alert']))
                             <p class="text-red-500 text-sm mt-1.5">{{ $errors->first($key) }}</p>
                         @endif
                     @endforeach
+
+                    {{-- Add / Edit Attribute modal --}}
+                    <template x-teleport="body">
+                        <div class="modal-backdrop-premium" x-show="modalOpen" x-cloak
+                            @keydown.escape.window="closeModal()" @click.self="closeModal()"
+                            x-transition.opacity.duration.150ms style="display:none;">
+                            <div class="attr-modal">
+                                <div class="attr-modal__head">
+                                    <div>
+                                        <h3 x-text="modalMode === 'edit' ? 'Edit Attribute' : 'Add Attribute'"></h3>
+                                        <p>Select an attribute and the values this product offers.</p>
+                                    </div>
+                                    <button type="button" class="form-modal__close" @click="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <div class="attr-modal__body">
+                                    <div class="form-field">
+                                        <label>Attribute</label>
+                                        <select class="form-input" x-model="draftAttributeId" @change="onDraftAttributeChange()" :disabled="modalMode === 'edit'">
+                                            <option value="">Select attribute…</option>
+                                            <template x-for="a in availableAttributes()" :key="a.id">
+                                                <option :value="a.id" x-text="a.name"></option>
+                                            </template>
+                                        </select>
+                                        <template x-if="attributes.length === 0">
+                                            <p class="form-help mt-1">No attributes exist yet — create some under Catalog → Attributes.</p>
+                                        </template>
+                                    </div>
+
+                                    <div x-show="draftAttributeId" x-cloak class="attr-modal__values">
+                                        <div class="attr-value-search">
+                                            <i class="fa-solid fa-magnifying-glass"></i>
+                                            <input type="text" x-model="valueSearch" placeholder="Search values…">
+                                        </div>
+                                        <div class="attr-check-list">
+                                            <template x-for="v in draftValues()" :key="v.id">
+                                                <label class="attr-check" :class="{ 'is-on': draftValueIds.includes(v.id) }">
+                                                    <input type="checkbox" class="visually-hidden" :checked="draftValueIds.includes(v.id)" @change="toggleDraftValue(v.id)">
+                                                    <span class="attr-check__box"><i class="fa-solid fa-check"></i></span>
+                                                    <template x-if="v.color_hex"><span class="attr-swatch" :style="`background:${v.color_hex}`"></span></template>
+                                                    <span x-text="v.value"></span>
+                                                </label>
+                                            </template>
+                                            <template x-if="draftAttributeId && draftValues().length === 0">
+                                                <p class="text-sm text-gray-400 p-2">No values match.</p>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="attr-modal__foot">
+                                    <button type="button" class="modal-cancel" @click="closeModal()">Cancel</button>
+                                    <button type="button" class="form-submit-button" :disabled="!draftAttributeId || draftValueIds.length === 0" @click="saveModal()">
+                                        <i class="fa-solid fa-check"></i> Save
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
                 </div>
             </section>
 
@@ -443,3 +660,137 @@
         </aside>
     </div>
 </form>
+
+@once
+    @push('js')
+        <script>
+            window.productVariants = function (config) {
+                return {
+                    type: config.type || 'single',
+                    single: config.single || { sku: '', stock: '0', low_stock_alert: '0' },
+                    attributes: config.attributes || [],   // [{id,name,values:[{id,value,color_hex}]}]
+                    selected: config.selected || [],        // [{attributeId, valueIds:[]}]
+                    variants: [],
+                    view: 'table',
+                    generated: false,
+                    dirty: false,
+
+                    // modal state
+                    modalOpen: false,
+                    modalMode: 'add',
+                    draftAttributeId: '',
+                    draftValueIds: [],
+                    valueSearch: '',
+
+                    // lookups
+                    _valueMap: {},
+                    _attrMap: {},
+
+                    init() {
+                        this.attributes.forEach((a) => {
+                            this._attrMap[a.id] = a;
+                            a.values.forEach((v) => { this._valueMap[v.id] = { ...v, attributeId: a.id }; });
+                        });
+
+                        this.variants = (config.variants || []).map((v) => ({
+                            value_ids: (v.value_ids || []).map(String),
+                            sku: v.sku || '', barcode: v.barcode || '',
+                            image: v.image || '', preview: v.image_url || null,
+                            stock: v.stock ?? '0', low_stock_alert: v.low_stock_alert ?? '0',
+                            price: v.price ?? '', cost_price: v.cost_price ?? '', weight: v.weight ?? '',
+                            status: v.status ?? '1',
+                        }));
+                        this.generated = this.variants.length > 0;
+                    },
+
+                    pickVariantImage(e, v) {
+                        const file = e.target.files[0];
+                        if (file) v.preview = URL.createObjectURL(file);
+                    },
+
+                    /* ---- attribute / value helpers ---- */
+                    attrName(id) { return this._attrMap[id]?.name || ''; },
+                    valueName(id) { return this._valueMap[id]?.value || ''; },
+                    valueHex(id) { return this._valueMap[id]?.color_hex || null; },
+                    isSelected(attrId) { return this.selected.some((s) => s.attributeId === attrId); },
+                    availableAttributes() {
+                        return this.attributes.filter((a) => !this.isSelected(a.id) || a.id === this.draftAttributeId);
+                    },
+                    draftAttribute() { return this._attrMap[this.draftAttributeId] || null; },
+                    draftValues() {
+                        const a = this.draftAttribute();
+                        if (!a) return [];
+                        const q = this.valueSearch.trim().toLowerCase();
+                        return q ? a.values.filter((v) => v.value.toLowerCase().includes(q)) : a.values;
+                    },
+                    toggleDraftValue(id) {
+                        const i = this.draftValueIds.indexOf(id);
+                        if (i === -1) this.draftValueIds.push(id); else this.draftValueIds.splice(i, 1);
+                    },
+
+                    /* ---- modal ---- */
+                    openAdd() {
+                        this.modalMode = 'add'; this.draftAttributeId = ''; this.draftValueIds = []; this.valueSearch = '';
+                        this.modalOpen = true;
+                    },
+                    openEdit(sel) {
+                        this.modalMode = 'edit'; this.draftAttributeId = sel.attributeId;
+                        this.draftValueIds = [...sel.valueIds]; this.valueSearch = '';
+                        this.modalOpen = true;
+                    },
+                    closeModal() { this.modalOpen = false; },
+                    onDraftAttributeChange() { this.draftValueIds = []; this.valueSearch = ''; },
+                    saveModal() {
+                        if (!this.draftAttributeId || this.draftValueIds.length === 0) return;
+                        const existing = this.selected.find((s) => s.attributeId === this.draftAttributeId);
+                        if (existing) existing.valueIds = [...this.draftValueIds];
+                        else this.selected.push({ attributeId: this.draftAttributeId, valueIds: [...this.draftValueIds] });
+                        this.dirty = true;
+                        this.closeModal();
+                    },
+                    removeAttribute(attrId) {
+                        this.selected = this.selected.filter((s) => s.attributeId !== attrId);
+                        this.dirty = true;
+                    },
+
+                    /* ---- generate ---- */
+                    canGenerate() {
+                        return this.selected.length > 0 && this.selected.every((s) => s.valueIds.length > 0);
+                    },
+                    keyOf(ids) { return ids.map(Number).sort((a, b) => a - b).join('-'); },
+                    cartesian(arrays) {
+                        return arrays.reduce((acc, arr) => acc.flatMap((a) => arr.map((b) => [...a, b])), [[]]);
+                    },
+                    generate() {
+                        if (!this.canGenerate()) return;
+                        const combos = this.cartesian(this.selected.map((s) => s.valueIds));
+                        const existing = {};
+                        this.variants.forEach((v) => { existing[this.keyOf(v.value_ids)] = v; });
+                        this.variants = combos.map((combo) => {
+                            const key = this.keyOf(combo);
+                            if (existing[key]) { existing[key].value_ids = combo; return existing[key]; }
+                            return { value_ids: combo, sku: '', barcode: '', image: '', preview: null, stock: '0', low_stock_alert: '0', price: '', cost_price: '', weight: '', status: '1' };
+                        });
+                        this.generated = true; this.dirty = false;
+                        if (!this.canMatrix()) this.view = 'table';
+                    },
+                    removeVariant(i) { this.variants.splice(i, 1); },
+                    variantLabel(v) {
+                        const order = this.selected.map((s) => s.attributeId);
+                        const sorted = [...v.value_ids].sort((a, b) =>
+                            order.indexOf(this._valueMap[a]?.attributeId) - order.indexOf(this._valueMap[b]?.attributeId));
+                        return sorted.map((id) => this.valueName(id)).join(' / ');
+                    },
+
+                    /* ---- matrix ---- */
+                    canMatrix() { return this.selected.length === 2 && this.variants.length > 0; },
+                    rowValues() { return this.selected[0]?.valueIds || []; },
+                    colValues() { return this.selected[1]?.valueIds || []; },
+                    matrixVariant(rowId, colId) {
+                        return this.variants.find((v) => v.value_ids.includes(rowId) && v.value_ids.includes(colId));
+                    },
+                };
+            };
+        </script>
+    @endpush
+@endonce

@@ -51,12 +51,10 @@
         </x-filter-card>
 
         <section class="premium-card mt-3">
+            <x-table-loader />
+
             <x-table-toolbar>
                 <x-slot:left>
-                    <div class="result-badge">
-                        <i class="fa-solid fa-users"></i>
-                        <span>{{ $users->total() }} result{{ $users->total() === 1 ? '' : 's' }}</span>
-                    </div>
                     <x-per-page-selector :current="$perPage" />
                 </x-slot:left>
                 <x-slot:right>
@@ -116,22 +114,23 @@
                                 </td>
                                 <td>
                                     <div class="action-group">
-                                        <a href="{{ route('admin.users.edit', $user->id) }}"
-                                            class="table-action table-action--edit">
-                                            <i class="fa-solid fa-pen"></i>
-                                            <span>Edit</span>
-                                        </a>
+                                        <x-table-actions>
+                                            <a href="{{ route('admin.users.edit', $user->id) }}"
+                                                class="table-actions__item table-actions__item--edit" role="menuitem">
+                                                <i class="fa-solid fa-pen"></i>
+                                                <span>Edit</span>
+                                            </a>
 
-                                        @can('delete users')
-                                            <button type="button" class="table-action table-action--delete"
-                                                data-delete-modal-target="deleteUserModal"
-                                                data-delete-action="{{ route('admin.users.destroy', $user->id) }}"
-                                                data-delete-name="{{ $user->name }}">
-                                                <i class="fa-solid fa-trash"></i>
-                                                <span>Delete</span>
-                                            </button>
-                                        @endcan
-                                        
+                                            @can('delete users')
+                                                <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
+                                                    data-delete-modal-target="deleteUserModal"
+                                                    data-delete-action="{{ route('admin.users.destroy', $user->id) }}"
+                                                    data-delete-name="{{ $user->name }}">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                    <span>Delete</span>
+                                                </button>
+                                            @endcan
+                                        </x-table-actions>
                                     </div>
                                 </td>
                             </tr>

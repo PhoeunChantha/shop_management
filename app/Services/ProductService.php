@@ -6,10 +6,13 @@ namespace App\Services;
 
 use App\Helpers\ImageManager;
 use App\Http\Requests\Product\BaseProductRequest;
+use App\Models\Attribute;
+use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductTag;
-use App\Services\SettingService;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -21,9 +24,62 @@ class ProductService
 {
     private const FOLDER = 'products';
 
+    private const VARIANT_FOLDER = 'variants';
+
     private const TRANSLATABLE = ['name', 'short_description', 'description', 'seo_title', 'seo_description'];
 
     public function __construct(private readonly SettingService $settings) {}
+
+    /**
+     * Paginated, filtered product list for the admin index.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    public function paginate(array $filters, int $perPage): LengthAwarePaginator
+    {
+        return $this->filteredQuery($filters)
+            ->with(['category', 'brand', 'images'])
+            ->withCount('variants')
+            ->withSum('variants', 'stock')
+            ->paginate($perPage)
+            ->withQueryString();
+    }
+
+    /**
+     * The filtered/sorted product query (no eager loads or pagination) — shared
+     * by the index list and the export so both honour the same filters.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    public function filteredQuery(array $filters): \Illuminate\Database\Eloquent\Builder
+    {
+        $search = trim($filters['search'] ?? '');
+
+        return Product::query()
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('name', 'like', "%{$search}%")
+                        ->orWhere('slug', 'like', "%{$search}%")
+                        ->orWhereHas('variants', function ($q) use ($search) {
+                            $q->where('sku', 'like', "%{$search}%")
+                                ->orWhere('barcode', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->when($filters['category_id'] ?? null, fn ($q, $v) => $q->where('category_id', $v))
+            ->when($filters['brand_id'] ?? null, fn ($q, $v) => $q->where('brand_id', $v))
+            ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
+            ->when(($filters['min_price'] ?? null) !== null, fn ($q) => $q->where('price', '>=', $filters['min_price']))
+            ->when(($filters['max_price'] ?? null) !== null, fn ($q) => $q->where('price', '<=', $filters['max_price']))
+            ->when(($filters['stock'] ?? null) === 'in_stock', fn ($q) => $q->whereHas('variants', fn ($v) => $v->where('stock', '>', 0)))
+            ->when(($filters['stock'] ?? null) === 'out_of_stock', fn ($q) => $q->whereDoesntHave('variants', fn ($v) => $v->where('stock', '>', 0)))
+            ->when(($filters['stock'] ?? null) === 'low_stock', fn ($q) => $q->whereHas('variants', fn ($v) => $v->whereColumn('stock', '<=', 'low_stock_alert')->where('low_stock_alert', '>', 0)))
+            ->when(($filters['flag'] ?? null) === 'featured', fn ($q) => $q->where('is_featured', true))
+            ->when(($filters['flag'] ?? null) === 'new', fn ($q) => $q->where('is_new', true))
+            ->when(($filters['flag'] ?? null) === 'best_seller', fn ($q) => $q->where('is_best_seller', true))
+            ->when(($filters['flag'] ?? null) === 'on_sale', fn ($q) => $q->where('is_on_sale', true))
+            ->orderByDesc('id');
+    }
 
     public function create(BaseProductRequest $request): Product
     {
@@ -33,6 +89,27 @@ class ProductService
     public function update(BaseProductRequest $request, Product $product): Product
     {
         return $this->save($request, $product);
+    }
+
+    /**
+     * Shared dropdown data for product create/edit forms.
+     *
+     * @return array<string, mixed>
+     */
+    public function formData(): array
+    {
+        return [
+            'categories' => Category::orderBy('name')->get(['id', 'name']),
+            'brands' => Brand::orderBy('name')->get(['id', 'name']),
+            'attributes' => Attribute::where('status', true)
+                ->with(['values' => fn ($q) => $q->where('status', true)->orderBy('sort_order')])
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(),
+            'tags' => ProductTag::orderBy('name')->get(['id', 'name']),
+            'locales' => $this->settings->activeLanguages(),
+            'primaryLang' => $this->settings->primaryLanguage(),
+        ];
     }
 
     /**
@@ -59,7 +136,7 @@ class ProductService
                 $this->removeImages($product, $request);
                 $this->storeImages($product, $request, $uploaded);
                 $this->setPrimaryImage($product, $request);
-                $this->syncVariants($product, $request);
+                $this->syncVariants($product, $request, $uploaded);
                 $this->syncSpecifications($product, $request);
                 $this->syncTags($product, $request);
 
@@ -71,26 +148,6 @@ class ProductService
             }
 
             throw $e;
-        }
-    }
-
-    public function updateStatus(Product $product, string $status): void
-    {
-        $product->update(['status' => $status]);
-    }
-
-    public function deleteImage(ProductImage $image): void
-    {
-        $productId = $image->product_id;
-        $wasPrimary = $image->is_primary;
-
-        ImageManager::delete($image->image, self::FOLDER);
-        $image->delete();
-
-        // Promote another image to primary if we removed the primary one.
-        if ($wasPrimary) {
-            $next = ProductImage::where('product_id', $productId)->orderBy('sort_order')->first();
-            $next?->update(['is_primary' => true]);
         }
     }
 
@@ -114,7 +171,24 @@ class ProductService
         $product->category_id = $request->input('category_id');
         $product->sub_category_id = $request->input('sub_category_id') ?: null;
         $product->brand_id = $request->input('brand_id') ?: null;
+        $product->product_type = $request->input('product_type', 'variable');
         $this->fillTranslations($product, $request);
+
+        // Single products carry their own sku/stock; variable products use variants.
+        if ($product->product_type === 'single') {
+            // Auto-generate a unique SKU when the admin leaves it blank (keep the
+            // existing one on edit so it stays stable).
+            $product->sku = $request->filled('sku')
+                ? trim((string) $request->input('sku'))
+                : ($product->sku ?: $this->generateProductSku());
+            $product->stock = (int) ($request->input('stock') ?? 0);
+            $product->low_stock_alert = (int) ($request->input('low_stock_alert') ?? 0);
+        } else {
+            $product->sku = null;
+            $product->stock = 0;
+            $product->low_stock_alert = 0;
+        }
+
         $product->price = $request->input('price');
         $product->cost_price = $request->filled('cost_price') ? $request->input('cost_price') : null;
         $product->discount_type = $request->input('discount_type') ?: null;
@@ -209,28 +283,43 @@ class ProductService
         $product->images()->whereKey($target->id)->update(['is_primary' => true]);
     }
 
-    private function syncVariants(Product $product, BaseProductRequest $request): void
+    private function syncVariants(Product $product, BaseProductRequest $request, array &$uploaded = []): void
     {
         $product->variants()->delete();
+
+        // Single products have no variant rows.
+        if ($request->input('product_type') === 'single') {
+            return;
+        }
+
         $usedSkus = [];
 
-        foreach ((array) $request->input('variants', []) as $variant) {
-            if (empty($variant['size_id']) || empty($variant['color_id'])) {
+        foreach ((array) $request->input('variants', []) as $index => $variant) {
+            $valueIds = array_values(array_filter(array_map('intval', (array) ($variant['value_ids'] ?? []))));
+            if (empty($valueIds)) {
                 continue;
             }
 
             // Auto-generate a unique SKU when the admin leaves it blank.
             $sku = trim($variant['sku'] ?? '');
             if ($sku === '') {
-                $sku = $this->generateSku($product, $variant, $usedSkus);
+                $sku = $this->generateSku($product, $valueIds, $usedSkus);
             }
             $usedSkus[] = $sku;
 
-            $product->variants()->create([
-                'size_id' => $variant['size_id'],
-                'color_id' => $variant['color_id'],
+            // Per-variant image: a freshly uploaded file wins, else keep the existing one.
+            $imageFile = $request->file("variants.{$index}.image");
+            if ($imageFile) {
+                $image = ImageManager::upload($imageFile, self::VARIANT_FOLDER);
+                $uploaded[] = $image;
+            } else {
+                $image = ($variant['image_existing'] ?? '') ?: null;
+            }
+
+            $created = $product->variants()->create([
                 'sku' => $sku,
                 'barcode' => $variant['barcode'] ?? null,
+                'image' => $image,
                 'stock' => $variant['stock'] ?? 0,
                 'low_stock_alert' => $variant['low_stock_alert'] ?? 0,
                 'price' => $this->nullableNumber($variant['price'] ?? null),
@@ -238,18 +327,39 @@ class ProductService
                 'weight' => $this->nullableNumber($variant['weight'] ?? null),
                 'status' => (bool) ($variant['status'] ?? true),
             ]);
+
+            $created->values()->sync($valueIds);
         }
+    }
+
+    /**
+     * A unique product-level SKU for single products left blank by the admin.
+     * Checks both the products and product_variants tables so codes never clash.
+     */
+    private function generateProductSku(): string
+    {
+        $prefix = $this->settings->productSkuPrefix();
+
+        do {
+            $sku = $prefix.strtoupper(Str::random(8));
+        } while (
+            Product::query()->where('sku', $sku)->exists()
+            || DB::table('product_variants')->where('sku', $sku)->exists()
+        );
+
+        return $sku;
     }
 
     /**
      * Build a unique SKU (e.g. SKU-12-3-4) that collides with neither the
      * batch being saved nor any existing variant.
      *
+     * @param  array<int, int>  $valueIds
      * @param  array<int, string>  $used
      */
-    private function generateSku(Product $product, array $variant, array $used): string
+    private function generateSku(Product $product, array $valueIds, array $used): string
     {
-        $base = 'SKU-'.$product->id.'-'.($variant['size_id'] ?? 'X').'-'.($variant['color_id'] ?? 'X');
+        $base = 'SKU-'.$product->id.'-'.implode('-', $valueIds);
         $sku = $base;
         $n = 1;
 

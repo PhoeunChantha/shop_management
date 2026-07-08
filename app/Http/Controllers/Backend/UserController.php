@@ -11,24 +11,14 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Routing\Controllers\HasMiddleware;
-use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\View\View;
 
-class UserController extends Controller implements HasMiddleware
+class UserController extends Controller
 {
-    public static function middleware(): array
-    {
-        return [
-            new Middleware(
-                'role:admin|manager',
-                only: ['index', 'edit', 'create', 'update', 'store', 'destroy']
-            ),
-        ];
-    }
-
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', User::class);
+
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
             'role' => ['nullable', 'string', 'exists:roles,name'],
@@ -74,6 +64,8 @@ class UserController extends Controller implements HasMiddleware
 
     public function create()
     {
+        $this->authorize('create', User::class);
+
         return view('admin.users.create', [
             'roles' => Role::orderBy('name', 'asc')->get(),
         ]);
@@ -81,6 +73,8 @@ class UserController extends Controller implements HasMiddleware
 
     public function store(Request $request)
     {
+        $this->authorize('create', User::class);
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|min:3',
             'email' => 'required|email|unique:users,email',
@@ -115,6 +109,8 @@ class UserController extends Controller implements HasMiddleware
 
     public function edit(string $id)
     {
+        $this->authorize('update', User::class);
+
         $user = User::findOrFail($id);
         $roles = Role::orderBy('id', 'asc')->get();
         $hasRoles = $user->roles->pluck('name');
@@ -128,6 +124,8 @@ class UserController extends Controller implements HasMiddleware
 
     public function update(Request $request, string $id)
     {
+        $this->authorize('update', User::class);
+
         $user = User::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
@@ -160,6 +158,8 @@ class UserController extends Controller implements HasMiddleware
 
     public function destroy(string $id)
     {
+        $this->authorize('delete', User::class);
+
         $user = User::findOrFail($id);
 
         if (Auth::id() === $user->id) {

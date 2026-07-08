@@ -2,87 +2,81 @@
 
 namespace App\Http\Controllers\Backend;
 
+use App\Http\Controllers\Backend\Concerns\HandlesBulkActions;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Http\Requests\Color\StoreColorRequest;
+use App\Http\Requests\Color\UpdateColorRequest;
 use App\Models\Color;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Routing\Controllers\HasMiddleware;
-use Illuminate\Routing\Controllers\Middleware;
+use App\Services\BulkActionService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
-class ColorController extends Controller implements HasMiddleware
+class ColorController extends Controller
 {
-    public static function middleware(): array
-    {
-        return [
-            new Middleware(
-                'role:admin|manager',
-                only: ['index', 'edit', 'create', 'update', 'store', 'destroy']
-            ),
-        ];
-    }
+    use HandlesBulkActions;
 
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', Color::class);
+
         $filters = $request->validate([
-            'search'   => ['nullable', 'string', 'max:255'],
+            'search' => ['nullable', 'string', 'max:255'],
             'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
         ]);
 
         $perPage = (int) ($filters['per_page'] ?? 10);
-        $search  = trim($filters['search'] ?? '');
+        $search = trim($filters['search'] ?? '');
 
         $colors = Color::query()
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('code', 'like', "%{$search}%");
-                });
-            })
+            ->search($search)
             ->orderBy('sort_order', 'asc')
             ->paginate($perPage)
             ->withQueryString();
 
         return view('admin.colors.index', [
-            'colors'  => $colors,
+            'colors' => $colors,
             'perPage' => $perPage,
         ]);
     }
 
-    public function create()
+    public function create(): View
     {
+        $this->authorize('create', Color::class);
+
         return view('admin.colors.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreColorRequest $request): RedirectResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name'       => 'required|string|max:255',
-            'code'       => 'required|string|max:50|unique:colors,code', // e.g., #FF0000, #000000
-            'sort_order' => 'nullable|integer',
-            'status'     => 'required|boolean',
-        ]);
+        $this->authorize('create', Color::class);
 
-        if ($validator->fails()) {
-            return redirect()->route('admin.colors.create')
-                ->withErrors($validator)
-                ->withInput();
+        try {
+            $validated = $request->validated();
+            $validated['hex_code'] = $validated['code'];
+            $validated['sort_order'] ??= 0;
+
+            Color::create($validated);
+
+            return to_route('admin.colors.index')
+                ->with('success', 'Color created successfully!');
+        } catch (\Exception $e) {
+            Log::error('Error creating color: '.$e->getMessage(), [
+                'exception' => $e,
+                'request_data' => $request->all(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => 'An error occurred while creating the color.']);
         }
-
-        $color = new Color();
-        $color->name       = $request->name;
-        $color->code       = $request->code;
-        $color->hex_code   = $request->code;
-        $color->sort_order = $request->sort_order ?? 0;
-        $color->status     = $request->status;
-        $color->save();
-
-        return redirect()->route('admin.colors.index')
-            ->with('success', 'Color created successfully!');
     }
 
-    public function edit(string $id)
+    public function edit(string $id): View
     {
+        $this->authorize('update', Color::class);
+
         $color = Color::findOrFail($id);
 
         return view('admin.colors.edit', [
@@ -90,40 +84,77 @@ class ColorController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function update(Request $request, string $id)
+    public function update(UpdateColorRequest $request, string $id): RedirectResponse
     {
-        $color = Color::findOrFail($id);
+        $this->authorize('update', Color::class);
 
-        $validator = Validator::make($request->all(), [
-            'name'       => 'required|string|max:255',
-            'code'       => 'required|string|max:50|unique:colors,code,' . $id,
-            'sort_order' => 'nullable|integer',
-            'status'     => 'required|boolean',
-        ]);
+        try {
+            $color = Color::findOrFail($id);
 
-        if ($validator->fails()) {
-            return redirect()->route('admin.colors.edit', $id)
-                ->withErrors($validator)
-                ->withInput();
+            $validated = $request->validated();
+            $validated['hex_code'] = $validated['code'];
+            $validated['sort_order'] ??= 0;
+
+            $color->update($validated);
+
+            return to_route('admin.colors.index')
+                ->with('success', 'Color updated successfully!');
+        } catch (\Exception $e) {
+            Log::error('Error updating color: '.$e->getMessage(), [
+                'exception' => $e,
+                'request_data' => $request->all(),
+                'color_id' => $id,
+            ]);
+
+            return back()
+                ->withInput()
+                ->withErrors(['error' => 'An error occurred while updating the color.']);
         }
-
-        $color->name       = $request->name;
-        $color->code       = $request->code;
-        $color->hex_code   = $request->code; 
-        $color->sort_order = $request->sort_order ?? 0;
-        $color->status     = $request->status;
-        $color->save();
-
-        return redirect()->route('admin.colors.index')
-            ->with('success', 'Color updated successfully!');
     }
 
-    public function destroy(string $id)
+    public function destroy(string $id): RedirectResponse
     {
-        $color = Color::findOrFail($id);
-        $color->delete();
+        $this->authorize('delete', Color::class);
 
-        return redirect()->route('admin.colors.index')
+        try {
+            $color = Color::findOrFail($id);
+
+            if ($color->isInUse()) {
+                return back()->with('error', "Cannot delete “{$color->name}” because it is used by one or more product variants.");
+            }
+
+            $color->delete();
+        } catch (\Exception $e) {
+            Log::error('Error deleting color: '.$e->getMessage(), [
+                'exception' => $e,
+                'color_id' => $id,
+            ]);
+
+            return back()
+                ->withErrors(['error' => 'An error occurred while deleting the color.']);
+        }
+
+        return to_route('admin.colors.index')
             ->with('success', 'Color deleted successfully!');
+    }
+
+    public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse
+    {
+        $this->authorize('delete', Color::class);
+
+        $ids = $this->validatedIds($request);
+        $result = $bulk->destroy(Color::class, $ids);
+
+        return back()->with($this->bulkFlash($result, 'color', 'used by variants'));
+    }
+
+    public function bulkStatus(Request $request, BulkActionService $bulk): RedirectResponse
+    {
+        $this->authorize('update', Color::class);
+
+        [$ids, $status] = $this->validatedStatus($request);
+        $count = $bulk->setStatus(Color::class, $ids, $status);
+
+        return back()->with('success', $count.' color(s) '.($status ? 'enabled' : 'disabled').'.');
     }
 }

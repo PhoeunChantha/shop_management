@@ -105,45 +105,75 @@
             </section>
         </div>
 
-        {{-- Variants --}}
+        {{-- Variants / stock --}}
         <section class="premium-card mt-4">
-            <div class="table-titlebar">
-                <div><h3>Variants</h3><p>{{ $product->variants->count() }} variant{{ $product->variants->count() === 1 ? '' : 's' }}.</p></div>
-            </div>
-            <div class="premium-table-wrap">
-                <table class="premium-table">
-                    <thead>
-                        <tr>
-                            <th>Size</th><th>Color</th><th>SKU</th><th>Barcode</th><th>Stock</th><th>Price</th><th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($product->variants as $variant)
+            @if ($product->isSingle())
+                <div class="table-titlebar">
+                    <div><h3>Stock</h3><p>Single product — one SKU.</p></div>
+                </div>
+                <div class="premium-table-wrap">
+                    <table class="premium-table">
+                        <thead><tr><th>SKU</th><th>Stock</th><th>Low Stock Alert</th></tr></thead>
+                        <tbody>
                             <tr>
-                                <td><strong>{{ $variant->size->name ?? '—' }}</strong></td>
-                                <td>
-                                    <span class="d-inline-flex align-items-center gap-2">
-                                        @if ($variant->color?->hex_code)
-                                            <span class="d-inline-block rounded-circle border" style="width:16px;height:16px;background: {{ $variant->color->hex_code }};"></span>
-                                        @endif
-                                        {{ $variant->color->name ?? '—' }}
-                                    </span>
-                                </td>
-                                <td><span class="font-mono text-sm">{{ $variant->sku }}</span></td>
-                                <td><span class="font-mono text-sm text-gray-500">{{ $variant->barcode ?: '—' }}</span></td>
-                                <td>
-                                    {{ $variant->stock }}
-                                    @if ($variant->is_low_stock)<span class="pill-badge pill-sale ms-1">Low</span>@endif
-                                </td>
-                                <td>{{ $variant->price !== null ? '$' . number_format($variant->price, 2) : '$' . number_format($product->price, 2) }}</td>
-                                <td><span class="status-chip {{ $variant->status ? 'st-active' : 'st-inactive' }}">{{ $variant->status ? 'Active' : 'Inactive' }}</span></td>
+                                <td><span class="font-mono text-sm">{{ $product->sku ?: '—' }}</span></td>
+                                <td>{{ $product->stock }}</td>
+                                <td>{{ $product->low_stock_alert }}</td>
                             </tr>
-                        @empty
-                            <tr><td colspan="7"><div class="empty-state"><i class="fa-solid fa-layer-group"></i><strong>No variants</strong></div></td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="table-titlebar">
+                    <div><h3>Variants</h3><p>{{ $product->variants->count() }} variant{{ $product->variants->count() === 1 ? '' : 's' }}.</p></div>
+                </div>
+                <div class="premium-table-wrap">
+                    <table class="premium-table">
+                        <thead>
+                            <tr>
+                                <th>Image</th><th>Variant</th><th>SKU</th><th>Barcode</th><th>Stock</th><th>Price</th><th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($product->variants as $variant)
+                                <tr>
+                                    <td>
+                                        @if ($variant->image_url)
+                                            <img src="{{ $variant->image_url }}" alt="" class="w-10 h-10 object-cover rounded border dark:border-white/10">
+                                        @else
+                                            <span class="d-inline-flex align-items-center justify-content-center rounded bg-gray-100 text-gray-300 dark:bg-white/10" style="width:40px;height:40px;"><i class="fa-regular fa-image"></i></span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @forelse ($variant->values as $value)
+                                                <span class="attr-value-pill">
+                                                    @if ($value->color_hex)
+                                                        <span class="attr-swatch" style="background: {{ $value->color_hex }};"></span>
+                                                    @endif
+                                                    {{ $value->value }}
+                                                </span>
+                                            @empty
+                                                <span class="text-gray-400">—</span>
+                                            @endforelse
+                                        </div>
+                                    </td>
+                                    <td><span class="font-mono text-sm">{{ $variant->sku }}</span></td>
+                                    <td><span class="font-mono text-sm text-gray-500">{{ $variant->barcode ?: '—' }}</span></td>
+                                    <td>
+                                        {{ $variant->stock }}
+                                        @if ($variant->is_low_stock)<span class="pill-badge pill-sale ms-1">Low</span>@endif
+                                    </td>
+                                    <td>{{ $variant->price !== null ? '$' . number_format($variant->price, 2) : '$' . number_format($product->price, 2) }}</td>
+                                    <td><span class="status-chip {{ $variant->status ? 'st-active' : 'st-inactive' }}">{{ $variant->status ? 'Active' : 'Inactive' }}</span></td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="7"><div class="empty-state"><i class="fa-solid fa-layer-group"></i><strong>No variants</strong></div></td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            @endif
         </section>
 
         {{-- Specifications --}}
