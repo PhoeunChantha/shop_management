@@ -59,6 +59,9 @@
     <script defer src="https://cdn.jsdelivr.net/npm/moment/min/moment.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 
+    {{-- ApexCharts (CDN) — dashboard charts. Loaded standalone (no jQuery dep). --}}
+    <script defer src="https://cdn.jsdelivr.net/npm/apexcharts@3.54.1/dist/apexcharts.min.js"></script>
+
     @if ($adminFavicon)
         <link rel="icon" href="{{ $adminFavicon }}">
     @endif

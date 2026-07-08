@@ -65,7 +65,7 @@
             </div>
         </x-filter-card>
 
-        <section class="premium-card mt-3">
+        <section class="premium-card mt-3 orders-panel">
             <x-table-loader />
 
             <x-table-toolbar>
@@ -78,41 +78,48 @@
             </x-table-toolbar>
 
             <div class="premium-table-wrap">
-                <table class="premium-table">
+                <table class="dash-table">
                     <thead>
                         <tr>
                             <th>Order</th>
                             <th>Customer</th>
-                            <th style="width:90px;">Items</th>
+                            <th style="width:80px;">Items</th>
                             <th>Total</th>
                             <th>Payment</th>
                             <th>Status</th>
                             <th>Date</th>
-                            <th class="text-end" style="width:110px;">Actions</th>
+                            <th class="text-end" style="width:96px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($orders as $order)
                             <tr>
-                                <td><strong class="text-gray-900 dark:text-slate-100 font-mono">{{ $order->order_number }}</strong></td>
                                 <td>
-                                    <div class="text-sm text-gray-800 dark:text-slate-200">{{ $order->customer_name }}</div>
-                                    <div class="text-xs text-gray-400 dark:text-slate-500">{{ $order->customer_email }}</div>
+                                    <a href="{{ route('admin.orders.show', $order->id) }}" class="dash-table__id">{{ $order->order_number }}</a>
                                 </td>
-                                <td><span class="text-sm text-gray-600 dark:text-slate-300">{{ (int) $order->details_sum_quantity }}</span></td>
-                                <td><strong class="text-gray-900 dark:text-slate-100">${{ number_format($order->grand_total, 2) }}</strong></td>
+                                <td>
+                                    <div class="orders-cust">
+                                        <span class="orders-avatar">{{ strtoupper(mb_substr($order->customer_name ?: '?', 0, 1)) }}</span>
+                                        <div>
+                                            <div class="orders-cust__name">{{ $order->customer_name }}</div>
+                                            <div class="orders-cust__email">{{ $order->customer_email }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="font-variant-numeric: tabular-nums;">{{ (int) $order->details_sum_quantity }}</td>
+                                <td class="dash-table__amt">${{ number_format($order->grand_total, 2) }}</td>
                                 <td>
                                     <span class="status-chip {{ $order->payment_status->badge() }}">{{ $order->payment_status->label() }}</span>
-                                    <div class="text-xs text-gray-400 dark:text-slate-500 mt-1">{{ $order->payment_method ? strtoupper($order->payment_method) : '—' }}</div>
+                                    <div class="orders-pay__method">
+                                        <i class="fa-regular fa-credit-card"></i>{{ $order->payment_method ? strtoupper($order->payment_method) : '—' }}
+                                    </div>
                                 </td>
                                 <td><span class="status-chip {{ $order->status->badge() }}">{{ $order->status->label() }}</span></td>
-                                <td><span class="text-xs text-gray-500 dark:text-slate-400">{{ ($order->placed_at ?? $order->created_at)?->format('M d, Y') }}</span></td>
-                                <td>
-                                    <div class="action-group">
-                                        <a href="{{ route('admin.orders.show', $order->id) }}" class="table-action table-action--edit">
-                                            <i class="fa-solid fa-eye"></i><span>View</span>
-                                        </a>
-                                    </div>
+                                <td class="dash-table__date">{{ ($order->placed_at ?? $order->created_at)?->format('M d, Y') }}</td>
+                                <td class="text-end">
+                                    <a href="{{ route('admin.orders.show', $order->id) }}" class="orders-view">
+                                        <i class="fa-solid fa-eye"></i><span>View</span>
+                                    </a>
                                 </td>
                             </tr>
                         @empty

@@ -39,6 +39,20 @@ enum OrderStatus: string
         };
     }
 
+    /** Accent colour (hex) for charts / status breakdown dots. */
+    public function color(): string
+    {
+        return match ($this) {
+            self::Pending => '#94a3b8',
+            self::Paid => '#0ea5e9',
+            self::Processing => '#6366f1',
+            self::Shipped => '#8b5cf6',
+            self::Delivered => '#10b981',
+            self::Cancelled => '#f43f5e',
+            self::Refunded => '#f59e0b',
+        };
+    }
+
     /** Statuses this one may transition to (admin workflow). */
     public function transitionsTo(): array
     {
