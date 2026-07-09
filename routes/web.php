@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Backend\DashboardController;
+use App\Http\Controllers\Backend\InventoryController;
 use App\Http\Controllers\Backend\PermissionController;
 use App\Http\Controllers\Backend\ProfileController;
 use App\Http\Controllers\Backend\RoleController;
@@ -189,6 +190,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/{id}/edit', [ColorController::class, 'edit'])->name('edit');
         Route::put('/{id}', [ColorController::class, 'update'])->name('update');
         Route::delete('/{id}', [ColorController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('inventory')->name('inventory.')->group(function () {
+        Route::get('/', [InventoryController::class, 'index'])->name('index');
+        Route::get('/{id}', [InventoryController::class, 'show'])->whereNumber('id')->name('show');
+        Route::post('/{id}/adjust', [InventoryController::class, 'adjust'])->whereNumber('id')->name('adjust');
     });
 
     Route::prefix('orders')->name('orders.')->group(function () {

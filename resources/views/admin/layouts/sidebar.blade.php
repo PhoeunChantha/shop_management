@@ -41,7 +41,7 @@
         </div>
 
         {{-- Catalog (collapsible) --}}
-        @php($catalogActive = request()->routeIs('admin.products.*', 'admin.brands.*', 'admin.categories.*', 'admin.attributes.*', 'admin.sizes.*', 'admin.colors.*'))
+        @php($catalogActive = request()->routeIs('admin.products.*', 'admin.inventory.*', 'admin.brands.*', 'admin.categories.*', 'admin.attributes.*', 'admin.sizes.*', 'admin.colors.*'))
         <div class="admin-nav-section">
             <p class="admin-nav-heading">Catalog</p>
             <div class="nav flex-column admin-nav">
@@ -59,6 +59,11 @@
                                 class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
                                 <span class="nav-ico"><i class="fa-solid fa-box-open"></i></span>
                                 <span class="small fw-medium">Products</span>
+                            </a>
+                            <a href="{{ route('admin.inventory.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.inventory.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-warehouse"></i></span>
+                                <span class="small fw-medium">Inventory</span>
                             </a>
                             <a href="{{ route('admin.brands.index') }}"
                                 class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.brands.*') ? 'active' : '' }}">

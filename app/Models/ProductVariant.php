@@ -37,6 +37,11 @@ class ProductVariant extends Model
         return $this->belongsTo(Product::class);
     }
 
+    public function stockMovements(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(StockMovement::class, 'variant_id')->latest();
+    }
+
     public function size(): BelongsTo
     {
         return $this->belongsTo(Size::class);
