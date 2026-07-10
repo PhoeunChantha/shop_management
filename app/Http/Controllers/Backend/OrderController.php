@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Backend;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Order\UpdateOrderRequest;
 use App\Models\Order;
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\OrderService;
+use App\Services\SettingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -14,7 +16,10 @@ use Illuminate\View\View;
 
 class OrderController extends Controller
 {
-    public function __construct(private readonly OrderService $orders) {}
+    public function __construct(
+        private readonly OrderService $orders,
+        private readonly SettingService $settings,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -57,6 +62,46 @@ class OrderController extends Controller
             'order' => $order,
             'customerStats' => $customerStats,
         ]);
+    }
+
+    public function invoice(string $id): View
+    {
+        $this->authorize('view', Order::class);
+
+        $order = Order::with(['details', 'user', 'coupon'])->findOrFail($id);
+
+        return view('admin.orders.print.invoice', [
+            'order' => $order,
+            'store' => $this->storeInfo(),
+        ]);
+    }
+
+    public function packingSlip(string $id): View
+    {
+        $this->authorize('view', Order::class);
+
+        $order = Order::with('details')->findOrFail($id);
+
+        return view('admin.orders.print.packing-slip', [
+            'order' => $order,
+            'store' => $this->storeInfo(),
+        ]);
+    }
+
+    /**
+     * Store identity for printable documents (from Settings).
+     *
+     * @return array<string, string|null>
+     */
+    private function storeInfo(): array
+    {
+        return [
+            'name' => $this->settings->siteName(),
+            'logo' => $this->settings->logoUrl(),
+            'email' => Setting::get('contact_email'),
+            'phone' => Setting::get('contact_phone'),
+            'address' => Setting::get('contact_address'),
+        ];
     }
 
     public function update(UpdateOrderRequest $request, string $id): RedirectResponse

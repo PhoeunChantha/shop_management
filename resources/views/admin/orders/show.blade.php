@@ -24,9 +24,17 @@
                     Placed {{ ($order->placed_at ?? $order->created_at)?->format('M d, Y \a\t g:i A') }}
                 </p>
             </div>
-            <a href="{{ route('admin.orders.index') }}" class="ghost-button ghost-button--panel">
-                <i class="fa-solid fa-arrow-left"></i><span>Back to orders</span>
-            </a>
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <a href="{{ route('admin.orders.invoice', $order->id) }}" target="_blank" class="ghost-button ghost-button--panel">
+                    <i class="fa-solid fa-file-invoice"></i><span>Invoice</span>
+                </a>
+                <a href="{{ route('admin.orders.packing-slip', $order->id) }}" target="_blank" class="ghost-button ghost-button--panel">
+                    <i class="fa-solid fa-box-open"></i><span>Packing slip</span>
+                </a>
+                <a href="{{ route('admin.orders.index') }}" class="ghost-button ghost-button--panel">
+                    <i class="fa-solid fa-arrow-left"></i><span>Back</span>
+                </a>
+            </div>
         </div>
 
         <x-message />

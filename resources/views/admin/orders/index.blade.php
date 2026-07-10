@@ -117,9 +117,22 @@
                                 <td><span class="status-chip {{ $order->status->badge() }}">{{ $order->status->label() }}</span></td>
                                 <td class="dash-table__date">{{ ($order->placed_at ?? $order->created_at)?->format('M d, Y') }}</td>
                                 <td class="text-end">
-                                    <a href="{{ route('admin.orders.show', $order->id) }}" class="orders-view">
-                                        <i class="fa-solid fa-eye"></i><span>View</span>
-                                    </a>
+                                    <div class="action-group">
+                                        <x-table-actions>
+                                            <a href="{{ route('admin.orders.show', $order->id) }}"
+                                                class="table-actions__item table-actions__item--edit" role="menuitem">
+                                                <i class="fa-solid fa-eye"></i><span>View</span>
+                                            </a>
+                                            <a href="{{ route('admin.orders.invoice', $order->id) }}" target="_blank"
+                                                class="table-actions__item" role="menuitem">
+                                                <i class="fa-solid fa-file-invoice"></i><span>Invoice</span>
+                                            </a>
+                                            <a href="{{ route('admin.orders.packing-slip', $order->id) }}" target="_blank"
+                                                class="table-actions__item" role="menuitem">
+                                                <i class="fa-solid fa-box-open"></i><span>Packing slip</span>
+                                            </a>
+                                        </x-table-actions>
+                                    </div>
                                 </td>
                             </tr>
                         @empty

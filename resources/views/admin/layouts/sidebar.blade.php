@@ -144,6 +144,18 @@
             </div>
         </div>
 
+        {{-- Content --}}
+        <div class="admin-nav-section">
+            <p class="admin-nav-heading">Content</p>
+            <div class="nav flex-column admin-nav">
+                <a href="{{ route('admin.banners.index') }}"
+                    class="nav-link d-flex align-items-center {{ request()->routeIs('admin.banners.*') ? 'active' : '' }}">
+                    <span class="nav-ico"><i class="fa-solid fa-images"></i></span>
+                    <span class="small fw-medium">Banners</span>
+                </a>
+            </div>
+        </div>
+
         {{-- System --}}
         <div class="admin-nav-section">
             <p class="admin-nav-heading">System</p>

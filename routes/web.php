@@ -8,6 +8,7 @@ use App\Http\Controllers\Backend\RoleController;
 use App\Http\Controllers\Backend\SettingController;
 use App\Http\Controllers\Backend\UserController;
 use App\Http\Controllers\Backend\AttributeController;
+use App\Http\Controllers\Backend\BannerController;
 use App\Http\Controllers\Backend\BrandController;
 use App\Http\Controllers\Backend\CategoryController;
 use App\Http\Controllers\Backend\CouponController;
@@ -201,7 +202,20 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::prefix('orders')->name('orders.')->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('index');
         Route::get('/{id}', [OrderController::class, 'show'])->whereNumber('id')->name('show');
+        Route::get('/{id}/invoice', [OrderController::class, 'invoice'])->whereNumber('id')->name('invoice');
+        Route::get('/{id}/packing-slip', [OrderController::class, 'packingSlip'])->whereNumber('id')->name('packing-slip');
         Route::patch('/{id}', [OrderController::class, 'update'])->whereNumber('id')->name('update');
+    });
+
+    Route::prefix('banners')->name('banners.')->group(function () {
+        Route::get('/', [BannerController::class, 'index'])->name('index');
+        Route::delete('/bulk', [BannerController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [BannerController::class, 'bulkStatus'])->name('bulk-status');
+        Route::get('/create', [BannerController::class, 'create'])->name('create');
+        Route::post('/', [BannerController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [BannerController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [BannerController::class, 'update'])->name('update');
+        Route::delete('/{id}', [BannerController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('coupons')->name('coupons.')->group(function () {
