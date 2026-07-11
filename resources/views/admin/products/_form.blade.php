@@ -104,9 +104,9 @@
                 </div>
                 <div class="form-section__body grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="md:col-span-1 product-thumbnail-upload">
-                        <x-image-upload name="thumbnail" label="Thumbnail"
+                        <x-image-upload name="thumbnail" label="Product thumbnail"
                             :value="\App\Helpers\ImageManager::path($product->thumbnail ?? null, 'products')"
-                            accept="image/*" help="Main image · up to 2MB" />
+                            accept="image/*" help="" />
                     </div>
                     <div class="md:col-span-2 d-flex flex-column gap-3">
                         {{-- Name (per language) --}}

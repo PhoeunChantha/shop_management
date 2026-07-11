@@ -49,7 +49,7 @@
             <img :src="preview" x-on:error="onError()" alt="Preview" class="h-16 w-16 flex-shrink-0 rounded-lg object-cover ring-1 ring-slate-200 dark:ring-white/10">
         </template>
         <template x-if="!preview">
-            <span class="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400 dark:bg-white/10 dark:text-slate-500">
+            <span class="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-500 ring-1 ring-teal-100 dark:bg-teal-500/10 dark:text-teal-400 dark:ring-teal-500/20">
                 <i class="fa-regular fa-image text-xl" x-show="!unsupported"></i>
                 <i class="fa-regular fa-file-image text-xl" x-show="unsupported" x-cloak></i>
             </span>
