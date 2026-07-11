@@ -1061,26 +1061,33 @@ body.admin-shell {
 .form-field>label,
 .permission-section-title label {
     display: block;
-    color: #344054;
-    font-size: 13px;
-    font-weight: 800;
+    color: var(--admin-ink);
+    font-size: 12.5px;
+    font-weight: 700;
     margin-bottom: 7px;
 }
 
 .form-input {
     display: block;
     width: 100%;
-    min-height: 40px;
+    min-height: 42px;
+    padding: 9px 13px;
     border: 1px solid var(--admin-line);
-    border-radius: 11px;
+    border-radius: 10px;
+    background: #fff;
     color: var(--admin-ink);
-    font-size: 13px;
-    box-shadow: 0 8px 18px rgba(16, 24, 40, 0.04);
+    font-size: 13.5px;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.form-input:hover {
+    border-color: color-mix(in srgb, var(--admin-line) 55%, var(--admin-muted));
 }
 
 .form-input:focus {
+    outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-color) 22%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 16%, transparent);
 }
 
 /* Settings → Appearance color pickers (picker doubles as the live preview) */
@@ -1616,21 +1623,26 @@ html.dark .bulk-bar {
 }
 
 .premium-table thead th {
-    padding: 13px 28px;
-    color: #5d6b82;
-    background: var(--light-color);
+    padding: 12px 22px;
+    color: var(--admin-muted);
+    background: transparent;
     border-bottom: 1px solid var(--admin-line);
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: 0.06em;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
 }
 
 .premium-table tbody td {
-    padding: 16px 28px;
-    border-bottom: 1px solid #eef2f6;
-    color: #344054;
+    padding: 14px 22px;
+    border-bottom: 1px solid color-mix(in srgb, var(--admin-line) 55%, #fff);
+    color: var(--admin-muted);
     vertical-align: middle;
+    font-variant-numeric: tabular-nums;
+}
+
+.premium-table tbody tr:last-child td {
+    border-bottom: 0;
 }
 
 .premium-table tbody tr {
@@ -1638,7 +1650,7 @@ html.dark .bulk-bar {
 }
 
 .premium-table tbody tr:hover {
-    background: #f9fbfd;
+    background: color-mix(in srgb, var(--admin-line) 22%, #fff);
 }
 
 .muted-id,
@@ -2918,8 +2930,8 @@ html.dark .search-control input::placeholder {
 
 /* Tables */
 html.dark .premium-table thead th {
-    background: #0e1830;
-    color: #9fb0c9;
+    background: transparent;
+    color: #94a3b8;
     border-color: var(--admin-line);
 }
 
@@ -5747,3 +5759,18 @@ html.dark .dash-chart__dot { border-color: #121c31; }
 html.dark .dash-chart__tip { background: #0b1424; }
 html.dark .dash-table tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
 html.dark .dash-lowstock__icon { background: rgba(255, 255, 255, 0.04); }
+
+/* Neutral count/number pill for table cells (products count, sort order…) */
+.count-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--admin-ink);
+    background: color-mix(in srgb, var(--admin-line) 38%, #fff);
+    border: 1px solid var(--admin-line);
+    font-variant-numeric: tabular-nums;
+}
+html.dark .count-pill { background: rgba(255, 255, 255, 0.05); color: #e2e8f0; }
