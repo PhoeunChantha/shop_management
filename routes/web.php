@@ -7,10 +7,12 @@ use App\Http\Controllers\Backend\ProfileController;
 use App\Http\Controllers\Backend\RoleController;
 use App\Http\Controllers\Backend\SettingController;
 use App\Http\Controllers\Backend\UserController;
+use App\Http\Controllers\Backend\AnnouncementController;
 use App\Http\Controllers\Backend\AttributeController;
 use App\Http\Controllers\Backend\BannerController;
 use App\Http\Controllers\Backend\BrandController;
 use App\Http\Controllers\Backend\CategoryController;
+use App\Http\Controllers\Backend\CollectionController;
 use App\Http\Controllers\Backend\CouponController;
 use App\Http\Controllers\Backend\OrderController;
 use App\Http\Controllers\Backend\ProductController;
@@ -216,6 +218,28 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/{id}/edit', [BannerController::class, 'edit'])->name('edit');
         Route::put('/{id}', [BannerController::class, 'update'])->name('update');
         Route::delete('/{id}', [BannerController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('announcements')->name('announcements.')->group(function () {
+        Route::get('/', [AnnouncementController::class, 'index'])->name('index');
+        Route::delete('/bulk', [AnnouncementController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [AnnouncementController::class, 'bulkStatus'])->name('bulk-status');
+        Route::get('/create', [AnnouncementController::class, 'create'])->name('create');
+        Route::post('/', [AnnouncementController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [AnnouncementController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [AnnouncementController::class, 'update'])->name('update');
+        Route::delete('/{id}', [AnnouncementController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('collections')->name('collections.')->group(function () {
+        Route::get('/', [CollectionController::class, 'index'])->name('index');
+        Route::delete('/bulk', [CollectionController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [CollectionController::class, 'bulkStatus'])->name('bulk-status');
+        Route::get('/create', [CollectionController::class, 'create'])->name('create');
+        Route::post('/', [CollectionController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [CollectionController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [CollectionController::class, 'update'])->name('update');
+        Route::delete('/{id}', [CollectionController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('coupons')->name('coupons.')->group(function () {
