@@ -6,6 +6,8 @@ use App\Http\Controllers\Backend\PermissionController;
 use App\Http\Controllers\Backend\ProfileController;
 use App\Http\Controllers\Backend\RoleController;
 use App\Http\Controllers\Backend\SettingController;
+use App\Http\Controllers\Backend\ShippingMethodController;
+use App\Http\Controllers\Backend\TaxRuleController;
 use App\Http\Controllers\Backend\UserController;
 use App\Http\Controllers\Backend\AnnouncementController;
 use App\Http\Controllers\Backend\AttributeController;
@@ -251,6 +253,28 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/{id}/edit', [CouponController::class, 'edit'])->name('edit');
         Route::put('/{id}', [CouponController::class, 'update'])->name('update');
         Route::delete('/{id}', [CouponController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('shipping')->name('shipping.')->group(function () {
+        Route::get('/', [ShippingMethodController::class, 'index'])->name('index');
+        Route::delete('/bulk', [ShippingMethodController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [ShippingMethodController::class, 'bulkStatus'])->name('bulk-status');
+        Route::get('/create', [ShippingMethodController::class, 'create'])->name('create');
+        Route::post('/', [ShippingMethodController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [ShippingMethodController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [ShippingMethodController::class, 'update'])->name('update');
+        Route::delete('/{id}', [ShippingMethodController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('taxes')->name('taxes.')->group(function () {
+        Route::get('/', [TaxRuleController::class, 'index'])->name('index');
+        Route::delete('/bulk', [TaxRuleController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [TaxRuleController::class, 'bulkStatus'])->name('bulk-status');
+        Route::get('/create', [TaxRuleController::class, 'create'])->name('create');
+        Route::post('/', [TaxRuleController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [TaxRuleController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [TaxRuleController::class, 'update'])->name('update');
+        Route::delete('/{id}', [TaxRuleController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('settings')->name('settings.')->group(function () {

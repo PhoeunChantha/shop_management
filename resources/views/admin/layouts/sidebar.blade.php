@@ -173,6 +173,37 @@
             </div>
         </div>
 
+        {{-- Configuration (collapsible) --}}
+        @php($configActive = request()->routeIs('admin.shipping.*', 'admin.taxes.*'))
+        <div class="admin-nav-section">
+            <p class="admin-nav-heading">Configuration</p>
+            <div class="nav flex-column admin-nav">
+                <div class="admin-nav-group" x-data="{ open: {{ $configActive ? 'true' : 'false' }} }"
+                    :class="{ 'is-open': open }">
+                    <button type="button" class="nav-link admin-nav-toggle d-flex align-items-center {{ $configActive ? 'has-active' : '' }}"
+                        @click="open = !open" :aria-expanded="open ? 'true' : 'false'">
+                        <span class="nav-ico"><i class="fa-solid fa-truck-fast"></i></span>
+                        <span class="small fw-medium flex-grow-1 text-start">Store setup</span>
+                        <i class="fa-solid fa-chevron-down admin-nav-caret"></i>
+                    </button>
+                    <div class="admin-nav-sub">
+                        <div class="admin-nav-sub-inner">
+                            <a href="{{ route('admin.shipping.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.shipping.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-truck"></i></span>
+                                <span class="small fw-medium">Shipping methods</span>
+                            </a>
+                            <a href="{{ route('admin.taxes.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.taxes.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-percent"></i></span>
+                                <span class="small fw-medium">Tax rules</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- System --}}
         <div class="admin-nav-section">
             <p class="admin-nav-heading">System</p>
