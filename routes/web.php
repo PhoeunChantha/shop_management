@@ -4,6 +4,7 @@ use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\InventoryController;
 use App\Http\Controllers\Backend\PermissionController;
 use App\Http\Controllers\Backend\ProfileController;
+use App\Http\Controllers\Backend\ReviewController;
 use App\Http\Controllers\Backend\RoleController;
 use App\Http\Controllers\Backend\SettingController;
 use App\Http\Controllers\Backend\ShippingMethodController;
@@ -16,7 +17,9 @@ use App\Http\Controllers\Backend\BrandController;
 use App\Http\Controllers\Backend\CategoryController;
 use App\Http\Controllers\Backend\CollectionController;
 use App\Http\Controllers\Backend\CouponController;
+use App\Http\Controllers\Backend\FaqController;
 use App\Http\Controllers\Backend\OrderController;
+use App\Http\Controllers\Backend\PageController as AdminPageController;
 use App\Http\Controllers\Backend\ProductController;
 use App\Http\Controllers\Backend\SizeController;
 use App\Http\Controllers\Backend\ColorController;
@@ -197,6 +200,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::delete('/{id}', [ColorController::class, 'destroy'])->name('destroy');
     });
 
+    Route::prefix('reviews')->name('reviews.')->group(function () {
+        Route::get('/', [ReviewController::class, 'index'])->name('index');
+        Route::patch('/bulk-moderate', [ReviewController::class, 'bulkModerate'])->name('bulk-moderate');
+        Route::delete('/bulk', [ReviewController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/{id}', [ReviewController::class, 'moderate'])->whereNumber('id')->name('moderate');
+        Route::delete('/{id}', [ReviewController::class, 'destroy'])->whereNumber('id')->name('destroy');
+    });
+
     Route::prefix('inventory')->name('inventory.')->group(function () {
         Route::get('/', [InventoryController::class, 'index'])->name('index');
         Route::get('/{id}', [InventoryController::class, 'show'])->whereNumber('id')->name('show');
@@ -253,6 +264,28 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/{id}/edit', [CouponController::class, 'edit'])->name('edit');
         Route::put('/{id}', [CouponController::class, 'update'])->name('update');
         Route::delete('/{id}', [CouponController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('pages')->name('pages.')->group(function () {
+        Route::get('/', [AdminPageController::class, 'index'])->name('index');
+        Route::delete('/bulk', [AdminPageController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [AdminPageController::class, 'bulkStatus'])->name('bulk-status');
+        Route::get('/create', [AdminPageController::class, 'create'])->name('create');
+        Route::post('/', [AdminPageController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [AdminPageController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [AdminPageController::class, 'update'])->name('update');
+        Route::delete('/{id}', [AdminPageController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('faqs')->name('faqs.')->group(function () {
+        Route::get('/', [FaqController::class, 'index'])->name('index');
+        Route::delete('/bulk', [FaqController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [FaqController::class, 'bulkStatus'])->name('bulk-status');
+        Route::get('/create', [FaqController::class, 'create'])->name('create');
+        Route::post('/', [FaqController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [FaqController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [FaqController::class, 'update'])->name('update');
+        Route::delete('/{id}', [FaqController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('shipping')->name('shipping.')->group(function () {

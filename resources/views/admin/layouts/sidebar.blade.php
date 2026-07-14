@@ -41,7 +41,7 @@
         </div>
 
         {{-- Catalog (collapsible) --}}
-        @php($catalogActive = request()->routeIs('admin.products.*', 'admin.inventory.*', 'admin.brands.*', 'admin.categories.*', 'admin.attributes.*', 'admin.sizes.*', 'admin.colors.*'))
+        @php($catalogActive = request()->routeIs('admin.products.*', 'admin.inventory.*', 'admin.reviews.*', 'admin.brands.*', 'admin.categories.*', 'admin.attributes.*', 'admin.sizes.*', 'admin.colors.*'))
         <div class="admin-nav-section">
             <p class="admin-nav-heading">Catalog</p>
             <div class="nav flex-column admin-nav">
@@ -64,6 +64,11 @@
                                 class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.inventory.*') ? 'active' : '' }}">
                                 <span class="nav-ico"><i class="fa-solid fa-warehouse"></i></span>
                                 <span class="small fw-medium">Inventory</span>
+                            </a>
+                            <a href="{{ route('admin.reviews.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.reviews.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-star"></i></span>
+                                <span class="small fw-medium">Reviews</span>
                             </a>
                             <a href="{{ route('admin.brands.index') }}"
                                 class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.brands.*') ? 'active' : '' }}">
@@ -166,6 +171,37 @@
                                 class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.announcements.*') ? 'active' : '' }}">
                                 <span class="nav-ico"><i class="fa-solid fa-bullhorn"></i></span>
                                 <span class="small fw-medium">Announcement bar</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Content (collapsible) --}}
+        @php($contentActive = request()->routeIs('admin.pages.*', 'admin.faqs.*'))
+        <div class="admin-nav-section">
+            <p class="admin-nav-heading">Content</p>
+            <div class="nav flex-column admin-nav">
+                <div class="admin-nav-group" x-data="{ open: {{ $contentActive ? 'true' : 'false' }} }"
+                    :class="{ 'is-open': open }">
+                    <button type="button" class="nav-link admin-nav-toggle d-flex align-items-center {{ $contentActive ? 'has-active' : '' }}"
+                        @click="open = !open" :aria-expanded="open ? 'true' : 'false'">
+                        <span class="nav-ico"><i class="fa-solid fa-file-lines"></i></span>
+                        <span class="small fw-medium flex-grow-1 text-start">Content</span>
+                        <i class="fa-solid fa-chevron-down admin-nav-caret"></i>
+                    </button>
+                    <div class="admin-nav-sub">
+                        <div class="admin-nav-sub-inner">
+                            <a href="{{ route('admin.pages.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.pages.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-file-lines"></i></span>
+                                <span class="small fw-medium">Pages</span>
+                            </a>
+                            <a href="{{ route('admin.faqs.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.faqs.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-circle-question"></i></span>
+                                <span class="small fw-medium">FAQ</span>
                             </a>
                         </div>
                     </div>

@@ -5979,3 +5979,78 @@ html.dark .picker__opt {
 html.dark .picker__opt-ph {
     background: rgba(255, 255, 255, 0.05);
 }
+
+/* ---------- Reviews (moderation) ---------- */
+.review-stars {
+    display: inline-flex;
+    gap: 2px;
+    color: #f59e0b;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.review-stars .fa-regular {
+    color: color-mix(in srgb, var(--admin-muted) 40%, transparent);
+}
+
+.review-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.review-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    border-radius: 11px;
+    border: 1px solid var(--admin-line);
+    background: var(--admin-panel);
+    color: var(--admin-muted);
+    font-size: 12.5px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all .16s ease;
+}
+
+.review-tab:hover {
+    color: var(--admin-ink);
+    border-color: color-mix(in srgb, var(--primary-color) 30%, var(--admin-line));
+}
+
+.review-tab span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--admin-line) 55%, #fff);
+    color: var(--admin-ink);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.review-tab.is-active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+}
+
+.review-tab.is-active span {
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
+}
+
+html.dark .review-tab {
+    background: #121c31;
+    border-color: var(--admin-line);
+}
+
+html.dark .review-tab span {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e2e8f0;
+}

@@ -56,6 +56,8 @@ class Product extends Model
         'sort_order',
         'seo_title',
         'seo_description',
+        'rating_avg',
+        'rating_count',
     ];
 
     protected $casts = [
@@ -71,6 +73,8 @@ class Product extends Model
         'is_best_seller' => 'boolean',
         'is_on_sale' => 'boolean',
         'sort_order' => 'integer',
+        'rating_avg' => 'decimal:2',
+        'rating_count' => 'integer',
     ];
 
     /* ---------------- Relationships ---------------- */
@@ -108,6 +112,11 @@ class Product extends Model
     public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class)->latest();
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class)->latest();
     }
 
     public function tags(): BelongsToMany

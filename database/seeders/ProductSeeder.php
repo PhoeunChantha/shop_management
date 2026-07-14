@@ -11,6 +11,21 @@ use Illuminate\Database\Seeder;
 
 class ProductSeeder extends Seeder
 {
+    private const DEMO_THUMBNAILS = [
+        'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=82',
+        'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&w=900&q=82',
+        'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=900&q=82',
+        'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=900&q=82',
+        'https://images.unsplash.com/photo-1622445275576-721325763afe?auto=format&fit=crop&w=900&q=82',
+        'https://images.unsplash.com/photo-1562157873-818bc0726f68?auto=format&fit=crop&w=900&q=82',
+        'https://images.unsplash.com/photo-1554568218-0f1715e72254?auto=format&fit=crop&w=900&q=82',
+        'https://images.unsplash.com/photo-1564859228273-274232fdb516?auto=format&fit=crop&w=900&q=82',
+        'https://images.unsplash.com/photo-1576566588028-4147f3842f27?auto=format&fit=crop&w=900&q=82',
+        'https://images.unsplash.com/photo-1627225924765-552d49cf47ad?auto=format&fit=crop&w=900&q=82',
+        'https://images.unsplash.com/photo-1571945153237-4929e783af4a?auto=format&fit=crop&w=900&q=82',
+        'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=900&q=82',
+    ];
+
     public function run(): void
     {
         // Prerequisite data (safe to call repeatedly).
@@ -28,7 +43,8 @@ class ProductSeeder extends Seeder
         $brandIds = Brand::pluck('id');
 
         if (Product::count() === 0) {
-            Product::factory()->count(12)->create()->each(function (Product $product) use ($sizes, $colors) {
+            Product::factory()->count(12)->create()->each(function (Product $product, int $index) use ($sizes, $colors) {
+                $this->addThumbnail($product, $index);
                 $this->addVariants($product, $sizes, $colors);
                 $this->addSpecs($product);
                 $this->attachTags($product);
@@ -40,9 +56,12 @@ class ProductSeeder extends Seeder
         }
 
         // Non-destructive backfill for products created before this upgrade.
-        Product::with(['variants', 'specifications', 'tags'])->get()->each(function (Product $product) use ($sizes, $colors, $tagIds, $brandIds) {
+        Product::with(['variants', 'specifications', 'tags'])->get()->each(function (Product $product, int $index) use ($sizes, $colors, $tagIds, $brandIds) {
             if (! $product->brand_id && $brandIds->isNotEmpty()) {
                 $product->update(['brand_id' => $brandIds->random()]);
+            }
+            if (! $product->thumbnail) {
+                $this->addThumbnail($product, $index);
             }
             if ($product->variants->isEmpty()) {
                 $this->addVariants($product, $sizes, $colors);
@@ -55,7 +74,14 @@ class ProductSeeder extends Seeder
             }
         });
 
-        $this->command?->info('Backfilled existing products with brand, specs and tags.');
+        $this->command?->info('Backfilled existing products with brand, thumbnails, specs and tags.');
+    }
+
+    private function addThumbnail(Product $product, int $index): void
+    {
+        $product->forceFill([
+            'thumbnail' => self::DEMO_THUMBNAILS[$index % count(self::DEMO_THUMBNAILS)],
+        ])->save();
     }
 
     private function addVariants(Product $product, $sizes, $colors): void
