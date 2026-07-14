@@ -17,7 +17,8 @@ class RolePermissionSeeder extends Seeder
         // the policies check (e.g. AdminRolePolicy → "edit products").
         $subjects = [
             'products', 'brands', 'attributes', 'categories', 'sizes',
-            'colors', 'coupons', 'orders', 'users', 'settings', 'role', 'permission',
+            'colors', 'coupons', 'orders', 'banners', 'collections', 'announcements',
+            'shipping', 'taxes', 'users', 'settings', 'role', 'permission',
         ];
         $actions = ['view', 'create', 'edit', 'delete'];
 

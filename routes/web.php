@@ -1,14 +1,20 @@
 <?php
 
 use App\Http\Controllers\Backend\DashboardController;
+use App\Http\Controllers\Backend\InventoryController;
 use App\Http\Controllers\Backend\PermissionController;
 use App\Http\Controllers\Backend\ProfileController;
 use App\Http\Controllers\Backend\RoleController;
 use App\Http\Controllers\Backend\SettingController;
+use App\Http\Controllers\Backend\ShippingMethodController;
+use App\Http\Controllers\Backend\TaxRuleController;
 use App\Http\Controllers\Backend\UserController;
+use App\Http\Controllers\Backend\AnnouncementController;
 use App\Http\Controllers\Backend\AttributeController;
+use App\Http\Controllers\Backend\BannerController;
 use App\Http\Controllers\Backend\BrandController;
 use App\Http\Controllers\Backend\CategoryController;
+use App\Http\Controllers\Backend\CollectionController;
 use App\Http\Controllers\Backend\CouponController;
 use App\Http\Controllers\Backend\OrderController;
 use App\Http\Controllers\Backend\ProductController;
@@ -191,10 +197,51 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::delete('/{id}', [ColorController::class, 'destroy'])->name('destroy');
     });
 
+    Route::prefix('inventory')->name('inventory.')->group(function () {
+        Route::get('/', [InventoryController::class, 'index'])->name('index');
+        Route::get('/{id}', [InventoryController::class, 'show'])->whereNumber('id')->name('show');
+        Route::post('/{id}/adjust', [InventoryController::class, 'adjust'])->whereNumber('id')->name('adjust');
+    });
+
     Route::prefix('orders')->name('orders.')->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('index');
         Route::get('/{id}', [OrderController::class, 'show'])->whereNumber('id')->name('show');
+        Route::get('/{id}/invoice', [OrderController::class, 'invoice'])->whereNumber('id')->name('invoice');
+        Route::get('/{id}/packing-slip', [OrderController::class, 'packingSlip'])->whereNumber('id')->name('packing-slip');
         Route::patch('/{id}', [OrderController::class, 'update'])->whereNumber('id')->name('update');
+    });
+
+    Route::prefix('banners')->name('banners.')->group(function () {
+        Route::get('/', [BannerController::class, 'index'])->name('index');
+        Route::delete('/bulk', [BannerController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [BannerController::class, 'bulkStatus'])->name('bulk-status');
+        Route::get('/create', [BannerController::class, 'create'])->name('create');
+        Route::post('/', [BannerController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [BannerController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [BannerController::class, 'update'])->name('update');
+        Route::delete('/{id}', [BannerController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('announcements')->name('announcements.')->group(function () {
+        Route::get('/', [AnnouncementController::class, 'index'])->name('index');
+        Route::delete('/bulk', [AnnouncementController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [AnnouncementController::class, 'bulkStatus'])->name('bulk-status');
+        Route::get('/create', [AnnouncementController::class, 'create'])->name('create');
+        Route::post('/', [AnnouncementController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [AnnouncementController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [AnnouncementController::class, 'update'])->name('update');
+        Route::delete('/{id}', [AnnouncementController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('collections')->name('collections.')->group(function () {
+        Route::get('/', [CollectionController::class, 'index'])->name('index');
+        Route::delete('/bulk', [CollectionController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [CollectionController::class, 'bulkStatus'])->name('bulk-status');
+        Route::get('/create', [CollectionController::class, 'create'])->name('create');
+        Route::post('/', [CollectionController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [CollectionController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [CollectionController::class, 'update'])->name('update');
+        Route::delete('/{id}', [CollectionController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('coupons')->name('coupons.')->group(function () {
@@ -206,6 +253,28 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/{id}/edit', [CouponController::class, 'edit'])->name('edit');
         Route::put('/{id}', [CouponController::class, 'update'])->name('update');
         Route::delete('/{id}', [CouponController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('shipping')->name('shipping.')->group(function () {
+        Route::get('/', [ShippingMethodController::class, 'index'])->name('index');
+        Route::delete('/bulk', [ShippingMethodController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [ShippingMethodController::class, 'bulkStatus'])->name('bulk-status');
+        Route::get('/create', [ShippingMethodController::class, 'create'])->name('create');
+        Route::post('/', [ShippingMethodController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [ShippingMethodController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [ShippingMethodController::class, 'update'])->name('update');
+        Route::delete('/{id}', [ShippingMethodController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('taxes')->name('taxes.')->group(function () {
+        Route::get('/', [TaxRuleController::class, 'index'])->name('index');
+        Route::delete('/bulk', [TaxRuleController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [TaxRuleController::class, 'bulkStatus'])->name('bulk-status');
+        Route::get('/create', [TaxRuleController::class, 'create'])->name('create');
+        Route::post('/', [TaxRuleController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [TaxRuleController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [TaxRuleController::class, 'update'])->name('update');
+        Route::delete('/{id}', [TaxRuleController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('settings')->name('settings.')->group(function () {

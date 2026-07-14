@@ -105,6 +105,11 @@ class Product extends Model
         return $this->hasMany(ProductSpecification::class)->orderBy('sort_order');
     }
 
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(StockMovement::class)->latest();
+    }
+
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(ProductTag::class, 'product_product_tag')->withTimestamps();

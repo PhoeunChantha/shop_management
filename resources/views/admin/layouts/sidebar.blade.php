@@ -41,7 +41,7 @@
         </div>
 
         {{-- Catalog (collapsible) --}}
-        @php($catalogActive = request()->routeIs('admin.products.*', 'admin.brands.*', 'admin.categories.*', 'admin.attributes.*', 'admin.sizes.*', 'admin.colors.*'))
+        @php($catalogActive = request()->routeIs('admin.products.*', 'admin.inventory.*', 'admin.brands.*', 'admin.categories.*', 'admin.attributes.*', 'admin.sizes.*', 'admin.colors.*'))
         <div class="admin-nav-section">
             <p class="admin-nav-heading">Catalog</p>
             <div class="nav flex-column admin-nav">
@@ -59,6 +59,11 @@
                                 class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.products.*') ? 'active' : '' }}">
                                 <span class="nav-ico"><i class="fa-solid fa-box-open"></i></span>
                                 <span class="small fw-medium">Products</span>
+                            </a>
+                            <a href="{{ route('admin.inventory.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.inventory.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-warehouse"></i></span>
+                                <span class="small fw-medium">Inventory</span>
                             </a>
                             <a href="{{ route('admin.brands.index') }}"
                                 class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.brands.*') ? 'active' : '' }}">
@@ -127,15 +132,75 @@
             </div>
         </div>
 
-        {{-- Marketing --}}
+        {{-- Marketing (collapsible) --}}
+        @php($marketingActive = request()->routeIs('admin.coupons.*', 'admin.banners.*', 'admin.collections.*', 'admin.announcements.*'))
         <div class="admin-nav-section">
             <p class="admin-nav-heading">Marketing</p>
             <div class="nav flex-column admin-nav">
-                <a href="{{ route('admin.coupons.index') }}"
-                    class="nav-link d-flex align-items-center {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
-                    <span class="nav-ico"><i class="fa-solid fa-ticket"></i></span>
-                    <span class="small fw-medium">Coupons</span>
-                </a>
+                <div class="admin-nav-group" x-data="{ open: {{ $marketingActive ? 'true' : 'false' }} }"
+                    :class="{ 'is-open': open }">
+                    <button type="button" class="nav-link admin-nav-toggle d-flex align-items-center {{ $marketingActive ? 'has-active' : '' }}"
+                        @click="open = !open" :aria-expanded="open ? 'true' : 'false'">
+                        <span class="nav-ico"><i class="fa-solid fa-bullhorn"></i></span>
+                        <span class="small fw-medium flex-grow-1 text-start">Marketing</span>
+                        <i class="fa-solid fa-chevron-down admin-nav-caret"></i>
+                    </button>
+                    <div class="admin-nav-sub">
+                        <div class="admin-nav-sub-inner">
+                            <a href="{{ route('admin.coupons.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-ticket"></i></span>
+                                <span class="small fw-medium">Coupons</span>
+                            </a>
+                            <a href="{{ route('admin.banners.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.banners.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-images"></i></span>
+                                <span class="small fw-medium">Banners</span>
+                            </a>
+                            <a href="{{ route('admin.collections.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.collections.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-layer-group"></i></span>
+                                <span class="small fw-medium">Collections</span>
+                            </a>
+                            <a href="{{ route('admin.announcements.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.announcements.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-bullhorn"></i></span>
+                                <span class="small fw-medium">Announcement bar</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Configuration (collapsible) --}}
+        @php($configActive = request()->routeIs('admin.shipping.*', 'admin.taxes.*'))
+        <div class="admin-nav-section">
+            <p class="admin-nav-heading">Configuration</p>
+            <div class="nav flex-column admin-nav">
+                <div class="admin-nav-group" x-data="{ open: {{ $configActive ? 'true' : 'false' }} }"
+                    :class="{ 'is-open': open }">
+                    <button type="button" class="nav-link admin-nav-toggle d-flex align-items-center {{ $configActive ? 'has-active' : '' }}"
+                        @click="open = !open" :aria-expanded="open ? 'true' : 'false'">
+                        <span class="nav-ico"><i class="fa-solid fa-truck-fast"></i></span>
+                        <span class="small fw-medium flex-grow-1 text-start">Store setup</span>
+                        <i class="fa-solid fa-chevron-down admin-nav-caret"></i>
+                    </button>
+                    <div class="admin-nav-sub">
+                        <div class="admin-nav-sub-inner">
+                            <a href="{{ route('admin.shipping.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.shipping.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-truck"></i></span>
+                                <span class="small fw-medium">Shipping methods</span>
+                            </a>
+                            <a href="{{ route('admin.taxes.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.taxes.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-percent"></i></span>
+                                <span class="small fw-medium">Tax rules</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 

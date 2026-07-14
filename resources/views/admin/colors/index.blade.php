@@ -70,16 +70,10 @@
                                 <span class="text-sm text-gray-500 dark:text-slate-400 font-mono">{{ $color->code }}</span>
                             </td>
                             <td>
-                                <span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs font-semibold rounded border border-gray-200 dark:bg-white/10 dark:text-slate-200 dark:border-white/10">
-                                    {{ $color->sort_order }}
-                                </span>
+                                <span class="count-pill">{{ $color->sort_order }}</span>
                             </td>
                             <td>
-                                @if($color->status)
-                                <span class="text-green-600 bg-green-50 px-2 py-1 rounded text-xs font-medium border border-green-200 dark:text-emerald-300 dark:bg-emerald-500/10 dark:border-emerald-500/20">Enabled</span>
-                                @else
-                                <span class="text-red-600 bg-red-50 px-2 py-1 rounded text-xs font-medium border border-red-200 dark:text-red-300 dark:bg-red-500/10 dark:border-red-500/20">Disabled</span>
-                                @endif
+                                <span class="status-chip {{ $color->status ? 'st-active' : 'st-inactive' }}">{{ $color->status ? 'Enabled' : 'Disabled' }}</span>
                             </td>
                             <td>
                                 <div class="action-group">
