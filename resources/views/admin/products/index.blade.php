@@ -8,26 +8,46 @@
         </div>
     </x-slot>
 
-    <div class="admin-page" x-data="{ importOpen: false }">
-        <div class="page-section-header">
-            <div>
+    <div class="admin-page products-index-page" x-data="{ importOpen: false }">
+        <div class="page-section-header products-index-hero">
+            <div class="products-index-hero__copy">
                 <p class="section-kicker">Product table</p>
                 <h3>All Products</h3>
+                <p>Manage catalog visibility, stock position, pricing, and merchandising flags from one clean workspace.</p>
             </div>
-            <div class="d-flex align-items-center flex-wrap gap-2">
-                <a href="{{ route('admin.products.template') }}" class="ghost-button">
+            <div class="products-index-actions">
+                <a href="{{ route('admin.products.template') }}" class="ghost-button product-action-link">
                     <i class="fa-solid fa-file-arrow-down"></i><span>Template</span>
                 </a>
-                <a href="{{ route('admin.products.export', request()->query()) }}" class="ghost-button">
+                <a href="{{ route('admin.products.export', request()->query()) }}" class="ghost-button product-action-link">
                     <i class="fa-solid fa-file-export"></i><span>Export</span>
                 </a>
-                <button type="button" class="ghost-button" @click="importOpen = true">
+                <button type="button" class="ghost-button product-action-link" @click="importOpen = true">
                     <i class="fa-solid fa-file-import"></i><span>Import</span>
                 </button>
-                <a href="{{ route('admin.products.create') }}" class="premium-button premium-button--dark">
+                <a href="{{ route('admin.products.create') }}" class="premium-button premium-button--dark product-create-button">
                     <i class="fa-solid fa-plus"></i>
                     <span>New Product</span>
                 </a>
+            </div>
+        </div>
+
+        <div class="product-metric-strip">
+            <div class="product-metric">
+                <span>Total catalog</span>
+                <strong>{{ number_format($products->total()) }}</strong>
+            </div>
+            <div class="product-metric">
+                <span>Categories</span>
+                <strong>{{ number_format($categories->count()) }}</strong>
+            </div>
+            <div class="product-metric">
+                <span>Brands</span>
+                <strong>{{ number_format($brands->count()) }}</strong>
+            </div>
+            <div class="product-metric product-metric--muted">
+                <span>Current view</span>
+                <strong>{{ number_format($products->count()) }}</strong>
             </div>
         </div>
 
@@ -82,7 +102,7 @@
         </div>
 
         {{-- Filters --}}
-        <x-filter-card :action="route('admin.products.index')">
+        <x-filter-card :action="route('admin.products.index')" class="product-filter-card">
             {{-- Search & per page live in the table toolbar; keep their values when applying filters. --}}
             <x-slot:hidden>
                 <input type="hidden" name="search" value="{{ request('search') }}">
@@ -105,7 +125,7 @@
                 :options="['featured' => 'Featured', 'new' => 'New Arrival', 'best_seller' => 'Best Seller', 'on_sale' => 'On Sale']" />
         </x-filter-card>
 
-        <section class="premium-card mt-3" x-data="bulkSelect()">
+        <section class="premium-card mt-3 product-table-card" x-data="bulkSelect()">
             <x-table-loader />
             <x-bulk-bar :destroy="route('admin.products.bulk-destroy')" :status="route('admin.products.bulk-status')" noun="product" />
 
@@ -114,12 +134,12 @@
                     <x-per-page-selector :current="$perPage" />
                 </x-slot:left>
                 <x-slot:right>
-                    <x-search-input name="search" placeholder="Search name, SKU or barcode..." />
+                    <x-search-input name="search" placeholder="Search products by name, SKU or barcode..." />
                 </x-slot:right>
             </x-table-toolbar>
 
             <div class="premium-table-wrap">
-                <table class="premium-table">
+                <table class="premium-table product-management-table">
                     <thead>
                         <tr>
                             <th class="bulk-check-col">
@@ -141,7 +161,7 @@
                     </thead>
                     <tbody>
                         @forelse ($products as $product)
-                            <tr>
+                            <tr class="product-row">
                                 <td class="bulk-check-col">
                                     <input type="checkbox" class="bulk-check" data-row-check value="{{ $product->id }}"
                                         x-model="selected" aria-label="Select row">
@@ -150,28 +170,28 @@
                                 <td>
                                     @if ($product->thumbnail)
                                         <img src="{{ Imageurl($product->thumbnail, 'products') }}" alt="{{ $product->name }}"
-                                            class="w-11 h-11 object-cover rounded-lg border dark:border-white/10" style="width:44px;height:44px;">
+                                            class="product-thumb">
                                     @else
-                                        <span class="d-inline-flex align-items-center justify-content-center rounded-lg bg-gray-100 text-gray-300 dark:bg-white/10" style="width:44px;height:44px;"><i class="fa-regular fa-image"></i></span>
+                                        <span class="product-thumb product-thumb--empty"><i class="fa-regular fa-image"></i></span>
                                     @endif
                                 </td>
                                 <td>
-                                    <div>
-                                        <strong class="text-sm text-gray-800 dark:text-slate-200">{{ $product->name }}</strong>
-                                        <div class="text-xs text-gray-400 dark:text-slate-500">{{ $product->slug }}</div>
+                                    <div class="product-cell-main">
+                                        <strong>{{ $product->name }}</strong>
+                                        <div>{{ $product->slug }}</div>
                                     </div>
                                 </td>
                                 <td><span class="text-sm text-gray-600 dark:text-slate-300">{{ $product->category->name ?? '—' }}</span></td>
                                 <td><span class="text-sm text-gray-600 dark:text-slate-300">{{ $product->brand->name ?? '—' }}</span></td>
                                 <td>
                                     @if ($product->has_discount)
-                                        <strong class="text-gray-900 dark:text-slate-100">${{ number_format($product->final_price, 2) }}</strong>
-                                        <span class="text-xs text-gray-400 line-through ml-1">${{ number_format($product->price, 2) }}</span>
+                                        <strong class="product-price">${{ number_format($product->final_price, 2) }}</strong>
+                                        <span class="product-price-was">${{ number_format($product->price, 2) }}</span>
                                     @else
-                                        <strong class="text-gray-900 dark:text-slate-100">${{ number_format($product->price, 2) }}</strong>
+                                        <strong class="product-price">${{ number_format($product->price, 2) }}</strong>
                                     @endif
                                 </td>
-                                <td><span class="text-sm text-gray-600 dark:text-slate-300">{{ $product->total_stock }}</span></td>
+                                <td><span class="product-stock">{{ $product->total_stock }}</span></td>
                                 <td>
                                     <div class="d-flex flex-wrap gap-1">
                                         @if ($product->is_featured)<span class="pill-badge pill-featured">Featured</span>@endif
