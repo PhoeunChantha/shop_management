@@ -8,8 +8,8 @@
         </div>
     </x-slot>
 
-    <div class="admin-page">
-        <div class="page-section-header">
+    <div class="admin-page product-editor-page">
+        <div class="page-section-header product-editor-toolbar">
             <div>
                 <p class="section-kicker">Product setup</p>
                 <h3>New Product</h3>

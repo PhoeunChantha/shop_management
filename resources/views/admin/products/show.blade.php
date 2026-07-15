@@ -8,13 +8,23 @@
         </div>
     </x-slot>
 
-    <div class="admin-page">
-        <div class="page-section-header">
-            <div>
+    <div class="admin-page product-show-page">
+        <div class="page-section-header product-show-hero">
+            <div class="product-show-hero__copy">
                 <p class="section-kicker">Product detail</p>
                 <h3>{{ $product->name }}</h3>
+                <div class="product-show-hero__meta">
+                    @php($map = ['active' => 'st-active', 'draft' => 'st-draft', 'inactive' => 'st-inactive', 'archived' => 'st-archived'])
+                    <span class="status-chip {{ $map[$product->status] ?? 'st-draft' }}">{{ ucfirst($product->status) }}</span>
+                    <span><i class="fa-solid fa-layer-group"></i>{{ $product->category->name ?? 'Uncategorized' }}</span>
+                    <span><i class="fa-solid fa-cubes-stacked"></i>{{ $product->isSingle() ? $product->stock : $product->variants->sum('stock') }} in stock</span>
+                </div>
             </div>
-            <div class="d-flex gap-2">
+            <div class="product-show-hero__price">
+                <span>Storefront price</span>
+                <strong>${{ number_format($product->final_price, 2) }}</strong>
+            </div>
+            <div class="product-show-hero__actions">
                 <a href="{{ route('admin.products.edit', $product->id) }}" class="premium-button premium-button--dark">
                     <i class="fa-solid fa-pen"></i><span>Edit</span>
                 </a>
@@ -26,29 +36,29 @@
 
         <x-message />
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 product-show-layout">
 
             {{-- Gallery --}}
-            <section class="premium-card p-4 lg:col-span-1">
+            <section class="premium-card product-show-gallery lg:col-span-1">
                 <p class="section-kicker mb-2">Gallery</p>
                 @php($cover = $product->thumbnail_url)
                 @if ($cover)
-                    <img src="{{ $cover }}" alt="{{ $product->name }}" class="w-full h-64 object-cover rounded-xl border border-gray-200 dark:border-white/10">
+                    <img src="{{ $cover }}" alt="{{ $product->name }}" class="product-show-gallery__cover">
                 @else
                     <div class="empty-state"><i class="fa-regular fa-image"></i><strong>No images</strong></div>
                 @endif
                 @if ($product->images->isNotEmpty())
-                    <div class="flex flex-wrap gap-2 mt-3">
+                    <div class="product-show-gallery__thumbs">
                         @foreach ($product->images as $img)
                             <img src="{{ Imageurl($img->image, 'products') }}" alt="image"
-                                class="w-16 h-16 object-cover rounded-lg border {{ $img->is_primary ? 'border-amber-400' : 'border-gray-200 dark:border-white/10' }}">
+                                class="{{ $img->is_primary ? 'is-primary' : '' }}">
                         @endforeach
                     </div>
                 @endif
             </section>
 
             {{-- Info --}}
-            <section class="premium-card p-4 lg:col-span-2">
+            <section class="premium-card product-show-overview lg:col-span-2">
                 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                     <p class="section-kicker mb-0">Overview</p>
                     <div class="d-flex flex-wrap gap-1">
@@ -61,29 +71,29 @@
                     </div>
                 </div>
 
-                <div class="d-flex align-items-baseline gap-2 mb-3">
-                    <span class="text-2xl font-bold text-gray-900 dark:text-slate-100">${{ number_format($product->final_price, 2) }}</span>
+                <div class="product-show-price-row">
+                    <span>${{ number_format($product->final_price, 2) }}</span>
                     @if ($product->has_discount)
-                        <span class="text-gray-400 line-through">${{ number_format($product->price, 2) }}</span>
+                        <del>${{ number_format($product->price, 2) }}</del>
                         <span class="pill-badge pill-sale">
                             {{ $product->discount_type === 'percentage' ? rtrim(rtrim(number_format($product->discount_amount, 2), '0'), '.') . '% off' : '$' . number_format($product->discount_amount, 2) . ' off' }}
                         </span>
                     @endif
                 </div>
 
-                <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <dl class="product-show-facts">
                     <dt class="text-gray-500 dark:text-slate-400">Slug</dt>
                     <dd class="font-mono text-gray-800 dark:text-slate-200">{{ $product->slug }}</dd>
                     <dt class="text-gray-500 dark:text-slate-400">Category</dt>
-                    <dd class="text-gray-800 dark:text-slate-200">{{ $product->category->name ?? '—' }}{{ $product->subCategory ? ' / ' . $product->subCategory->name : '' }}</dd>
+                    <dd class="text-gray-800 dark:text-slate-200">{{ $product->category->name ?? 'N/A' }}{{ $product->subCategory ? ' / ' . $product->subCategory->name : '' }}</dd>
                     <dt class="text-gray-500 dark:text-slate-400">Brand</dt>
-                    <dd class="text-gray-800 dark:text-slate-200">{{ $product->brand->name ?? '—' }}</dd>
+                    <dd class="text-gray-800 dark:text-slate-200">{{ $product->brand->name ?? 'N/A' }}</dd>
                     <dt class="text-gray-500 dark:text-slate-400">Cost Price</dt>
-                    <dd class="text-gray-800 dark:text-slate-200">{{ $product->cost_price !== null ? '$' . number_format($product->cost_price, 2) : '—' }}</dd>
+                    <dd class="text-gray-800 dark:text-slate-200">{{ $product->cost_price !== null ? '$' . number_format($product->cost_price, 2) : 'N/A' }}</dd>
                     <dt class="text-gray-500 dark:text-slate-400">Weight</dt>
-                    <dd class="text-gray-800 dark:text-slate-200">{{ $product->weight !== null ? $product->weight . ' kg' : '—' }}</dd>
+                    <dd class="text-gray-800 dark:text-slate-200">{{ $product->weight !== null ? $product->weight . ' kg' : 'N/A' }}</dd>
                     <dt class="text-gray-500 dark:text-slate-400">Total Stock</dt>
-                    <dd class="text-gray-800 dark:text-slate-200">{{ $product->variants->sum('stock') }}</dd>
+                    <dd class="text-gray-800 dark:text-slate-200">{{ $product->isSingle() ? $product->stock : $product->variants->sum('stock') }}</dd>
                 </dl>
 
                 @if ($product->tags->isNotEmpty())
@@ -109,14 +119,14 @@
         <section class="premium-card mt-4">
             @if ($product->isSingle())
                 <div class="table-titlebar">
-                    <div><h3>Stock</h3><p>Single product — one SKU.</p></div>
+                    <div><h3>Stock</h3><p>Single product - one SKU.</p></div>
                 </div>
                 <div class="premium-table-wrap">
                     <table class="premium-table">
                         <thead><tr><th>SKU</th><th>Stock</th><th>Low Stock Alert</th></tr></thead>
                         <tbody>
                             <tr>
-                                <td><span class="font-mono text-sm">{{ $product->sku ?: '—' }}</span></td>
+                                <td><span class="font-mono text-sm">{{ $product->sku ?: 'N/A' }}</span></td>
                                 <td>{{ $product->stock }}</td>
                                 <td>{{ $product->low_stock_alert }}</td>
                             </tr>
@@ -154,12 +164,12 @@
                                                     {{ $value->value }}
                                                 </span>
                                             @empty
-                                                <span class="text-gray-400">—</span>
+                                                <span class="text-gray-400">N/A</span>
                                             @endforelse
                                         </div>
                                     </td>
                                     <td><span class="font-mono text-sm">{{ $variant->sku }}</span></td>
-                                    <td><span class="font-mono text-sm text-gray-500">{{ $variant->barcode ?: '—' }}</span></td>
+                                    <td><span class="font-mono text-sm text-gray-500">{{ $variant->barcode ?: 'N/A' }}</span></td>
                                     <td>
                                         {{ $variant->stock }}
                                         @if ($variant->is_low_stock)<span class="pill-badge pill-sale ms-1">Low</span>@endif
