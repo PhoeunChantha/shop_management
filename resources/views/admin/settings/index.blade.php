@@ -172,6 +172,7 @@
                                     <div class="sm:col-span-2 settings-upload-row">
                                         @foreach ($imageFields as $fieldKey => $field)
                                             <x-image-upload :name="$fieldKey" :label="$field['label']"
+                                                :folder="$field['folder'] ?? 'settings'"
                                                 :value="\App\Helpers\ImageManager::path($values[$fieldKey] ?? null, $field['folder'] ?? 'settings')"
                                                 :accept="$field['accept'] ?? 'image/*'"
                                                 :help="$field['help'] ?? 'PNG, JPG, GIF or SVG — up to 2MB'" />

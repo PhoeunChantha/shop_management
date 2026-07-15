@@ -20,89 +20,89 @@
             </a>
         </div>
 
-        <section class="premium-card">
-            <x-table-loader />
+        <x-admin.table-card>
+            <x-slot:toolbar>
+                <x-table-toolbar>
+                    <x-slot:left>
+                        <x-per-page-selector :current="$perPage" />
+                    </x-slot:left>
+                    <x-slot:right>
+                        <x-search-input name="search" placeholder="Search roles..." />
+                    </x-slot:right>
+                </x-table-toolbar>
+            </x-slot:toolbar>
 
-            <x-table-toolbar>
-                <x-slot:left>
-                    <x-per-page-selector :current="$perPage" />
-                </x-slot:left>
-                <x-slot:right>
-                    <x-search-input name="search" placeholder="Search roles..." />
-                </x-slot:right>
-            </x-table-toolbar>
-
-            <div class="premium-table-wrap">
-                <table class="premium-table">
-                    <thead>
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Permissions</th>
+                        <th>Created At</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($roles as $role)
                         <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Permissions</th>
-                            <th>Created At</th>
-                            <th class="text-end">Actions</th>
+                            <td>
+                                <span class="muted-id">#{{ $role->id }}</span>
+                            </td>
+                            <td>
+                                <div class="role-name-cell">
+                                    <span><i class="fa-solid fa-shield-halved"></i></span>
+                                    <strong>{{ $role->name }}</strong>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="role-stack">
+                                    @forelse ($role->permissions as $permission)
+                                        <span class="status-pill status-pill--neutral">{{ $permission->name }}</span>
+                                    @empty
+                                        <span class="empty-pill">No permissions</span>
+                                    @endforelse
+                                </div>
+                            </td>
+                            <td>
+                                <span class="date-text">{{ \Carbon\Carbon::parse($role->created_at)->format('d M, Y') }}</span>
+                            </td>
+                            <td>
+                                <div class="action-group">
+                                    <x-table-actions>
+                                        <a href="{{ route('admin.roles.edit', $role->id) }}" class="table-actions__item table-actions__item--edit" role="menuitem">
+                                            <i class="fa-solid fa-pen"></i>
+                                            <span>Edit</span>
+                                        </a>
+
+                                        <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
+                                            data-delete-modal-target="deleteRoleModal"
+                                            data-delete-action="{{ route('admin.roles.destroy', $role->id) }}"
+                                            data-delete-name="{{ $role->name }}">
+                                            <i class="fa-solid fa-trash"></i>
+                                            <span>Delete</span>
+                                        </button>
+                                    </x-table-actions>
+                                </div>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($roles as $role)
-                            <tr>
-                                <td>
-                                    <span class="muted-id">#{{ $role->id }}</span>
-                                </td>
-                                <td>
-                                    <div class="role-name-cell">
-                                        <span><i class="fa-solid fa-shield-halved"></i></span>
-                                        <strong>{{ $role->name }}</strong>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="role-stack">
-                                        @forelse ($role->permissions as $permission)
-                                            <span class="status-pill status-pill--neutral">{{ $permission->name }}</span>
-                                        @empty
-                                            <span class="empty-pill">No permissions</span>
-                                        @endforelse
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="date-text">{{ \Carbon\Carbon::parse($role->created_at)->format('d M, Y') }}</span>
-                                </td>
-                                <td>
-                                    <div class="action-group">
-                                        <x-table-actions>
-                                            <a href="{{ route('admin.roles.edit', $role->id) }}" class="table-actions__item table-actions__item--edit" role="menuitem">
-                                                <i class="fa-solid fa-pen"></i>
-                                                <span>Edit</span>
-                                            </a>
+                    @empty
+                        <tr>
+                            <td colspan="5">
+                                <x-admin.empty-state
+                                    icon="fa-solid fa-shield-halved"
+                                    title="No roles found"
+                                    message="Try a different search term or clear the current filters."
+                                />
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
 
-                                            <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
-                                                data-delete-modal-target="deleteRoleModal"
-                                                data-delete-action="{{ route('admin.roles.destroy', $role->id) }}"
-                                                data-delete-name="{{ $role->name }}">
-                                                <i class="fa-solid fa-trash"></i>
-                                                <span>Delete</span>
-                                            </button>
-                                        </x-table-actions>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5">
-                                    <div class="empty-state">
-                                        <i class="fa-solid fa-shield-halved"></i>
-                                        <strong>No roles found</strong>
-                                        <span>Try a different search term or clear the current filters.</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            <x-table-footer :paginator="$roles" label="roles" />
-        </section>
+            <x-slot:footer>
+                <x-table-footer :paginator="$roles" label="roles" />
+            </x-slot:footer>
+        </x-admin.table-card>
 
         <x-delete-confirm-modal
             id="deleteRoleModal"

@@ -18,6 +18,7 @@ use App\Http\Controllers\Backend\CategoryController;
 use App\Http\Controllers\Backend\CollectionController;
 use App\Http\Controllers\Backend\CouponController;
 use App\Http\Controllers\Backend\FaqController;
+use App\Http\Controllers\Backend\MediaAssetController;
 use App\Http\Controllers\Backend\OrderController;
 use App\Http\Controllers\Backend\PageController as AdminPageController;
 use App\Http\Controllers\Backend\ProductController;
@@ -212,6 +213,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/', [InventoryController::class, 'index'])->name('index');
         Route::get('/{id}', [InventoryController::class, 'show'])->whereNumber('id')->name('show');
         Route::post('/{id}/adjust', [InventoryController::class, 'adjust'])->whereNumber('id')->name('adjust');
+    });
+
+    Route::prefix('media')->name('media.')->group(function () {
+        Route::get('/', [MediaAssetController::class, 'index'])->name('index');
+        Route::get('/picker', [MediaAssetController::class, 'picker'])->name('picker');
+        Route::post('/', [MediaAssetController::class, 'store'])->name('store');
+        Route::delete('/{media}', [MediaAssetController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('orders')->name('orders.')->group(function () {

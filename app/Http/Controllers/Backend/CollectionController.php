@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Backend;
 
 use App\Helpers\ImageManager;
 use App\Http\Controllers\Backend\Concerns\HandlesBulkActions;
+use App\Http\Controllers\Backend\Concerns\ResolvesMediaSelection;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Collection\StoreCollectionRequest;
 use App\Http\Requests\Collection\UpdateCollectionRequest;
@@ -19,6 +20,7 @@ use Illuminate\View\View;
 class CollectionController extends Controller
 {
     use HandlesBulkActions;
+    use ResolvesMediaSelection;
 
     public function index(Request $request): View
     {
@@ -61,13 +63,16 @@ class CollectionController extends Controller
         $this->authorize('create', Collection::class);
 
         try {
-            $validated = $request->safe()->except(['image', 'products']);
+            $validated = $request->safe()->except(['image', 'image_media', 'products']);
             $validated['slug'] = $this->uniqueSlug($validated['name']);
 
             $collection = Collection::create($validated);
 
             if ($request->hasFile('image')) {
                 $collection->image = ImageManager::upload($request->file('image'), 'collections');
+                $collection->save();
+            } elseif ($selected = $this->selectedMediaFilename($request, 'image', 'collections')) {
+                $collection->image = $selected;
                 $collection->save();
             }
 
@@ -101,13 +106,16 @@ class CollectionController extends Controller
         try {
             $collection = Collection::findOrFail($id);
 
-            $validated = $request->safe()->except(['image', 'products']);
+            $validated = $request->safe()->except(['image', 'image_media', 'products']);
             $validated['slug'] = $this->uniqueSlug($validated['name'], $collection->id);
 
             $collection->update($validated);
 
             if ($request->hasFile('image')) {
                 $collection->image = ImageManager::update($request->file('image'), $collection->image, 'collections');
+                $collection->save();
+            } elseif ($selected = $this->selectedMediaFilename($request, 'image', 'collections')) {
+                $collection->image = $selected;
                 $collection->save();
             }
 

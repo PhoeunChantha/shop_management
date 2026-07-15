@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Backend;
 
 use App\Helpers\ImageManager;
 use App\Http\Controllers\Backend\Concerns\HandlesBulkActions;
+use App\Http\Controllers\Backend\Concerns\ResolvesMediaSelection;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Brand\StoreBrandRequest;
 use App\Http\Requests\Brand\UpdateBrandRequest;
@@ -18,6 +19,7 @@ use Illuminate\View\View;
 class BrandController extends Controller
 {
     use HandlesBulkActions;
+    use ResolvesMediaSelection;
 
     public function index(Request $request): View
     {
@@ -56,13 +58,16 @@ class BrandController extends Controller
         $this->authorize('create', Brand::class);
 
         try {
-            $validated = $request->safe()->except('image');
+            $validated = $request->safe()->except(['image', 'image_media']);
             $validated['slug'] = $this->uniqueSlug($validated['name']);
 
             $brand = Brand::create($validated);
 
             if ($request->hasFile('image')) {
                 $brand->image = ImageManager::upload($request->file('image'), 'brands');
+                $brand->save();
+            } elseif ($selected = $this->selectedMediaFilename($request, 'image', 'brands')) {
+                $brand->image = $selected;
                 $brand->save();
             }
 
@@ -98,13 +103,16 @@ class BrandController extends Controller
         try {
             $brand = Brand::findOrFail($id);
 
-            $validated = $request->safe()->except('image');
+            $validated = $request->safe()->except(['image', 'image_media']);
             $validated['slug'] = $this->uniqueSlug($validated['name'], $brand->id);
 
             $brand->update($validated);
 
             if ($request->hasFile('image')) {
                 $brand->image = ImageManager::update($request->file('image'), $brand->image, 'brands');
+                $brand->save();
+            } elseif ($selected = $this->selectedMediaFilename($request, 'image', 'brands')) {
+                $brand->image = $selected;
                 $brand->save();
             }
 

@@ -9,6 +9,7 @@ use App\Http\Requests\Product\BaseProductRequest;
 use App\Models\Attribute;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\MediaAsset;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductTag;
@@ -129,6 +130,8 @@ class ProductService
                     $name = ImageManager::update($request->file('thumbnail'), $product->thumbnail, self::FOLDER);
                     $product->thumbnail = $name;
                     $uploaded[] = $name;
+                } elseif ($selected = $this->selectedMediaFilename($request->input('thumbnail_media'), self::FOLDER)) {
+                    $product->thumbnail = $selected;
                 }
 
                 $product->save();
@@ -250,6 +253,22 @@ class ProductService
                 'is_primary' => false,
             ]);
         }
+
+        $mediaNames = array_values(array_unique(array_filter((array) $request->input('images_media', []))));
+
+        foreach ($mediaNames as $offset => $filename) {
+            $name = $this->selectedMediaFilename($filename, self::FOLDER);
+
+            if (! $name || $product->images()->where('image', $name)->exists()) {
+                continue;
+            }
+
+            $product->images()->create([
+                'image' => $name,
+                'sort_order' => $start + count((array) $request->file('images', [])) + $offset + 1,
+                'is_primary' => false,
+            ]);
+        }
     }
 
     private function removeImages(Product $product, BaseProductRequest $request): void
@@ -312,6 +331,8 @@ class ProductService
             if ($imageFile) {
                 $image = ImageManager::upload($imageFile, self::VARIANT_FOLDER);
                 $uploaded[] = $image;
+            } elseif ($selected = $this->selectedMediaFilename($variant['image_media'] ?? null, self::VARIANT_FOLDER)) {
+                $image = $selected;
             } else {
                 $image = ($variant['image_existing'] ?? '') ?: null;
             }
@@ -412,6 +433,20 @@ class ProductService
     private function nullableNumber($value): ?string
     {
         return ($value === null || $value === '') ? null : (string) $value;
+    }
+
+    private function selectedMediaFilename(?string $filename, string $folder): ?string
+    {
+        $filename = trim((string) $filename);
+
+        if ($filename === '') {
+            return null;
+        }
+
+        return MediaAsset::query()
+            ->where('folder', $folder)
+            ->where('filename', $filename)
+            ->value('filename');
     }
 
     private function uniqueSlug(string $name, ?int $ignoreId = null): string

@@ -20,20 +20,22 @@
             </a>
         </div>
 
-        <section class="premium-card" x-data="bulkSelect()">
-            <x-table-loader />
-            <x-bulk-bar :destroy="route('admin.coupons.bulk-destroy')" :status="route('admin.coupons.bulk-status')" noun="coupon" />
+        <x-admin.table-card bulk>
+            <x-slot:bulkBar>
+                <x-bulk-bar :destroy="route('admin.coupons.bulk-destroy')" :status="route('admin.coupons.bulk-status')" noun="coupon" />
+            </x-slot:bulkBar>
 
-            <x-table-toolbar>
-                <x-slot:left>
-                    <x-per-page-selector :current="$perPage" />
-                </x-slot:left>
-                <x-slot:right>
-                    <x-search-input name="search" placeholder="Search by code..." />
-                </x-slot:right>
-            </x-table-toolbar>
+            <x-slot:toolbar>
+                <x-table-toolbar>
+                    <x-slot:left>
+                        <x-per-page-selector :current="$perPage" />
+                    </x-slot:left>
+                    <x-slot:right>
+                        <x-search-input name="search" placeholder="Search by code..." />
+                    </x-slot:right>
+                </x-table-toolbar>
+            </x-slot:toolbar>
 
-            <div class="premium-table-wrap">
                 <table class="premium-table">
                     <thead>
                         <tr>
@@ -129,20 +131,18 @@
                         @empty
                         <tr>
                             <td colspan="9">
-                                <div class="empty-state">
-                                    <i class="fa-solid fa-ticket"></i>
-                                    <strong>No coupons found</strong>
-                                    <span>Create your first discount coupon or adjust the current search.</span>
-                                </div>
+                                <x-admin.empty-state icon="fa-solid fa-ticket" title="No coupons found"
+                                    message="Create your first discount coupon or adjust the current search." />
                             </td>
                         </tr>
                         @endforelse
                     </tbody>
                 </table>
-            </div>
 
-            <x-table-footer :paginator="$coupons" label="coupons" />
-        </section>
+            <x-slot:footer>
+                <x-table-footer :paginator="$coupons" label="coupons" />
+            </x-slot:footer>
+        </x-admin.table-card>
 
         <x-delete-confirm-modal
             id="deleteCouponModal"

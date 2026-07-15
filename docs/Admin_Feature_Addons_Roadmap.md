@@ -1,0 +1,62 @@
+# Admin Feature Add-ons Roadmap
+
+Shop Management admin recommendations - 2026-07-15
+
+**Recommendation:** Build the admin improvements in layers: first stabilize shared components, then improve operational workflows, then add analytics.
+
+## Best Next Features
+
+- Reusable admin table shell for filters, search, bulk actions, empty states, and pagination.
+- Order operations workflow with status timeline, payment state, fulfillment notes, and printable invoice.
+- Inventory alert center for low stock, out-of-stock variants, and reorder suggestions.
+- Admin dashboard KPIs for sales, pending orders, active products, low stock, and top products.
+- Product form section collapse so long product setup stays fast and clean.
+- Media library for product, banner, brand, and collection images with reuse and cleanup.
+- Activity log export and admin audit filters for user, module, action, date, and IP.
+
+## Feature Priority Matrix
+
+| Priority | Feature | Why it matters | Suggested build |
+|---|---|---|---|
+| 1 | Reusable table system | Makes every admin list consistent and faster to redesign. | Create Blade component, then migrate categories and brands first. |
+| 2 | Order management polish | Most important daily e-commerce workflow after product setup. | Improve index filters, show page timeline, status actions, and invoice print. |
+| 3 | Inventory alerts | Prevents selling unavailable products and helps restock planning. | Add low-stock query, alert page, and dashboard widget. |
+| 4 | Dashboard KPIs | Gives admin users an immediate store health overview. | Add cards, recent orders, top products, and low-stock list. |
+| 5 | Media library | Reduces duplicate uploads and broken images across admin. | Create image browser modal and attach existing assets to records. |
+| 6 | Bulk operations | Saves time for product/status/category maintenance. | Bulk status update, delete, export, and import review screen. |
+
+## Suggested Implementation Order
+
+1. Fix shared admin primitives: page header, table shell, filters, empty state, and status chips.
+2. Apply the table shell to simple catalog pages first: categories, brands, sizes, colors, and tags.
+3. Upgrade order management because it has the highest operational value.
+4. Add dashboard widgets using the same table and card primitives.
+5. Add media library and bulk operations once the admin visual system is stable.
+
+## Implementation Progress
+
+- Done: reusable admin page header component.
+- Done: reusable admin table card component.
+- Done: reusable admin empty state component.
+- Done: migrated the brands index table to the reusable table card.
+- Done: migrated the categories index table to the reusable table card.
+- Done: migrated the sizes index table to the reusable table card.
+- Done: migrated the colors index table to the reusable table card.
+- Done: migrated the attributes index table to the reusable table card.
+- Done: migrated the roles index table to the reusable table card.
+- Done: migrated the permissions index table to the reusable table card.
+- Done: migrated the users index table to the reusable table card.
+- Done: migrated the orders index table to the reusable table card.
+- Done: polished the order detail workflow surface.
+- Done: migrated the inventory index and detail tables to the reusable table card.
+- Done: migrated the reviews, coupons, shipping, and taxes index tables to the reusable table card.
+- Done: migrated pages, FAQs, announcements, banners, collections, and products index tables to the reusable table card.
+- Done: added the first media library slice with database storage, upload/delete actions, admin route, sidebar entry, search/filter UI, and responsive image grid.
+- Done: added the media picker endpoint and integrated library selection into banner, brand, category, and collection image fields.
+- Done: integrated the media picker into product thumbnail, gallery, variant images, and settings logo/favicon fields.
+- Done: redesigned the shared image field so clicking the preview opens a media modal with Library and Upload new tabs.
+- Next: review the remaining auth/profile test failures or add activity log export/filtering if you want one more admin operations feature.
+
+## Build Notes
+
+Keep the admin design dense, predictable, and task-focused. Avoid marketing-style sections inside operational pages. Use the product table visual language as the base system, but extract it into reusable Blade components before applying it to many pages.

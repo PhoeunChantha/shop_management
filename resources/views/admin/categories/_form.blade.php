@@ -66,7 +66,7 @@
             @enderror
         </div>
         <div class="col-span-2 md:col-span-2">
-            <x-image-upload name="image" label="Category Image" :value="$category->image ?? null"
+            <x-image-upload name="image" label="Category Image" folder="categories" :value="$category->image ?? null"
                 help="PNG, JPG, GIF or SVG — up to 2MB" />
         </div>
     </div>

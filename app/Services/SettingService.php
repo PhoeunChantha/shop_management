@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Enums\SettingGroup;
 use App\Helpers\ImageManager;
+use App\Models\MediaAsset;
 use App\Models\Setting;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -249,6 +250,10 @@ final class SettingService
                 }
 
                 $rules[$key] = $field['rules'] ?? 'nullable|string|max:255';
+
+                if (($field['type'] ?? '') === 'image') {
+                    $rules[$key.'_media'] = ['nullable', 'string', 'max:255'];
+                }
             }
         }
 
@@ -335,10 +340,13 @@ final class SettingService
                 // keep the existing file. Stores the filename (ImageManager convention).
                 if (($field['type'] ?? '') === 'image') {
                     $file = $validated[$key] ?? null;
+                    $folder = $field['folder'] ?? 'settings';
 
                     if ($file instanceof UploadedFile) {
-                        $newName = ImageManager::update($file, Setting::get($key), $field['folder'] ?? 'settings');
+                        $newName = ImageManager::update($file, Setting::get($key), $folder);
                         Setting::set($key, $newName, $groupValue);
+                    } elseif ($selected = $this->selectedMediaFilename($validated[$key.'_media'] ?? null, $folder)) {
+                        Setting::set($key, $selected, $groupValue);
                     }
 
                     continue;
@@ -428,5 +436,19 @@ final class SettingService
             'fa-solid fa-location-dot' => 'Location',
             'fa-solid fa-link' => 'Other link',
         ]);
+    }
+
+    private function selectedMediaFilename(?string $filename, string $folder): ?string
+    {
+        $filename = trim((string) $filename);
+
+        if ($filename === '') {
+            return null;
+        }
+
+        return MediaAsset::query()
+            ->where('folder', $folder)
+            ->where('filename', $filename)
+            ->value('filename');
     }
 }

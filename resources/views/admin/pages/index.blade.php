@@ -17,20 +17,22 @@
             </a>
         </div>
 
-        <section class="premium-card mt-3 orders-panel" x-data="bulkSelect()">
-            <x-table-loader />
-            <x-bulk-bar :destroy="route('admin.pages.bulk-destroy')" :status="route('admin.pages.bulk-status')" noun="page" />
+        <x-admin.table-card class="mt-3 orders-panel" bulk>
+            <x-slot:bulkBar>
+                <x-bulk-bar :destroy="route('admin.pages.bulk-destroy')" :status="route('admin.pages.bulk-status')" noun="page" />
+            </x-slot:bulkBar>
 
-            <x-table-toolbar>
-                <x-slot:left>
-                    <x-per-page-selector :current="$perPage" />
-                </x-slot:left>
-                <x-slot:right>
-                    <x-search-input name="search" placeholder="Search pages..." />
-                </x-slot:right>
-            </x-table-toolbar>
+            <x-slot:toolbar>
+                <x-table-toolbar>
+                    <x-slot:left>
+                        <x-per-page-selector :current="$perPage" />
+                    </x-slot:left>
+                    <x-slot:right>
+                        <x-search-input name="search" placeholder="Search pages..." />
+                    </x-slot:right>
+                </x-table-toolbar>
+            </x-slot:toolbar>
 
-            <div class="premium-table-wrap">
                 <table class="dash-table">
                     <thead>
                         <tr>
@@ -80,20 +82,18 @@
                         @empty
                             <tr>
                                 <td colspan="6">
-                                    <div class="empty-state">
-                                        <i class="fa-solid fa-file-lines"></i>
-                                        <strong>No pages yet</strong>
-                                        <span>Create content pages like About, Privacy or Terms.</span>
-                                    </div>
+                                    <x-admin.empty-state icon="fa-solid fa-file-lines" title="No pages yet"
+                                        message="Create content pages like About, Privacy or Terms." />
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
-            </div>
 
-            <x-table-footer :paginator="$pages" label="pages" />
-        </section>
+            <x-slot:footer>
+                <x-table-footer :paginator="$pages" label="pages" />
+            </x-slot:footer>
+        </x-admin.table-card>
 
         <x-delete-confirm-modal id="deletePageModal" title="Delete this page?"
             message-after="from the storefront. This cannot be undone." />

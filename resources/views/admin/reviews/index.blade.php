@@ -29,11 +29,10 @@
             @endforeach
         </div>
 
-        <section class="premium-card mt-3 orders-panel" x-data="bulkSelect()">
-            <x-table-loader />
-
-            {{-- Bulk moderation bar --}}
-            <div class="bulk-bar" x-show="count > 0" x-cloak>
+        <x-admin.table-card class="mt-3 orders-panel" bulk>
+            <x-slot:bulkBar>
+                {{-- Bulk moderation bar --}}
+                <div class="bulk-bar" x-show="count > 0" x-cloak>
                 <span class="bulk-bar__count"><i class="fa-solid fa-check-double"></i> <span x-text="count"></span> selected</span>
                 <form method="POST" action="{{ route('admin.reviews.bulk-moderate') }}" class="bulk-bar__form">
                     @csrf @method('PATCH')
@@ -54,18 +53,20 @@
                     <button type="submit" class="bulk-btn bulk-btn--danger"><i class="fa-solid fa-trash"></i> Delete</button>
                 </form>
                 <button type="button" class="bulk-bar__clear" @click="clear()"><i class="fa-solid fa-xmark"></i> Clear</button>
-            </div>
+                </div>
+            </x-slot:bulkBar>
 
-            <x-table-toolbar>
-                <x-slot:left>
-                    <x-per-page-selector :current="$perPage" />
-                </x-slot:left>
-                <x-slot:right>
-                    <x-search-input name="search" placeholder="Search reviews..." />
-                </x-slot:right>
-            </x-table-toolbar>
+            <x-slot:toolbar>
+                <x-table-toolbar>
+                    <x-slot:left>
+                        <x-per-page-selector :current="$perPage" />
+                    </x-slot:left>
+                    <x-slot:right>
+                        <x-search-input name="search" placeholder="Search reviews..." />
+                    </x-slot:right>
+                </x-table-toolbar>
+            </x-slot:toolbar>
 
-            <div class="premium-table-wrap">
                 <table class="dash-table">
                     <thead>
                         <tr>
@@ -159,20 +160,18 @@
                         @empty
                             <tr>
                                 <td colspan="7">
-                                    <div class="empty-state">
-                                        <i class="fa-solid fa-star"></i>
-                                        <strong>No reviews found</strong>
-                                        <span>Customer reviews will appear here for moderation.</span>
-                                    </div>
+                                    <x-admin.empty-state icon="fa-solid fa-star" title="No reviews found"
+                                        message="Customer reviews will appear here for moderation." />
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
-            </div>
 
-            <x-table-footer :paginator="$reviews" label="reviews" />
-        </section>
+            <x-slot:footer>
+                <x-table-footer :paginator="$reviews" label="reviews" />
+            </x-slot:footer>
+        </x-admin.table-card>
 
         {{-- View review modal --}}
         <div class="modal-backdrop-premium" x-show="viewOpen" x-cloak style="display:none;"

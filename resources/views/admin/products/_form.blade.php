@@ -105,6 +105,7 @@
                 <div class="form-section__body grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="md:col-span-1 product-thumbnail-upload">
                         <x-image-upload name="thumbnail" label="Product thumbnail"
+                            folder="products"
                             :value="\App\Helpers\ImageManager::path($product->thumbnail ?? null, 'products')"
                             accept="image/*" help="" />
                     </div>
@@ -155,7 +156,7 @@
                     <div><h4>Product Gallery</h4><p>Upload alternate angles, detail shots and campaign images.</p></div>
                 </div>
                 <div class="form-section__body">
-                    <x-admin::multiple-image-upload name="images" :existing="$product->images ?? null" />
+                    <x-admin::multiple-image-upload name="images" :existing="$product->images ?? null" mediaName="images_media" />
                     @error('images.*')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                 </div>
             </section>
@@ -224,6 +225,7 @@
                     attributes: @js($attributesJs),
                     selected: @js($selectedSeed),
                     variants: @js($variantsSeed),
+                    variantMediaUrl: @js(route('admin.media.picker', ['folder' => 'variants'])),
                     single: {
                         sku: @js($singleSku),
                         stock: @js($singleStock),
@@ -351,12 +353,16 @@
                                             <tr>
                                                 <td>
                                                     <input type="hidden" :name="`variants[${i}][image_existing]`" :value="v.image" :disabled="type !== 'variable'">
+                                                    <input type="hidden" :name="`variants[${i}][image_media]`" :value="v.image_media || ''" :disabled="type !== 'variable'">
                                                     <label class="erp-img" title="Upload variant image">
                                                         <template x-if="v.preview"><img :src="v.preview" alt=""></template>
                                                         <template x-if="!v.preview"><i class="fa-regular fa-image"></i></template>
                                                         <input type="file" accept="image/*" class="visually-hidden"
                                                             :name="`variants[${i}][image]`" @change="pickVariantImage($event, v)" :disabled="type !== 'variable'">
                                                     </label>
+                                                    <button type="button" class="variant-media-btn" @click="openVariantMedia(v)" :disabled="type !== 'variable'" title="Choose from media library">
+                                                        <i class="fa-solid fa-photo-film"></i>
+                                                    </button>
                                                 </td>
                                                 <td class="erp-variant-cell">
                                                     <template x-for="vid in v.value_ids" :key="vid">
@@ -477,6 +483,48 @@
                                     <button type="button" class="form-submit-button" :disabled="!draftAttributeId || draftValueIds.length === 0" @click="saveModal()">
                                         <i class="fa-solid fa-check"></i> Save
                                     </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    {{-- Variant media picker modal --}}
+                    <template x-teleport="body">
+                        <div class="modal-backdrop-premium" x-show="variantMediaOpen" x-cloak
+                            @keydown.escape.window="variantMediaOpen = false" @click.self="variantMediaOpen = false"
+                            x-transition.opacity.duration.150ms style="display:none;">
+                            <div class="attr-modal product-variant-media-modal">
+                                <div class="attr-modal__head">
+                                    <div>
+                                        <h3>Choose Variant Image</h3>
+                                        <p>Select an image from the variant media folder.</p>
+                                    </div>
+                                    <button type="button" class="form-modal__close" @click="variantMediaOpen = false"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
+                                <div class="attr-modal__body">
+                                    <div class="media-picker-panel__search">
+                                        <i class="fa-solid fa-magnifying-glass"></i>
+                                        <input type="search" x-model="variantMediaSearch" placeholder="Search variant media">
+                                    </div>
+                                    <div class="product-variant-media-grid">
+                                        <template x-if="variantMediaLoading">
+                                            <div class="media-picker-panel__empty">Loading media...</div>
+                                        </template>
+                                        <template x-if="!variantMediaLoading && filteredVariantMedia.length === 0">
+                                            <div class="media-picker-panel__empty">No variant media found.</div>
+                                        </template>
+                                        <template x-for="asset in filteredVariantMedia" :key="asset.id">
+                                            <button type="button" class="media-picker-option"
+                                                :class="{ 'is-selected': variantMediaTarget && variantMediaTarget.image_media === asset.filename }"
+                                                @click="selectVariantMedia(asset)">
+                                                <img :src="asset.url" :alt="asset.name">
+                                                <span>
+                                                    <strong x-text="asset.name"></strong>
+                                                    <small x-text="[asset.size, asset.dimensions].filter(Boolean).join(' - ')"></small>
+                                                </span>
+                                            </button>
+                                        </template>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -681,6 +729,12 @@
                     draftAttributeId: '',
                     draftValueIds: [],
                     valueSearch: '',
+                    variantMediaOpen: false,
+                    variantMediaLoading: false,
+                    variantMediaLoaded: false,
+                    variantMediaSearch: '',
+                    variantMediaAssets: [],
+                    variantMediaTarget: null,
 
                     // lookups
                     _valueMap: {},
@@ -695,7 +749,7 @@
                         this.variants = (config.variants || []).map((v) => ({
                             value_ids: (v.value_ids || []).map(String),
                             sku: v.sku || '', barcode: v.barcode || '',
-                            image: v.image || '', preview: v.image_url || null,
+                            image: v.image || '', image_media: v.image_media || '', preview: v.image_url || null,
                             stock: v.stock ?? '0', low_stock_alert: v.low_stock_alert ?? '0',
                             price: v.price ?? '', cost_price: v.cost_price ?? '', weight: v.weight ?? '',
                             status: v.status ?? '1',
@@ -705,7 +759,36 @@
 
                     pickVariantImage(e, v) {
                         const file = e.target.files[0];
-                        if (file) v.preview = URL.createObjectURL(file);
+                        if (file) {
+                            v.preview = URL.createObjectURL(file);
+                            v.image_media = '';
+                        }
+                    },
+                    async openVariantMedia(v) {
+                        this.variantMediaTarget = v;
+                        this.variantMediaOpen = true;
+                        if (this.variantMediaLoaded || this.variantMediaLoading) return;
+                        this.variantMediaLoading = true;
+                        try {
+                            const res = await fetch(config.variantMediaUrl, { headers: { 'Accept': 'application/json' } });
+                            const json = await res.json();
+                            this.variantMediaAssets = json.data || [];
+                            this.variantMediaLoaded = true;
+                        } finally {
+                            this.variantMediaLoading = false;
+                        }
+                    },
+                    get filteredVariantMedia() {
+                        const q = this.variantMediaSearch.trim().toLowerCase();
+                        if (!q) return this.variantMediaAssets;
+                        return this.variantMediaAssets.filter((asset) => (asset.name || '').toLowerCase().includes(q) || (asset.filename || '').toLowerCase().includes(q));
+                    },
+                    selectVariantMedia(asset) {
+                        if (!this.variantMediaTarget) return;
+                        this.variantMediaTarget.image_media = asset.filename;
+                        this.variantMediaTarget.image = '';
+                        this.variantMediaTarget.preview = asset.url;
+                        this.variantMediaOpen = false;
                     },
 
                     /* ---- attribute / value helpers ---- */
@@ -769,7 +852,7 @@
                         this.variants = combos.map((combo) => {
                             const key = this.keyOf(combo);
                             if (existing[key]) { existing[key].value_ids = combo; return existing[key]; }
-                            return { value_ids: combo, sku: '', barcode: '', image: '', preview: null, stock: '0', low_stock_alert: '0', price: '', cost_price: '', weight: '', status: '1' };
+                            return { value_ids: combo, sku: '', barcode: '', image: '', image_media: '', preview: null, stock: '0', low_stock_alert: '0', price: '', cost_price: '', weight: '', status: '1' };
                         });
                         this.generated = true; this.dirty = false;
                         if (!this.canMatrix()) this.view = 'table';

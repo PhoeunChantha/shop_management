@@ -145,7 +145,7 @@
         </div>
 
         {{-- Marketing (collapsible) --}}
-        @php($marketingActive = request()->routeIs('admin.coupons.*', 'admin.banners.*', 'admin.collections.*', 'admin.announcements.*'))
+        @php($marketingActive = request()->routeIs('admin.coupons.*', 'admin.banners.*', 'admin.collections.*', 'admin.announcements.*', 'admin.media.*'))
         <div class="admin-nav-section">
             <p class="admin-nav-heading">Marketing</p>
             <div class="nav flex-column admin-nav">
@@ -168,6 +168,11 @@
                                 class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.banners.*') ? 'active' : '' }}">
                                 <span class="nav-ico"><i class="fa-solid fa-images"></i></span>
                                 <span class="small fw-medium">Banners</span>
+                            </a>
+                            <a href="{{ route('admin.media.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.media.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-photo-film"></i></span>
+                                <span class="small fw-medium">Media Library</span>
                             </a>
                             <a href="{{ route('admin.collections.index') }}"
                                 class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.collections.*') ? 'active' : '' }}">

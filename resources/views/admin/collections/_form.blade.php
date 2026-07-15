@@ -13,7 +13,7 @@
     <div class="form-panel-body grid grid-cols-1 md:grid-cols-2 gap-4">
 
         <div class="form-field col-span-2">
-            <x-image-upload name="image" label="Cover image"
+            <x-image-upload name="image" label="Cover image" folder="collections"
                 :value="$c && $c->image ? 'uploads/collections/' . $c->image : null"
                 help="Optional — JPG, PNG or WebP, up to 4MB" />
         </div>

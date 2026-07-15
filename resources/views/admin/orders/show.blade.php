@@ -8,9 +8,9 @@
         </div>
     </x-slot>
 
-    <div class="admin-page">
+    <div class="admin-page order-detail-page">
         {{-- Header --}}
-        <div class="order-detail-head">
+        <div class="order-detail-head order-detail-hero">
             <div>
                 <p class="section-kicker">Order detail</p>
                 <div class="order-detail-head__meta">
@@ -39,8 +39,27 @@
 
         <x-message />
 
+        <div class="order-detail-summary">
+            <div class="order-detail-summary__card">
+                <span>Total</span>
+                <strong>${{ number_format($order->grand_total, 2) }}</strong>
+            </div>
+            <div class="order-detail-summary__card">
+                <span>Items</span>
+                <strong>{{ $order->details->sum('quantity') }}</strong>
+            </div>
+            <div class="order-detail-summary__card">
+                <span>Customer</span>
+                <strong>{{ $order->user ? 'Account' : 'Guest' }}</strong>
+            </div>
+            <div class="order-detail-summary__card">
+                <span>Tracking</span>
+                <strong>{{ $order->tracking_number ? 'Added' : 'Pending' }}</strong>
+            </div>
+        </div>
+
         {{-- Status stepper --}}
-        <section class="premium-card p-4 mt-3">
+        <section class="premium-card p-4 mt-3 order-stepper-card">
             @php($current = $order->status->flowIndex())
             <div class="order-stepper {{ $order->status->isTerminal() ? 'is-cancelled' : '' }}">
                 @if ($order->status->isTerminal())
@@ -67,7 +86,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
             {{-- Left: items + money + activity --}}
             <div class="lg:col-span-2 d-flex flex-column gap-4">
-                <section class="premium-card">
+                <section class="premium-card order-items-card">
                     <div class="table-titlebar">
                         <div>
                             <h3>Items</h3>
@@ -117,14 +136,14 @@
                 </section>
 
                 @if ($order->customer_note)
-                    <section class="premium-card p-4">
+                    <section class="premium-card p-4 order-note-card">
                         <p class="section-kicker mb-1">Customer note</p>
                         <p class="text-sm text-gray-700 dark:text-slate-300 mb-0">{{ $order->customer_note }}</p>
                     </section>
                 @endif
 
                 {{-- Activity timeline --}}
-                <section class="premium-card p-4">
+                <section class="premium-card p-4 order-activity-card">
                     <p class="section-kicker mb-3">Activity</p>
                     @if ($order->events->isEmpty())
                         <p class="text-sm text-gray-400 mb-0">No activity recorded yet.</p>
@@ -149,8 +168,8 @@
             </div>
 
             {{-- Right: fulfilment + customer + shipping + payment --}}
-            <aside class="d-flex flex-column gap-4">
-                <section class="premium-card form-panel">
+            <aside class="d-flex flex-column gap-4 order-side-rail">
+                <section class="premium-card form-panel order-fulfilment-card">
                     <div class="form-panel-header">
                         <div class="form-panel-icon"><i class="fa-solid fa-truck-fast"></i></div>
                         <div><h3>Fulfilment</h3><p>Update status, payment, tracking and notes.</p></div>
@@ -191,7 +210,7 @@
                     </form>
                 </section>
 
-                <section class="premium-card p-4">
+                <section class="premium-card p-4 order-side-card">
                     <p class="section-kicker mb-3">Customer</p>
                     <div class="d-flex align-items-center gap-3">
                         <span class="order-avatar">{{ strtoupper(mb_substr($order->customer_name ?: '?', 0, 1)) }}</span>
@@ -219,7 +238,7 @@
                     @endif
                 </section>
 
-                <section class="premium-card p-4">
+                <section class="premium-card p-4 order-side-card">
                     <p class="section-kicker mb-2">Shipping</p>
                     <dl class="mb-0">
                         <div class="order-info-row">
@@ -243,7 +262,7 @@
                     </dl>
                 </section>
 
-                <section class="premium-card p-4">
+                <section class="premium-card p-4 order-side-card">
                     <p class="section-kicker mb-2">Payment</p>
                     <dl class="mb-0">
                         <div class="order-info-row">

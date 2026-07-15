@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Backend;
 
 use App\Helpers\ImageManager;
 use App\Http\Controllers\Backend\Concerns\HandlesBulkActions;
+use App\Http\Controllers\Backend\Concerns\ResolvesMediaSelection;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Banner\StoreBannerRequest;
 use App\Http\Requests\Banner\UpdateBannerRequest;
@@ -17,6 +18,7 @@ use Illuminate\View\View;
 class BannerController extends Controller
 {
     use HandlesBulkActions;
+    use ResolvesMediaSelection;
 
     public function index(Request $request): View
     {
@@ -55,11 +57,14 @@ class BannerController extends Controller
         $this->authorize('create', Banner::class);
 
         try {
-            $validated = $request->safe()->except('image');
+            $validated = $request->safe()->except(['image', 'image_media']);
             $banner = Banner::create($validated);
 
             if ($request->hasFile('image')) {
                 $banner->image = ImageManager::upload($request->file('image'), 'banners');
+                $banner->save();
+            } elseif ($selected = $this->selectedMediaFilename($request, 'image', 'banners')) {
+                $banner->image = $selected;
                 $banner->save();
             }
 
@@ -84,10 +89,13 @@ class BannerController extends Controller
 
         try {
             $banner = Banner::findOrFail($id);
-            $banner->update($request->safe()->except('image'));
+            $banner->update($request->safe()->except(['image', 'image_media']));
 
             if ($request->hasFile('image')) {
                 $banner->image = ImageManager::update($request->file('image'), $banner->image, 'banners');
+                $banner->save();
+            } elseif ($selected = $this->selectedMediaFilename($request, 'image', 'banners')) {
+                $banner->image = $selected;
                 $banner->save();
             }
 

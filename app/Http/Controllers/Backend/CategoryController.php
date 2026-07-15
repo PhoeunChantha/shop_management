@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Backend;
 
 use App\Helpers\ImageManager;
 use App\Http\Controllers\Backend\Concerns\HandlesBulkActions;
+use App\Http\Controllers\Backend\Concerns\ResolvesMediaSelection;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Category\StoreCategoryRequest;
 use App\Http\Requests\Category\UpdateCategoryRequest;
@@ -18,6 +19,7 @@ use Illuminate\View\View;
 class CategoryController extends Controller
 {
     use HandlesBulkActions;
+    use ResolvesMediaSelection;
 
     public function index(Request $request): View
     {
@@ -55,13 +57,16 @@ class CategoryController extends Controller
         $this->authorize('create', Category::class);
 
         try {
-            $validated = $request->safe()->except('image');
+            $validated = $request->safe()->except(['image', 'image_media']);
             $validated['slug'] = $this->uniqueSlug($validated['name']);
 
             $category = Category::create($validated);
 
             if ($request->hasFile('image')) {
                 $category->image = ImageManager::upload($request->file('image'), 'categories');
+                $category->save();
+            } elseif ($selected = $this->selectedMediaFilename($request, 'image', 'categories')) {
+                $category->image = $selected;
                 $category->save();
             }
 
@@ -96,13 +101,16 @@ class CategoryController extends Controller
 
         try {
             $category = Category::findOrFail($id);
-            $validated = $request->safe()->except('image');
+            $validated = $request->safe()->except(['image', 'image_media']);
             $validated['slug'] = $this->uniqueSlug($validated['name'], $category->id);
 
             $category->update($validated);
 
             if ($request->hasFile('image')) {
                 $category->image = ImageManager::update($request->file('image'), $category->image, 'categories');
+                $category->save();
+            } elseif ($selected = $this->selectedMediaFilename($request, 'image', 'categories')) {
+                $category->image = $selected;
                 $category->save();
             }
 

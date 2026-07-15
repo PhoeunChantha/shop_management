@@ -17,20 +17,22 @@
             </a>
         </div>
 
-        <section class="premium-card mt-3 orders-panel" x-data="bulkSelect()">
-            <x-table-loader />
-            <x-bulk-bar :destroy="route('admin.collections.bulk-destroy')" :status="route('admin.collections.bulk-status')" noun="collection" />
+        <x-admin.table-card class="mt-3 orders-panel" bulk>
+            <x-slot:bulkBar>
+                <x-bulk-bar :destroy="route('admin.collections.bulk-destroy')" :status="route('admin.collections.bulk-status')" noun="collection" />
+            </x-slot:bulkBar>
 
-            <x-table-toolbar>
-                <x-slot:left>
-                    <x-per-page-selector :current="$perPage" />
-                </x-slot:left>
-                <x-slot:right>
-                    <x-search-input name="search" placeholder="Search collections..." />
-                </x-slot:right>
-            </x-table-toolbar>
+            <x-slot:toolbar>
+                <x-table-toolbar>
+                    <x-slot:left>
+                        <x-per-page-selector :current="$perPage" />
+                    </x-slot:left>
+                    <x-slot:right>
+                        <x-search-input name="search" placeholder="Search collections..." />
+                    </x-slot:right>
+                </x-table-toolbar>
+            </x-slot:toolbar>
 
-            <div class="premium-table-wrap">
                 <table class="dash-table">
                     <thead>
                         <tr>
@@ -94,20 +96,18 @@
                         @empty
                             <tr>
                                 <td colspan="7">
-                                    <div class="empty-state">
-                                        <i class="fa-solid fa-layer-group"></i>
-                                        <strong>No collections yet</strong>
-                                        <span>Group products into a curated collection for the storefront.</span>
-                                    </div>
+                                    <x-admin.empty-state icon="fa-solid fa-layer-group" title="No collections yet"
+                                        message="Group products into a curated collection for the storefront." />
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
-            </div>
 
-            <x-table-footer :paginator="$collections" label="collections" />
-        </section>
+            <x-slot:footer>
+                <x-table-footer :paginator="$collections" label="collections" />
+            </x-slot:footer>
+        </x-admin.table-card>
 
         <x-delete-confirm-modal id="deleteCollectionModal" title="Delete this collection?"
             message-after="from the storefront. Products are not deleted. This cannot be undone." />

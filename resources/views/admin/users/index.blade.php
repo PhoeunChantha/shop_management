@@ -50,107 +50,107 @@
             </label>
         </x-filter-card>
 
-        <section class="premium-card mt-3">
-            <x-table-loader />
+        <x-admin.table-card class="mt-3">
+            <x-slot:toolbar>
+                <x-table-toolbar>
+                    <x-slot:left>
+                        <x-per-page-selector :current="$perPage" />
+                    </x-slot:left>
+                    <x-slot:right>
+                        <x-search-input name="search" placeholder="Search users..." />
+                    </x-slot:right>
+                </x-table-toolbar>
+            </x-slot:toolbar>
 
-            <x-table-toolbar>
-                <x-slot:left>
-                    <x-per-page-selector :current="$perPage" />
-                </x-slot:left>
-                <x-slot:right>
-                    <x-search-input name="search" placeholder="Search users..." />
-                </x-slot:right>
-            </x-table-toolbar>
-
-            <div class="premium-table-wrap">
-                <table class="premium-table">
-                    <thead>
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Roles</th>
+                        <th>Created At</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($users as $user)
                         <tr>
-                            <th>ID</th>
-                            <th>User</th>
-                            <th>Roles</th>
-                            <th>Created At</th>
-                            <th class="text-end">Actions</th>
+                            <td>
+                                <span class="muted-id">#{{ $user->id }}</span>
+                            </td>
+                            <td>
+                                <div class="user-cell">
+                                    @if ($user->avatar)
+                                        @php
+                                            $avatarUrl = str_contains($user->avatar, '/')
+                                                ? (str_starts_with($user->avatar, 'uploads/')
+                                                    ? asset($user->avatar)
+                                                    : asset('storage/' . $user->avatar))
+                                                : asset('uploads/users/' . $user->avatar);
+                                        @endphp
+                                        <img src="{{ $avatarUrl }}" alt="{{ $user->name }} avatar">
+                                    @else
+                                        <span>{{ strtoupper(substr($user->name, 0, 1)) }}</span>
+                                    @endif
+                                    <div>
+                                        <strong>{{ $user->name }}</strong>
+                                        <small>{{ $user->email }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="role-stack">
+                                    @forelse ($user->roles as $role)
+                                        <span class="status-pill">{{ $role->name }}</span>
+                                    @empty
+                                        <span class="empty-pill">No role</span>
+                                    @endforelse
+                                </div>
+                            </td>
+                            <td>
+                                <span
+                                    class="date-text">{{ \Carbon\Carbon::parse($user->created_at)->format('d M, Y') }}</span>
+                            </td>
+                            <td>
+                                <div class="action-group">
+                                    <x-table-actions>
+                                        <a href="{{ route('admin.users.edit', $user->id) }}"
+                                            class="table-actions__item table-actions__item--edit" role="menuitem">
+                                            <i class="fa-solid fa-pen"></i>
+                                            <span>Edit</span>
+                                        </a>
+
+                                        @can('delete users')
+                                            <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
+                                                data-delete-modal-target="deleteUserModal"
+                                                data-delete-action="{{ route('admin.users.destroy', $user->id) }}"
+                                                data-delete-name="{{ $user->name }}">
+                                                <i class="fa-solid fa-trash"></i>
+                                                <span>Delete</span>
+                                            </button>
+                                        @endcan
+                                    </x-table-actions>
+                                </div>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($users as $user)
-                            <tr>
-                                <td>
-                                    <span class="muted-id">#{{ $user->id }}</span>
-                                </td>
-                                <td>
-                                    <div class="user-cell">
-                                        @if ($user->avatar)
-                                            @php
-                                                $avatarUrl = str_contains($user->avatar, '/')
-                                                    ? (str_starts_with($user->avatar, 'uploads/')
-                                                        ? asset($user->avatar)
-                                                        : asset('storage/' . $user->avatar))
-                                                    : asset('uploads/users/' . $user->avatar);
-                                            @endphp
-                                            <img src="{{ $avatarUrl }}" alt="{{ $user->name }} avatar">
-                                        @else
-                                            <span>{{ strtoupper(substr($user->name, 0, 1)) }}</span>
-                                        @endif
-                                        <div>
-                                            <strong>{{ $user->name }}</strong>
-                                            <small>{{ $user->email }}</small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="role-stack">
-                                        @forelse ($user->roles as $role)
-                                            <span class="status-pill">{{ $role->name }}</span>
-                                        @empty
-                                            <span class="empty-pill">No role</span>
-                                        @endforelse
-                                    </div>
-                                </td>
-                                <td>
-                                    <span
-                                        class="date-text">{{ \Carbon\Carbon::parse($user->created_at)->format('d M, Y') }}</span>
-                                </td>
-                                <td>
-                                    <div class="action-group">
-                                        <x-table-actions>
-                                            <a href="{{ route('admin.users.edit', $user->id) }}"
-                                                class="table-actions__item table-actions__item--edit" role="menuitem">
-                                                <i class="fa-solid fa-pen"></i>
-                                                <span>Edit</span>
-                                            </a>
+                    @empty
+                        <tr>
+                            <td colspan="5">
+                                <x-admin.empty-state
+                                    icon="fa-solid fa-users"
+                                    title="No users found"
+                                    message="Try a different search term or clear the current filters."
+                                />
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
 
-                                            @can('delete users')
-                                                <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
-                                                    data-delete-modal-target="deleteUserModal"
-                                                    data-delete-action="{{ route('admin.users.destroy', $user->id) }}"
-                                                    data-delete-name="{{ $user->name }}">
-                                                    <i class="fa-solid fa-trash"></i>
-                                                    <span>Delete</span>
-                                                </button>
-                                            @endcan
-                                        </x-table-actions>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5">
-                                    <div class="empty-state">
-                                        <i class="fa-solid fa-users"></i>
-                                        <strong>No users found</strong>
-                                        <span>Try a different search term or clear the current filters.</span>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            <x-table-footer :paginator="$users" label="users" />
-        </section>
+            <x-slot:footer>
+                <x-table-footer :paginator="$users" label="users" />
+            </x-slot:footer>
+        </x-admin.table-card>
 
         <x-delete-confirm-modal
             id="deleteUserModal"

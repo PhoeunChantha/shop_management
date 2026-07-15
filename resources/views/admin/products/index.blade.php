@@ -125,20 +125,22 @@
                 :options="['featured' => 'Featured', 'new' => 'New Arrival', 'best_seller' => 'Best Seller', 'on_sale' => 'On Sale']" />
         </x-filter-card>
 
-        <section class="premium-card mt-3 product-table-card" x-data="bulkSelect()">
-            <x-table-loader />
-            <x-bulk-bar :destroy="route('admin.products.bulk-destroy')" :status="route('admin.products.bulk-status')" noun="product" />
+        <x-admin.table-card class="mt-3 product-table-card" bulk>
+            <x-slot:bulkBar>
+                <x-bulk-bar :destroy="route('admin.products.bulk-destroy')" :status="route('admin.products.bulk-status')" noun="product" />
+            </x-slot:bulkBar>
 
-            <x-table-toolbar>
-                <x-slot:left>
-                    <x-per-page-selector :current="$perPage" />
-                </x-slot:left>
-                <x-slot:right>
-                    <x-search-input name="search" placeholder="Search products by name, SKU or barcode..." />
-                </x-slot:right>
-            </x-table-toolbar>
+            <x-slot:toolbar>
+                <x-table-toolbar>
+                    <x-slot:left>
+                        <x-per-page-selector :current="$perPage" />
+                    </x-slot:left>
+                    <x-slot:right>
+                        <x-search-input name="search" placeholder="Search products by name, SKU or barcode..." />
+                    </x-slot:right>
+                </x-table-toolbar>
+            </x-slot:toolbar>
 
-            <div class="premium-table-wrap">
                 <table class="premium-table product-management-table">
                     <thead>
                         <tr>
@@ -227,20 +229,18 @@
                         @empty
                             <tr>
                                 <td colspan="12">
-                                    <div class="empty-state">
-                                        <i class="fa-solid fa-box-open"></i>
-                                        <strong>No products found</strong>
-                                        <span>Create your first product or adjust the filters.</span>
-                                    </div>
+                                    <x-admin.empty-state icon="fa-solid fa-box-open" title="No products found"
+                                        message="Create your first product or adjust the filters." />
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
-            </div>
 
-            <x-table-footer :paginator="$products" label="products" />
-        </section>
+            <x-slot:footer>
+                <x-table-footer :paginator="$products" label="products" />
+            </x-slot:footer>
+        </x-admin.table-card>
 
         <x-delete-confirm-modal id="deleteProductModal" title="Delete this product?"
             message-after="and all its images, variants and specifications. This cannot be undone." />
