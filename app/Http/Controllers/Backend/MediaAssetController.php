@@ -68,6 +68,8 @@ class MediaAssetController extends Controller
         try {
             foreach ($request->file('files', []) as $file) {
                 $dimensions = @getimagesize($file->getRealPath()) ?: null;
+                $mimeType = $file->getMimeType();
+                $size = $file->getSize() ?: 0;
                 $filename = ImageManager::upload($file, $validated['folder']);
 
                 $asset = MediaAsset::create([
@@ -75,8 +77,8 @@ class MediaAssetController extends Controller
                     'folder' => $validated['folder'],
                     'filename' => $filename,
                     'original_name' => $file->getClientOriginalName(),
-                    'mime_type' => $file->getMimeType(),
-                    'size' => $file->getSize() ?: 0,
+                    'mime_type' => $mimeType,
+                    'size' => $size,
                     'width' => $dimensions[0] ?? null,
                     'height' => $dimensions[1] ?? null,
                     'alt_text' => $validated['alt_text'] ?? null,
