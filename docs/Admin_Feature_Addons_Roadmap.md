@@ -4,6 +4,8 @@ Shop Management admin recommendations - 2026-07-15
 
 **Recommendation:** Build the admin improvements in layers: first stabilize shared components, then improve operational workflows, then add analytics.
 
+**Full system plan:** See [Admin_Ecommerce_System_Addons.md](Admin_Ecommerce_System_Addons.md) for the complete e-commerce admin add-on roadmap.
+
 ## Best Next Features
 
 - Reusable admin table shell for filters, search, bulk actions, empty states, and pagination.
@@ -55,7 +57,13 @@ Shop Management admin recommendations - 2026-07-15
 - Done: added the media picker endpoint and integrated library selection into banner, brand, category, and collection image fields.
 - Done: integrated the media picker into product thumbnail, gallery, variant images, and settings logo/favicon fields.
 - Done: redesigned the shared image field so clicking the preview opens a media modal with Library and Upload new tabs.
-- Next: review the remaining auth/profile test failures or add activity log export/filtering if you want one more admin operations feature.
+- Done: improved the media library with preview modal, copy URL/path actions, drag/drop upload feedback, usage badges, and delete safety.
+- Done: restored backend auth/profile compatibility routes and fixed the auth/profile test failures.
+- Done: added an admin activity log with audit filters, searchable order events, and CSV export.
+- Done: created the full e-commerce admin add-ons plan in `docs/Admin_Ecommerce_System_Addons.md`.
+- Done: added image optimization metadata, thumbnail generation, upload compression, and a pending media optimizer action.
+- Done: expanded product bulk actions with selected export, status, category, brand, flag, and guarded delete workflows.
+- Next: add product import review if you want the next catalog operations feature.
 
 ## Build Notes
 

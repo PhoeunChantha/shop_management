@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\InventoryController;
+use App\Http\Controllers\Backend\ActivityLogController;
 use App\Http\Controllers\Backend\PermissionController;
 use App\Http\Controllers\Backend\ProfileController;
 use App\Http\Controllers\Backend\ReviewController;
@@ -84,6 +85,11 @@ Route::get('admin/login', function () {
 Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    Route::prefix('activity')->name('activity.')->group(function () {
+        Route::get('/', [ActivityLogController::class, 'index'])->name('index');
+        Route::get('/export', [ActivityLogController::class, 'export'])->name('export');
+    });
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -135,6 +141,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/', [ProductController::class, 'index'])->name('index');
         Route::delete('/bulk', [ProductController::class, 'bulkDestroy'])->name('bulk-destroy');
         Route::patch('/bulk-status', [ProductController::class, 'bulkStatus'])->name('bulk-status');
+        Route::patch('/bulk-update', [ProductController::class, 'bulkUpdate'])->name('bulk-update');
+        Route::post('/bulk-export', [ProductController::class, 'bulkExport'])->name('bulk-export');
         Route::get('/export', [ProductController::class, 'export'])->name('export');
         Route::get('/template', [ProductController::class, 'template'])->name('template');
         Route::post('/import', [ProductController::class, 'import'])->name('import');
@@ -219,6 +227,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/', [MediaAssetController::class, 'index'])->name('index');
         Route::get('/picker', [MediaAssetController::class, 'picker'])->name('picker');
         Route::post('/', [MediaAssetController::class, 'store'])->name('store');
+        Route::post('/optimize-pending', [MediaAssetController::class, 'optimizePending'])->name('optimize-pending');
         Route::delete('/{media}', [MediaAssetController::class, 'destroy'])->name('destroy');
     });
 

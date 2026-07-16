@@ -57,6 +57,7 @@ class ProductService
         $search = trim($filters['search'] ?? '');
 
         return Product::query()
+            ->when(! empty($filters['ids'] ?? []), fn ($q) => $q->whereKey($filters['ids']))
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('name', 'like', "%{$search}%")

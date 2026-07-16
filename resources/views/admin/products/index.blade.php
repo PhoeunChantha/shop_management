@@ -127,7 +127,75 @@
 
         <x-admin.table-card class="mt-3 product-table-card" bulk>
             <x-slot:bulkBar>
-                <x-bulk-bar :destroy="route('admin.products.bulk-destroy')" :status="route('admin.products.bulk-status')" noun="product" />
+                <x-bulk-bar :destroy="route('admin.products.bulk-destroy')" noun="product">
+                    <x-slot:actions>
+                        <form method="POST" action="{{ route('admin.products.bulk-update') }}" class="bulk-bar__form product-bulk-form">
+                            @csrf
+                            @method('PATCH')
+                            <template x-for="id in selected" :key="'bulk-status-' + id"><input type="hidden" name="ids[]" :value="id"></template>
+                            <input type="hidden" name="operation" value="status">
+                            <select name="status" class="bulk-select" aria-label="Bulk product status">
+                                <option value="active">Active</option>
+                                <option value="draft">Draft</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="archived">Archived</option>
+                            </select>
+                            <button type="submit" class="bulk-btn"><i class="fa-solid fa-toggle-on"></i> Status</button>
+                        </form>
+
+                        <form method="POST" action="{{ route('admin.products.bulk-update') }}" class="bulk-bar__form product-bulk-form">
+                            @csrf
+                            @method('PATCH')
+                            <template x-for="id in selected" :key="'bulk-category-' + id"><input type="hidden" name="ids[]" :value="id"></template>
+                            <input type="hidden" name="operation" value="category">
+                            <select name="category_id" class="bulk-select" aria-label="Bulk product category" required>
+                                <option value="">Category</option>
+                                @foreach ($categories as $category)
+                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                @endforeach
+                            </select>
+                            <button type="submit" class="bulk-btn"><i class="fa-solid fa-layer-group"></i> Move</button>
+                        </form>
+
+                        <form method="POST" action="{{ route('admin.products.bulk-update') }}" class="bulk-bar__form product-bulk-form">
+                            @csrf
+                            @method('PATCH')
+                            <template x-for="id in selected" :key="'bulk-brand-' + id"><input type="hidden" name="ids[]" :value="id"></template>
+                            <input type="hidden" name="operation" value="brand">
+                            <select name="brand_id" class="bulk-select" aria-label="Bulk product brand" required>
+                                <option value="">Brand</option>
+                                @foreach ($brands as $brand)
+                                    <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                                @endforeach
+                            </select>
+                            <button type="submit" class="bulk-btn"><i class="fa-solid fa-copyright"></i> Brand</button>
+                        </form>
+
+                        <form method="POST" action="{{ route('admin.products.bulk-update') }}" class="bulk-bar__form product-bulk-form">
+                            @csrf
+                            @method('PATCH')
+                            <template x-for="id in selected" :key="'bulk-flag-' + id"><input type="hidden" name="ids[]" :value="id"></template>
+                            <input type="hidden" name="operation" value="flag">
+                            <select name="flag" class="bulk-select" aria-label="Bulk product flag">
+                                <option value="is_featured">Featured</option>
+                                <option value="is_new">New</option>
+                                <option value="is_best_seller">Best seller</option>
+                                <option value="is_on_sale">On sale</option>
+                            </select>
+                            <select name="flag_value" class="bulk-select bulk-select--mini" aria-label="Bulk product flag value">
+                                <option value="1">On</option>
+                                <option value="0">Off</option>
+                            </select>
+                            <button type="submit" class="bulk-btn"><i class="fa-solid fa-tags"></i> Flag</button>
+                        </form>
+
+                        <form method="POST" action="{{ route('admin.products.bulk-export') }}" class="bulk-bar__form">
+                            @csrf
+                            <template x-for="id in selected" :key="'bulk-export-' + id"><input type="hidden" name="ids[]" :value="id"></template>
+                            <button type="submit" class="bulk-btn"><i class="fa-solid fa-file-export"></i> Export</button>
+                        </form>
+                    </x-slot:actions>
+                </x-bulk-bar>
             </x-slot:bulkBar>
 
             <x-slot:toolbar>

@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Backend;
 use App\Helpers\ImageManager;
 use App\Http\Controllers\Controller;
 use App\Models\MediaAsset;
+use App\Services\MediaOptimizationService;
+use App\Services\MediaUsageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -25,7 +27,7 @@ class MediaAssetController extends Controller
         'settings' => 'Settings',
     ];
 
-    public function index(Request $request): View
+    public function index(Request $request, MediaUsageService $mediaUsage): View
     {
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
@@ -51,10 +53,16 @@ class MediaAssetController extends Controller
             'perPage' => $perPage,
             'totalSize' => MediaAsset::sum('size'),
             'totalAssets' => MediaAsset::count(),
+            'optimizedAssets' => MediaAsset::whereIn('optimization_status', ['optimized', 'kept_original'])->count(),
+            'totalSaved' => MediaAsset::query()
+                ->whereColumn('original_size', '>', 'optimized_size')
+                ->selectRaw('COALESCE(SUM(original_size - optimized_size), 0) as saved')
+                ->value('saved') ?: 0,
+            'usageMap' => $mediaUsage->summaryMap($assets->getCollection()),
         ]);
     }
 
-    public function store(Request $request): RedirectResponse|JsonResponse
+    public function store(Request $request, MediaOptimizationService $optimizer): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
             'folder' => ['required', Rule::in(array_keys(self::FOLDERS))],
@@ -79,11 +87,15 @@ class MediaAssetController extends Controller
                     'original_name' => $file->getClientOriginalName(),
                     'mime_type' => $mimeType,
                     'size' => $size,
+                    'original_size' => $size,
+                    'optimized_size' => $size,
                     'width' => $dimensions[0] ?? null,
                     'height' => $dimensions[1] ?? null,
+                    'optimization_status' => 'pending',
                     'alt_text' => $validated['alt_text'] ?? null,
                 ]);
 
+                $asset->update($optimizer->optimize($asset));
                 $created->push($asset);
             }
         } catch (\Throwable $e) {
@@ -123,9 +135,40 @@ class MediaAssetController extends Controller
         return response()->json(['data' => $assets]);
     }
 
-    public function destroy(MediaAsset $media): RedirectResponse
+    public function optimizePending(MediaOptimizationService $optimizer): RedirectResponse
     {
+        $assets = MediaAsset::query()
+            ->whereIn('optimization_status', ['pending', 'failed'])
+            ->oldest()
+            ->limit(100)
+            ->get();
+
+        $assets->each(function (MediaAsset $asset) use ($optimizer): void {
+            $asset->update($optimizer->optimize($asset));
+        });
+
+        return back()->with('success', $assets->count().' media file(s) processed for optimization.');
+    }
+
+    public function destroy(
+        MediaAsset $media,
+        MediaUsageService $mediaUsage,
+        MediaOptimizationService $optimizer
+    ): RedirectResponse {
+        $usages = $mediaUsage->usages($media);
+
+        if ($usages !== []) {
+            $labels = collect($usages)
+                ->map(fn (array $usage): string => $usage['label'].' ('.$usage['count'].')')
+                ->join(', ');
+
+            return back()->withErrors([
+                'error' => 'This media file is still used by '.$labels.'. Remove those references before deleting it.',
+            ]);
+        }
+
         try {
+            $optimizer->deleteThumbnail($media);
             ImageManager::delete($media->filename, $media->folder);
             $media->delete();
         } catch (\Throwable $e) {
@@ -147,7 +190,12 @@ class MediaAssetController extends Controller
             'filename' => $asset->filename,
             'name' => $asset->original_name ?: $asset->filename,
             'url' => $asset->url,
+            'thumbnail_url' => $asset->thumbnail_url,
             'size' => $asset->size_for_humans,
+            'original_size' => $asset->original_size_for_humans,
+            'optimized_size' => $asset->optimized_size_for_humans,
+            'optimization_status' => $asset->optimization_status,
+            'optimization_label' => $asset->optimization_label,
             'dimensions' => $asset->width && $asset->height ? $asset->width.'x'.$asset->height : null,
         ];
     }

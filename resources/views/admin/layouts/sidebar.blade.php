@@ -261,6 +261,11 @@
                     <span class="nav-ico"><i class="fa-solid fa-gear"></i></span>
                     <span class="small fw-medium">Settings</span>
                 </a>
+                <a href="{{ route('admin.activity.index') }}"
+                    class="nav-link d-flex align-items-center {{ request()->routeIs('admin.activity.*') ? 'active' : '' }}">
+                    <span class="nav-ico"><i class="fa-solid fa-clock-rotate-left"></i></span>
+                    <span class="small fw-medium">Activity log</span>
+                </a>
             </div>
         </div>
 

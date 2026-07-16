@@ -16,6 +16,7 @@ use App\Services\ProductService;
 use App\Services\SettingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -141,6 +142,49 @@ class ProductController extends Controller
         $count = Product::whereKey($ids)->update(['status' => $value]);
 
         return back()->with('success', $count.' product(s) '.($status ? 'activated' : 'deactivated').'.');
+    }
+
+    public function bulkUpdate(Request $request): RedirectResponse
+    {
+        $this->authorize('update', Product::class);
+
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'exists:products,id'],
+            'operation' => ['required', Rule::in(['status', 'category', 'brand', 'flag'])],
+            'status' => ['nullable', 'required_if:operation,status', Rule::in(['draft', 'active', 'inactive', 'archived'])],
+            'category_id' => ['nullable', 'required_if:operation,category', 'integer', 'exists:categories,id'],
+            'brand_id' => ['nullable', 'required_if:operation,brand', 'integer', 'exists:brands,id'],
+            'flag' => ['nullable', 'required_if:operation,flag', Rule::in(['is_featured', 'is_new', 'is_best_seller', 'is_on_sale'])],
+            'flag_value' => ['nullable', 'required_if:operation,flag', 'boolean'],
+        ]);
+
+        $payload = match ($data['operation']) {
+            'status' => ['status' => $data['status']],
+            'category' => ['category_id' => $data['category_id']],
+            'brand' => ['brand_id' => $data['brand_id']],
+            'flag' => [$data['flag'] => (bool) $data['flag_value']],
+        };
+
+        $count = Product::whereKey($data['ids'])->update($payload);
+
+        return back()->with('success', $count.' product(s) updated.');
+    }
+
+    public function bulkExport(Request $request): BinaryFileResponse
+    {
+        $this->authorize('viewAny', Product::class);
+
+        $ids = $this->validatedIds($request);
+        $languages = array_keys($this->settings->activeLanguages());
+        $export = new ProductsExport(
+            $this->products,
+            ['ids' => $ids],
+            $languages,
+            $this->settings->primaryLanguage(),
+        );
+
+        return Excel::download($export, 'selected-products-'.now()->format('Y-m-d_His').'.xlsx');
     }
 
     /* ---------------- Import / Export ---------------- */
