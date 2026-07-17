@@ -3,15 +3,18 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
-
+use App\Services\RoleService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 use Illuminate\View\View;
 
 class RoleController extends Controller
 {
+    public function __construct(
+        private readonly RoleService $roles,
+    ) {}
+
     public function index(Request $request): View
     {
         $filters = $request->validate([
@@ -20,98 +23,61 @@ class RoleController extends Controller
         ]);
 
         $perPage = (int) ($filters['per_page'] ?? 10);
-        $search = trim($filters['search'] ?? '');
-
-        $roles = Role::query()
-            ->with('permissions')
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%")
-                        ->orWhereHas('permissions', function ($query) use ($search) {
-                            $query->where('name', 'like', "%{$search}%");
-                        });
-                });
-            })
-            ->orderBy('id', 'asc')
-            ->paginate($perPage)
-            ->withQueryString();
 
         return view('admin.roles.index', [
-            'roles' => $roles,
+            'roles' => $this->roles->paginate($filters, $perPage),
             'perPage' => $perPage,
         ]);
     }
 
-    public function create()
+    public function create(): View
     {
-        $permissions = Permission::orderBy('id', 'asc')->get();
         return view('admin.roles.create', [
-            'permissions' => $permissions,
+            'permissions' => $this->roles->permissions(),
         ]);
     }
 
-
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|min:3|unique:roles',
+        $data = $request->validate([
+            'name' => ['required', 'string', 'min:3', 'unique:roles,name'],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => ['integer', 'exists:permissions,id'],
         ]);
 
-        if ($validator->passes()) {
-            $role = Role::create([
-                'name' => $request->name,
-            ]);
+        $this->roles->create($data);
 
-            if (!empty($request->permissions)) {
-                $permissions = Permission::whereIn('id', $request->permissions)->get();
-                $role->syncPermissions($permissions);
-            }
-
-            return redirect()->route('admin.roles.index')->with('success', 'Role created successfully!');
-        } else {
-            return redirect()->route('admin.roles.create')->withInput()->withErrors($validator);
-        }
+        return redirect()->route('admin.roles.index')->with('success', 'Role created successfully!');
     }
 
-    public function edit($id)
+    public function edit($id): View
     {
         $role = Role::findOrFail($id);
         $hasPermissions = $role->permissions()->pluck('name');
-        $permissions = Permission::orderBy('id', 'asc')->get();
+
         return view('admin.roles.edit', [
             'role' => $role,
-            'permissions' => $permissions,
+            'permissions' => $this->roles->permissions(),
             'hasPermissions' => $hasPermissions,
         ]);
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $id): RedirectResponse
     {
         $role = Role::findOrFail($id);
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|min:3|unique:roles,name,' . $role->id,
+        $data = $request->validate([
+            'name' => ['required', 'string', 'min:3', 'unique:roles,name,'.$role->id],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => ['integer', 'exists:permissions,id'],
         ]);
 
-        if ($validator->passes()) {
-            $role->update([
-                'name' => $request->name,
-            ]);
+        $this->roles->update($role, $data);
 
-            if (!empty($request->permissions)) {
-                $permissions = Permission::whereIn('id', $request->permissions)->get();
-                $role->syncPermissions($permissions);
-            } else {
-                $role->syncPermissions([]);
-            }
-
-            return redirect()->route('admin.roles.index')->with('success', 'Role updated successfully!');
-        } else {
-            return redirect()->route('admin.roles.edit', $role->id)->withInput()->withErrors($validator);
-        }
+        return redirect()->route('admin.roles.index')->with('success', 'Role updated successfully!');
     }
 
-    public function destroy($id)
+    public function destroy($id): RedirectResponse
     {
         $role = Role::find($id);
 

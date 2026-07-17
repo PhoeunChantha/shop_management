@@ -65,6 +65,32 @@ final class OrderService
             ->withQueryString();
     }
 
+    public function findForShow(string $id): Order
+    {
+        return Order::with(['details', 'user', 'coupon', 'events.actor'])->findOrFail($id);
+    }
+
+    public function findForInvoice(string $id): Order
+    {
+        return Order::with(['details', 'user', 'coupon'])->findOrFail($id);
+    }
+
+    public function findForPackingSlip(string $id): Order
+    {
+        return Order::with('details')->findOrFail($id);
+    }
+
+    public function customerStats(Order $order): ?object
+    {
+        if (! $order->user_id) {
+            return null;
+        }
+
+        return Order::where('user_id', $order->user_id)
+            ->selectRaw('count(*) as orders, coalesce(sum(grand_total),0) as spent')
+            ->first();
+    }
+
     /**
      * Price-range filter options: value ("min-max", open-ended max) => label.
      *

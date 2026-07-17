@@ -93,6 +93,53 @@ class ProductService
         return $this->save($request, $product);
     }
 
+    public function findForShow(string $id): Product
+    {
+        return Product::with([
+            'category', 'subCategory', 'brand', 'tags',
+            'images', 'specifications', 'variants.values.attribute',
+        ])->findOrFail($id);
+    }
+
+    public function findForEdit(string $id): Product
+    {
+        return Product::with(['images', 'variants.values', 'specifications', 'tags'])->findOrFail($id);
+    }
+
+    /**
+     * @param  array<int, int|string>  $ids
+     */
+    public function bulkDelete(array $ids): int
+    {
+        $products = Product::with('images')->whereKey($ids)->get();
+        $products->each(fn (Product $product) => $this->delete($product));
+
+        return $products->count();
+    }
+
+    /**
+     * @param  array<int, int|string>  $ids
+     */
+    public function setStatus(array $ids, bool $status): int
+    {
+        return Product::whereKey($ids)->update(['status' => $status ? 'active' : 'inactive']);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function bulkUpdate(array $data): int
+    {
+        $payload = match ($data['operation']) {
+            'status' => ['status' => $data['status']],
+            'category' => ['category_id' => $data['category_id']],
+            'brand' => ['brand_id' => $data['brand_id']],
+            'flag' => [$data['flag'] => (bool) $data['flag_value']],
+        };
+
+        return Product::whereKey($data['ids'])->update($payload);
+    }
+
     /**
      * Shared dropdown data for product create/edit forms.
      *

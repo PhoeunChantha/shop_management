@@ -124,6 +124,11 @@ class Product extends Model
         return $this->belongsToMany(ProductTag::class, 'product_product_tag')->withTimestamps();
     }
 
+    public function dealCampaigns(): BelongsToMany
+    {
+        return $this->belongsToMany(DealCampaign::class, 'deal_campaign_product')->withTimestamps();
+    }
+
     /* ---------------- Scopes ---------------- */
 
     public function scopeStatus(Builder $query, string $status): Builder

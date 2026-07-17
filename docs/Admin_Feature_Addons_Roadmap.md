@@ -63,8 +63,17 @@ Shop Management admin recommendations - 2026-07-15
 - Done: created the full e-commerce admin add-ons plan in `docs/Admin_Ecommerce_System_Addons.md`.
 - Done: added image optimization metadata, thumbnail generation, upload compression, and a pending media optimizer action.
 - Done: expanded product bulk actions with selected export, status, category, brand, flag, and guarded delete workflows.
-- Next: add product import review if you want the next catalog operations feature.
+- Done: added product import review with dry-run validation, preview rows, error summary, confirm, and cancel workflow.
+- Done: added customer management from order history with customer list, profile page, spend summary, order history, and top products.
+- Done: added customer bulk enable, disable, selected export, and guarded delete workflow using persistent customer profile state.
+- Done: extracted customer business/query logic into `App\Services\CustomerService` so `CustomerController` stays thin.
+- Done: added customer CRM notes and tags with persistent profiles, tag filtering, show-page editing, and reusable service-backed persistence.
+- Done: added admin Offers & Deals with unified deal campaigns for flash, daily, featured, and clearance promotions.
+- Done: refactored heavier backend controllers into service-backed workflows for activity log, users, roles, permissions, inventory, media assets, reviews, product import/bulk operations, order read models, and shared image fields.
+- Next: add return/refund management, or connect Offers & Deals to storefront promo sections when frontend changes are approved.
 
 ## Build Notes
 
 Keep the admin design dense, predictable, and task-focused. Avoid marketing-style sections inside operational pages. Use the product table visual language as the base system, but extract it into reusable Blade components before applying it to many pages.
+
+Architecture direction: controllers should validate, authorize, and return responses. Query composition, persistence workflows, bulk mutations, exports, and cross-model operations should live in `app/Services`. Simple CRUD controllers can keep direct model calls only when the logic is genuinely small and not reused.

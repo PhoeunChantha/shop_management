@@ -44,6 +44,11 @@
                     <span class="nav-ico"><i class="fa-solid fa-receipt"></i></span>
                     <span class="small fw-medium">Orders</span>
                 </a>
+                <a href="{{ route('admin.customers.index') }}"
+                    class="nav-link d-flex align-items-center {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
+                    <span class="nav-ico"><i class="fa-solid fa-user-group"></i></span>
+                    <span class="small fw-medium">Customers</span>
+                </a>
             </div>
         </div>
 
@@ -145,7 +150,7 @@
         </div>
 
         {{-- Marketing (collapsible) --}}
-        @php($marketingActive = request()->routeIs('admin.coupons.*', 'admin.banners.*', 'admin.collections.*', 'admin.announcements.*', 'admin.media.*'))
+        @php($marketingActive = request()->routeIs('admin.coupons.*', 'admin.deals.*', 'admin.banners.*', 'admin.collections.*', 'admin.announcements.*', 'admin.media.*'))
         <div class="admin-nav-section">
             <p class="admin-nav-heading">Marketing</p>
             <div class="nav flex-column admin-nav">
@@ -163,6 +168,11 @@
                                 class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}">
                                 <span class="nav-ico"><i class="fa-solid fa-ticket"></i></span>
                                 <span class="small fw-medium">Coupons</span>
+                            </a>
+                            <a href="{{ route('admin.deals.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.deals.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-tags"></i></span>
+                                <span class="small fw-medium">Offers & Deals</span>
                             </a>
                             <a href="{{ route('admin.banners.index') }}"
                                 class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.banners.*') ? 'active' : '' }}">

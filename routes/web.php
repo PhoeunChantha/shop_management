@@ -18,6 +18,8 @@ use App\Http\Controllers\Backend\BrandController;
 use App\Http\Controllers\Backend\CategoryController;
 use App\Http\Controllers\Backend\CollectionController;
 use App\Http\Controllers\Backend\CouponController;
+use App\Http\Controllers\Backend\CustomerController;
+use App\Http\Controllers\Backend\DealCampaignController;
 use App\Http\Controllers\Backend\FaqController;
 use App\Http\Controllers\Backend\MediaAssetController;
 use App\Http\Controllers\Backend\OrderController;
@@ -145,6 +147,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::post('/bulk-export', [ProductController::class, 'bulkExport'])->name('bulk-export');
         Route::get('/export', [ProductController::class, 'export'])->name('export');
         Route::get('/template', [ProductController::class, 'template'])->name('template');
+        Route::post('/import/preview', [ProductController::class, 'importPreview'])->name('import.preview');
+        Route::post('/import/confirm', [ProductController::class, 'confirmImport'])->name('import.confirm');
+        Route::post('/import/cancel', [ProductController::class, 'cancelImport'])->name('import.cancel');
         Route::post('/import', [ProductController::class, 'import'])->name('import');
         Route::get('/create', [ProductController::class, 'create'])->name('create');
         Route::post('/', [ProductController::class, 'store'])->name('store');
@@ -239,6 +244,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::patch('/{id}', [OrderController::class, 'update'])->whereNumber('id')->name('update');
     });
 
+    Route::prefix('customers')->name('customers.')->group(function () {
+        Route::get('/', [CustomerController::class, 'index'])->name('index');
+        Route::delete('/bulk', [CustomerController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [CustomerController::class, 'bulkStatus'])->name('bulk-status');
+        Route::post('/bulk-export', [CustomerController::class, 'bulkExport'])->name('bulk-export');
+        Route::patch('/{email}/crm', [CustomerController::class, 'updateCrm'])->name('crm.update');
+        Route::get('/{email}', [CustomerController::class, 'show'])->name('show');
+    });
+
     Route::prefix('banners')->name('banners.')->group(function () {
         Route::get('/', [BannerController::class, 'index'])->name('index');
         Route::delete('/bulk', [BannerController::class, 'bulkDestroy'])->name('bulk-destroy');
@@ -281,6 +295,18 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/{id}/edit', [CouponController::class, 'edit'])->name('edit');
         Route::put('/{id}', [CouponController::class, 'update'])->name('update');
         Route::delete('/{id}', [CouponController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('deals')->name('deals.')->group(function () {
+        Route::get('/', [DealCampaignController::class, 'index'])->name('index');
+        Route::delete('/bulk', [DealCampaignController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [DealCampaignController::class, 'bulkStatus'])->name('bulk-status');
+        Route::get('/create', [DealCampaignController::class, 'create'])->name('create');
+        Route::post('/', [DealCampaignController::class, 'store'])->name('store');
+        Route::get('/{deal}', [DealCampaignController::class, 'show'])->name('show');
+        Route::get('/{deal}/edit', [DealCampaignController::class, 'edit'])->name('edit');
+        Route::put('/{deal}', [DealCampaignController::class, 'update'])->name('update');
+        Route::delete('/{deal}', [DealCampaignController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('pages')->name('pages.')->group(function () {

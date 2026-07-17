@@ -10,16 +10,17 @@ This document lists high-value add-ons for making the admin panel feel like a co
 |---|---|---|---|
 | 1 | Image optimization | Improve upload quality, storage, and storefront performance. | Done: compress uploads, generate thumbnails, store original/optimized size, and show admin optimization status. |
 | 2 | Bulk product actions | Speed up catalog maintenance. | Done: selected export, guarded delete, status, category, brand, and flag updates. |
-| 3 | Product import review | Make CSV/Excel imports safer. | Upload file, preview rows, validate errors, then confirm import. |
-| 4 | Customer management | Give admins a full customer view. | Customer list, order history, lifetime spend, notes, tags, and blocked/VIP status. |
-| 5 | Stock movement history | Make inventory changes auditable. | Track stock in/out, reason, related order, admin actor, and timestamp. |
-| 6 | Return and refund management | Handle post-purchase support cleanly. | Return requests, refund status, reason, admin notes, and order timeline events. |
-| 7 | Notification center | Centralize urgent admin alerts. | Low stock, new orders, failed payments, pending reviews, and media cleanup warnings. |
-| 8 | Advanced dashboard analytics | Improve daily decision making. | Revenue chart, top products, low stock, recent orders, conversion summary, and payment status widgets. |
-| 9 | SEO manager | Improve product and category discoverability. | Missing meta report, slug checks, duplicate title warnings, and SEO completion score. |
-| 10 | Supplier restock workflow | Support purchasing and replenishment. | Supplier records, purchase orders, incoming stock, and receiving history. |
-| 11 | Abandoned cart | Recover missed sales. | Track incomplete carts, customer/contact details, products, and reminder status. |
-| 12 | Admin permission audit | Make team access safer. | Role permission comparison, permission change log, and admin access review page. |
+| 3 | Product import review | Make CSV/Excel imports safer. | Done: upload file, dry-run validation, preview rows/errors, then confirm or cancel import. |
+| 4 | Customer management | Give admins a full customer view. | Done: customer list, order history, lifetime spend, top products, bulk enable/disable/export/delete, CRM notes/tags, and `CustomerService`. |
+| 5 | Offers & Deals | Manage flash deals, daily offers, featured deals, and clearance campaigns. | Done: unified deal campaigns, product assignment, image/media support, lifecycle filters, bulk actions, and deal permissions. |
+| 6 | Stock movement history | Make inventory changes auditable. | Track stock in/out, reason, related order, admin actor, and timestamp. |
+| 7 | Return and refund management | Handle post-purchase support cleanly. | Return requests, refund status, reason, admin notes, and order timeline events. |
+| 8 | Notification center | Centralize urgent admin alerts. | Low stock, new orders, failed payments, pending reviews, and media cleanup warnings. |
+| 9 | Advanced dashboard analytics | Improve daily decision making. | Revenue chart, top products, low stock, recent orders, conversion summary, and payment status widgets. |
+| 10 | SEO manager | Improve product and category discoverability. | Missing meta report, slug checks, duplicate title warnings, and SEO completion score. |
+| 11 | Supplier restock workflow | Support purchasing and replenishment. | Supplier records, purchase orders, incoming stock, and receiving history. |
+| 12 | Abandoned cart | Recover missed sales. | Track incomplete carts, customer/contact details, products, and reminder status. |
+| 13 | Admin permission audit | Make team access safer. | Role permission comparison, permission change log, and admin access review page. |
 
 ## Phase 1: Media And Catalog Operations
 
@@ -44,20 +45,40 @@ Best next feature because the media library, picker modal, and upload workflow a
 
 ### Product Import Review
 
-- Accept CSV first, Excel later if needed.
-- Map columns to product fields.
-- Preview valid and invalid rows before saving.
-- Save only after admin confirmation.
-- Export rejected rows with error messages.
+- Done: accept CSV, TXT, XLS, and XLSX using the existing Laravel Excel importer.
+- Done: map columns through the existing product template headings.
+- Done: preview valid rows and invalid rows before saving.
+- Done: save only after admin confirmation.
+- Remaining later: export rejected rows with error messages.
+
+### Offers & Deals
+
+- Done: add `deal_campaigns` for flash deals, deal of the day, featured deals, and clearance sales.
+- Done: attach campaign images through the admin media library in a dedicated `deals` folder.
+- Done: assign selected products to each campaign.
+- Done: support discount type/value, campaign timing, priority, status, CTA fields, and SEO metadata.
+- Done: add admin table filters, bulk enable/disable/delete, detail page, and deal permissions.
+- Remaining later: wire active campaigns into storefront Flash Sale and offer landing surfaces when frontend changes are approved.
 
 ## Phase 2: Customers, Orders, And Support
 
 ### Customer Management
 
-- Customer index with search and filters.
-- Customer show page with order history, spend summary, addresses, and notes.
-- Tags for VIP, wholesale, blocked, or high risk.
-- Link customers to orders where email matches existing records.
+- Done: customer index with search, filters, sort, and pagination.
+- Done: customer show page with order history, spend summary, contact/location, and top products.
+- Done: link customers to orders by checkout email.
+- Done: persist admin customer state in `customer_profiles` so enable, disable, and delete actions survive reloads without changing order history.
+- Done: add customer bulk actions for enable, disable, selected export, and guarded delete confirmation.
+- Done: move customer query, stats, profile sync, export rows, and bulk mutations into `App\Services\CustomerService`.
+- Done: add persistent internal notes and reusable tags for VIP, wholesale, risk, and blocked customer CRM labeling.
+- Remaining later: customer activity timeline and support ownership assignment.
+
+### Admin Service Architecture
+
+- Done: product, order, dashboard, inventory, review, setting, media, attribute, bulk actions, and customer workflows use service classes where business logic is non-trivial.
+- Done: extracted reusable query, import/export, media, bulk mutation, role/permission, and file/image workflows from heavier backend controllers into service classes.
+- Next: keep future admin modules service-backed from the first implementation pass.
+- Keep thin controllers: validate input, authorize the action, delegate to a service, and return a response.
 
 ### Return And Refund Management
 
@@ -121,4 +142,4 @@ Best next feature because the media library, picker modal, and upload workflow a
 
 ## Immediate Recommendation
 
-Build **Image Optimization** next. It is the strongest continuation because the media library is already in place, and optimized images improve product management, storage, and customer-facing performance without requiring a storefront redesign.
+Build return/refund management next, or wire Offers & Deals into the storefront when frontend changes are approved. Keep storefront/frontend files untouched unless a separate frontend task is requested.

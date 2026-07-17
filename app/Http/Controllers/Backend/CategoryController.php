@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Backend;
 
-use App\Helpers\ImageManager;
 use App\Http\Controllers\Backend\Concerns\HandlesBulkActions;
 use App\Http\Controllers\Backend\Concerns\ResolvesMediaSelection;
 use App\Http\Controllers\Controller;
@@ -10,6 +9,7 @@ use App\Http\Requests\Category\StoreCategoryRequest;
 use App\Http\Requests\Category\UpdateCategoryRequest;
 use App\Models\Category;
 use App\Services\BulkActionService;
+use App\Services\ImageFieldService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -20,6 +20,10 @@ class CategoryController extends Controller
 {
     use HandlesBulkActions;
     use ResolvesMediaSelection;
+
+    public function __construct(
+        private readonly ImageFieldService $images,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -63,11 +67,9 @@ class CategoryController extends Controller
             $category = Category::create($validated);
 
             if ($request->hasFile('image')) {
-                $category->image = ImageManager::upload($request->file('image'), 'categories');
-                $category->save();
+                $this->images->attachUploaded($category, $request->file('image'), 'categories');
             } elseif ($selected = $this->selectedMediaFilename($request, 'image', 'categories')) {
-                $category->image = $selected;
-                $category->save();
+                $this->images->attachSelected($category, $selected);
             }
 
             return to_route('admin.categories.index')
@@ -107,11 +109,9 @@ class CategoryController extends Controller
             $category->update($validated);
 
             if ($request->hasFile('image')) {
-                $category->image = ImageManager::update($request->file('image'), $category->image, 'categories');
-                $category->save();
+                $this->images->replaceUploaded($category, $request->file('image'), 'categories');
             } elseif ($selected = $this->selectedMediaFilename($request, 'image', 'categories')) {
-                $category->image = $selected;
-                $category->save();
+                $this->images->attachSelected($category, $selected);
             }
 
             return to_route('admin.categories.index')
@@ -140,7 +140,7 @@ class CategoryController extends Controller
                 return back()->with('error', "Cannot delete “{$category->name}” because it is assigned to one or more products.");
             }
 
-            ImageManager::delete($category->image, 'categories');
+            $this->images->delete($category->image, 'categories');
 
             $category->delete();
         } catch (\Exception $e) {

@@ -8,7 +8,9 @@
         </div>
     </x-slot>
 
-    <div class="admin-page products-index-page" x-data="{ importOpen: false }">
+    @php($importPreview = session('product_import_preview'))
+
+    <div class="admin-page products-index-page" x-data="{ importOpen: false, importPreviewOpen: @js((bool) $importPreview) }">
         <div class="page-section-header products-index-hero">
             <div class="products-index-hero__copy">
                 <p class="section-kicker">Product table</p>
@@ -79,7 +81,7 @@
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
-                <form action="{{ route('admin.products.import') }}" method="POST" enctype="multipart/form-data" class="form-modal__body">
+                <form action="{{ route('admin.products.import.preview') }}" method="POST" enctype="multipart/form-data" class="form-modal__body">
                     @csrf
                     <div class="form-field">
                         <label for="import_file">Spreadsheet file <span class="text-red-500">*</span></label>
@@ -93,13 +95,99 @@
                     <div class="form-modal__foot">
                         <button type="button" class="modal-cancel" @click="importOpen = false">Cancel</button>
                         <button type="submit" class="form-submit-button">
-                            <i class="fa-solid fa-upload"></i>
-                            <span>Import products</span>
+                            <i class="fa-solid fa-magnifying-glass-chart"></i>
+                            <span>Preview import</span>
                         </button>
                     </div>
                 </form>
             </div>
         </div>
+
+        @if ($importPreview)
+            <div class="modal-backdrop-premium product-import-preview-backdrop" x-show="importPreviewOpen" x-cloak style="display:none;"
+                @keydown.escape.window="importPreviewOpen = false" @click.self="importPreviewOpen = false">
+                <div class="form-modal product-import-preview-modal">
+                    <div class="form-modal__head">
+                        <div class="form-modal__icon"><i class="fa-solid fa-clipboard-check"></i></div>
+                        <div class="flex-grow-1 min-w-0">
+                            <h3>Review Product Import</h3>
+                            <p>{{ $importPreview['filename'] ?? 'Uploaded spreadsheet' }}</p>
+                        </div>
+                        <button type="button" class="form-modal__close" @click="importPreviewOpen = false" aria-label="Close">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <div class="product-import-review">
+                        <div class="product-import-review__stats">
+                            <span><b>{{ number_format($importPreview['valid'] ?? 0) }}</b><em>Valid rows</em></span>
+                            <span class="{{ count($importPreview['errors'] ?? []) ? 'is-warning' : 'is-clean' }}">
+                                <b>{{ number_format(count($importPreview['errors'] ?? [])) }}</b><em>Rows with errors</em>
+                            </span>
+                            <span><b>{{ number_format(count($importPreview['rows'] ?? [])) }}</b><em>Preview rows</em></span>
+                        </div>
+
+                        @if (! empty($importPreview['rows']))
+                            <div class="product-import-review__table">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Row</th>
+                                            <th>Action</th>
+                                            <th>SKU</th>
+                                            <th>Product</th>
+                                            <th>Category</th>
+                                            <th>Brand</th>
+                                            <th>Price</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($importPreview['rows'] as $row)
+                                            <tr>
+                                                <td>{{ $row['row'] }}</td>
+                                                <td><span class="import-action-pill">{{ $row['action'] }}</span></td>
+                                                <td>{{ $row['sku'] }}</td>
+                                                <td>{{ $row['name'] }}</td>
+                                                <td>{{ $row['category'] }}</td>
+                                                <td>{{ $row['brand'] }}</td>
+                                                <td>${{ number_format((float) $row['price'], 2) }}</td>
+                                                <td>{{ ucfirst((string) $row['status']) }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+
+                        @if (! empty($importPreview['errors']))
+                            <div class="product-import-review__errors">
+                                <strong><i class="fa-solid fa-triangle-exclamation"></i> Fix or skip these rows</strong>
+                                <ul>
+                                    @foreach (array_slice($importPreview['errors'], 0, 8) as $error)
+                                        <li><b>Row {{ $error['row'] }}:</b> {{ implode(' ', $error['messages']) }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="form-modal__foot">
+                        <form method="POST" action="{{ route('admin.products.import.cancel') }}" class="mb-0">
+                            @csrf
+                            <button type="submit" class="modal-cancel">Cancel import</button>
+                        </form>
+                        <form method="POST" action="{{ route('admin.products.import.confirm') }}" class="mb-0">
+                            @csrf
+                            <button type="submit" class="form-submit-button" @disabled(($importPreview['valid'] ?? 0) < 1)>
+                                <i class="fa-solid fa-file-import"></i>
+                                <span>Confirm import</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         {{-- Filters --}}
         <x-filter-card :action="route('admin.products.index')" class="product-filter-card">

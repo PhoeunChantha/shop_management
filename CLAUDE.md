@@ -132,9 +132,22 @@ middleware from `session('locale')` (supported: `en`, `km`), switched via
   `label()`/`options()` helpers and are cast on models.
 - Site configuration is DB-driven: `Setting` model + `SettingService` +
   `SettingGroup` enum (drives the settings tabs and the language list).
-- Heavier persistence logic (multi-step product save, image galleries, variants)
-  lives in `app/Services/*` (e.g. `ProductService`); simple CRUDs keep it in the
-  controller.
+- Controllers should stay thin: validate, authorize, call a service, and return a
+  response. Query composition, exports, bulk mutations, cross-model workflows, and
+  multi-step persistence belong in `app/Services/*`.
+- Current admin service examples: `ProductService`, `OrderService`,
+  `CustomerService`, `DashboardService`, `StockService`, `ReviewService`,
+  `SettingService`, `MediaOptimizationService`, `MediaUsageService`,
+  `AttributeService`, and `BulkActionService`.
+- `CustomerController` delegates customer list/profile queries, stats, order
+  history, top products, selected export, profile sync, bulk enable/disable, and
+  guarded bulk delete to `CustomerService`. Keep future customer CRM features
+  (notes, tags, VIP/risk labels) in the same service or a focused customer-domain
+  service.
+- Simple CRUD controllers may call a model directly only when the action is truly
+  one-step and not reused. If the controller starts adding private query helpers,
+  repeated bulk logic, file/media work, exports, or transaction boundaries, extract
+  a service before adding more actions.
 
 ### Frontend JS (`resources/js/app.js`)
 Single entry that registers Alpine (`Alpine.start()` at the end), exposes jQuery

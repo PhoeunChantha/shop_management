@@ -19,6 +19,7 @@ class MediaUsageService
         ['label' => 'Categories', 'table' => 'categories', 'column' => 'image'],
         ['label' => 'Brands', 'table' => 'brands', 'column' => 'image'],
         ['label' => 'Banners', 'table' => 'banners', 'column' => 'image'],
+        ['label' => 'Deals', 'table' => 'deal_campaigns', 'column' => 'image'],
         ['label' => 'Collections', 'table' => 'collections', 'column' => 'image'],
         ['label' => 'Color swatches', 'table' => 'colors', 'column' => 'image'],
         ['label' => 'Order items', 'table' => 'order_details', 'column' => 'image'],

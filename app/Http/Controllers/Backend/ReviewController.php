@@ -28,19 +28,10 @@ class ReviewController extends Controller
 
         $perPage = (int) ($filters['per_page'] ?? 10);
 
-        $reviews = Review::query()
-            ->with(['product:id,name,thumbnail', 'user:id,name'])
-            ->search(trim($filters['search'] ?? ''))
-            ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
-            ->when($filters['rating'] ?? null, fn ($q, $v) => $q->where('rating', $v))
-            ->latest()
-            ->paginate($perPage)
-            ->withQueryString();
-
         return view('admin.reviews.index', [
-            'reviews' => $reviews,
+            'reviews' => $this->reviews->paginate($filters, $perPage),
             'perPage' => $perPage,
-            'counts' => Review::selectRaw('status, COUNT(*) as c')->groupBy('status')->pluck('c', 'status'),
+            'counts' => $this->reviews->counts(),
         ]);
     }
 
@@ -88,11 +79,9 @@ class ReviewController extends Controller
             'status' => ['required', 'in:pending,approved,rejected'],
         ]);
 
-        $productIds = Review::whereKey($data['ids'])->pluck('product_id')->unique();
-        Review::whereKey($data['ids'])->update(['status' => $data['status']]);
-        $productIds->each(fn ($pid) => $this->reviews->recompute((int) $pid));
+        $count = $this->reviews->bulkModerate($data['ids'], ReviewStatus::from($data['status']));
 
-        return back()->with('success', count($data['ids']).' review(s) marked as '.$data['status'].'.');
+        return back()->with('success', $count.' review(s) marked as '.$data['status'].'.');
     }
 
     public function bulkDestroy(Request $request): RedirectResponse
@@ -104,10 +93,8 @@ class ReviewController extends Controller
             'ids.*' => ['integer'],
         ]);
 
-        $productIds = Review::whereKey($data['ids'])->pluck('product_id')->unique();
-        Review::whereKey($data['ids'])->delete();
-        $productIds->each(fn ($pid) => $this->reviews->recompute((int) $pid));
+        $count = $this->reviews->bulkDelete($data['ids']);
 
-        return back()->with('success', count($data['ids']).' review(s) deleted.');
+        return back()->with('success', $count.' review(s) deleted.');
     }
 }

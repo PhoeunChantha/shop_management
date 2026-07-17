@@ -37,6 +37,11 @@ final class ProductsImport implements ToCollection, WithChunkReading, WithHeadin
     /** @var array<int, array{row: int, messages: array<int, string>}> */
     public array $errors = [];
 
+    public int $valid = 0;
+
+    /** @var array<int, array<string, mixed>> */
+    public array $previewRows = [];
+
     /** @var array<int, string> */
     private array $languages;
 
@@ -53,7 +58,7 @@ final class ProductsImport implements ToCollection, WithChunkReading, WithHeadin
 
     private string $skuPrefix;
 
-    public function __construct(SettingService $settings)
+    public function __construct(SettingService $settings, private readonly bool $dryRun = false)
     {
         $this->languages = array_keys($settings->activeLanguages());
         $this->primaryLang = $settings->primaryLanguage();
@@ -175,11 +180,43 @@ final class ProductsImport implements ToCollection, WithChunkReading, WithHeadin
             }
         }
 
+        if ($this->dryRun) {
+            $this->recordPreview($row, $data, $primaryName);
+
+            return;
+        }
+
         try {
             $this->upsert($row, $data, $primaryName, $categoryId, $subCategoryId, $brandId);
         } catch (\Throwable $e) {
             $this->addError(['Could not save row: '.$e->getMessage()]);
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $row
+     * @param  array<string, mixed>  $data
+     */
+    private function recordPreview(array $row, array $data, string $primaryName): void
+    {
+        $this->valid++;
+
+        if (count($this->previewRows) >= 12) {
+            return;
+        }
+
+        $sku = trim((string) ($row['sku'] ?? ''));
+
+        $this->previewRows[] = [
+            'row' => $this->rowNumber,
+            'action' => $sku !== '' && Product::where('sku', $sku)->exists() ? 'Update' : 'Create',
+            'sku' => $sku !== '' ? $sku : 'Auto',
+            'name' => $primaryName,
+            'category' => $data['category'],
+            'brand' => $data['brand'] !== '' ? $data['brand'] : 'No brand',
+            'price' => $data['price'],
+            'status' => $data['status'] ?? 'draft',
+        ];
     }
 
     /**

@@ -52,15 +52,11 @@ class OrderController extends Controller
     {
         $this->authorize('view', Order::class);
 
-        $order = Order::with(['details', 'user', 'coupon', 'events.actor'])->findOrFail($id);
-
-        $customerStats = $order->user_id
-            ? Order::where('user_id', $order->user_id)->selectRaw('count(*) as orders, coalesce(sum(grand_total),0) as spent')->first()
-            : null;
+        $order = $this->orders->findForShow($id);
 
         return view('admin.orders.show', [
             'order' => $order,
-            'customerStats' => $customerStats,
+            'customerStats' => $this->orders->customerStats($order),
         ]);
     }
 
@@ -68,10 +64,8 @@ class OrderController extends Controller
     {
         $this->authorize('view', Order::class);
 
-        $order = Order::with(['details', 'user', 'coupon'])->findOrFail($id);
-
         return view('admin.orders.print.invoice', [
-            'order' => $order,
+            'order' => $this->orders->findForInvoice($id),
             'store' => $this->storeInfo(),
         ]);
     }
@@ -80,10 +74,8 @@ class OrderController extends Controller
     {
         $this->authorize('view', Order::class);
 
-        $order = Order::with('details')->findOrFail($id);
-
         return view('admin.orders.print.packing-slip', [
-            'order' => $order,
+            'order' => $this->orders->findForPackingSlip($id),
             'store' => $this->storeInfo(),
         ]);
     }
