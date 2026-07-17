@@ -14,13 +14,13 @@ This document lists high-value add-ons for making the admin panel feel like a co
 | 4 | Customer management | Give admins a full customer view. | Done: customer list, order history, lifetime spend, top products, bulk enable/disable/export/delete, CRM notes/tags, and `CustomerService`. |
 | 5 | Offers & Deals | Manage flash deals, daily offers, featured deals, and clearance campaigns. | Done: unified deal campaigns, product assignment, image/media support, lifecycle filters, bulk actions, and deal permissions. |
 | 6 | Stock movement history | Make inventory changes auditable. | Track stock in/out, reason, related order, admin actor, and timestamp. |
-| 7 | Return and refund management | Handle post-purchase support cleanly. | Return requests, refund status, reason, admin notes, and order timeline events. |
-| 8 | Notification center | Centralize urgent admin alerts. | Low stock, new orders, failed payments, pending reviews, and media cleanup warnings. |
-| 9 | Advanced dashboard analytics | Improve daily decision making. | Revenue chart, top products, low stock, recent orders, conversion summary, and payment status widgets. |
-| 10 | SEO manager | Improve product and category discoverability. | Missing meta report, slug checks, duplicate title warnings, and SEO completion score. |
-| 11 | Supplier restock workflow | Support purchasing and replenishment. | Supplier records, purchase orders, incoming stock, and receiving history. |
-| 12 | Abandoned cart | Recover missed sales. | Track incomplete carts, customer/contact details, products, and reminder status. |
-| 13 | Admin permission audit | Make team access safer. | Role permission comparison, permission change log, and admin access review page. |
+| 7 | Return and refund management | Handle post-purchase support cleanly. | Done: return requests, selected order items, refund workflow, admin notes, and order timeline events. |
+| 8 | Notification center | Centralize urgent admin alerts. | Done: persisted admin alerts for orders, returns, stock, reviews, media optimization, and expiring deals with read/unread workflow. |
+| 9 | Advanced dashboard analytics | Improve daily decision making. | Done: revenue trends, KPI sparklines, status/payment mix, control queue, top products, fulfillment pulse, recent orders, and low-stock widgets. |
+| 10 | SEO manager | Improve product and category discoverability. | Done: product/category/page SEO audit, completion scores, issue filters, duplicate warnings, quick metadata edits, and CSV export. |
+| 11 | Supplier restock workflow | Support purchasing and replenishment. | Done: supplier records, purchase orders, incoming stock lines, receive workflow, stock movement integration, and restock permissions. |
+| 12 | Abandoned cart | Recover missed sales. | Done: abandoned cart records, item details, value/age filters, recovery statuses, admin notes, export, dashboard queue, and notifications. |
+| 13 | Admin permission audit | Make team access safer. | Done: role permission matrix, role comparison, risky grant summary, direct user permission review, stale admin review, and CSV export. |
 
 ## Phase 1: Media And Catalog Operations
 
@@ -82,16 +82,21 @@ Best next feature because the media library, picker modal, and upload workflow a
 
 ### Return And Refund Management
 
-- Admin return requests with status workflow.
-- Return reasons and internal notes.
-- Refund state separate from order status.
-- Add events to the order timeline and activity log.
+- Done: admin return request list, create flow from orders, and detail workflow page.
+- Done: return statuses: requested, approved, rejected, received, refunded.
+- Done: refund statuses: not refunded, pending, partial, refunded.
+- Done: selected order items, quantities, condition notes, requested amount, and refund amount.
+- Done: add return/refund events to the order activity timeline and update order payment state when refunds complete.
+- Remaining later: customer self-service return request page and payment gateway refund integration.
 
 ### Abandoned Cart
 
-- Store cart owner, email, items, total, and last activity.
-- Show abandoned carts by age and value.
-- Add reminder status for future email automation.
+- Done: store cart owner, email, phone, items, total, and last activity.
+- Done: show abandoned carts by age, value, search, and recovery status.
+- Done: recovery statuses: new, contacted, recovered, ignored.
+- Done: admin notes, detail page, and CSV export.
+- Done: dashboard control queue count and high-value abandoned cart notifications.
+- Remaining later: connect live storefront cart tracking and automated email/SMS reminders when frontend/customer messaging work is approved.
 
 ## Phase 3: Inventory And Purchasing
 
@@ -104,42 +109,53 @@ Best next feature because the media library, picker modal, and upload workflow a
 
 ### Supplier Restock Workflow
 
-- Supplier CRUD.
-- Purchase order draft, ordered, received, and cancelled statuses.
-- Incoming stock quantity.
-- Receiving action that increases inventory and records stock movements.
+- Done: supplier CRUD with active/inactive state.
+- Done: purchase order draft, ordered, received, and cancelled statuses.
+- Done: incoming product/variant stock lines with quantity and unit cost.
+- Done: receiving action increases inventory through `StockService`.
+- Done: received stock writes stock movement history using the existing restock audit path.
+- Remaining later: partial receiving quantities and supplier cost history.
 
 ## Phase 4: Intelligence And Governance
 
 ### Advanced Dashboard Analytics
 
-- Revenue trend chart.
-- Orders by status.
-- Top products by sales.
-- Low-stock and out-of-stock widgets.
-- Recent admin activity widget.
+- Done: revenue trend chart with selectable 7-day, 30-day, and 12-month windows.
+- Done: KPI cards with trend comparison and sparklines.
+- Done: order status and payment mix charts.
+- Done: control queue for pending orders, unpaid orders, returns, reviews, stock alerts, and unread notifications.
+- Done: top products by sold quantity and revenue for the selected range.
+- Done: low-stock widget and fulfillment pulse.
+- Remaining later: conversion metrics when storefront event tracking is added.
 
 ### Notification Center
 
-- Persist admin notifications in the database.
-- Mark read/unread.
-- Filter by alert type.
-- Link alerts to related products, orders, media, or reviews.
+- Done: persist admin notifications in the database with duplicate-safe fingerprints.
+- Done: generate alerts for pending orders, unpaid orders, requested returns, low/out-of-stock products, pending reviews, media optimization issues, and expiring deals.
+- Done: show live alerts in the admin header dropdown.
+- Done: mark read/unread and mark all read.
+- Done: filter by alert type, priority, read state, and search text.
+- Done: link alerts to related products, orders, returns, media, reviews, or deals.
 
 ### SEO Manager
 
-- Product and category SEO completion report.
-- Missing meta title and description filters.
-- Duplicate slug/title warnings.
-- Bulk SEO export for review.
+- Done: product, category, and page SEO completion report.
+- Done: missing title/description and title/description length checks.
+- Done: duplicate slug/title warnings across indexed admin records.
+- Done: SEO score per record with filterable issue states.
+- Done: quick edit SEO title/description from one admin table.
+- Done: CSV export for review.
 
 ### Admin Permission Audit
 
-- Role permission matrix.
-- Admin access summary.
-- Permission change history.
-- Last login and inactive admin review.
+- Done: role permission matrix for every Spatie role and permission.
+- Done: role-to-role comparison with difference-only rows.
+- Done: risky permission summary for delete, settings, users, roles, permissions, supplier, and purchase order grants.
+- Done: direct user permission review so role bypasses are visible.
+- Done: stale admin record review using old admin, manager, and staff profile update dates.
+- Done: CSV export of the permission matrix.
+- Remaining later: permission change history and last-login audit when login tracking is added.
 
 ## Immediate Recommendation
 
-Build return/refund management next, or wire Offers & Deals into the storefront when frontend changes are approved. Keep storefront/frontend files untouched unless a separate frontend task is requested.
+Build finance/reporting exports next, or wire Offers & Deals into the storefront when frontend changes are approved. Keep storefront/frontend files untouched unless a separate frontend task is requested.

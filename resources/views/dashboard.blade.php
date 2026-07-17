@@ -20,6 +20,11 @@
                 'values' => collect($statusBreakdown)->pluck('count')->all(),
                 'colors' => collect($statusBreakdown)->pluck('color')->all(),
             ],
+            'payment' => [
+                'labels' => collect($paymentBreakdown)->pluck('label')->all(),
+                'values' => collect($paymentBreakdown)->pluck('count')->all(),
+                'colors' => collect($paymentBreakdown)->pluck('color')->all(),
+            ],
         ];
     @endphp
 
@@ -63,6 +68,29 @@
             @endforeach
         </div>
 
+        {{-- ============ Operations queue ============ --}}
+        <section class="dash-ops-panel">
+            <div class="dash-ops-panel__intro">
+                <span class="dash-ops-panel__icon"><i class="fa-solid fa-command"></i></span>
+                <div>
+                    <h3>Today&apos;s control queue</h3>
+                    <p>High-signal tasks from orders, support, inventory, reviews, and alerts.</p>
+                </div>
+            </div>
+            <div class="dash-ops-grid">
+                @foreach ($operations as $item)
+                    <a href="{{ $item['url'] }}" class="dash-op dash-op--{{ $item['tone'] }}">
+                        <span class="dash-op__icon"><i class="fa-solid {{ $item['icon'] }}"></i></span>
+                        <span class="dash-op__copy">
+                            <strong>{{ number_format($item['value']) }}</strong>
+                            <small>{{ $item['label'] }}</small>
+                        </span>
+                        <i class="fa-solid fa-arrow-right dash-op__arrow"></i>
+                    </a>
+                @endforeach
+            </div>
+        </section>
+
         {{-- ============ Chart + status ============ --}}
         <div class="dash-grid dash-grid--chart">
             {{-- Revenue area chart --}}
@@ -81,10 +109,10 @@
             </section>
 
             {{-- Orders by status --}}
-            <section class="dash-panel">
+            <section class="dash-panel dash-panel--compact">
                 <div class="dash-panel__head">
                     <div>
-                        <h3>Orders by status</h3>
+                        <h3>Order status</h3>
                         <p>All time</p>
                     </div>
                 </div>
@@ -102,6 +130,30 @@
                     </ul>
                 @else
                     <div class="dash-empty"><i class="fa-solid fa-receipt"></i><p>No orders yet.</p></div>
+                @endif
+            </section>
+
+            {{-- Payment mix --}}
+            <section class="dash-panel dash-panel--compact">
+                <div class="dash-panel__head">
+                    <div>
+                        <h3>Payment mix</h3>
+                        <p>All time</p>
+                    </div>
+                </div>
+                @if (count($paymentBreakdown))
+                    <div id="paymentChart" class="dash-apex dash-apex--donut"></div>
+                    <ul class="dash-legend">
+                        @foreach ($paymentBreakdown as $payment)
+                            <li>
+                                <span class="dash-legend__dot" style="background: {{ $payment['color'] }};"></span>
+                                <span class="dash-legend__label">{{ $payment['label'] }}</span>
+                                <span class="dash-legend__count">{{ $payment['count'] }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @else
+                    <div class="dash-empty"><i class="fa-solid fa-credit-card"></i><p>No payments yet.</p></div>
                 @endif
             </section>
         </div>
@@ -141,6 +193,37 @@
                 </div>
             </section>
 
+            {{-- Top products --}}
+            <section class="dash-panel">
+                <div class="dash-panel__head">
+                    <div>
+                        <h3>Top products</h3>
+                        <p>Best sellers in this range</p>
+                    </div>
+                    <a href="{{ route('admin.products.index') }}" class="dash-link">Catalog <i class="fa-solid fa-arrow-right"></i></a>
+                </div>
+                <div class="dash-products">
+                    @forelse ($topProducts as $product)
+                        <div class="dash-product-row">
+                            <div class="dash-product-row__rank">{{ $loop->iteration }}</div>
+                            <div class="dash-product-row__body">
+                                <div class="dash-product-row__top">
+                                    <strong>{{ $product['name'] }}</strong>
+                                    <span>{{ $product['revenue'] }}</span>
+                                </div>
+                                <div class="dash-product-row__meta">
+                                    <span>{{ $product['sku'] }}</span>
+                                    <span>{{ number_format($product['sold']) }} sold</span>
+                                </div>
+                                <div class="dash-product-row__bar"><span style="width: {{ $product['pct'] }}%;"></span></div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="dash-empty"><i class="fa-solid fa-box-open"></i><p>No product sales in this range.</p></div>
+                    @endforelse
+                </div>
+            </section>
+
             {{-- Low stock --}}
             <section class="dash-panel">
                 <div class="dash-panel__head">
@@ -170,6 +253,22 @@
                 </div>
             </section>
         </div>
+
+        <section class="dash-fulfillment">
+            <div class="dash-fulfillment__meter" style="--pct: {{ $fulfillment['health'] }};">
+                <span>{{ $fulfillment['health'] }}%</span>
+            </div>
+            <div class="dash-fulfillment__copy">
+                <p class="section-kicker mb-1">Fulfillment pulse</p>
+                <h3>Shipping workload is {{ $fulfillment['open'] > 0 ? 'active' : 'clear' }}</h3>
+                <p>{{ number_format($fulfillment['open']) }} open orders, {{ number_format($fulfillment['shipped']) }} shipped, {{ number_format($fulfillment['delivered']) }} delivered in this range.</p>
+            </div>
+            <div class="dash-fulfillment__stats">
+                <span><strong>{{ number_format($fulfillment['open']) }}</strong>Open</span>
+                <span><strong>{{ number_format($fulfillment['shipped']) }}</strong>Shipped</span>
+                <span><strong>{{ number_format($fulfillment['cancelled']) }}</strong>Cancelled</span>
+            </div>
+        </section>
     </div>
 
     <script type="application/json" id="dash-data">@json($dashData)</script>
@@ -262,6 +361,26 @@
                                 name: { color: muted },
                                 value: { color: dark ? '#e2e8f0' : '#101827', fontSize: '22px', fontWeight: 800 },
                                 total: { show: true, label: 'Orders', color: muted, formatter: () => total } } } } },
+                            tooltip: { theme: dark ? 'dark' : 'light' },
+                        }).render();
+                    }
+
+                    // Payment-status donut
+                    const payment = document.getElementById('paymentChart');
+                    if (payment && data.payment.values.length) {
+                        const total = data.payment.values.reduce((a, b) => a + b, 0);
+                        new ApexCharts(payment, {
+                            chart: { type: 'donut', height: 210, fontFamily: font },
+                            series: data.payment.values,
+                            labels: data.payment.labels,
+                            colors: data.payment.colors,
+                            stroke: { width: 2, colors: [dark ? '#121c31' : '#fff'] },
+                            legend: { show: false },
+                            dataLabels: { enabled: false },
+                            plotOptions: { pie: { donut: { size: '72%', labels: { show: true,
+                                name: { color: muted },
+                                value: { color: dark ? '#e2e8f0' : '#101827', fontSize: '22px', fontWeight: 800 },
+                                total: { show: true, label: 'Payments', color: muted, formatter: () => total } } } } },
                             tooltip: { theme: dark ? 'dark' : 'light' },
                         }).render();
                     }

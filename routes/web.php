@@ -3,11 +3,16 @@
 use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\InventoryController;
 use App\Http\Controllers\Backend\ActivityLogController;
+use App\Http\Controllers\Backend\AdminNotificationController;
+use App\Http\Controllers\Backend\AbandonedCartController;
+use App\Http\Controllers\Backend\PermissionAuditController;
 use App\Http\Controllers\Backend\PermissionController;
 use App\Http\Controllers\Backend\ProfileController;
 use App\Http\Controllers\Backend\ReviewController;
+use App\Http\Controllers\Backend\ReturnRequestController;
 use App\Http\Controllers\Backend\RoleController;
 use App\Http\Controllers\Backend\SettingController;
+use App\Http\Controllers\Backend\SeoManagerController;
 use App\Http\Controllers\Backend\ShippingMethodController;
 use App\Http\Controllers\Backend\TaxRuleController;
 use App\Http\Controllers\Backend\UserController;
@@ -25,8 +30,10 @@ use App\Http\Controllers\Backend\MediaAssetController;
 use App\Http\Controllers\Backend\OrderController;
 use App\Http\Controllers\Backend\PageController as AdminPageController;
 use App\Http\Controllers\Backend\ProductController;
+use App\Http\Controllers\Backend\PurchaseOrderController;
 use App\Http\Controllers\Backend\SizeController;
 use App\Http\Controllers\Backend\ColorController;
+use App\Http\Controllers\Backend\SupplierController;
 use App\Http\Controllers\Frontend\AccountController;
 use App\Http\Controllers\Frontend\AuthController;
 use App\Http\Controllers\Frontend\CartController;
@@ -92,6 +99,19 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/export', [ActivityLogController::class, 'export'])->name('export');
     });
 
+    Route::prefix('seo')->name('seo.')->group(function () {
+        Route::get('/', [SeoManagerController::class, 'index'])->name('index');
+        Route::get('/export', [SeoManagerController::class, 'export'])->name('export');
+        Route::patch('/{type}/{id}', [SeoManagerController::class, 'update'])->whereNumber('id')->name('update');
+    });
+
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [AdminNotificationController::class, 'index'])->name('index');
+        Route::post('/mark-all-read', [AdminNotificationController::class, 'markAllRead'])->name('mark-all-read');
+        Route::patch('/{notification}/read', [AdminNotificationController::class, 'markRead'])->name('read');
+        Route::patch('/{notification}/unread', [AdminNotificationController::class, 'markUnread'])->name('unread');
+    });
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -115,6 +135,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::delete('/{id}', [PermissionController::class, 'destroy'])
             ->middleware('permission:delete permission')
             ->name('destroy');
+    });
+
+    Route::prefix('permission-audit')->name('permission-audit.')->middleware('permission:view permission')->group(function () {
+        Route::get('/', [PermissionAuditController::class, 'index'])->name('index');
+        Route::get('/export', [PermissionAuditController::class, 'export'])->name('export');
     });
 
     Route::prefix('roles')->name('roles.')->group(function () {
@@ -228,6 +253,25 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::post('/{id}/adjust', [InventoryController::class, 'adjust'])->whereNumber('id')->name('adjust');
     });
 
+    Route::prefix('suppliers')->name('suppliers.')->group(function () {
+        Route::get('/', [SupplierController::class, 'index'])->name('index');
+        Route::get('/create', [SupplierController::class, 'create'])->name('create');
+        Route::post('/', [SupplierController::class, 'store'])->name('store');
+        Route::get('/{supplier}/edit', [SupplierController::class, 'edit'])->name('edit');
+        Route::put('/{supplier}', [SupplierController::class, 'update'])->name('update');
+        Route::delete('/{supplier}', [SupplierController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('purchase-orders')->name('purchase-orders.')->group(function () {
+        Route::get('/', [PurchaseOrderController::class, 'index'])->name('index');
+        Route::get('/create', [PurchaseOrderController::class, 'create'])->name('create');
+        Route::post('/', [PurchaseOrderController::class, 'store'])->name('store');
+        Route::get('/{purchaseOrder}', [PurchaseOrderController::class, 'show'])->name('show');
+        Route::patch('/{purchaseOrder}/ordered', [PurchaseOrderController::class, 'markOrdered'])->name('ordered');
+        Route::patch('/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receive'])->name('receive');
+        Route::patch('/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('cancel');
+    });
+
     Route::prefix('media')->name('media.')->group(function () {
         Route::get('/', [MediaAssetController::class, 'index'])->name('index');
         Route::get('/picker', [MediaAssetController::class, 'picker'])->name('picker');
@@ -242,6 +286,22 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/{id}/invoice', [OrderController::class, 'invoice'])->whereNumber('id')->name('invoice');
         Route::get('/{id}/packing-slip', [OrderController::class, 'packingSlip'])->whereNumber('id')->name('packing-slip');
         Route::patch('/{id}', [OrderController::class, 'update'])->whereNumber('id')->name('update');
+    });
+
+    Route::prefix('returns')->name('returns.')->group(function () {
+        Route::get('/', [ReturnRequestController::class, 'index'])->name('index');
+        Route::get('/create', [ReturnRequestController::class, 'create'])->name('create');
+        Route::post('/', [ReturnRequestController::class, 'store'])->name('store');
+        Route::get('/{return}', [ReturnRequestController::class, 'show'])->name('show');
+        Route::patch('/{return}', [ReturnRequestController::class, 'update'])->name('update');
+    });
+
+    Route::prefix('abandoned-carts')->name('abandoned-carts.')->group(function () {
+        Route::get('/', [AbandonedCartController::class, 'index'])->name('index');
+        Route::get('/export', [AbandonedCartController::class, 'export'])->name('export');
+        Route::get('/{cart}', [AbandonedCartController::class, 'show'])->name('show');
+        Route::patch('/{cart}', [AbandonedCartController::class, 'update'])->name('update');
+        Route::delete('/{cart}', [AbandonedCartController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('customers')->name('customers.')->group(function () {

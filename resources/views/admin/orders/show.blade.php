@@ -31,6 +31,9 @@
                 <a href="{{ route('admin.orders.packing-slip', $order->id) }}" target="_blank" class="ghost-button ghost-button--panel">
                     <i class="fa-solid fa-box-open"></i><span>Packing slip</span>
                 </a>
+                <a href="{{ route('admin.returns.create', ['order_id' => $order->id]) }}" class="ghost-button ghost-button--panel">
+                    <i class="fa-solid fa-rotate-left"></i><span>Create return</span>
+                </a>
                 <a href="{{ route('admin.orders.index') }}" class="ghost-button ghost-button--panel">
                     <i class="fa-solid fa-arrow-left"></i><span>Back</span>
                 </a>
@@ -139,6 +142,26 @@
                     <section class="premium-card p-4 order-note-card">
                         <p class="section-kicker mb-1">Customer note</p>
                         <p class="text-sm text-gray-700 dark:text-slate-300 mb-0">{{ $order->customer_note }}</p>
+                    </section>
+                @endif
+
+                @if ($order->returnRequests->isNotEmpty())
+                    <section class="premium-card p-4 return-order-history-card">
+                        <div class="table-titlebar">
+                            <div>
+                                <h3>Returns & refunds</h3>
+                                <p>{{ $order->returnRequests->count() }} return workflow(s) linked to this order</p>
+                            </div>
+                        </div>
+                        <div class="return-order-history">
+                            @foreach ($order->returnRequests as $return)
+                                <a href="{{ route('admin.returns.show', $return) }}">
+                                    <strong>{{ $return->return_number }}</strong>
+                                    <span class="status-chip {{ $return->statusBadge() }}">{{ $return->statusLabel() }}</span>
+                                    <em>${{ number_format((float) $return->refund_amount, 2) }}</em>
+                                </a>
+                            @endforeach
+                        </div>
                     </section>
                 @endif
 

@@ -69,8 +69,15 @@ Shop Management admin recommendations - 2026-07-15
 - Done: extracted customer business/query logic into `App\Services\CustomerService` so `CustomerController` stays thin.
 - Done: added customer CRM notes and tags with persistent profiles, tag filtering, show-page editing, and reusable service-backed persistence.
 - Done: added admin Offers & Deals with unified deal campaigns for flash, daily, featured, and clearance promotions.
+- Done: added admin Return & Refund Management with return requests, selected order items, refund workflow, and order timeline events.
 - Done: refactored heavier backend controllers into service-backed workflows for activity log, users, roles, permissions, inventory, media assets, reviews, product import/bulk operations, order read models, and shared image fields.
-- Next: add return/refund management, or connect Offers & Deals to storefront promo sections when frontend changes are approved.
+- Done: added an admin Notification Center with generated alerts for orders, returns, stock, reviews, media, and expiring deals, plus header dropdown and read/unread workflow.
+- Done: upgraded the admin dashboard with advanced analytics: operational queue, payment mix, top products, fulfillment pulse, KPI sparklines, revenue trends, recent orders, and low-stock widgets.
+- Done: added SEO Manager with product/category/page audits, score-based issue filters, duplicate warnings, quick metadata edits, and CSV export.
+- Done: added Supplier Restock Workflow with suppliers, purchase orders, receive-to-stock action, and stock movement history integration.
+- Done: added Abandoned Cart management with recovery statuses, admin notes, age/value filters, CSV export, dashboard queue, and notification signals.
+- Done: added Admin Permission Audit with role matrix, role comparison, risky grants, direct user permission review, stale admin review, and CSV export.
+- Next: add admin finance/reporting exports, or connect Offers & Deals to storefront promo sections when frontend changes are approved.
 
 ## Build Notes
 

@@ -67,7 +67,7 @@ final class OrderService
 
     public function findForShow(string $id): Order
     {
-        return Order::with(['details', 'user', 'coupon', 'events.actor'])->findOrFail($id);
+        return Order::with(['details', 'user', 'coupon', 'events.actor', 'returnRequests.items'])->findOrFail($id);
     }
 
     public function findForInvoice(string $id): Order

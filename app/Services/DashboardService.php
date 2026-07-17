@@ -5,9 +5,16 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
+use App\Enums\ReviewStatus;
+use App\Models\AbandonedCart;
+use App\Models\AdminNotification;
 use App\Models\Order;
+use App\Models\OrderDetail;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\ReturnRequest;
+use App\Models\Review;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -97,6 +104,10 @@ final class DashboardService
             ],
             'chart' => $this->chart($buckets, $revSeries),
             'statusBreakdown' => $this->statusBreakdown(),
+            'paymentBreakdown' => $this->paymentBreakdown(),
+            'operations' => $this->operationsQueue(),
+            'fulfillment' => $this->fulfillmentPulse($curStart),
+            'topProducts' => $this->topProducts($curStart),
             'recentOrders' => $this->recentOrders(),
             'lowStock' => $this->lowStock(),
         ];
@@ -230,6 +241,150 @@ final class DashboardService
             ->sortByDesc('count')
             ->values()
             ->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function paymentBreakdown(): array
+    {
+        $counts = Order::query()
+            ->selectRaw('payment_status, COUNT(*) as c')
+            ->groupBy('payment_status')
+            ->pluck('c', 'payment_status');
+
+        $colors = [
+            PaymentStatus::Paid->value => '#10b981',
+            PaymentStatus::Unpaid->value => '#f59e0b',
+            PaymentStatus::PartiallyRefunded->value => '#0ea5e9',
+            PaymentStatus::Refunded->value => '#ef4444',
+        ];
+
+        return collect(PaymentStatus::cases())
+            ->map(fn (PaymentStatus $status) => [
+                'label' => $status->label(),
+                'count' => (int) ($counts[$status->value] ?? 0),
+                'color' => $colors[$status->value],
+            ])
+            ->filter(fn (array $row) => $row['count'] > 0)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function operationsQueue(): array
+    {
+        $lowStockCount = Product::query()
+            ->where('product_type', 'single')
+            ->where('low_stock_alert', '>', 0)
+            ->whereColumn('stock', '<=', 'low_stock_alert')
+            ->count()
+            + ProductVariant::query()
+                ->where('low_stock_alert', '>', 0)
+                ->whereColumn('stock', '<=', 'low_stock_alert')
+                ->count();
+
+        return [
+            [
+                'label' => 'Pending orders',
+                'value' => Order::where('status', OrderStatus::Pending->value)->count(),
+                'icon' => 'fa-receipt',
+                'tone' => 'info',
+                'url' => route('admin.orders.index', ['status' => OrderStatus::Pending->value]),
+            ],
+            [
+                'label' => 'Unpaid orders',
+                'value' => Order::where('payment_status', PaymentStatus::Unpaid->value)->count(),
+                'icon' => 'fa-credit-card',
+                'tone' => 'warning',
+                'url' => route('admin.orders.index', ['payment_status' => PaymentStatus::Unpaid->value]),
+            ],
+            [
+                'label' => 'Return requests',
+                'value' => ReturnRequest::where('status', 'requested')->count(),
+                'icon' => 'fa-rotate-left',
+                'tone' => 'danger',
+                'url' => route('admin.returns.index', ['status' => 'requested']),
+            ],
+            [
+                'label' => 'Pending reviews',
+                'value' => Review::where('status', ReviewStatus::Pending->value)->count(),
+                'icon' => 'fa-star-half-stroke',
+                'tone' => 'info',
+                'url' => route('admin.reviews.index', ['status' => ReviewStatus::Pending->value]),
+            ],
+            [
+                'label' => 'Stock alerts',
+                'value' => $lowStockCount,
+                'icon' => 'fa-box-open',
+                'tone' => 'warning',
+                'url' => route('admin.inventory.index'),
+            ],
+            [
+                'label' => 'Abandoned carts',
+                'value' => AbandonedCart::whereIn('status', ['new', 'contacted'])->count(),
+                'icon' => 'fa-cart-arrow-down',
+                'tone' => 'warning',
+                'url' => route('admin.abandoned-carts.index'),
+            ],
+            [
+                'label' => 'Unread alerts',
+                'value' => AdminNotification::unread()->count(),
+                'icon' => 'fa-bell',
+                'tone' => 'danger',
+                'url' => route('admin.notifications.index', ['state' => 'unread']),
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function fulfillmentPulse(Carbon $start): array
+    {
+        $open = Order::whereIn('status', [
+            OrderStatus::Pending->value,
+            OrderStatus::Paid->value,
+            OrderStatus::Processing->value,
+            OrderStatus::Shipped->value,
+        ])->count();
+
+        $shipped = Order::where('status', OrderStatus::Shipped->value)->count();
+        $delivered = Order::where('status', OrderStatus::Delivered->value)->where('updated_at', '>=', $start)->count();
+        $cancelled = Order::where('status', OrderStatus::Cancelled->value)->where('updated_at', '>=', $start)->count();
+        $total = max(1, $open + $delivered + $cancelled);
+
+        return [
+            'open' => $open,
+            'shipped' => $shipped,
+            'delivered' => $delivered,
+            'cancelled' => $cancelled,
+            'health' => (int) max(0, min(100, round((($delivered + $shipped) / $total) * 100))),
+        ];
+    }
+
+    /**
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function topProducts(Carbon $start, int $limit = 5): Collection
+    {
+        return OrderDetail::query()
+            ->join('orders', 'orders.id', '=', 'order_details.order_id')
+            ->where('orders.created_at', '>=', $start)
+            ->selectRaw('order_details.product_id, order_details.name, order_details.sku, SUM(order_details.quantity) as sold, SUM(order_details.line_total) as revenue')
+            ->groupBy('order_details.product_id', 'order_details.name', 'order_details.sku')
+            ->orderByDesc('sold')
+            ->limit($limit)
+            ->get()
+            ->map(fn ($row) => [
+                'name' => $row->name,
+                'sku' => $row->sku ?: '-',
+                'sold' => (int) $row->sold,
+                'revenue' => $this->money((float) $row->revenue),
+                'pct' => min(100, max(8, (int) $row->sold * 8)),
+            ]);
     }
 
     /**

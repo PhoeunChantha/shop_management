@@ -36,24 +36,48 @@
         </div>
 
         {{-- Sales --}}
+        @php($salesActive = request()->routeIs('admin.orders.*', 'admin.customers.*', 'admin.returns.*', 'admin.abandoned-carts.*'))
         <div class="admin-nav-section">
             <p class="admin-nav-heading">Sales</p>
             <div class="nav flex-column admin-nav">
-                <a href="{{ route('admin.orders.index') }}"
-                    class="nav-link d-flex align-items-center {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
-                    <span class="nav-ico"><i class="fa-solid fa-receipt"></i></span>
-                    <span class="small fw-medium">Orders</span>
-                </a>
+                <div class="admin-nav-group" x-data="{ open: {{ request()->routeIs('admin.orders.*', 'admin.returns.*') ? 'true' : 'false' }} }"
+                    :class="{ 'is-open': open }">
+                    <button type="button" class="nav-link admin-nav-toggle d-flex align-items-center {{ request()->routeIs('admin.orders.*', 'admin.returns.*') ? 'has-active' : '' }}"
+                        @click="open = !open" :aria-expanded="open ? 'true' : 'false'">
+                        <span class="nav-ico"><i class="fa-solid fa-receipt"></i></span>
+                        <span class="small fw-medium flex-grow-1 text-start">Orders</span>
+                        <i class="fa-solid fa-chevron-down admin-nav-caret"></i>
+                    </button>
+                    <div class="admin-nav-sub">
+                        <div class="admin-nav-sub-inner">
+                            <a href="{{ route('admin.orders.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-list-check"></i></span>
+                                <span class="small fw-medium">All Orders</span>
+                            </a>
+                            <a href="{{ route('admin.returns.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.returns.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-rotate-left"></i></span>
+                                <span class="small fw-medium">Returns & Refunds</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
                 <a href="{{ route('admin.customers.index') }}"
                     class="nav-link d-flex align-items-center {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}">
                     <span class="nav-ico"><i class="fa-solid fa-user-group"></i></span>
                     <span class="small fw-medium">Customers</span>
                 </a>
+                <a href="{{ route('admin.abandoned-carts.index') }}"
+                    class="nav-link d-flex align-items-center {{ request()->routeIs('admin.abandoned-carts.*') ? 'active' : '' }}">
+                    <span class="nav-ico"><i class="fa-solid fa-cart-arrow-down"></i></span>
+                    <span class="small fw-medium">Abandoned Carts</span>
+                </a>
             </div>
         </div>
 
         {{-- Catalog (collapsible) --}}
-        @php($catalogActive = request()->routeIs('admin.products.*', 'admin.inventory.*', 'admin.reviews.*', 'admin.brands.*', 'admin.categories.*', 'admin.attributes.*', 'admin.sizes.*', 'admin.colors.*'))
+        @php($catalogActive = request()->routeIs('admin.products.*', 'admin.inventory.*', 'admin.suppliers.*', 'admin.purchase-orders.*', 'admin.reviews.*', 'admin.brands.*', 'admin.categories.*', 'admin.attributes.*', 'admin.sizes.*', 'admin.colors.*'))
         <div class="admin-nav-section">
             <p class="admin-nav-heading">Catalog</p>
             <div class="nav flex-column admin-nav">
@@ -76,6 +100,16 @@
                                 class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.inventory.*') ? 'active' : '' }}">
                                 <span class="nav-ico"><i class="fa-solid fa-warehouse"></i></span>
                                 <span class="small fw-medium">Inventory</span>
+                            </a>
+                            <a href="{{ route('admin.purchase-orders.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.purchase-orders.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-clipboard-list"></i></span>
+                                <span class="small fw-medium">Purchase Orders</span>
+                            </a>
+                            <a href="{{ route('admin.suppliers.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.suppliers.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-truck-field"></i></span>
+                                <span class="small fw-medium">Suppliers</span>
                             </a>
                             <a href="{{ route('admin.reviews.index') }}"
                                 class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.reviews.*') ? 'active' : '' }}">
@@ -114,7 +148,7 @@
         </div>
 
         {{-- Access Control (collapsible) --}}
-        @php($accessActive = request()->routeIs('admin.users.*', 'admin.roles.*', 'admin.permissions.*'))
+        @php($accessActive = request()->routeIs('admin.users.*', 'admin.roles.*', 'admin.permissions.*', 'admin.permission-audit.*'))
         <div class="admin-nav-section">
             <p class="admin-nav-heading">Access Control</p>
             <div class="nav flex-column admin-nav">
@@ -142,6 +176,11 @@
                                 class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
                                 <span class="nav-ico"><i class="fa-solid fa-key"></i></span>
                                 <span class="small fw-medium">Permissions</span>
+                            </a>
+                            <a href="{{ route('admin.permission-audit.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.permission-audit.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-clipboard-check"></i></span>
+                                <span class="small fw-medium">Permission Audit</span>
                             </a>
                         </div>
                     </div>
@@ -201,7 +240,7 @@
         </div>
 
         {{-- Content (collapsible) --}}
-        @php($contentActive = request()->routeIs('admin.pages.*', 'admin.faqs.*'))
+        @php($contentActive = request()->routeIs('admin.pages.*', 'admin.faqs.*', 'admin.seo.*'))
         <div class="admin-nav-section">
             <p class="admin-nav-heading">Content</p>
             <div class="nav flex-column admin-nav">
@@ -219,6 +258,11 @@
                                 class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.pages.*') ? 'active' : '' }}">
                                 <span class="nav-ico"><i class="fa-solid fa-file-lines"></i></span>
                                 <span class="small fw-medium">Pages</span>
+                            </a>
+                            <a href="{{ route('admin.seo.index') }}"
+                                class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.seo.*') ? 'active' : '' }}">
+                                <span class="nav-ico"><i class="fa-solid fa-magnifying-glass-chart"></i></span>
+                                <span class="small fw-medium">SEO Manager</span>
                             </a>
                             <a href="{{ route('admin.faqs.index') }}"
                                 class="nav-link nav-sublink d-flex align-items-center {{ request()->routeIs('admin.faqs.*') ? 'active' : '' }}">
@@ -266,6 +310,11 @@
         <div class="admin-nav-section">
             <p class="admin-nav-heading">System</p>
             <div class="nav flex-column admin-nav">
+                <a href="{{ route('admin.notifications.index') }}"
+                    class="nav-link d-flex align-items-center {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}">
+                    <span class="nav-ico"><i class="fa-solid fa-bell"></i></span>
+                    <span class="small fw-medium">Notifications</span>
+                </a>
                 <a href="{{ route('admin.settings.index') }}"
                     class="nav-link d-flex align-items-center {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                     <span class="nav-ico"><i class="fa-solid fa-gear"></i></span>

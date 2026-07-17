@@ -108,6 +108,11 @@ final class Order extends Model
         return $this->hasMany(OrderEvent::class)->latest();
     }
 
+    public function returnRequests(): HasMany
+    {
+        return $this->hasMany(ReturnRequest::class)->latest();
+    }
+
     /**
      * Append an entry to the order's activity log.
      */

@@ -15,6 +15,8 @@ class Category extends Model
         'image',
         'icon',
         'sort_order',
+        'seo_title',
+        'seo_description',
         'status',
     ];
 

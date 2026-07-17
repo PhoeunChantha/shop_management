@@ -4,9 +4,11 @@ namespace App\Providers;
 
 use App\Models\Color;
 use App\Models\Size;
+use App\Services\AdminNotificationService;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -37,5 +39,24 @@ class AppServiceProvider extends ServiceProvider
         // Reusable admin Blade components: resources/views/admin/components/*
         // usable as <x-admin::component-name />.
         Blade::anonymousComponentPath(resource_path('views/admin/components'), 'admin');
+
+        View::composer('admin.layouts.header', function ($view): void {
+            if (! auth()->check()) {
+                $view->with([
+                    'adminHeaderNotifications' => collect(),
+                    'adminUnreadNotifications' => 0,
+                ]);
+
+                return;
+            }
+
+            $notifications = app(AdminNotificationService::class);
+            $notifications->refreshGenerated();
+
+            $view->with([
+                'adminHeaderNotifications' => $notifications->recentForHeader(),
+                'adminUnreadNotifications' => $notifications->unreadCount(),
+            ]);
+        });
     }
 }

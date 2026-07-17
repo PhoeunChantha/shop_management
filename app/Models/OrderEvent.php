@@ -36,6 +36,8 @@ final class OrderEvent extends Model
             'payment' => 'fa-credit-card',
             'fulfilment' => 'fa-truck',
             'note' => 'fa-note-sticky',
+            'return' => 'fa-rotate-left',
+            'refund' => 'fa-money-bill-transfer',
             default => 'fa-circle-dot',
         };
     }
