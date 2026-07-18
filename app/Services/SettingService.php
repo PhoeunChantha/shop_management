@@ -28,6 +28,11 @@ final class SettingService
         'admin_info_color' => '#2563eb',
         'admin_light_color' => '#eef2f7',
         'admin_dark_color' => '#101827',
+        'admin_sidebar_bg_color' => '#09111f',
+        'admin_sidebar_panel_color' => '#121c2f',
+        'admin_sidebar_text_color' => '#d8e2f0',
+        'admin_sidebar_muted_color' => '#8fa1bb',
+        'admin_sidebar_active_color' => '#14b8a6',
     ];
 
     /**
@@ -44,6 +49,11 @@ final class SettingService
         'admin_info_color' => ['label' => 'Info', 'hint' => 'View, Details, Preview, Export'],
         'admin_light_color' => ['label' => 'Light', 'hint' => 'Neutral surfaces, table headers'],
         'admin_dark_color' => ['label' => 'Dark', 'hint' => 'Emphasis / high-contrast accents'],
+        'admin_sidebar_bg_color' => ['label' => 'Sidebar background', 'hint' => 'Main admin sidebar background'],
+        'admin_sidebar_panel_color' => ['label' => 'Sidebar panel', 'hint' => 'Module cards, user panel, and brand panel'],
+        'admin_sidebar_text_color' => ['label' => 'Sidebar text', 'hint' => 'Primary sidebar labels'],
+        'admin_sidebar_muted_color' => ['label' => 'Sidebar muted text', 'hint' => 'Section captions and secondary labels'],
+        'admin_sidebar_active_color' => ['label' => 'Sidebar active', 'hint' => 'Active module accent and selected link'],
     ];
 
     /**

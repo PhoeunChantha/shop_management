@@ -18,7 +18,7 @@ class RolePermissionSeeder extends Seeder
         $subjects = [
             'products', 'brands', 'attributes', 'categories', 'sizes',
             'colors', 'coupons', 'deals', 'returns', 'orders', 'banners', 'collections', 'announcements',
-            'shipping', 'taxes', 'pages', 'faqs', 'reviews', 'suppliers', 'purchase orders', 'abandoned carts', 'users', 'settings', 'notifications', 'seo', 'role', 'permission',
+            'shipping', 'taxes', 'pages', 'faqs', 'reviews', 'suppliers', 'purchase orders', 'abandoned carts', 'reports', 'saved views', 'users', 'settings', 'notifications', 'seo', 'role', 'permission',
         ];
         $actions = ['view', 'create', 'edit', 'delete'];
 

@@ -8,10 +8,22 @@
 
     <div class="admin-page">
         <div class="cart-recovery-strip">
-            <div class="cart-recovery-stat"><span>Total carts</span><strong>{{ number_format($stats['total']) }}</strong></div>
-            <div class="cart-recovery-stat cart-recovery-stat--active"><span>New leads</span><strong>{{ number_format($stats['new']) }}</strong></div>
-            <div class="cart-recovery-stat"><span>Recoverable value</span><strong>${{ number_format($stats['value'], 0) }}</strong></div>
-            <div class="cart-recovery-stat"><span>Recovered</span><strong>{{ number_format($stats['recovered']) }}</strong></div>
+            <div class="cart-recovery-stat">
+                <span><i class="fa-solid fa-cart-shopping"></i> Total carts</span>
+                <strong>{{ number_format($stats['total']) }}</strong>
+            </div>
+            <div class="cart-recovery-stat cart-recovery-stat--active">
+                <span><i class="fa-solid fa-user-plus"></i> New leads</span>
+                <strong>{{ number_format($stats['new']) }}</strong>
+            </div>
+            <div class="cart-recovery-stat">
+                <span><i class="fa-solid fa-sack-dollar"></i> Recoverable value</span>
+                <strong>${{ number_format($stats['value'], 0) }}</strong>
+            </div>
+            <div class="cart-recovery-stat">
+                <span><i class="fa-solid fa-check-double"></i> Recovered</span>
+                <strong>{{ number_format($stats['recovered']) }}</strong>
+            </div>
         </div>
 
         <div class="page-section-header">

@@ -36,8 +36,10 @@
             @endforeach
         </div>
 
+        @include('admin.saved-views._bar', ['scope' => 'orders', 'icon' => 'fa-receipt', 'color' => '#2563eb'])
+
         {{-- Filters --}}
-        <x-filter-card :action="route('admin.orders.index')" :grid="'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3'">
+        <x-filter-card :action="route('admin.orders.index')" :grid="'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3'">
             <x-slot:hidden>
                 <input type="hidden" name="search" value="{{ request('search') }}">
                 <input type="hidden" name="per_page" value="{{ $perPage }}">
@@ -45,6 +47,9 @@
 
             <x-select name="status" size="sm" label="Status" :value="request('status')" placeholder="Any status"
                 :options="\App\Enums\OrderStatus::options()" />
+
+            <x-select name="payment_status" size="sm" label="Payment" :value="request('payment_status')" placeholder="Any payment"
+                :options="\App\Enums\PaymentStatus::options()" />
 
             <x-select name="customer" size="sm" label="Customer" :value="request('customer')" placeholder="Any customer"
                 :options="$customers" searchable />

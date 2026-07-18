@@ -28,6 +28,7 @@ class OrderController extends Controller
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', 'string'],
+            'payment_status' => ['nullable', 'string'],
             'customer' => ['nullable', 'integer'],
             'price' => ['nullable', 'string', 'in:'.implode(',', array_keys(OrderService::priceRanges()))],
             'date_from' => ['nullable', 'date'],

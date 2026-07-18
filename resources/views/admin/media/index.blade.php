@@ -91,6 +91,8 @@
             </div>
         </div>
 
+        @include('admin.saved-views._bar', ['scope' => 'media', 'icon' => 'fa-photo-film', 'color' => '#0f766e'])
+
         <x-filter-card :action="route('admin.media.index')" class="mt-3 media-filter-card"
             :grid="'media-filter-grid'">
             <x-slot:hidden>

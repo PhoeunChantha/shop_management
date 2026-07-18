@@ -24,6 +24,8 @@
             </a>
         </div>
 
+        @include('admin.saved-views._bar', ['scope' => 'returns', 'icon' => 'fa-rotate-left', 'color' => '#dc2626'])
+
         <x-filter-card :action="route('admin.returns.index')" class="return-filter-card">
             <x-select name="status" size="sm" :value="request('status')" placeholder="Any return status" :options="\App\Models\ReturnRequest::STATUSES" />
             <x-select name="refund_status" size="sm" :value="request('refund_status')" placeholder="Any refund status" :options="\App\Models\ReturnRequest::REFUND_STATUSES" />

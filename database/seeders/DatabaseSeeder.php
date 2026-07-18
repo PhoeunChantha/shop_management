@@ -31,15 +31,7 @@ class DatabaseSeeder extends Seeder
         $admin->assignRole('admin');
     }
 
-        // Feature demo data
-        $this->call([
-            UserSeeder::class,
-            CategorySeeder::class,
-            SizeSeeder::class,
-            ColorSeeder::class,
-            ProductSeeder::class,
-            SettingSeeder::class,
-        ]);
+        // Complete admin demo data for reviewing the system.
+        $this->call(AdminDemoSeeder::class);
     }
 }
-

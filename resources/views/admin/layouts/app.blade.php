@@ -76,6 +76,11 @@
             --info-color: {{ $adminTheme['admin_info_color'] }};
             --light-color: {{ $adminTheme['admin_light_color'] }};
             --dark-color: {{ $adminTheme['admin_dark_color'] }};
+            --sidebar-bg-color: {{ $adminTheme['admin_sidebar_bg_color'] }};
+            --sidebar-panel-color: {{ $adminTheme['admin_sidebar_panel_color'] }};
+            --sidebar-text-color: {{ $adminTheme['admin_sidebar_text_color'] }};
+            --sidebar-muted-color: {{ $adminTheme['admin_sidebar_muted_color'] }};
+            --sidebar-active-color: {{ $adminTheme['admin_sidebar_active_color'] }};
         }
     </style>
 </head>

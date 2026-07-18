@@ -48,6 +48,7 @@ final class OrderService
             ->withSum('details', 'quantity')
             ->search($search)
             ->status($filters['status'] ?? null)
+            ->when($filters['payment_status'] ?? null, fn ($q, $v) => $q->where('payment_status', $v))
             ->when($filters['customer'] ?? null, fn ($q, $v) => $q->where('user_id', $v))
             ->when($filters['price'] ?? null, function ($q, $range) {
                 [$min, $max] = array_pad(explode('-', $range), 2, null);

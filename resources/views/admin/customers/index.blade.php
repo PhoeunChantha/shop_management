@@ -36,6 +36,8 @@
             </div>
         </div>
 
+        @include('admin.saved-views._bar', ['scope' => 'customers', 'icon' => 'fa-user-group', 'color' => '#7c3aed'])
+
         <x-filter-card :action="route('admin.customers.index')" class="customer-filter-card"
             :grid="'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'">
             <x-slot:hidden>

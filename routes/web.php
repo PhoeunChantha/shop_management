@@ -11,7 +11,9 @@ use App\Http\Controllers\Backend\ProfileController;
 use App\Http\Controllers\Backend\ReviewController;
 use App\Http\Controllers\Backend\ReturnRequestController;
 use App\Http\Controllers\Backend\RoleController;
+use App\Http\Controllers\Backend\AdminSavedViewController;
 use App\Http\Controllers\Backend\SettingController;
+use App\Http\Controllers\Backend\SetupHealthController;
 use App\Http\Controllers\Backend\SeoManagerController;
 use App\Http\Controllers\Backend\ShippingMethodController;
 use App\Http\Controllers\Backend\TaxRuleController;
@@ -26,6 +28,7 @@ use App\Http\Controllers\Backend\CouponController;
 use App\Http\Controllers\Backend\CustomerController;
 use App\Http\Controllers\Backend\DealCampaignController;
 use App\Http\Controllers\Backend\FaqController;
+use App\Http\Controllers\Backend\FinanceReportController;
 use App\Http\Controllers\Backend\MediaAssetController;
 use App\Http\Controllers\Backend\OrderController;
 use App\Http\Controllers\Backend\PageController as AdminPageController;
@@ -93,6 +96,14 @@ Route::get('admin/login', function () {
 
 Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/setup-health', [SetupHealthController::class, 'index'])
+        ->middleware('permission:view settings')
+        ->name('setup-health.index');
+
+    Route::prefix('reports')->name('reports.')->middleware('permission:view reports')->group(function () {
+        Route::get('/', [FinanceReportController::class, 'index'])->name('index');
+        Route::get('/export/{type}', [FinanceReportController::class, 'export'])->name('export');
+    });
 
     Route::prefix('activity')->name('activity.')->group(function () {
         Route::get('/', [ActivityLogController::class, 'index'])->name('index');
@@ -110,6 +121,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::post('/mark-all-read', [AdminNotificationController::class, 'markAllRead'])->name('mark-all-read');
         Route::patch('/{notification}/read', [AdminNotificationController::class, 'markRead'])->name('read');
         Route::patch('/{notification}/unread', [AdminNotificationController::class, 'markUnread'])->name('unread');
+    });
+
+    Route::prefix('saved-views')->name('saved-views.')->group(function () {
+        Route::get('/', [AdminSavedViewController::class, 'index'])->name('index');
+        Route::post('/', [AdminSavedViewController::class, 'store'])->name('store');
+        Route::delete('/{savedView}', [AdminSavedViewController::class, 'destroy'])->name('destroy');
     });
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

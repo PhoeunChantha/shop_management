@@ -53,6 +53,8 @@
             </div>
         </div>
 
+        @include('admin.saved-views._bar', ['scope' => 'products', 'icon' => 'fa-box-open', 'color' => '#0f766e'])
+
         {{-- Skipped rows from the last import --}}
         @if (session('import_errors'))
             <div class="premium-card p-4 mt-3" style="border-left: 3px solid var(--danger-color);">

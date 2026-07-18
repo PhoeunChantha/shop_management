@@ -22,43 +22,66 @@
 
         <div class="permission-audit-strip">
             <div class="permission-audit-stat">
-                <span>Roles</span>
-                <strong>{{ number_format($stats['roles']) }}</strong>
+                <div>
+                    <span>Roles</span>
+                    <strong>{{ number_format($stats['roles']) }}</strong>
+                </div>
+                <i class="fa-solid fa-user-shield"></i>
             </div>
             <div class="permission-audit-stat">
-                <span>Permissions</span>
-                <strong>{{ number_format($stats['permissions']) }}</strong>
+                <div>
+                    <span>Permissions</span>
+                    <strong>{{ number_format($stats['permissions']) }}</strong>
+                </div>
+                <i class="fa-solid fa-key"></i>
             </div>
             <div class="permission-audit-stat permission-audit-stat--warning">
-                <span>Risky Grants</span>
-                <strong>{{ number_format($stats['risky_permissions']) }}</strong>
+                <div>
+                    <span>Risky Grants</span>
+                    <strong>{{ number_format($stats['risky_permissions']) }}</strong>
+                </div>
+                <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
             <div class="permission-audit-stat">
-                <span>Direct User Grants</span>
-                <strong>{{ number_format($stats['direct_permissions']) }}</strong>
+                <div>
+                    <span>Direct User Grants</span>
+                    <strong>{{ number_format($stats['direct_permissions']) }}</strong>
+                </div>
+                <i class="fa-solid fa-user-lock"></i>
             </div>
         </div>
 
-        <form method="GET" action="{{ route('admin.permission-audit.index') }}" class="filter-card permission-audit-filter">
-            <div>
-                <label class="form-label premium-label">Compare role</label>
-                <select name="role_a" class="form-select premium-input">
-                    <option value="">Choose first role</option>
-                    @foreach ($roles as $role)
-                        <option value="{{ $role->id }}" @selected(($filters['role_a'] ?? null) == $role->id)>{{ $role->name }}</option>
-                    @endforeach
-                </select>
+        <form method="GET" action="{{ route('admin.permission-audit.index') }}" class="permission-audit-compare">
+            <div class="permission-audit-compare__intro">
+                <span><i class="fa-solid fa-code-compare"></i></span>
+                <div>
+                    <p class="section-kicker">Role Compare</p>
+                    <strong>Review permission gaps</strong>
+                </div>
             </div>
-            <div>
-                <label class="form-label premium-label">Against role</label>
-                <select name="role_b" class="form-select premium-input">
-                    <option value="">Choose second role</option>
-                    @foreach ($roles as $role)
-                        <option value="{{ $role->id }}" @selected(($filters['role_b'] ?? null) == $role->id)>{{ $role->name }}</option>
-                    @endforeach
-                </select>
+
+            <div class="permission-audit-compare__fields">
+                <label>
+                    <span>Compare</span>
+                    <select name="role_a">
+                        <option value="">First role</option>
+                        @foreach ($roles as $role)
+                            <option value="{{ $role->id }}" @selected(($filters['role_a'] ?? null) == $role->id)>{{ $role->name }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                <label>
+                    <span>Against</span>
+                    <select name="role_b">
+                        <option value="">Second role</option>
+                        @foreach ($roles as $role)
+                            <option value="{{ $role->id }}" @selected(($filters['role_b'] ?? null) == $role->id)>{{ $role->name }}</option>
+                        @endforeach
+                    </select>
+                </label>
             </div>
-            <div class="d-flex align-items-end gap-2 justify-content-end">
+
+            <div class="permission-audit-compare__actions">
                 <a href="{{ route('admin.permission-audit.index') }}" class="ghost-button">
                     <i class="fa-solid fa-rotate-left"></i>
                     <span>Reset</span>

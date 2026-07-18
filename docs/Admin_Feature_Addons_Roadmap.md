@@ -77,7 +77,8 @@ Shop Management admin recommendations - 2026-07-15
 - Done: added Supplier Restock Workflow with suppliers, purchase orders, receive-to-stock action, and stock movement history integration.
 - Done: added Abandoned Cart management with recovery statuses, admin notes, age/value filters, CSV export, dashboard queue, and notification signals.
 - Done: added Admin Permission Audit with role matrix, role comparison, risky grants, direct user permission review, stale admin review, and CSV export.
-- Next: add admin finance/reporting exports, or connect Offers & Deals to storefront promo sections when frontend changes are approved.
+- Done: added Finance & Reporting Exports with date/status/payment filters, revenue/refund/net sales KPIs, tax/shipping/discount/purchase summaries, top products, top customers, payment mix, and CSV exports.
+- Next: add Admin Login History, or connect Offers & Deals to storefront promo sections when frontend changes are approved.
 
 ## Build Notes
 

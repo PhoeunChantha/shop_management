@@ -21,6 +21,7 @@ This document lists high-value add-ons for making the admin panel feel like a co
 | 11 | Supplier restock workflow | Support purchasing and replenishment. | Done: supplier records, purchase orders, incoming stock lines, receive workflow, stock movement integration, and restock permissions. |
 | 12 | Abandoned cart | Recover missed sales. | Done: abandoned cart records, item details, value/age filters, recovery statuses, admin notes, export, dashboard queue, and notifications. |
 | 13 | Admin permission audit | Make team access safer. | Done: role permission matrix, role comparison, risky grant summary, direct user permission review, stale admin review, and CSV export. |
+| 14 | Finance & reporting exports | Centralize money reporting for admin decisions. | Done: finance report dashboard, date/status/payment filters, net sales, refunds, tax, shipping, purchase cost, top products, top customers, payment mix, and CSV exports. |
 
 ## Phase 1: Media And Catalog Operations
 
@@ -158,4 +159,4 @@ Best next feature because the media library, picker modal, and upload workflow a
 
 ## Immediate Recommendation
 
-Build finance/reporting exports next, or wire Offers & Deals into the storefront when frontend changes are approved. Keep storefront/frontend files untouched unless a separate frontend task is requested.
+Build admin login history next, or wire Offers & Deals into the storefront when frontend changes are approved. Keep storefront/frontend files untouched unless a separate frontend task is requested.
