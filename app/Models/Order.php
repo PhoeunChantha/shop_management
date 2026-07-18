@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\OrderStatus;
+use App\Enums\FulfillmentStatus;
 use App\Enums\PaymentStatus;
 use App\Services\SettingService;
 use Illuminate\Database\Eloquent\Builder;
@@ -47,6 +48,7 @@ final class Order extends Model
         'order_number',
         'user_id',
         'status',
+        'fulfillment_status',
         'customer_name',
         'customer_email',
         'customer_phone',
@@ -62,7 +64,10 @@ final class Order extends Model
         'coupon_id',
         'coupon_code',
         'shipping_method',
+        'carrier',
         'tracking_number',
+        'shipped_at',
+        'fulfilled_at',
         'payment_method',
         'payment_status',
         'paid_at',
@@ -75,6 +80,7 @@ final class Order extends Model
     {
         return [
             'status' => OrderStatus::class,
+            'fulfillment_status' => FulfillmentStatus::class,
             'payment_status' => PaymentStatus::class,
             'subtotal' => 'decimal:2',
             'discount_total' => 'decimal:2',
@@ -82,6 +88,8 @@ final class Order extends Model
             'tax_total' => 'decimal:2',
             'grand_total' => 'decimal:2',
             'paid_at' => 'immutable_datetime',
+            'shipped_at' => 'immutable_datetime',
+            'fulfilled_at' => 'immutable_datetime',
             'placed_at' => 'immutable_datetime',
         ];
     }

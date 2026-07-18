@@ -24,6 +24,7 @@ use App\Http\Controllers\Backend\BannerController;
 use App\Http\Controllers\Backend\BrandController;
 use App\Http\Controllers\Backend\CategoryController;
 use App\Http\Controllers\Backend\CollectionController;
+use App\Http\Controllers\Backend\CommandPaletteController;
 use App\Http\Controllers\Backend\CouponController;
 use App\Http\Controllers\Backend\CustomerController;
 use App\Http\Controllers\Backend\DealCampaignController;
@@ -96,6 +97,7 @@ Route::get('admin/login', function () {
 
 Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/command-palette', CommandPaletteController::class)->name('command-palette');
     Route::get('/setup-health', [SetupHealthController::class, 'index'])
         ->middleware('permission:view settings')
         ->name('setup-health.index');
@@ -266,6 +268,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::prefix('inventory')->name('inventory.')->group(function () {
         Route::get('/', [InventoryController::class, 'index'])->name('index');
+        Route::get('/reorder', [InventoryController::class, 'reorder'])->name('reorder');
+        Route::patch('/reorder/rules', [InventoryController::class, 'updateReorderRules'])->name('reorder.rules');
+        Route::post('/reorder/purchase-order', [InventoryController::class, 'createPurchaseOrder'])->name('reorder.purchase-order');
         Route::get('/{id}', [InventoryController::class, 'show'])->whereNumber('id')->name('show');
         Route::post('/{id}/adjust', [InventoryController::class, 'adjust'])->whereNumber('id')->name('adjust');
     });

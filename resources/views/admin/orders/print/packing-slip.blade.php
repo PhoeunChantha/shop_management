@@ -48,7 +48,9 @@
                 <p>
                     <strong>Number:</strong> {{ $order->order_number }}<br>
                     <strong>Method:</strong> {{ $order->shipping_method ? ucfirst($order->shipping_method) : 'Standard' }}<br>
+                    @if ($order->carrier)<strong>Carrier:</strong> {{ $order->carrier }}<br>@endif
                     @if ($order->tracking_number)<strong>Tracking:</strong> {{ $order->tracking_number }}<br>@endif
+                    @if ($order->shipped_at)<strong>Shipped:</strong> {{ $order->shipped_at->format('M d, Y') }}<br>@endif
                     <strong>Items:</strong> {{ $order->details->sum('quantity') }} units
                 </p>
             </div>

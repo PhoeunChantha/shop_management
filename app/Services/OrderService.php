@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\OrderStatus;
+use App\Enums\FulfillmentStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -28,6 +29,7 @@ final class OrderService
             'revenue' => $revenue,
             'orders' => Order::count(),
             'pending' => Order::where('status', OrderStatus::Pending->value)->count(),
+            'unfulfilled' => Order::where('fulfillment_status', FulfillmentStatus::Unfulfilled->value)->count(),
             'aov' => $paidCount > 0 ? $revenue / $paidCount : 0.0,
             'refunded' => (float) Order::where('payment_status', PaymentStatus::Refunded->value)->sum('grand_total'),
         ];
@@ -48,6 +50,7 @@ final class OrderService
             ->withSum('details', 'quantity')
             ->search($search)
             ->status($filters['status'] ?? null)
+            ->when($filters['fulfillment_status'] ?? null, fn ($q, $v) => $q->where('fulfillment_status', $v))
             ->when($filters['payment_status'] ?? null, fn ($q, $v) => $q->where('payment_status', $v))
             ->when($filters['customer'] ?? null, fn ($q, $v) => $q->where('user_id', $v))
             ->when($filters['price'] ?? null, function ($q, $range) {
@@ -117,17 +120,30 @@ final class OrderService
         return DB::transaction(function () use ($order, $data) {
             $oldStatus = $order->status;
             $oldPayment = $order->payment_status;
+            $oldFulfillment = $order->fulfillment_status;
             $oldTracking = $order->tracking_number;
+            $oldCarrier = $order->carrier;
 
             $newStatus = OrderStatus::from($data['status']);
+            $newFulfillment = FulfillmentStatus::from($data['fulfillment_status']);
             $newPayment = ! empty($data['payment_status'])
                 ? PaymentStatus::from($data['payment_status'])
                 : $this->derivePaymentStatus($order->payment_status, $newStatus);
 
             $order->status = $newStatus;
+            $order->fulfillment_status = $newFulfillment;
             $order->payment_status = $newPayment;
+            $order->carrier = $data['carrier'] ?? null;
             $order->tracking_number = $data['tracking_number'] ?? null;
+            $order->shipped_at = ! empty($data['shipped_at']) ? $data['shipped_at'] : null;
             $order->admin_note = $data['admin_note'] ?? null;
+
+            if ($newFulfillment === FulfillmentStatus::Fulfilled) {
+                $order->fulfilled_at ??= now();
+                $order->shipped_at ??= now();
+            } elseif ($newFulfillment === FulfillmentStatus::Unfulfilled) {
+                $order->fulfilled_at = null;
+            }
 
             if ($newPayment === PaymentStatus::Paid && $order->paid_at === null) {
                 $order->paid_at = now();
@@ -141,6 +157,12 @@ final class OrderService
             }
             if ($oldPayment !== $newPayment) {
                 $order->logEvent('payment', 'Payment marked '.$newPayment->label());
+            }
+            if ($oldFulfillment !== $newFulfillment) {
+                $order->logEvent('fulfilment', 'Fulfillment marked '.$newFulfillment->label(), 'Was '.$oldFulfillment->label());
+            }
+            if (filled($order->carrier) && $order->carrier !== $oldCarrier) {
+                $order->logEvent('fulfilment', 'Carrier added', $order->carrier);
             }
             if (filled($order->tracking_number) && $order->tracking_number !== $oldTracking) {
                 $order->logEvent('fulfilment', 'Tracking number added', $order->tracking_number);

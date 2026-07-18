@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\OrderStatus;
+use App\Enums\FulfillmentStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\ReviewStatus;
 use App\Models\AbandonedCart;
@@ -45,8 +46,6 @@ final class DashboardService
         'violet' => '#7c3aed',
     ];
 
-    public function __construct(private readonly SetupHealthService $setupHealth) {}
-
     /**
      * @return array<string, mixed>
      */
@@ -54,7 +53,6 @@ final class DashboardService
     {
         $range = isset(self::RANGES[$range]) ? $range : '30d';
         [$unit, $count, $rangeLabel] = self::RANGES[$range];
-        $health = $this->setupHealth->overview();
 
         $buckets = $this->buckets($unit, $count);
         $keys = $buckets->pluck('key')->all();
@@ -106,7 +104,6 @@ final class DashboardService
                 $this->kpi('Products', Product::count(), false, $prodSeries, array_sum($prodSeries), $prodPrev, 'fa-shirt', 'violet', 'total'),
             ],
             'chart' => $this->chart($buckets, $revSeries),
-            'actionCenter' => $this->actionCenter($health),
             'statusBreakdown' => $this->statusBreakdown(),
             'paymentBreakdown' => $this->paymentBreakdown(),
             'operations' => $this->operationsQueue(),
@@ -114,31 +111,6 @@ final class DashboardService
             'topProducts' => $this->topProducts($curStart),
             'recentOrders' => $this->recentOrders(),
             'lowStock' => $this->lowStock(),
-        ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $health
-     * @return array<string, mixed>
-     */
-    private function actionCenter(array $health): array
-    {
-        $priority = collect($health['priorityChecks'] ?? [])->take(4)->values();
-
-        return [
-            'score' => $health['score'] ?? 0,
-            'ready' => $health['ready'] ?? 0,
-            'attention' => $health['attention'] ?? 0,
-            'critical' => $health['critical'] ?? 0,
-            'priority' => $priority->all(),
-            'quickActions' => [
-                ['label' => 'New product', 'icon' => 'fa-plus', 'url' => route('admin.products.create'), 'tone' => 'dark'],
-                ['label' => 'Create deal', 'icon' => 'fa-tags', 'url' => route('admin.deals.create'), 'tone' => 'teal'],
-                ['label' => 'New coupon', 'icon' => 'fa-ticket', 'url' => route('admin.coupons.create'), 'tone' => 'amber'],
-                ['label' => 'Purchase order', 'icon' => 'fa-clipboard-list', 'url' => route('admin.purchase-orders.create'), 'tone' => 'blue'],
-                ['label' => 'Upload media', 'icon' => 'fa-photo-film', 'url' => route('admin.media.index'), 'tone' => 'slate'],
-                ['label' => 'Setup health', 'icon' => 'fa-list-check', 'url' => route('admin.setup-health.index'), 'tone' => 'green'],
-            ],
         ];
     }
 
@@ -317,11 +289,11 @@ final class DashboardService
 
         return [
             [
-                'label' => 'Pending orders',
-                'value' => Order::where('status', OrderStatus::Pending->value)->count(),
-                'icon' => 'fa-receipt',
+                'label' => 'Unfulfilled orders',
+                'value' => Order::where('fulfillment_status', FulfillmentStatus::Unfulfilled->value)->count(),
+                'icon' => 'fa-box-open',
                 'tone' => 'info',
-                'url' => route('admin.orders.index', ['status' => OrderStatus::Pending->value]),
+                'url' => route('admin.orders.index', ['fulfillment_status' => FulfillmentStatus::Unfulfilled->value]),
             ],
             [
                 'label' => 'Unpaid orders',
@@ -380,8 +352,8 @@ final class DashboardService
             OrderStatus::Shipped->value,
         ])->count();
 
-        $shipped = Order::where('status', OrderStatus::Shipped->value)->count();
-        $delivered = Order::where('status', OrderStatus::Delivered->value)->where('updated_at', '>=', $start)->count();
+        $shipped = Order::whereIn('fulfillment_status', [FulfillmentStatus::Partial->value, FulfillmentStatus::Fulfilled->value])->count();
+        $delivered = Order::where('fulfillment_status', FulfillmentStatus::Fulfilled->value)->where('updated_at', '>=', $start)->count();
         $cancelled = Order::where('status', OrderStatus::Cancelled->value)->where('updated_at', '>=', $start)->count();
         $total = max(1, $open + $delivered + $cancelled);
 

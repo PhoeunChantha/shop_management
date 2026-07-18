@@ -244,4 +244,77 @@ Alpine.data('bulkSelect', () => ({
     },
 }));
 
+Alpine.data('commandPalette', (url) => ({
+    open: false,
+    query: '',
+    groups: [],
+    loading: false,
+    activeUrl: null,
+    timer: null,
+
+    init() {
+        window.addEventListener('keydown', (event) => {
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+                event.preventDefault();
+                this.openPalette();
+            }
+        });
+    },
+
+    openPalette() {
+        this.open = true;
+        this.search();
+        this.$nextTick(() => this.$refs.input?.focus());
+    },
+
+    closePalette() {
+        this.open = false;
+        this.activeUrl = null;
+    },
+
+    visibleGroups() {
+        return this.groups.filter((group) => group.items && group.items.length);
+    },
+
+    flatItems() {
+        return this.visibleGroups().flatMap((group) => group.items);
+    },
+
+    move(step) {
+        const items = this.flatItems();
+        if (!items.length) return;
+
+        const index = Math.max(0, items.findIndex((item) => item.url === this.activeUrl));
+        const next = (index + step + items.length) % items.length;
+        this.activeUrl = items[next].url;
+    },
+
+    goSelected() {
+        const target = this.activeUrl || this.flatItems()[0]?.url;
+        if (target) window.location.href = target;
+    },
+
+    search() {
+        clearTimeout(this.timer);
+        this.timer = setTimeout(async () => {
+            this.loading = true;
+
+            try {
+                const response = await fetch(`${url}?q=${encodeURIComponent(this.query)}`, {
+                    headers: { Accept: 'application/json' },
+                });
+                const payload = await response.json();
+                this.groups = payload.groups || [];
+                this.activeUrl = this.flatItems()[0]?.url || null;
+            } catch (error) {
+                console.error('Command palette search failed.', error);
+                this.groups = [];
+                this.activeUrl = null;
+            } finally {
+                this.loading = false;
+            }
+        }, 120);
+    },
+}));
+
 Alpine.start();

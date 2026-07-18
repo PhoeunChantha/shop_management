@@ -1,13 +1,19 @@
 @php
     $modules = [
         [
-            'label' => 'Command',
+            'type' => 'link',
+            'label' => 'Dashboard',
             'caption' => 'Store overview',
             'icon' => 'fa-gauge-high',
-            'routes' => ['admin.dashboard', 'admin.setup-health.*', 'admin.reports.*'],
+            'route' => 'admin.dashboard',
+            'routes' => ['admin.dashboard'],
+        ],
+        [
+            'label' => 'Reports',
+            'caption' => 'Analytics and exports',
+            'icon' => 'fa-chart-column',
+            'routes' => ['admin.reports.*'],
             'items' => [
-                ['label' => 'Dashboard', 'icon' => 'fa-gauge-high', 'route' => 'admin.dashboard', 'active' => ['admin.dashboard']],
-                ['label' => 'Setup Health', 'icon' => 'fa-list-check', 'route' => 'admin.setup-health.index', 'active' => ['admin.setup-health.*']],
                 ['label' => 'Reports', 'icon' => 'fa-chart-column', 'route' => 'admin.reports.index', 'active' => ['admin.reports.*']],
             ],
         ],
@@ -30,7 +36,8 @@
             'routes' => ['admin.products.*', 'admin.inventory.*', 'admin.suppliers.*', 'admin.purchase-orders.*', 'admin.reviews.*', 'admin.brands.*', 'admin.categories.*', 'admin.attributes.*', 'admin.sizes.*', 'admin.colors.*'],
             'items' => [
                 ['label' => 'Products', 'icon' => 'fa-box-open', 'route' => 'admin.products.index', 'active' => ['admin.products.*']],
-                ['label' => 'Inventory', 'icon' => 'fa-warehouse', 'route' => 'admin.inventory.index', 'active' => ['admin.inventory.*']],
+                ['label' => 'Inventory', 'icon' => 'fa-warehouse', 'route' => 'admin.inventory.index', 'active' => ['admin.inventory.index', 'admin.inventory.show', 'admin.inventory.adjust']],
+                ['label' => 'Reorder Alerts', 'icon' => 'fa-truck-ramp-box', 'route' => 'admin.inventory.reorder', 'active' => ['admin.inventory.reorder', 'admin.inventory.reorder.*']],
                 ['label' => 'Purchase Orders', 'icon' => 'fa-clipboard-list', 'route' => 'admin.purchase-orders.index', 'active' => ['admin.purchase-orders.*']],
                 ['label' => 'Suppliers', 'icon' => 'fa-truck-field', 'route' => 'admin.suppliers.index', 'active' => ['admin.suppliers.*']],
                 ['label' => 'Reviews', 'icon' => 'fa-star', 'route' => 'admin.reviews.index', 'active' => ['admin.reviews.*']],
@@ -82,8 +89,9 @@
             'label' => 'Operations',
             'caption' => 'Store configuration',
             'icon' => 'fa-gear',
-            'routes' => ['admin.shipping.*', 'admin.taxes.*', 'admin.saved-views.*', 'admin.notifications.*', 'admin.settings.*', 'admin.activity.*'],
+            'routes' => ['admin.setup-health.*', 'admin.shipping.*', 'admin.taxes.*', 'admin.saved-views.*', 'admin.notifications.*', 'admin.settings.*', 'admin.activity.*'],
             'items' => [
+                ['label' => 'Setup Health', 'icon' => 'fa-list-check', 'route' => 'admin.setup-health.index', 'active' => ['admin.setup-health.*']],
                 ['label' => 'Shipping Methods', 'icon' => 'fa-truck', 'route' => 'admin.shipping.index', 'active' => ['admin.shipping.*']],
                 ['label' => 'Tax Rules', 'icon' => 'fa-percent', 'route' => 'admin.taxes.index', 'active' => ['admin.taxes.*']],
                 ['label' => 'Saved Views', 'icon' => 'fa-bookmark', 'route' => 'admin.saved-views.index', 'active' => ['admin.saved-views.*']],
@@ -123,29 +131,41 @@
 
         @foreach ($modules as $module)
             @php($moduleActive = request()->routeIs(...$module['routes']))
-            <section class="admin-module" x-data="{ open: {{ $moduleActive ? 'true' : 'false' }} }" :class="{ 'is-open': open }">
-                <button type="button" class="admin-module__toggle {{ $moduleActive ? 'has-active' : '' }}"
-                    @click="open = !open" :aria-expanded="open ? 'true' : 'false'">
-                    <span class="admin-module__icon"><i class="fa-solid {{ $module['icon'] }}"></i></span>
-                    <span class="admin-module__copy">
-                        <strong>{{ $module['label'] }}</strong>
-                        <small>{{ $module['caption'] }}</small>
+            @if (($module['type'] ?? 'group') === 'link')
+                <a href="{{ route($module['route']) }}" class="admin-module admin-module--link {{ $moduleActive ? 'is-open' : '' }}">
+                    <span class="admin-module__toggle {{ $moduleActive ? 'has-active' : '' }}">
+                        <span class="admin-module__icon"><i class="fa-solid {{ $module['icon'] }}"></i></span>
+                        <span class="admin-module__copy">
+                            <strong>{{ $module['label'] }}</strong>
+                            <small>{{ $module['caption'] }}</small>
+                        </span>
                     </span>
-                    <i class="fa-solid fa-chevron-down admin-module__caret"></i>
-                </button>
+                </a>
+            @else
+                <section class="admin-module" x-data="{ open: {{ $moduleActive ? 'true' : 'false' }} }" :class="{ 'is-open': open }">
+                    <button type="button" class="admin-module__toggle {{ $moduleActive ? 'has-active' : '' }}"
+                        @click="open = !open" :aria-expanded="open ? 'true' : 'false'">
+                        <span class="admin-module__icon"><i class="fa-solid {{ $module['icon'] }}"></i></span>
+                        <span class="admin-module__copy">
+                            <strong>{{ $module['label'] }}</strong>
+                            <small>{{ $module['caption'] }}</small>
+                        </span>
+                        <i class="fa-solid fa-chevron-down admin-module__caret"></i>
+                    </button>
 
-                <div class="admin-module__submenu">
-                    <div class="admin-module__submenu-inner">
-                        @foreach ($module['items'] as $item)
-                            <a href="{{ route($item['route']) }}"
-                                class="admin-module__link {{ request()->routeIs(...$item['active']) ? 'active' : '' }}">
-                                <span><i class="fa-solid {{ $item['icon'] }}"></i></span>
-                                <strong>{{ $item['label'] }}</strong>
-                            </a>
-                        @endforeach
+                    <div class="admin-module__submenu">
+                        <div class="admin-module__submenu-inner">
+                            @foreach ($module['items'] as $item)
+                                <a href="{{ route($item['route']) }}"
+                                    class="admin-module__link {{ request()->routeIs(...$item['active']) ? 'active' : '' }}">
+                                    <span><i class="fa-solid {{ $item['icon'] }}"></i></span>
+                                    <strong>{{ $item['label'] }}</strong>
+                                </a>
+                            @endforeach
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
+            @endif
         @endforeach
     </div>
 

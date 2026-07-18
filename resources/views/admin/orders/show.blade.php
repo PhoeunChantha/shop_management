@@ -19,6 +19,9 @@
                     <span class="status-chip {{ $order->payment_status->badge() }}">
                         <i class="fa-solid fa-credit-card me-1"></i>{{ $order->payment_status->label() }}
                     </span>
+                    <span class="status-chip {{ $order->fulfillment_status->badge() }}">
+                        <i class="fa-solid fa-truck-fast me-1"></i>{{ $order->fulfillment_status->label() }}
+                    </span>
                 </div>
                 <p class="text-sm text-gray-500 dark:text-slate-400 mt-2 mb-0">
                     Placed {{ ($order->placed_at ?? $order->created_at)?->format('M d, Y \a\t g:i A') }}
@@ -56,8 +59,8 @@
                 <strong>{{ $order->user ? 'Account' : 'Guest' }}</strong>
             </div>
             <div class="order-detail-summary__card">
-                <span>Tracking</span>
-                <strong>{{ $order->tracking_number ? 'Added' : 'Pending' }}</strong>
+                <span>Fulfillment</span>
+                <strong>{{ $order->fulfillment_status->label() }}</strong>
             </div>
         </div>
 
@@ -195,7 +198,7 @@
                 <section class="premium-card form-panel order-fulfilment-card">
                     <div class="form-panel-header">
                         <div class="form-panel-icon"><i class="fa-solid fa-truck-fast"></i></div>
-                        <div><h3>Fulfilment</h3><p>Update status, payment, tracking and notes.</p></div>
+                        <div><h3>Fulfillment</h3><p>Update shipping state, carrier, tracking and notes.</p></div>
                     </div>
                     <form action="{{ route('admin.orders.update', $order->id) }}" method="POST" class="form-panel-body d-flex flex-column gap-3">
                         @csrf
@@ -219,10 +222,31 @@
                             @error('payment_status')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-field">
+                            <label for="fulfillment_status">Fulfillment status</label>
+                            <select name="fulfillment_status" id="fulfillment_status" class="form-input">
+                                @foreach (\App\Enums\FulfillmentStatus::options() as $val => $label)
+                                    <option value="{{ $val }}" @selected(old('fulfillment_status', $order->fulfillment_status->value) === $val)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            @error('fulfillment_status')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="form-field">
+                            <label for="carrier">Carrier</label>
+                            <input type="text" name="carrier" id="carrier" class="form-input"
+                                value="{{ old('carrier', $order->carrier) }}" placeholder="e.g. DHL, FedEx, local courier">
+                            @error('carrier')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="form-field">
                             <label for="tracking_number">Tracking number</label>
                             <input type="text" name="tracking_number" id="tracking_number" class="form-input"
                                 value="{{ old('tracking_number', $order->tracking_number) }}" placeholder="e.g. 1Z999AA10123456784">
                             @error('tracking_number')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="form-field">
+                            <label for="shipped_at">Shipped date</label>
+                            <input type="date" name="shipped_at" id="shipped_at" class="form-input"
+                                value="{{ old('shipped_at', $order->shipped_at?->format('Y-m-d')) }}">
+                            @error('shipped_at')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-field">
                             <label for="admin_note">Internal note</label>
@@ -276,10 +300,32 @@
                             <dt>Method</dt>
                             <dd>{{ $order->shipping_method ? ucfirst($order->shipping_method) : '—' }}</dd>
                         </div>
+                        <div class="order-info-row">
+                            <dt>Fulfillment</dt>
+                            <dd><span class="status-chip {{ $order->fulfillment_status->badge() }}">{{ $order->fulfillment_status->label() }}</span></dd>
+                        </div>
+                        @if ($order->carrier)
+                            <div class="order-info-row">
+                                <dt>Carrier</dt>
+                                <dd>{{ $order->carrier }}</dd>
+                            </div>
+                        @endif
                         @if ($order->tracking_number)
                             <div class="order-info-row">
                                 <dt>Tracking</dt>
                                 <dd class="font-mono">{{ $order->tracking_number }}</dd>
+                            </div>
+                        @endif
+                        @if ($order->shipped_at)
+                            <div class="order-info-row">
+                                <dt>Shipped on</dt>
+                                <dd>{{ $order->shipped_at->format('M d, Y') }}</dd>
+                            </div>
+                        @endif
+                        @if ($order->fulfilled_at)
+                            <div class="order-info-row">
+                                <dt>Fulfilled on</dt>
+                                <dd>{{ $order->fulfilled_at->format('M d, Y') }}</dd>
                             </div>
                         @endif
                     </dl>

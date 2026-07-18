@@ -4,13 +4,21 @@
     $unreadNotifications = $adminUnreadNotifications ?? 0;
 @endphp
 
-<div class="container-fluid py-2 px-4 d-flex justify-content-between align-items-center gap-3">
+<div class="container-fluid py-2 px-4 d-flex justify-content-between align-items-center gap-3"
+    x-data="commandPalette('{{ route('admin.command-palette') }}')"
+    x-init="init()">
 
     <div class="page-title fs-5 fw-bold text-dark min-w-0">
         {{ $header }}
     </div>
 
     <div class="d-flex align-items-center text-secondary small flex-shrink-0 gap-2">
+
+        <button type="button" class="admin-command-trigger" @click="openPalette()" aria-label="Open command palette">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <span class="d-none d-md-inline">Search admin...</span>
+            <kbd class="d-none d-lg-inline">Ctrl K</kbd>
+        </button>
 
         {{-- Language switcher --}}
         <div class="language-switch d-none d-sm-inline-flex align-items-center p-1 rounded-pill">
@@ -129,5 +137,67 @@
             </div>
         @endauth
 
+    </div>
+
+    <div class="command-palette-backdrop" x-show="open" x-cloak
+        x-transition:enter="command-palette-backdrop--enter"
+        x-transition:enter-start="command-palette-backdrop--enter-start"
+        x-transition:enter-end="command-palette-backdrop--enter-end"
+        x-transition:leave="command-palette-backdrop--leave"
+        x-transition:leave-start="command-palette-backdrop--leave-start"
+        x-transition:leave-end="command-palette-backdrop--leave-end"
+        @click.self="closePalette()" @keydown.escape.window="closePalette()" style="display:none;">
+        <div class="command-palette-panel"
+            x-transition:enter="command-palette-panel--enter"
+            x-transition:enter-start="command-palette-panel--enter-start"
+            x-transition:enter-end="command-palette-panel--enter-end"
+            x-transition:leave="command-palette-panel--leave"
+            x-transition:leave-start="command-palette-panel--leave-start"
+            x-transition:leave-end="command-palette-panel--leave-end">
+            <div class="command-palette-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="search" x-ref="input" x-model.debounce.180ms="query"
+                    @input="search()" @keydown.arrow-down.prevent="move(1)" @keydown.arrow-up.prevent="move(-1)"
+                    @keydown.enter.prevent="goSelected()" placeholder="Search products, orders, customers, returns, media...">
+                <button type="button" @click="closePalette()" aria-label="Close command palette">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="command-palette-body">
+                <template x-if="loading">
+                    <div class="command-palette-empty">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                        <span>Searching admin...</span>
+                    </div>
+                </template>
+
+                <template x-if="!loading && visibleGroups().length === 0">
+                    <div class="command-palette-empty">
+                        <i class="fa-regular fa-compass"></i>
+                        <strong>No results</strong>
+                        <span>Try an order number, product SKU, customer email, or page name.</span>
+                    </div>
+                </template>
+
+                <template x-for="group in visibleGroups()" :key="group.label">
+                    <section class="command-palette-group">
+                        <p x-text="group.label"></p>
+                        <template x-for="item in group.items" :key="item.url">
+                            <a :href="item.url" class="command-palette-result"
+                                :class="{ 'is-active': activeUrl === item.url }"
+                                @mouseenter="activeUrl = item.url">
+                                <span class="command-palette-result__icon"><i class="fa-solid" :class="item.icon"></i></span>
+                                <span class="command-palette-result__copy">
+                                    <strong x-text="item.title"></strong>
+                                    <small x-text="item.subtitle"></small>
+                                </span>
+                                <i class="fa-solid fa-arrow-right command-palette-result__arrow"></i>
+                            </a>
+                        </template>
+                    </section>
+                </template>
+            </div>
+        </div>
     </div>
 </div>

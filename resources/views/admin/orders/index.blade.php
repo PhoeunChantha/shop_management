@@ -22,8 +22,8 @@
                 ['label' => 'Revenue', 'value' => '$' . number_format($stats['revenue'], 2), 'icon' => 'fa-sack-dollar', 'tone' => 'emerald'],
                 ['label' => 'Orders', 'value' => number_format($stats['orders']), 'icon' => 'fa-receipt', 'tone' => 'blue'],
                 ['label' => 'Pending', 'value' => number_format($stats['pending']), 'icon' => 'fa-clock', 'tone' => 'amber'],
+                ['label' => 'Unfulfilled', 'value' => number_format($stats['unfulfilled']), 'icon' => 'fa-box-open', 'tone' => 'rose'],
                 ['label' => 'Avg. order value', 'value' => '$' . number_format($stats['aov'], 2), 'icon' => 'fa-chart-line', 'tone' => 'violet'],
-                ['label' => 'Refunded', 'value' => '$' . number_format($stats['refunded'], 2), 'icon' => 'fa-rotate-left', 'tone' => 'rose'],
             ])
             @foreach ($cards as $c)
                 <div class="order-stat">
@@ -39,7 +39,7 @@
         @include('admin.saved-views._bar', ['scope' => 'orders', 'icon' => 'fa-receipt', 'color' => '#2563eb'])
 
         {{-- Filters --}}
-        <x-filter-card :action="route('admin.orders.index')" :grid="'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3'">
+        <x-filter-card :action="route('admin.orders.index')" :grid="'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3'">
             <x-slot:hidden>
                 <input type="hidden" name="search" value="{{ request('search') }}">
                 <input type="hidden" name="per_page" value="{{ $perPage }}">
@@ -47,6 +47,9 @@
 
             <x-select name="status" size="sm" label="Status" :value="request('status')" placeholder="Any status"
                 :options="\App\Enums\OrderStatus::options()" />
+
+            <x-select name="fulfillment_status" size="sm" label="Fulfillment" :value="request('fulfillment_status')" placeholder="Any fulfillment"
+                :options="\App\Enums\FulfillmentStatus::options()" />
 
             <x-select name="payment_status" size="sm" label="Payment" :value="request('payment_status')" placeholder="Any payment"
                 :options="\App\Enums\PaymentStatus::options()" />
@@ -90,6 +93,7 @@
                             <th style="width:80px;">Items</th>
                             <th>Total</th>
                             <th>Payment</th>
+                            <th>Fulfillment</th>
                             <th>Status</th>
                             <th>Date</th>
                             <th class="text-end" style="width:96px;">Actions</th>
@@ -118,6 +122,12 @@
                                         <i class="fa-regular fa-credit-card"></i>{{ $order->payment_method ? strtoupper($order->payment_method) : '—' }}
                                     </div>
                                 </td>
+                                <td>
+                                    <span class="status-chip {{ $order->fulfillment_status->badge() }}">{{ $order->fulfillment_status->label() }}</span>
+                                    <div class="orders-pay__method">
+                                        <i class="fa-solid fa-truck-fast"></i>{{ $order->carrier ?: ($order->tracking_number ? 'Tracking added' : 'No carrier') }}
+                                    </div>
+                                </td>
                                 <td><span class="status-chip {{ $order->status->badge() }}">{{ $order->status->label() }}</span></td>
                                 <td class="dash-table__date">{{ ($order->placed_at ?? $order->created_at)?->format('M d, Y') }}</td>
                                 <td class="text-end">
@@ -141,7 +151,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8">
+                                <td colspan="9">
                                     <x-admin.empty-state
                                         icon="fa-solid fa-receipt"
                                         title="No orders found"

@@ -50,53 +50,6 @@
             </div>
         </div>
 
-        {{-- ============ Action center ============ --}}
-        <section class="dash-action-center">
-            <div class="dash-action-center__readiness">
-                <div class="dash-action-score" style="--score: {{ $actionCenter['score'] }};">
-                    <strong>{{ $actionCenter['score'] }}%</strong>
-                    <span>Ready</span>
-                </div>
-                <div class="dash-action-center__copy">
-                    <p class="section-kicker mb-1">Action Center</p>
-                    <h3>{{ $actionCenter['critical'] > 0 ? 'Critical admin tasks need review' : ($actionCenter['attention'] > 0 ? 'Admin system is close to ready' : 'Admin system is ready') }}</h3>
-                    <p>{{ $actionCenter['ready'] }} checks ready, {{ $actionCenter['attention'] }} need attention, {{ $actionCenter['critical'] }} critical.</p>
-                </div>
-                <a href="{{ route('admin.setup-health.index') }}" class="dash-action-center__link">
-                    Open health <i class="fa-solid fa-arrow-right"></i>
-                </a>
-            </div>
-
-            <div class="dash-action-center__priority">
-                @forelse ($actionCenter['priority'] as $item)
-                    <a href="{{ $item['url'] }}" class="dash-priority-item dash-priority-item--{{ $item['status'] }}">
-                        <span><i class="fa-solid {{ $item['status'] === 'critical' ? 'fa-triangle-exclamation' : 'fa-circle-info' }}"></i></span>
-                        <div>
-                            <strong>{{ $item['title'] }}</strong>
-                            <small>{{ number_format($item['count']) }} {{ $item['positiveCount'] ? 'found' : 'open' }}</small>
-                        </div>
-                    </a>
-                @empty
-                    <div class="dash-priority-item dash-priority-item--ready">
-                        <span><i class="fa-solid fa-circle-check"></i></span>
-                        <div>
-                            <strong>No urgent tasks</strong>
-                            <small>All health checks are clean</small>
-                        </div>
-                    </div>
-                @endforelse
-            </div>
-
-            <div class="dash-action-center__quick">
-                @foreach ($actionCenter['quickActions'] as $action)
-                    <a href="{{ $action['url'] }}" class="dash-quick-action dash-quick-action--{{ $action['tone'] }}">
-                        <i class="fa-solid {{ $action['icon'] }}"></i>
-                        <span>{{ $action['label'] }}</span>
-                    </a>
-                @endforeach
-            </div>
-        </section>
-
         {{-- ============ KPI cards ============ --}}
         <div class="dash-kpis">
             @foreach ($kpis as $kpi)

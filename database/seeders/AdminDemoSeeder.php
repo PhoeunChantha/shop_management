@@ -526,6 +526,7 @@ class AdminDemoSeeder extends Seeder
             ['scope' => 'products', 'name' => 'On sale', 'route_name' => 'admin.products.index', 'query' => ['flag' => 'on_sale'], 'icon' => 'fa-tags', 'color' => '#dc2626', 'sort_order' => 3],
             ['scope' => 'orders', 'name' => 'Unpaid', 'route_name' => 'admin.orders.index', 'query' => ['payment_status' => 'unpaid'], 'icon' => 'fa-credit-card', 'color' => '#c9a227', 'sort_order' => 1],
             ['scope' => 'orders', 'name' => 'Processing', 'route_name' => 'admin.orders.index', 'query' => ['status' => 'processing'], 'icon' => 'fa-truck-fast', 'color' => '#2563eb', 'sort_order' => 2],
+            ['scope' => 'orders', 'name' => 'Unfulfilled', 'route_name' => 'admin.orders.index', 'query' => ['fulfillment_status' => 'unfulfilled'], 'icon' => 'fa-box-open', 'color' => '#dc2626', 'sort_order' => 3],
             ['scope' => 'customers', 'name' => 'VIP buyers', 'route_name' => 'admin.customers.index', 'query' => ['spend' => 'vip'], 'icon' => 'fa-crown', 'color' => '#7c3aed', 'sort_order' => 1],
             ['scope' => 'customers', 'name' => 'Repeat buyers', 'route_name' => 'admin.customers.index', 'query' => ['spend' => 'repeat'], 'icon' => 'fa-repeat', 'color' => '#0f766e', 'sort_order' => 2],
             ['scope' => 'returns', 'name' => 'Pending refund', 'route_name' => 'admin.returns.index', 'query' => ['refund_status' => 'pending'], 'icon' => 'fa-money-bill-transfer', 'color' => '#dc2626', 'sort_order' => 1],
