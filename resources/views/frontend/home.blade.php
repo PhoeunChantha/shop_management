@@ -187,7 +187,7 @@
         <section class="ut-wrap" style="margin-top:96px">
             <div data-reveal
                 style="background:var(--ink);border-radius:var(--r-xl);padding:clamp(24px,4vw,44px);color:#fff;position:relative;overflow:hidden"
-                data-countdown="{{ 7 * 3600 + 42 * 60 + 18 }}">
+                data-countdown="{{ (int) ($flashDeal['seconds'] ?? 7 * 3600 + 42 * 60 + 18) }}">
                 <div
                     style="position:absolute;top:-60px;right:-40px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(122,100,70,.55),transparent 70%)">
                 </div>
@@ -195,7 +195,7 @@
                     style="justify-content:space-between;flex-wrap:wrap;gap:18px;margin-bottom:28px;position:relative">
                     <div><span class="ut-eyebrow" style="color:var(--accent)"><x-frontend.icon n="flame" :size="13"
                                 style="vertical-align:-2px" /> Flash sale</span>
-                        <h2 style="color:#fff;font-size:clamp(26px,3vw,38px);margin-top:8px">Up to 40% off — ends soon</h2>
+                        <h2 style="color:#fff;font-size:clamp(26px,3vw,38px);margin-top:8px">{{ $flashDeal['title'] ?? 'Up to 40% off - ends soon' }}</h2>
                     </div>
                     <div class="ut-row" style="gap:10px">
                         @foreach ([['data-h', 'hrs'], ['data-m', 'min'], ['data-s', 'sec']] as $i => [$attr, $lab])
@@ -256,7 +256,7 @@
         {{-- REVIEWS --}}
         <section class="ut-wrap" style="margin-top:96px">
             <div class="ut-sec-head ut-testimonial-head" data-reveal>
-                <div><span class="ut-eyebrow">Loved by 50,000+</span>
+                <div><span class="ut-eyebrow">{{ $reviewMeta['eyebrow'] ?? 'Loved by 50,000+' }}</span>
                     <h2 style="margin-top:14px">What the community says</h2>
                 </div>
                 <div class="ut-testimonial-controls" aria-label="Review slider controls"><button type="button"
@@ -295,7 +295,7 @@
         {{-- INSTAGRAM --}}
         <section class="ut-wrap" style="margin-top:96px">
             <div class="ut-sec-head" data-reveal>
-                <div><span class="ut-eyebrow">@tshirtshop</span>
+                <div><span class="ut-eyebrow">{{ $instagramHandle ?? '@tshirtshop' }}</span>
                     <h2 style="margin-top:14px">Tag us to be featured</h2>
                 </div><a href="#" class="ut-link">Follow <x-frontend.icon n="arrowR" :size="16" /></a>
             </div>

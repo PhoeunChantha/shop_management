@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Color;
 use App\Models\Size;
 use App\Services\AdminNotificationService;
+use App\Services\FrontendNavigationService;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Schema;
@@ -57,6 +58,10 @@ class AppServiceProvider extends ServiceProvider
                 'adminHeaderNotifications' => $notifications->recentForHeader(),
                 'adminUnreadNotifications' => $notifications->unreadCount(),
             ]);
+        });
+
+        View::composer('components.frontend.header', function ($view): void {
+            $view->with('frontendNav', app(FrontendNavigationService::class)->data());
         });
     }
 }

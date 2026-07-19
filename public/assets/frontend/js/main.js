@@ -284,13 +284,13 @@
 
   /* ---------- countdown (flash sale) ---------- */
   document.querySelectorAll('[data-countdown]').forEach(node => {
-    let t = Number(node.getAttribute('data-countdown'));
+    let t = Math.max(0, Math.floor(Number(node.getAttribute('data-countdown')) || 0));
     const h = node.querySelector('[data-h]'), m = node.querySelector('[data-m]'), s = node.querySelector('[data-s]');
     const tick = () => {
       if (t > 0) t--;
       if (h) h.textContent = String(Math.floor(t / 3600)).padStart(2, '0');
       if (m) m.textContent = String(Math.floor((t % 3600) / 60)).padStart(2, '0');
-      if (s) s.textContent = String(t % 60).padStart(2, '0');
+      if (s) s.textContent = String(Math.floor(t % 60)).padStart(2, '0');
     };
     tick(); setInterval(tick, 1000);
   });

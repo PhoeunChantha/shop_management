@@ -2,12 +2,17 @@
 
 namespace App\Http\Controllers\Frontend;
 
+use App\Enums\ReviewStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
 use App\Models\Banner;
 use App\Models\Collection as ProductCollection;
+use App\Models\DealCampaign;
 use App\Models\Product;
+use App\Models\Review;
+use App\Models\Setting;
 use App\Support\Catalog;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
@@ -16,15 +21,7 @@ class HomeController extends Controller
     public function index(): View
     {
         $products = Product::query()
-            ->with([
-                'brand:id,name',
-                'category:id,name',
-                'subCategory:id,name',
-                'images:id,product_id,image,is_primary,sort_order',
-                'variants:id,product_id,color_id,size_id,price,stock,status',
-                'variants.color:id,name,code,hex_code',
-                'variants.size:id,name,code',
-            ])
+            ->with($this->productRelations())
             ->withSum('variants', 'stock')
             ->where('status', 'active')
             ->orderBy('sort_order')
@@ -35,29 +32,45 @@ class HomeController extends Controller
         $catalogProducts = collect(Catalog::products());
         $hasDynamicProducts = $mappedProducts->isNotEmpty();
         $homeProducts = $hasDynamicProducts ? $mappedProducts : $catalogProducts;
+        $flashDeal = $this->activeFlashDeal();
+        $flashProducts = $flashDeal['products'] ?: $this->section($homeProducts, fn (array $product) => filled($product['was']));
 
         return view('frontend.home', [
             'heroSlides' => $this->heroSlides(),
             'best' => $this->section($homeProducts, fn (array $product) => $product['badge'] === 'Best Seller' || $product['reviews'] > 200),
             'fresh' => $this->section($homeProducts, fn (array $product) => $product['tag'] === 'new'),
             'trend' => $this->section($homeProducts, fn (array $product) => (bool) ($product['featured'] ?? false), 4, 4),
-            'flash' => $this->section($homeProducts, fn (array $product) => filled($product['was'])),
+            'flash' => $flashProducts,
+            'flashDeal' => $flashDeal,
             'collections' => $this->collections(),
-            'reviews' => Catalog::reviews(),
+            'reviews' => $this->reviews(),
+            'reviewMeta' => $this->reviewMeta(),
             'marquee' => $this->marquee(),
             'instagramTiles' => $this->instagramTiles($homeProducts, $hasDynamicProducts),
-            'trustItems' => [
-                ['truck', 'Free shipping', 'On orders over $75'],
-                ['refresh', '30-day returns', 'No-questions-asked'],
-                ['shield', 'Secure checkout', '256-bit encryption'],
-                ['spark', 'Carbon neutral', 'Every delivery'],
-            ],
+            'instagramHandle' => $this->instagramHandle(),
+            'trustItems' => $this->trustItems(),
             'newsletter' => [
                 'eyebrow' => 'Members get more',
                 'title' => 'Get 10% off your first order',
                 'copy' => 'Early access to drops, members-only pricing, and free shipping. No spam — just good tees.',
             ],
         ]);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function productRelations(): array
+    {
+        return [
+            'brand:id,name',
+            'category:id,name',
+            'subCategory:id,name',
+            'images:id,product_id,image,is_primary,sort_order',
+            'variants:id,product_id,color_id,size_id,price,stock,status',
+            'variants.color:id,name,code,hex_code',
+            'variants.size:id,name,code',
+        ];
     }
 
     private function heroSlides(): array
@@ -120,7 +133,117 @@ class HomeController extends Controller
             ->pluck('message')
             ->all();
 
-        return $announcements ?: Catalog::marquee();
+        return collect($announcements)
+            ->merge(Catalog::marquee())
+            ->filter()
+            ->unique(fn (string $message): string => mb_strtolower($message))
+            ->values()
+            ->take(6)
+            ->all();
+    }
+
+    /**
+     * @return array{title: string, seconds: int, products: array<int, array<string, mixed>>}
+     */
+    private function activeFlashDeal(): array
+    {
+        $deal = DealCampaign::query()
+            ->with(['products' => fn ($query) => $query
+                ->with($this->productRelations())
+                ->withSum('variants', 'stock')
+                ->where('status', 'active')
+                ->orderBy('sort_order')
+                ->limit(4)])
+            ->where('status', true)
+            ->where('type', 'flash')
+            ->where(function (Builder $query): void {
+                $query->whereNull('starts_at')->orWhere('starts_at', '<=', now());
+            })
+            ->where(function (Builder $query): void {
+                $query->whereNull('ends_at')->orWhere('ends_at', '>=', now());
+            })
+            ->orderBy('priority')
+            ->orderBy('ends_at')
+            ->first();
+
+        if (! $deal) {
+            return [
+                'title' => 'Up to 40% off - ends soon',
+                'seconds' => 7 * 3600 + 42 * 60 + 18,
+                'products' => [],
+            ];
+        }
+
+        return [
+            'title' => $deal->title,
+            'seconds' => $deal->ends_at ? (int) max(1, floor(now()->diffInSeconds($deal->ends_at, false))) : 24 * 3600,
+            'products' => $deal->products
+                ->map(fn (Product $product): array => $this->applyDealDiscount($this->mapProduct($product), $deal))
+                ->values()
+                ->all(),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $product
+     * @return array<string, mixed>
+     */
+    private function applyDealDiscount(array $product, DealCampaign $deal): array
+    {
+        $value = (float) $deal->discount_value;
+
+        if ($value <= 0 || ! in_array($deal->discount_type, ['fixed', 'percentage'], true)) {
+            return $product;
+        }
+
+        $basePrice = (float) $product['price'];
+        $discounted = match ($deal->discount_type) {
+            'percentage' => $basePrice - ($basePrice * min($value, 100) / 100),
+            'fixed' => $basePrice - $value,
+            default => $basePrice,
+        };
+
+        $product['was'] = $basePrice;
+        $product['price'] = max(0, round($discounted, 2));
+        $product['tag'] = 'sale';
+
+        return $product;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function reviews(): array
+    {
+        $reviews = Review::query()
+            ->with('user:id,name')
+            ->where('status', ReviewStatus::Approved->value)
+            ->latest()
+            ->limit(8)
+            ->get()
+            ->map(fn (Review $review): array => [
+                'name' => $review->author_name ?: $review->user?->name ?: 'Customer',
+                'city' => 'Verified buyer',
+                'rating' => $review->rating,
+                'text' => $review->body ?: $review->title ?: 'Great product and smooth shopping experience.',
+                'verified' => $review->is_verified,
+            ])
+            ->values()
+            ->all();
+
+        return $reviews ?: Catalog::reviews();
+    }
+
+    /**
+     * @return array{eyebrow: string}
+     */
+    private function reviewMeta(): array
+    {
+        $count = Review::query()->where('status', ReviewStatus::Approved->value)->count();
+
+        return [
+            'eyebrow' => $count > 0 ? 'Loved by '.number_format($count).' customers' : 'Loved by 50,000+',
+        ];
     }
 
     private function section(Collection $products, callable $filter, int $limit = 4, int $fallbackOffset = 0): array
@@ -175,8 +298,8 @@ class HomeController extends Controller
             'tag' => $product->is_on_sale ? 'sale' : ($product->is_new ? 'new' : null),
             'colors' => $colors ?: ['black'],
             'color_map' => $colorMap ?: Catalog::colors(),
-            'rating' => 5,
-            'reviews' => 0,
+            'rating' => (float) ($product->rating_avg ?: 5),
+            'reviews' => (int) $product->rating_count,
             'badge' => $product->is_best_seller ? 'Best Seller' : ($product->is_featured ? 'Featured' : null),
             'featured' => $product->is_featured,
             'brand' => $product->brand?->name ?: config('app.name'),
@@ -209,6 +332,33 @@ class HomeController extends Controller
             ])
             ->values()
             ->all();
+    }
+
+    private function instagramHandle(): string
+    {
+        $links = json_decode((string) Setting::get('social_links', '[]'), true) ?: [];
+        $instagram = collect($links)->first(fn (array $link): bool => str_contains((string) ($link['icon'] ?? ''), 'instagram'));
+        $url = (string) ($instagram['url'] ?? '');
+        $handle = trim((string) ($instagram['title'] ?? ''));
+
+        if ($url !== '' && preg_match('~instagram\.com/([^/?#]+)~i', $url, $matches)) {
+            $handle = $matches[1];
+        }
+
+        return '@'.ltrim($handle ?: 'tshirtshop', '@');
+    }
+
+    /**
+     * @return array<int, array{0: string, 1: string, 2: string}>
+     */
+    private function trustItems(): array
+    {
+        return [
+            ['truck', 'Free shipping', 'On orders over $75'],
+            ['refresh', '30-day returns', 'No-questions-asked'],
+            ['shield', 'Secure checkout', '256-bit encryption'],
+            ['spark', filled(Setting::get('site_tagline')) ? Setting::get('site_tagline') : 'Carbon neutral', 'Every delivery'],
+        ];
     }
 
     private function gradientFor(int $seed): string
