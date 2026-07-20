@@ -8,6 +8,7 @@ use App\Models\Collection as ProductCollection;
 use App\Models\Product;
 use App\Models\ProductTag;
 use App\Support\Catalog;
+use Illuminate\Support\Str;
 
 class FrontendNavigationService
 {
@@ -174,10 +175,10 @@ class FrontendNavigationService
             ->where('is_new', true)
             ->latest()
             ->limit($limit)
-            ->get(['id', 'name'])
+            ->get(['id', 'name', 'slug'])
             ->map(fn (Product $product): array => [
                 'label' => $product->name,
-                'url' => route('frontend.shop.show', $product->id),
+                'url' => route('frontend.shop.show', $this->productSlug($product)),
             ])
             ->values()
             ->all() ?: $this->fallbackLinks(['New arrivals', 'Latest drops', 'Trending now', 'Staff picks']);
@@ -193,10 +194,10 @@ class FrontendNavigationService
             ->where('is_best_seller', true)
             ->latest()
             ->limit($limit)
-            ->get(['id', 'name'])
+            ->get(['id', 'name', 'slug'])
             ->map(fn (Product $product): array => [
                 'label' => $product->name,
-                'url' => route('frontend.shop.show', $product->id),
+                'url' => route('frontend.shop.show', $this->productSlug($product)),
             ])
             ->values()
             ->all() ?: $this->fallbackLinks(['Most loved tees', 'Heavyweight favorites', 'Community picks', 'Sale best sellers']);
@@ -270,10 +271,10 @@ class FrontendNavigationService
             ->orderByDesc('is_featured')
             ->latest()
             ->limit($limit)
-            ->get(['id', 'name', 'price', 'discount_type', 'discount_amount'])
+            ->get(['id', 'name', 'slug', 'price', 'discount_type', 'discount_amount'])
             ->map(fn (Product $product): array => [
                 'label' => $product->name,
-                'url' => route('frontend.shop.show', $product->id),
+                'url' => route('frontend.shop.show', $this->productSlug($product)),
                 'price' => '$'.number_format((float) $product->final_price, 2),
             ])
             ->values()
@@ -322,5 +323,10 @@ class FrontendNavigationService
         return collect($labels)
             ->map(fn (string $label): array => ['label' => $label, 'url' => route('frontend.shop.index')])
             ->all();
+    }
+
+    private function productSlug(Product $product): string
+    {
+        return $product->slug ?: Str::slug($product->name);
     }
 }

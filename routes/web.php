@@ -53,7 +53,7 @@ Route::name('frontend.')->group(function () {
 
     // ---- Shop ----
     Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
-    Route::get('/shop/{id}', [ShopController::class, 'show'])->whereNumber('id')->name('shop.show');
+    Route::get('/shop/{product}', [ShopController::class, 'show'])->name('shop.show');
 
     // ---- Cart & Checkout ----
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');

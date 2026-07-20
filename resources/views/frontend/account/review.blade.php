@@ -2,6 +2,7 @@
 @section('title', 'Write a Review — T-Shirt Shop')
 
 @section('content')
+@php($productUrl = $product['url'] ?? route('frontend.shop.show', $product['slug'] ?? \Illuminate\Support\Str::slug($product['name'])))
 <div class="ut-wrap anim-up" style="padding-top:28px;max-width:620px">
     <a href="{{ route('frontend.account.orders') }}" class="ut-link" style="margin-bottom:18px;display:inline-flex"><x-frontend.icon n="arrowL" :size="16" /> Back</a>
     <h1 style="font-size:32px;margin-bottom:6px">Write a review</h1>
@@ -56,7 +57,7 @@
             '<div style="text-align:center;padding:60px 0"><div style="width:80px;height:80px;border-radius:50%;background:#dcfce7;color:#15803d;display:grid;place-items:center;margin:0 auto 20px"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg></div>'+
             '<h1 style="font-size:32px">Thanks for your review!</h1>'+
             '<p class="muted" style="margin:10px 0 24px">You earned <b style="color:var(--ink)">50 thread points</b>. Your review helps other shoppers.</p>'+
-            '<div class="ut-row" style="gap:12px;justify-content:center"><a href="{{ route('frontend.shop.show', $product['id']) }}" class="ut-btn ut-btn-ink ut-btn-lg">View product</a><a href="{{ route('frontend.account.orders') }}" class="ut-btn ut-btn-ghost ut-btn-lg">Back to orders</a></div></div>';
+            '<div class="ut-row" style="gap:12px;justify-content:center"><a href="{{ $productUrl }}" class="ut-btn ut-btn-ink ut-btn-lg">View product</a><a href="{{ route('frontend.account.orders') }}" class="ut-btn ut-btn-ghost ut-btn-lg">Back to orders</a></div></div>';
         return false;
     }
 </script>

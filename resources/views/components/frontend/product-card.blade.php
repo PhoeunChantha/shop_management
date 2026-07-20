@@ -3,13 +3,15 @@
     $p = $product;
     $off = $p['was'] ? round((1 - $p['price'] / $p['was']) * 100) : 0;
     $colors = $p['color_map'] ?? \App\Support\Catalog::colors();
-    $url = $p['url'] ?? route('frontend.shop.show', $p['id']);
+    $slug = $p['slug'] ?? \Illuminate\Support\Str::slug($p['name'] ?? (string) $p['id']);
+    $url = $p['url'] ?? route('frontend.shop.show', $slug);
 @endphp
 <article class="ut-card ut-pcard" style="position:relative">
     <a href="{{ $url }}" style="display:block">
-        <div style="position:relative">
+        <div class="ut-pcard-media" style="position:relative">
             @if (!empty($p['image_url']))
                 <img src="{{ $p['image_url'] }}" alt="{{ $p['name'] }}"
+                    class="ut-pcard-image"
                     style="width:100%;aspect-ratio:3/4;object-fit:cover;display:block">
             @else
                 <x-frontend.ph :tint="$p['tint']" :dark="$p['dark']" :label="'product · '.strtolower($p['cat'])" style="aspect-ratio:3/4" />

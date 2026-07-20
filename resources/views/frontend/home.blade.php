@@ -153,14 +153,15 @@
                         style="position:relative;border-radius:var(--r-lg);overflow:hidden;{{ $i === 0 ? 'grid-row:span 2;' : '' }}">
                         @if (!empty($c['image_url']))
                             <img src="{{ $c['image_url'] }}" alt="{{ $c['name'] }}"
+                                class="ut-coll-image"
                                 style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
                         @else
-                            <x-frontend.ph :tint="$c['tint']" :dark="$c['dark']" style="position:absolute;inset:0" />
+                            <x-frontend.ph :tint="$c['tint']" :dark="$c['dark']" class="ut-coll-image" style="position:absolute;inset:0" />
                         @endif
-                        <div
+                        <div class="ut-coll-shade"
                             style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.5))">
                         </div>
-                        <div
+                        <div class="ut-coll-copy"
                             style="position:absolute;left:0;right:0;bottom:0;padding:{{ $i === 0 ? '28px' : '18px' }};color:#fff">
                             <div
                                 style="font-family:var(--font-head);font-weight:700;font-size:{{ $i === 0 ? '28px' : '18px' }}">
@@ -168,7 +169,7 @@
                             <div style="opacity:.8;font-size:13px;margin-top:2px">{{ $c['sub'] }} ·
                                 {{ $c['count'] }} styles</div>
                         </div>
-                        <span class="icon-btn"
+                        <span class="icon-btn ut-coll-arrow"
                             style="position:absolute;top:14px;right:14px;background:#fff"><x-frontend.icon n="arrowR"
                                 :size="18" /></span>
                     </a>

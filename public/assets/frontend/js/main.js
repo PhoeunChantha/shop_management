@@ -196,10 +196,10 @@
       const ds = add.dataset;
       // size/color may come from selected controls on PDP, else defaults
       const scope = add.closest('[data-product-scope]') || document;
-      const sizeEl = scope.querySelector('[data-size].is-active');
+      const sizeEl = scope.querySelector('[data-size].is-active') || scope.querySelector('[data-size]');
       const colorEl = scope.querySelector('[data-color].is-active');
       const qtyEl = scope.querySelector('[data-qty-value]');
-      if (add.hasAttribute('data-require-size') && !sizeEl) { toast('Please select a size'); return; }
+      if (add.hasAttribute('data-require-size') && !sizeEl && !ds.size) { toast('Please select a size'); return; }
       addToCart({
         id: Number(ds.id), name: ds.name, price: Number(ds.price), tint: ds.tint || 'linear-gradient(150deg,#eef2f7,#e2e8f0)',
         size: sizeEl ? sizeEl.getAttribute('data-size') : (ds.size || 'M'),
