@@ -11,27 +11,22 @@ use App\Models\DealCampaign;
 use App\Models\Product;
 use App\Models\Review;
 use App\Models\Setting;
-use App\Support\Catalog;
+use App\Services\FrontendProductService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class HomeController extends Controller
 {
+    public function __construct(
+        private readonly FrontendProductService $products,
+    ) {}
+
     public function index(): View
     {
-        $products = Product::query()
-            ->with($this->productRelations())
-            ->withSum('variants', 'stock')
-            ->where('status', 'active')
-            ->orderBy('sort_order')
-            ->latest()
-            ->get();
-
-        $mappedProducts = $products->map(fn (Product $product) => $this->mapProduct($product))->values();
-        $catalogProducts = collect(Catalog::products());
+        $mappedProducts = $this->products->mappedActiveProducts();
         $hasDynamicProducts = $mappedProducts->isNotEmpty();
-        $homeProducts = $hasDynamicProducts ? $mappedProducts : $catalogProducts;
+        $homeProducts = $mappedProducts;
         $flashDeal = $this->activeFlashDeal();
         $flashProducts = $flashDeal['products'] ?: $this->section($homeProducts, fn (array $product) => filled($product['was']));
 
@@ -62,15 +57,7 @@ class HomeController extends Controller
      */
     private function productRelations(): array
     {
-        return [
-            'brand:id,name',
-            'category:id,name',
-            'subCategory:id,name',
-            'images:id,product_id,image,is_primary,sort_order',
-            'variants:id,product_id,color_id,size_id,price,stock,status',
-            'variants.color:id,name,code,hex_code',
-            'variants.size:id,name,code',
-        ];
+        return $this->products->relations();
     }
 
     private function heroSlides(): array
@@ -121,7 +108,10 @@ class HomeController extends Controller
             ->values()
             ->all();
 
-        return $collections ?: Catalog::collections();
+        return $collections ?: [
+            ['name' => 'Premium Basics', 'count' => 0, 'image_url' => null, 'tint' => 'linear-gradient(150deg,#e8e4dd,#cbbfa9)', 'dark' => false, 'sub' => 'Core products for clean merchandising.'],
+            ['name' => 'Editorial Picks', 'count' => 0, 'image_url' => null, 'tint' => 'linear-gradient(150deg,#dfe7ee,#bcccdb)', 'dark' => false, 'sub' => 'Featured products for homepage and campaign use.'],
+        ];
     }
 
     private function marquee(): array
@@ -134,12 +124,26 @@ class HomeController extends Controller
             ->all();
 
         return collect($announcements)
-            ->merge(Catalog::marquee())
+            ->merge($this->defaultMarquee())
             ->filter()
             ->unique(fn (string $message): string => mb_strtolower($message))
             ->values()
             ->take(6)
             ->all();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function defaultMarquee(): array
+    {
+        return [
+            'Free standard shipping over $75',
+            'Easy 30-day returns',
+            '240gsm organic cotton',
+            'Carbon-neutral delivery',
+            'Member early access',
+        ];
     }
 
     /**
@@ -178,7 +182,7 @@ class HomeController extends Controller
             'title' => $deal->title,
             'seconds' => $deal->ends_at ? (int) max(1, floor(now()->diffInSeconds($deal->ends_at, false))) : 24 * 3600,
             'products' => $deal->products
-                ->map(fn (Product $product): array => $this->applyDealDiscount($this->mapProduct($product), $deal))
+                ->map(fn (Product $product): array => $this->applyDealDiscount($this->products->map($product), $deal))
                 ->values()
                 ->all(),
         ];
@@ -231,7 +235,10 @@ class HomeController extends Controller
             ->values()
             ->all();
 
-        return $reviews ?: Catalog::reviews();
+        return $reviews ?: [
+            ['name' => 'Verified customer', 'city' => 'Recent buyer', 'rating' => 5, 'text' => 'Clean fit, fast checkout, and the fabric feels premium.', 'verified' => true],
+            ['name' => 'Store customer', 'city' => 'Repeat buyer', 'rating' => 5, 'text' => 'The product photos and sizing made it easy to choose.', 'verified' => true],
+        ];
     }
 
     /**
@@ -258,57 +265,6 @@ class HomeController extends Controller
         }
 
         return $items->values()->all();
-    }
-
-    private function mapProduct(Product $product): array
-    {
-        $colorRows = $product->variants
-            ->filter(fn ($variant) => $variant->color)
-            ->pluck('color')
-            ->unique('id')
-            ->values();
-
-        $colors = $colorRows
-            ->map(fn ($color) => $color->code ?: str($color->name)->slug()->toString())
-            ->filter()
-            ->values()
-            ->all();
-
-        $colorMap = $colorRows
-            ->mapWithKeys(fn ($color) => [
-                $color->code ?: str($color->name)->slug()->toString() => [
-                    'name' => $color->name,
-                    'hex' => $color->hex_code ?: '#1a1a1d',
-                ],
-            ])
-            ->all();
-
-        $price = (float) $product->final_price;
-        $was = $product->has_discount ? (float) $product->price : null;
-
-        return [
-            'id' => $product->id,
-            'url' => route('frontend.shop.index', ['product' => $product->id]),
-            'name' => $product->name,
-            'price' => $price,
-            'was' => $was,
-            'tint' => $this->gradientFor($product->id),
-            'dark' => $product->id % 5 === 0,
-            'cat' => $product->category?->name ?: 'Products',
-            'tag' => $product->is_on_sale ? 'sale' : ($product->is_new ? 'new' : null),
-            'colors' => $colors ?: ['black'],
-            'color_map' => $colorMap ?: Catalog::colors(),
-            'rating' => (float) ($product->rating_avg ?: 5),
-            'reviews' => (int) $product->rating_count,
-            'badge' => $product->is_best_seller ? 'Best Seller' : ($product->is_featured ? 'Featured' : null),
-            'featured' => $product->is_featured,
-            'brand' => $product->brand?->name ?: config('app.name'),
-            'subcat' => $product->subCategory?->name ?: $product->category?->name ?: 'General',
-            'sizes' => $product->variants->filter(fn ($variant) => $variant->size)->pluck('size.code')->filter()->unique()->values()->all(),
-            'desc' => $product->short_description ?: $product->description,
-            'gallery' => max(1, $product->images->count()),
-            'image_url' => $product->thumbnail_url,
-        ];
     }
 
     private function instagramTiles(Collection $products, bool $hasDynamicProducts): array

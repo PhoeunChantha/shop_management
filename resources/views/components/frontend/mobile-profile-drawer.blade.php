@@ -1,4 +1,4 @@
-@php $u = \App\Support\Catalog::user(); @endphp
+@php $u = app(\App\Services\FrontendAccountService::class)->user(); @endphp
 {{-- Mobile profile / account drawer (Bootstrap Offcanvas) --}}
 <div class="offcanvas offcanvas-end" tabindex="-1" id="profileDrawer" style="width:min(360px,88vw)">
     <div style="background:var(--ink);color:#fff;padding:22px 22px 24px">

@@ -1,7 +1,8 @@
 @props(['active' => 'dashboard'])
 @php
-    $u = \App\Support\Catalog::user();
-    $notifUnread = collect(\App\Support\Catalog::notifications())->where('unread', true)->count();
+    $account = app(\App\Services\FrontendAccountService::class);
+    $u = $account->user();
+    $notifUnread = $account->unreadNotifications();
     $nav = [
         ['dashboard', 'Dashboard', 'home', route('frontend.account.dashboard')],
         ['orders', 'Orders', 'box', route('frontend.account.orders')],

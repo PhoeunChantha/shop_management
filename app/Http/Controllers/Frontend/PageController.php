@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
-use App\Support\Catalog;
+use App\Models\Faq;
 use Illuminate\View\View;
 
 class PageController extends Controller
@@ -20,7 +20,20 @@ class PageController extends Controller
 
     public function faq(): View
     {
-        return view('frontend.pages.faq', ['faq' => Catalog::faq()]);
+        $faq = Faq::query()
+            ->where('status', true)
+            ->orderBy('sort_order')
+            ->latest()
+            ->get(['question', 'answer', 'category'])
+            ->map(fn (Faq $item): array => [
+                'cat' => $item->category ?: 'General',
+                'q' => $item->question,
+                'a' => $item->answer,
+            ])
+            ->values()
+            ->all();
+
+        return view('frontend.pages.faq', ['faq' => $faq]);
     }
 
     public function privacy(): View

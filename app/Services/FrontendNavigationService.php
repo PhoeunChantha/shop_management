@@ -7,7 +7,6 @@ use App\Models\Category;
 use App\Models\Collection as ProductCollection;
 use App\Models\Product;
 use App\Models\ProductTag;
-use App\Support\Catalog;
 use Illuminate\Support\Str;
 
 class FrontendNavigationService
@@ -157,12 +156,26 @@ class FrontendNavigationService
     private function fillAnnouncementLoop(array $messages): array
     {
         return collect($messages)
-            ->merge(Catalog::marquee())
+            ->merge($this->defaultAnnouncements())
             ->filter()
             ->unique(fn (string $message): string => mb_strtolower($message))
             ->values()
             ->take(6)
             ->all();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function defaultAnnouncements(): array
+    {
+        return [
+            'Free standard shipping over $75',
+            'Easy 30-day returns',
+            '240gsm organic cotton',
+            'Carbon-neutral delivery',
+            'Member early access',
+        ];
     }
 
     /**

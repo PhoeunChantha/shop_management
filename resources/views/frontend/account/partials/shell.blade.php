@@ -3,7 +3,7 @@
        @extends('frontend.account.partials.shell', ['active' => 'orders'])
        @section('account') ...page body... @endsection --}}
 @extends('frontend.layouts.frontend')
-@php $u = \App\Support\Catalog::user(); @endphp
+@php $u = app(\App\Services\FrontendAccountService::class)->user(); @endphp
 
 @push('head')
 <style>

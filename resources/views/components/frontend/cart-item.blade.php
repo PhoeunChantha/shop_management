@@ -1,6 +1,6 @@
 @props(['item', 'big' => false])
 {{-- Server-rendered cart line (e.g. order items). Live cart uses JS-rendered lines. --}}
-@php $colors = \App\Support\Catalog::colors(); $c = $colors[$item['color']] ?? ['name' => $item['color'], 'hex' => '#ccc']; @endphp
+@php $colors = app(\App\Services\FrontendProductService::class)->colors(); $c = $colors[$item['color']] ?? ['name' => $item['color'], 'hex' => '#ccc']; @endphp
 <div class="ut-row" style="gap:14px;padding:{{ $big ? '18px' : '14px' }} 0;border-bottom:1px solid var(--border-2);align-items:flex-start">
     <x-frontend.ph :tint="$item['tint'] ?? 'linear-gradient(150deg,#eef2f7,#e2e8f0)'"
         style="width:{{ $big ? '96px' : '72px' }};height:{{ $big ? '120px' : '90px' }};border-radius:14px;flex-shrink:0" />

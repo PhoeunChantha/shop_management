@@ -1,7 +1,7 @@
 @extends('frontend.account.partials.shell', ['active' => 'dashboard'])
 @section('title', 'Account — T-Shirt Shop')
 
-@php $activeProduct = $products[$active['items'][0]['pid']] ?? null; @endphp
+@php $activeProduct = $active && !empty($active['items']) ? ($products[$active['items'][0]['pid']] ?? null) : null; @endphp
 
 @section('account')
 <div class="ut-row" style="justify-content:space-between;align-items:flex-end;margin-bottom:18px;gap:12px;flex-wrap:wrap">
@@ -29,6 +29,7 @@
 
 {{-- active order --}}
 <div class="ut-card" style="padding:22px;margin-bottom:24px">
+    @if($active)
     <div class="ut-row" style="justify-content:space-between;margin-bottom:16px"><h3 style="font-size:17px">Latest order</h3><span class="ut-tag {{ $active['status'] === 'Delivered' ? 'ut-tag-success' : 'ut-tag-new' }}">{{ $active['status'] }}</span></div>
     @include('frontend.account.partials.mini-timeline', ['stage' => $active['stage']])
     <div class="ut-row" style="justify-content:space-between;margin-top:18px;flex-wrap:wrap;gap:12px">
@@ -41,6 +42,13 @@
             <a href="{{ route('frontend.account.orders.tracking', $active['id']) }}" class="ut-btn ut-btn-ink ut-btn-sm"><x-frontend.icon n="truck" :size="15" /> Track</a>
         </div>
     </div>
+    @else
+        <div style="text-align:center;padding:24px">
+            <h3 style="font-size:17px">No orders yet</h3>
+            <p class="muted" style="font-size:14px;margin:6px 0 16px">Your latest order will appear here after checkout.</p>
+            <a href="{{ route('frontend.shop.index') }}" class="ut-btn ut-btn-ink ut-btn-sm">Start shopping</a>
+        </div>
+    @endif
 </div>
 
 {{-- quick links --}}

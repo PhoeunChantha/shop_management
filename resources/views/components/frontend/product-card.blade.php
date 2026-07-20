@@ -2,7 +2,7 @@
 @php
     $p = $product;
     $off = $p['was'] ? round((1 - $p['price'] / $p['was']) * 100) : 0;
-    $colors = $p['color_map'] ?? \App\Support\Catalog::colors();
+    $colors = $p['color_map'] ?? app(\App\Services\FrontendProductService::class)->colors();
     $slug = $p['slug'] ?? \Illuminate\Support\Str::slug($p['name'] ?? (string) $p['id']);
     $url = $p['url'] ?? route('frontend.shop.show', $slug);
 @endphp

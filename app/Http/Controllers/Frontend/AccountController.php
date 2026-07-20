@@ -3,99 +3,104 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
-use App\Support\Catalog;
+use App\Services\FrontendAccountService;
 use Illuminate\View\View;
 
 class AccountController extends Controller
 {
+    public function __construct(
+        private readonly FrontendAccountService $account,
+    ) {}
+
     public function dashboard(): View
     {
-        $orders = Catalog::orders();
-        $active = collect($orders)->firstWhere('status', '!=', 'Delivered') ?? $orders[0];
+        $orders = $this->account->orders();
+        $active = collect($orders)->firstWhere('status', '!=', 'Delivered') ?? ($orders[0] ?? null);
 
         return view('frontend.account.dashboard', [
-            'user'         => Catalog::user(),
-            'orders'       => $orders,
-            'active'       => $active,
-            'products'     => collect(Catalog::products())->keyBy('id'),
-            'notifUnread'  => collect(Catalog::notifications())->where('unread', true)->count(),
+            'user' => $this->account->user(),
+            'orders' => $orders,
+            'active' => $active,
+            'products' => $this->account->productsById(),
+            'notifUnread' => $this->account->unreadNotifications(),
         ]);
     }
 
     public function profile(): View
     {
-        return view('frontend.account.profile', ['user' => Catalog::user()]);
+        return view('frontend.account.profile', ['user' => $this->account->user()]);
     }
 
     public function password(): View
     {
-        return view('frontend.account.password', ['user' => Catalog::user()]);
+        return view('frontend.account.password', ['user' => $this->account->user()]);
     }
 
     public function addresses(): View
     {
         return view('frontend.account.addresses', [
-            'user'      => Catalog::user(),
-            'addresses' => Catalog::addresses(),
+            'user' => $this->account->user(),
+            'addresses' => $this->account->addresses(),
         ]);
     }
 
     public function notifications(): View
     {
         return view('frontend.account.notifications', [
-            'user'          => Catalog::user(),
-            'notifications' => Catalog::notifications(),
+            'user' => $this->account->user(),
+            'notifications' => $this->account->notifications(),
         ]);
     }
 
     public function wishlist(): View
     {
         return view('frontend.account.wishlist', [
-            'user'     => Catalog::user(),
-            'products' => Catalog::products(),
-            'colors'   => Catalog::colors(),
+            'user' => $this->account->user(),
+            'products' => $this->account->wishlistProducts(),
+            'colors' => $this->account->colors(),
         ]);
     }
 
     public function orders(): View
     {
         return view('frontend.account.orders', [
-            'user'     => Catalog::user(),
-            'orders'   => Catalog::orders(),
-            'products' => collect(Catalog::products())->keyBy('id'),
+            'user' => $this->account->user(),
+            'orders' => $this->account->orders(),
+            'products' => $this->account->productsById(),
         ]);
     }
 
     public function orderDetail(string $id): View
     {
-        $order = Catalog::findOrder($id) ?? abort(404);
+        $order = $this->account->findOrder($id) ?? abort(404);
 
         return view('frontend.account.order-detail', [
-            'user'     => Catalog::user(),
-            'order'    => $order,
-            'products' => collect(Catalog::products())->keyBy('id'),
-            'colors'   => Catalog::colors(),
+            'user' => $this->account->user(),
+            'order' => $order,
+            'products' => $this->account->productsById(),
+            'colors' => $this->account->colors(),
         ]);
     }
 
     public function orderTracking(string $id): View
     {
-        $order = Catalog::findOrder($id) ?? abort(404);
+        $order = $this->account->findOrder($id) ?? abort(404);
 
         return view('frontend.account.order-tracking', [
-            'user'  => Catalog::user(),
+            'user' => $this->account->user(),
             'order' => $order,
         ]);
     }
 
     public function review(string $id, int $pid): View
     {
-        $order = Catalog::findOrder($id) ?? abort(404);
+        $order = $this->account->findOrder($id) ?? abort(404);
+        $product = $this->account->findProduct($pid) ?? abort(404);
 
         return view('frontend.account.review', [
-            'user'    => Catalog::user(),
-            'order'   => $order,
-            'product' => Catalog::find($pid) ?? abort(404),
+            'user' => $this->account->user(),
+            'order' => $order,
+            'product' => $product,
         ]);
     }
 }

@@ -57,7 +57,7 @@
 
 {{-- Expose data + named routes to plain JS --}}
 <script>
-    window.UT_COLORS = @json(\App\Support\Catalog::colors());
+    window.UT_COLORS = @json(app(\App\Services\FrontendProductService::class)->colors());
     window.UT_URLS = {
         shop: "{{ route('frontend.shop.index') }}",
         cart: "{{ route('frontend.cart.index') }}",
@@ -70,4 +70,3 @@
 @stack('scripts')
 </body>
 </html>
-
