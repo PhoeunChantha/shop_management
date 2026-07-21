@@ -1,9 +1,22 @@
-{{-- Shared legal layout. Pass $title, $updated, $sections (array of ['h'=>, 'p'=>[]]) --}}
+{{-- Shared legal layout.
+     Pass $title, $updated, and EITHER $sections (array of ['h'=>, 'p'=>[]])
+     OR $body (raw HTML from an admin-managed page). --}}
+@php($body = $body ?? null)
 @extends('frontend.layouts.frontend')
 @section('title', $title.' — T-Shirt Shop')
 
 @push('head')
-<style>.ut-legal-grid{ display:grid; grid-template-columns:240px 1fr; gap:48px; align-items:start; } @media (max-width:767px){ .ut-legal-grid{ grid-template-columns:1fr; } .ut-legal-toc{ display:none; } }</style>
+<style>
+    .ut-legal-grid{ display:grid; grid-template-columns:240px 1fr; gap:48px; align-items:start; }
+    @media (max-width:767px){ .ut-legal-grid{ grid-template-columns:1fr; } .ut-legal-toc{ display:none; } }
+    .ut-legal-body{ max-width:760px; }
+    .ut-legal-body h1,.ut-legal-body h2,.ut-legal-body h3{ font-family:var(--font-head); margin:26px 0 12px; line-height:1.25; }
+    .ut-legal-body h2{ font-size:22px; }
+    .ut-legal-body h3{ font-size:18px; }
+    .ut-legal-body p,.ut-legal-body li{ color:var(--text-2); font-size:15px; line-height:1.75; margin-bottom:12px; }
+    .ut-legal-body ul,.ut-legal-body ol{ padding-left:20px; margin-bottom:12px; }
+    .ut-legal-body a{ color:var(--text); text-decoration:underline; }
+</style>
 @endpush
 
 @section('content')
@@ -17,24 +30,28 @@
     </section>
 
     <section class="ut-wrap" style="margin-top:40px">
-        <div class="ut-legal-grid">
-            <aside class="ut-legal-toc ut-card" style="padding:14px;position:sticky;top:96px">
-                <div style="font-family:var(--font-head);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-2);padding:6px 10px 10px">On this page</div>
-                @foreach($sections as $i => $s)
-                    <a href="#sec-{{ $i }}" style="display:block;padding:9px 10px;border-radius:10px;font-family:var(--font-head);font-weight:500;font-size:13.5px;color:var(--text-2)">{{ $i + 1 }}. {{ $s['h'] }}</a>
-                @endforeach
-            </aside>
-            <div style="max-width:720px">
-                @foreach($sections as $i => $s)
-                    <div id="sec-{{ $i }}" style="margin-bottom:36px;scroll-margin-top:90px">
-                        <h2 style="font-size:22px;margin-bottom:12px">{{ $i + 1 }}. {{ $s['h'] }}</h2>
-                        @foreach($s['p'] as $para)
-                            <p class="muted" style="font-size:15px;line-height:1.75;margin-bottom:12px">{{ $para }}</p>
-                        @endforeach
-                    </div>
-                @endforeach
+        @if($body)
+            <div class="ut-legal-body" style="margin:0 auto 40px">{!! $body !!}</div>
+        @else
+            <div class="ut-legal-grid">
+                <aside class="ut-legal-toc ut-card" style="padding:14px;position:sticky;top:96px">
+                    <div style="font-family:var(--font-head);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-2);padding:6px 10px 10px">On this page</div>
+                    @foreach($sections as $i => $s)
+                        <a href="#sec-{{ $i }}" style="display:block;padding:9px 10px;border-radius:10px;font-family:var(--font-head);font-weight:500;font-size:13.5px;color:var(--text-2)">{{ $i + 1 }}. {{ $s['h'] }}</a>
+                    @endforeach
+                </aside>
+                <div style="max-width:720px">
+                    @foreach($sections as $i => $s)
+                        <div id="sec-{{ $i }}" style="margin-bottom:36px;scroll-margin-top:90px">
+                            <h2 style="font-size:22px;margin-bottom:12px">{{ $i + 1 }}. {{ $s['h'] }}</h2>
+                            @foreach($s['p'] as $para)
+                                <p class="muted" style="font-size:15px;line-height:1.75;margin-bottom:12px">{{ $para }}</p>
+                            @endforeach
+                        </div>
+                    @endforeach
+                </div>
             </div>
-        </div>
+        @endif
     </section>
 </div>
 @endsection

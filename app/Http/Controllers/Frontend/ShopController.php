@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Frontend;
 
+use App\Enums\ReviewStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\Review;
 use App\Services\FrontendProductService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
@@ -91,11 +93,28 @@ class ShopController extends Controller
             ->values()
             ->all();
 
+        $reviews = Review::query()
+            ->with('user:id,name')
+            ->where('product_id', $dynamicProduct->id)
+            ->where('status', ReviewStatus::Approved->value)
+            ->latest()
+            ->limit(6)
+            ->get()
+            ->map(fn (Review $review): array => [
+                'name' => $review->author_name ?: $review->user?->name ?: 'Customer',
+                'city' => $review->is_verified ? 'Verified buyer' : 'Customer',
+                'rating' => $review->rating,
+                'text' => $review->body ?: $review->title ?: '',
+                'verified' => (bool) $review->is_verified,
+            ])
+            ->values()
+            ->all();
+
         return view('frontend.shop.show', [
             'product' => $product,
             'related' => $related,
             'colors' => $product['color_map'] ?? $this->products->colors(),
-            'reviews' => [],
+            'reviews' => $reviews,
         ]);
     }
 }

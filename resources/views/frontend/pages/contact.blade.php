@@ -17,8 +17,13 @@
 
     <section class="ut-wrap" style="margin-top:48px">
         <div class="ut-contact-grid">
+            @php($contact = $contact ?? [])
             <div class="ut-col" style="gap:14px">
-                @foreach([['mail', 'Email us', 'help@tshirtshop.com', 'We reply within 24 hours'], ['truck', 'Order support', 'Track or manage orders', 'Mon–Fri, 9am–6pm ET'], ['ig', 'Social', '@tshirtshop', 'DMs always open']] as [$ic, $t, $v, $d])
+                @foreach([
+                    ['mail', 'Email us', ($contact['email'] ?? null) ?: 'help@tshirtshop.com', 'We reply within 24 hours'],
+                    ['truck', 'Order support', ($contact['phone'] ?? null) ?: 'Track or manage orders', ($contact['hours'] ?? null) ?: 'Mon–Fri, 9am–6pm ET'],
+                    ['ig', 'Social', '@tshirtshop', 'DMs always open'],
+                ] as [$ic, $t, $v, $d])
                     <div class="ut-card" style="padding:22px;display:flex;gap:16px;align-items:center">
                         <span style="width:48px;height:48px;border-radius:14px;background:var(--bg);display:grid;place-items:center;color:var(--blue);flex-shrink:0"><x-frontend.icon :n="$ic" :size="22" /></span>
                         <div><div style="font-family:var(--font-head);font-weight:700;font-size:14px">{{ $t }}</div><div style="font-family:var(--font-head);font-weight:600;font-size:15px;color:var(--blue)">{{ $v }}</div><div class="muted" style="font-size:12.5px">{{ $d }}</div></div>
@@ -26,7 +31,7 @@
                 @endforeach
                 <div class="ut-card" style="padding:0;overflow:hidden">
                     <x-frontend.ph tint="linear-gradient(150deg,#dde6ee,#b9cad9)" label="store map" style="aspect-ratio:16/9" />
-                    <div style="padding:18px"><div class="ut-row" style="gap:10px"><span style="color:var(--accent)"><x-frontend.icon n="pin" :size="18" /></span><div><div style="font-family:var(--font-head);font-weight:700;font-size:14px">Flagship store</div><div class="muted" style="font-size:13px">211 Wythe Ave, Brooklyn, NY</div></div></div></div>
+                    <div style="padding:18px"><div class="ut-row" style="gap:10px"><span style="color:var(--accent)"><x-frontend.icon n="pin" :size="18" /></span><div><div style="font-family:var(--font-head);font-weight:700;font-size:14px">{{ ($contact['store_name'] ?? null) ?: 'Flagship store' }}</div><div class="muted" style="font-size:13px">{{ ($contact['address'] ?? null) ?: '211 Wythe Ave, Brooklyn, NY' }}</div></div></div></div>
                 </div>
             </div>
 

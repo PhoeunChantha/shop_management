@@ -52,13 +52,22 @@
                 <div data-step style="display:none">
                     <h3 style="font-size:20px;margin-bottom:20px">Delivery</h3>
                     <div class="ut-col" style="gap:12px">
-                        @foreach([['Standard', '2–4 business days', 'Free', true], ['Express', '1–2 business days', '$14.95', false], ['Store pickup', 'Ready in 2 hours', 'Free', false]] as [$t, $d, $price, $sel])
-                            <label class="ut-radio-card {{ $sel ? 'sel' : '' }}" onclick="document.querySelectorAll('.ut-radio-card').forEach(c=>c.classList.remove('sel')); this.classList.add('sel');">
-                                <input type="radio" name="del" {{ $sel ? 'checked' : '' }} style="accent-color:var(--blue);width:18px;height:18px">
-                                <div style="flex:1"><div style="font-family:var(--font-head);font-weight:600">{{ $t }}</div><div class="muted" style="font-size:13px">{{ $d }}</div></div>
-                                <span style="font-family:var(--font-head);font-weight:700;color:{{ $price === 'Free' ? '#15803d' : 'var(--ink)' }}">{{ $price }}</span>
+                        @php($shippingMethods = $shippingMethods ?? [])
+                        @forelse($shippingMethods as $i => $m)
+                            @php($label = $m['type'] === 'free' ? 'Free' : '$'.number_format($m['rate'], 2))
+                            <label class="ut-radio-card {{ $i === 0 ? 'sel' : '' }}" onclick="document.querySelectorAll('.ut-radio-card').forEach(c=>c.classList.remove('sel')); this.classList.add('sel');">
+                                <input type="radio" name="del" value="{{ $m['id'] }}" {{ $i === 0 ? 'checked' : '' }}
+                                    onchange="window.__coRecalc && window.__coRecalc()" style="accent-color:var(--blue);width:18px;height:18px">
+                                <div style="flex:1"><div style="font-family:var(--font-head);font-weight:600">{{ $m['name'] }}</div><div class="muted" style="font-size:13px">{{ $m['description'] ?: 'Standard delivery' }}@if($m['type'] === 'free_over') · free over ${{ number_format($m['free_over'], 0) }}@endif</div></div>
+                                <span style="font-family:var(--font-head);font-weight:700;color:{{ $m['type'] === 'free' ? '#15803d' : 'var(--ink)' }}">{{ $label }}</span>
                             </label>
-                        @endforeach
+                        @empty
+                            <label class="ut-radio-card sel">
+                                <input type="radio" name="del" value="0" checked onchange="window.__coRecalc && window.__coRecalc()" style="accent-color:var(--blue);width:18px;height:18px">
+                                <div style="flex:1"><div style="font-family:var(--font-head);font-weight:600">Standard</div><div class="muted" style="font-size:13px">2–4 business days</div></div>
+                                <span style="font-family:var(--font-head);font-weight:700;color:#15803d">Free</span>
+                            </label>
+                        @endforelse
                     </div>
                 </div>
 
@@ -66,13 +75,19 @@
                 <div data-step style="display:none">
                     <h3 style="font-size:20px;margin-bottom:20px">Payment</h3>
                     <div class="ut-col" style="gap:16px">
-                        <div class="ut-row" style="gap:10px">
-                            @foreach([['Card', 'card', true], ['Apple Pay', 'lock', false], ['Google Pay', 'lock', false]] as [$t, $ic, $sel])
-                                <button type="button" class="pay-tab" onclick="document.querySelectorAll('.pay-tab').forEach(b=>b.style.borderColor='var(--border)'); this.style.borderColor='var(--ink)';"
-                                        style="flex:1;padding:14px;border-radius:var(--r-md);border:1.5px solid {{ $sel ? 'var(--ink)' : 'var(--border)' }};background:#fff;display:flex;flex-direction:column;align-items:center;gap:7px;font-family:var(--font-head);font-weight:600;font-size:13px">
-                                    <x-frontend.icon :n="$ic" :size="22" />{{ $t }}
+                        <div class="ut-row" style="gap:10px;flex-wrap:wrap">
+                            @php($paymentMethods = $paymentMethods ?? [])
+                            @forelse($paymentMethods as $i => $p)
+                                <button type="button" class="pay-tab" data-pay="{{ $p['code'] }}" data-type="{{ $p['type'] }}"
+                                        onclick="document.querySelectorAll('.pay-tab').forEach(b=>b.style.borderColor='var(--border)'); this.style.borderColor='var(--ink)';"
+                                        style="flex:1;min-width:96px;padding:14px;border-radius:var(--r-md);border:1.5px solid {{ $i === 0 ? 'var(--ink)' : 'var(--border)' }};background:#fff;display:flex;flex-direction:column;align-items:center;gap:7px;font-family:var(--font-head);font-weight:600;font-size:13px">
+                                    <x-frontend.icon :n="$p['type'] === 'manual' ? 'lock' : 'card'" :size="22" />{{ $p['name'] }}
                                 </button>
-                            @endforeach
+                            @empty
+                                <button type="button" class="pay-tab" style="flex:1;padding:14px;border-radius:var(--r-md);border:1.5px solid var(--ink);background:#fff;display:flex;flex-direction:column;align-items:center;gap:7px;font-family:var(--font-head);font-weight:600;font-size:13px">
+                                    <x-frontend.icon n="card" :size="22" />Card
+                                </button>
+                            @endforelse
                         </div>
                         <div class="field"><label>Card number</label><div style="position:relative"><input class="ut-input" placeholder="4242 4242 4242 4242" style="padding-right:42px"><span style="position:absolute;right:14px;top:14px;color:var(--text-2)"><x-frontend.icon n="card" :size="18" /></span></div></div>
                         <div class="ut-form-2">
@@ -120,31 +135,55 @@
 @endsection
 
 @push('scripts')
+<script>window.UT_CHECKOUT = { shipping: @json($shippingMethods ?? []), taxRate: {{ $taxRate ?? 0 }} };</script>
 <script>
-    // hydrate checkout summary lines from localStorage cart
+    // Checkout summary — totals reflect admin shipping methods + tax rate.
     (function(){
-        var cart = []; try { cart = JSON.parse(localStorage.getItem('ut_cart')||'[]'); } catch(e){}
         var wrap = document.getElementById('checkoutLines');
         var colors = window.UT_COLORS || {};
-        if(wrap && cart.length){
-            wrap.innerHTML = cart.map(function(it){
+        function cart(){ try { return JSON.parse(localStorage.getItem('ut_cart')||'[]'); } catch(e){ return []; } }
+        function money(n){ return '$'+(Math.round(n*100)/100).toFixed(2); }
+
+        function renderLines(items){
+            if(!wrap) return;
+            if(!items.length){ wrap.innerHTML='<p class="muted" style="font-size:14px;text-align:center;padding:20px 0">Your bag is empty. <a href="{{ route('frontend.shop.index') }}" style="color:var(--blue);font-weight:600">Shop tees</a></p>'; return; }
+            wrap.innerHTML = items.map(function(it){
                 var cn = (colors[it.color]||{}).name || it.color;
-                return '<div class="ut-row" style="gap:12px;padding:8px 0">'+
-                    '<div style="position:relative;flex-shrink:0"><div class="ph" style="width:54px;height:66px;border-radius:10px;--ph-tint:'+it.tint+'"></div>'+
+                var img = it.image ? '<img src="'+it.image+'" alt="" style="width:54px;height:66px;border-radius:10px;object-fit:cover">'
+                                   : '<div class="ph" style="width:54px;height:66px;border-radius:10px;--ph-tint:'+it.tint+'"></div>';
+                return '<div class="ut-row" style="gap:12px;padding:8px 0"><div style="position:relative;flex-shrink:0">'+img+
                     '<span class="ut-badge" style="top:-6px;right:-6px">'+it.qty+'</span></div>'+
                     '<div style="flex:1;min-width:0"><div style="font-family:var(--font-head);font-weight:600;font-size:13.5px">'+it.name+'</div>'+
                     '<div class="muted" style="font-size:12px">'+it.size+' · '+cn+'</div></div>'+
-                    '<span style="font-family:var(--font-head);font-weight:600;font-size:13.5px">$'+(it.price*it.qty)+'</span></div>';
+                    '<span style="font-family:var(--font-head);font-weight:600;font-size:13.5px">'+money(it.price*it.qty)+'</span></div>';
             }).join('');
-            var sub = cart.reduce(function(s,i){return s+i.price*i.qty;},0);
-            var shipping = sub>=75?0:6.95, tax=Math.round(sub*0.08*100)/100, total=sub+shipping+tax;
-            document.getElementById('sumSubtotal').textContent='$'+sub;
-            document.getElementById('sumShipping').textContent=shipping===0?'Free':'$'+shipping.toFixed(2);
-            document.getElementById('sumTax').textContent='$'+tax.toFixed(2);
-            document.getElementById('sumTotal').textContent='$'+total.toFixed(2);
-        } else if(wrap){
-            wrap.innerHTML='<p class="muted" style="font-size:14px;text-align:center;padding:20px 0">Your bag is empty. <a href="{{ route('frontend.shop.index') }}" style="color:var(--blue);font-weight:600">Shop tees</a></p>';
         }
+
+        window.__coRecalc = function(){
+            var items = cart();
+            renderLines(items);
+            var sub = items.reduce(function(s,i){ return s + i.price*i.qty; }, 0);
+            var cfg = window.UT_CHECKOUT || { shipping:[], taxRate:0 };
+            var selEl = document.querySelector('input[name="del"]:checked');
+            var method = null;
+            if(selEl){ method = (cfg.shipping||[]).find(function(m){ return String(m.id)===String(selEl.value); }); }
+            if(!method){ method = (cfg.shipping||[])[0]; }
+            var shipping = 0;
+            if(method){
+                if(method.type==='free') shipping = 0;
+                else if(method.type==='free_over') shipping = (method.free_over!=null && sub>=method.free_over) ? 0 : method.rate;
+                else shipping = method.rate;
+            }
+            var tax = Math.round(sub*(cfg.taxRate||0)*100)/100;
+            var total = sub + shipping + tax;
+            var g = function(id){ return document.getElementById(id); };
+            if(g('sumSubtotal')) g('sumSubtotal').textContent = money(sub);
+            if(g('sumShipping')) g('sumShipping').textContent = shipping===0 ? 'Free' : money(shipping);
+            if(g('sumTax')) g('sumTax').textContent = money(tax);
+            if(g('sumTotal')) g('sumTotal').textContent = money(total);
+        };
+
+        window.__coRecalc();
     })();
 </script>
 @endpush

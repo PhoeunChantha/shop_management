@@ -1,6 +1,8 @@
 @php
-    $title = 'Terms & Conditions';
-    $updated = 'June 1, 2026';
+    $page = $page ?? null;
+    $body = ($page && filled($page->content)) ? $page->content : null;
+    $title = $body ? $page->title : 'Terms & Conditions';
+    $updated = $body ? ($page->updated_at?->format('F j, Y') ?? 'Recently') : 'June 1, 2026';
     $sections = [
         ['h' => 'Acceptance of terms', 'p' => ['By accessing or purchasing from T-Shirt Shop, you agree to be bound by these Terms & Conditions and all applicable laws. If you do not agree, please do not use our services.']],
         ['h' => 'Account responsibilities', 'p' => ['You are responsible for maintaining the confidentiality of your account credentials and for all activity under your account. Notify us immediately of any unauthorized use.']],
@@ -12,5 +14,5 @@
         ['h' => 'Governing law', 'p' => ['These terms are governed by the laws of the State of New York. Any disputes will be resolved in the courts located in New York County.']],
     ];
 @endphp
-@include('frontend.pages.partials.legal', compact('title', 'updated', 'sections'))
+@include('frontend.pages.partials.legal', compact('title', 'updated', 'sections', 'body'))
 

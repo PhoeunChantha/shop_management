@@ -156,7 +156,7 @@
     <section class="ut-wrap" style="margin-top:72px">
         <div class="ut-sec-head"><div><span class="ut-eyebrow">Verified reviews</span><h2 style="margin-top:8px">{{ $product['rating'] }} · {{ $product['reviews'] }} reviews</h2></div></div>
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:18px" class="ut-rev-grid">
-            @foreach(array_slice($reviews, 0, 2) as $r)
+            @forelse(array_slice($reviews, 0, 2) as $r)
                 <div class="ut-card" style="padding:24px">
                     <div class="ut-row" style="justify-content:space-between;margin-bottom:12px">
                         <div class="ut-row" style="gap:11px">
@@ -167,7 +167,11 @@
                     </div>
                     <p style="font-size:14.5px;line-height:1.6;margin:0">"{{ $r['text'] }}"</p>
                 </div>
-            @endforeach
+            @empty
+                <div class="ut-card" style="padding:24px;grid-column:1/-1;text-align:center">
+                    <p class="muted" style="margin:0;font-size:14.5px">No reviews yet — be the first to share your thoughts.</p>
+                </div>
+            @endforelse
         </div>
     </section>
 
