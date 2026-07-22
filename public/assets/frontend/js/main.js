@@ -353,7 +353,19 @@
       if (back) back.style.visibility = step > 0 ? 'visible' : 'hidden';
     };
     document.addEventListener('click', (e) => {
-      if (e.target.closest('#coNext')) { if (step < panels.length - 1) { step++; show(); } else { window.location.href = window.UT_URLS.confirm; } }
+      if (e.target.closest('#coNext')) {
+        if (step < panels.length - 1) { step++; show(); }
+        else {
+          var coForm = document.getElementById('checkoutForm');
+          if (coForm) {
+            var itemsInput = document.getElementById('coItems');
+            if (itemsInput) itemsInput.value = JSON.stringify(store.cart);
+            coForm.submit();
+          } else {
+            window.location.href = window.UT_URLS.confirm;
+          }
+        }
+      }
       if (e.target.closest('#coBack')) { if (step > 0) { step--; show(); } }
     });
     show();

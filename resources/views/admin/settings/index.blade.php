@@ -158,10 +158,21 @@
                                         @if (($field['type'] ?? 'text') === 'textarea')
                                             <textarea name="{{ $fieldKey }}" id="{{ $fieldKey }}" rows="3"
                                                 class="form-input" placeholder="{{ $field['placeholder'] ?? '' }}">{{ old($fieldKey, $values[$fieldKey] ?? '') }}</textarea>
+                                        @elseif (($field['type'] ?? 'text') === 'select')
+                                            @php($selectedVal = (string) old($fieldKey, $values[$fieldKey] ?? ($field['default'] ?? '')))
+                                            <select name="{{ $fieldKey }}" id="{{ $fieldKey }}" class="form-input">
+                                                @foreach ($field['options'] ?? [] as $optVal => $optLabel)
+                                                    <option value="{{ $optVal }}" @selected($selectedVal === (string) $optVal)>{{ $optLabel }}</option>
+                                                @endforeach
+                                            </select>
                                         @else
                                             <input type="{{ $field['type'] ?? 'text' }}" name="{{ $fieldKey }}" id="{{ $fieldKey }}"
                                                 value="{{ old($fieldKey, $values[$fieldKey] ?? '') }}"
                                                 class="form-input" placeholder="{{ $field['placeholder'] ?? '' }}">
+                                        @endif
+
+                                        @if (!empty($field['help']))
+                                            <small class="text-gray-400 dark:text-slate-500 d-block mt-1">{{ $field['help'] }}</small>
                                         @endif
 
                                         @error($fieldKey)

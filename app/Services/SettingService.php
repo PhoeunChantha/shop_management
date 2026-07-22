@@ -172,6 +172,18 @@ final class SettingService
                 'contact_address' => ['label' => 'Store address', 'type' => 'textarea', 'placeholder' => '211 Wythe Ave, Brooklyn, NY', 'rules' => 'nullable|string|max:500'],
                 'contact_map_url' => ['label' => 'Map embed URL', 'type' => 'url', 'placeholder' => 'https://www.google.com/maps/embed?...', 'rules' => 'nullable|url|max:2000'],
             ],
+            SettingGroup::SocialLogin->value => [
+                'login_kicker' => ['label' => 'Login page kicker', 'type' => 'text', 'placeholder' => 'Members get more', 'rules' => 'nullable|string|max:120'],
+                'login_title' => ['label' => 'Login page title', 'type' => 'text', 'placeholder' => 'Premium tees, members-only pricing.', 'rules' => 'nullable|string|max:255'],
+                'login_subtitle' => ['label' => 'Login page subtitle', 'type' => 'textarea', 'placeholder' => 'Early access to every drop, free shipping, and 10% off your first order when you join.', 'rules' => 'nullable|string|max:500'],
+                'login_bg_image' => ['label' => 'Login background image', 'type' => 'image', 'folder' => 'settings', 'accept' => 'image/png,image/jpeg,image/webp', 'help' => 'Shown behind the login/register panel — JPG, PNG or WebP, up to 3MB', 'rules' => 'nullable|image|mimes:png,jpg,jpeg,webp|max:3072'],
+                'google_login' => ['label' => 'Google login', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '1', 'help' => 'Show the “Continue with Google” button on login/register.', 'rules' => 'nullable|in:0,1'],
+                'google_client_id' => ['label' => 'Google client ID', 'type' => 'text', 'placeholder' => 'xxxxx.apps.googleusercontent.com', 'rules' => 'nullable|string|max:255'],
+                'apple_login' => ['label' => 'Apple login', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '1', 'help' => 'Show the “Continue with Apple” button.', 'rules' => 'nullable|in:0,1'],
+                'apple_client_id' => ['label' => 'Apple service ID', 'type' => 'text', 'placeholder' => 'com.yourapp.web', 'rules' => 'nullable|string|max:255'],
+                'facebook_login' => ['label' => 'Facebook login', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '0', 'help' => 'Show the “Continue with Facebook” button.', 'rules' => 'nullable|in:0,1'],
+                'facebook_client_id' => ['label' => 'Facebook app ID', 'type' => 'text', 'rules' => 'nullable|string|max:255'],
+            ],
             SettingGroup::Localization->value => [
                 'languages' => [
                     'label' => 'Store languages',
@@ -439,6 +451,41 @@ final class SettingService
         $prefix = Setting::get('product_sku_prefix');
 
         return filled($prefix) ? trim($prefix) : 'PRD-';
+    }
+
+    /**
+     * Enabled social-login providers for the storefront auth buttons.
+     * Managed in Settings → Social Login.
+     *
+     * @return array<int, array{key: string, name: string, icon: string}>
+     */
+    public function socialProviders(): array
+    {
+        $providers = [
+            ['key' => 'google', 'name' => 'Google', 'icon' => 'mail'],
+            ['key' => 'apple', 'name' => 'Apple', 'icon' => 'lock'],
+            ['key' => 'facebook', 'name' => 'Facebook', 'icon' => 'user'],
+        ];
+
+        return collect($providers)
+            ->filter(fn (array $p): bool => (string) Setting::get($p['key'].'_login', $p['key'] === 'facebook' ? '0' : '1') === '1')
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Login/register brand-panel content (managed in Settings → Login).
+     *
+     * @return array{kicker: string, title: string, subtitle: string, bg: string|null}
+     */
+    public function loginPage(): array
+    {
+        return [
+            'kicker' => Setting::get('login_kicker') ?: 'Members get more',
+            'title' => Setting::get('login_title') ?: 'Premium tees, members-only pricing.',
+            'subtitle' => Setting::get('login_subtitle') ?: 'Early access to every drop, free shipping, and 10% off your first order when you join.',
+            'bg' => ImageManager::url(Setting::get('login_bg_image'), 'settings'),
+        ];
     }
 
     /**

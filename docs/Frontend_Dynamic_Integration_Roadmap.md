@@ -23,13 +23,13 @@ Goal: convert every page under `resources/views/frontend` to dynamic Laravel dat
 | --- | --- | --- | --- |
 | Home | `home.blade.php`, `HomeController.php` | Partial | Products, collections, reviews partly dynamic; hero/newsletter/trust blocks still use controller/static fallback data. |
 | Shop Listing | `shop/index.blade.php`, `ShopController.php` | Mostly dynamic | Product grid, filters, sorting, category links, colors, and sizes are DB-backed. Needs optional server-side filter refinement. |
-| Product Detail | `shop/show.blade.php` | Mostly dynamic | Slug URL, images, price, colors, sizes, related products work. Needs dynamic reviews, shipping copy, fabric/care/specs. |
+| Product Detail | `shop/show.blade.php` | Mostly dynamic | Slug URL, images, price, colors, sizes, related products, **and approved reviews (with product rating_avg/count)** are DB-backed. Needs shipping copy + fabric/care/specs from product specifications/settings. |
 | Header/Nav/Search | `components/frontend/header.blade.php`, `FrontendNavigationService.php` | Mostly dynamic | Categories, popular products, and announcements are DB-backed with local text fallbacks. Search chips remain preset suggestions. |
 | Cart | `cart/index.blade.php`, `CartController.php`, `main.js` | Partial | Cart is localStorage-based. Cross-sell and colors are DB-backed; checkout handoff is not persisted server-side. |
-| Checkout | `checkout/index.blade.php`, `confirmation.blade.php` | Static | Shipping methods, payment methods, customer data, totals, and confirmation are demo/client-side only. |
+| Checkout | `checkout/index.blade.php`, `confirmation.blade.php`, `CheckoutController.php`, `FrontendCheckoutService.php` | Mostly dynamic | Shipping methods, payment methods, and tax are admin-backed; totals recompute live (free-over + tax). **Placing an order creates a real `Order` + `OrderDetails` (re-priced server-side), decrements stock, and the confirmation shows the real order.** Remaining: payment-gateway processing, saved addresses, and per-step field validation. |
 | Account | `account/*` | Partial | User, orders, order details, notifications, colors, and products are service/DB-backed. Wishlist remains localStorage and addresses are derived from orders until saved addresses exist. |
 | Auth | `auth/*` | Mostly static forms | Needs real Laravel auth form actions, CSRF, validation errors, old input, and route wiring. |
-| Content Pages | `pages/about.blade.php`, `contact.blade.php`, `faq.blade.php`, `privacy.blade.php`, `terms.blade.php` | Partial/static | FAQ is DB-backed; legal/about/contact content should come from admin pages/settings. |
+| Content Pages | `pages/about.blade.php`, `contact.blade.php`, `faq.blade.php`, `privacy.blade.php`, `terms.blade.php` | Mostly dynamic | FAQ, **Privacy + Terms (from admin CMS Pages), and Contact (from Settings)** are DB-backed. About remains a designed marketing page (kept per "don't redesign"); wire to a CMS page if desired. |
 | Layout/Shared | `layouts/frontend.blade.php`, frontend components | Partial | Global colors and product card colors are DB-backed; store name/social/footer settings still need cleanup. |
 
 ## Step 1: Shared Storefront Data
@@ -70,11 +70,13 @@ Goal: convert every page under `resources/views/frontend` to dynamic Laravel dat
 
 ## Step 6: Checkout
 
-- Load active shipping methods from admin shipping settings.
-- Load active payment methods from settings, including manual/QR payment.
-- Validate required customer, shipping, and payment fields.
-- Create real orders and order items from cart data.
-- Redirect confirmation page to a real order identifier.
+- [x] Load active shipping methods from admin shipping settings (`FrontendCheckoutService::shippingMethods`).
+- [x] Load active payment methods from settings, including manual/QR (`paymentMethods`).
+- [x] Live totals: shipping (per method + free-over) + tax (`taxRate`, single applicable exclusive rule) via `window.UT_CHECKOUT`.
+- [x] Create real orders + order details from cart data — **`FrontendCheckoutService::placeOrder`** re-prices every line **server-side** (never trusts client prices), applies shipping+tax, decrements the matched variant/product stock (logs a `sale` `StockMovement`), all in a DB transaction.
+- [x] Confirmation shows the real order (number, lines, totals) and clears the localStorage bag.
+- Approach: cart stays in **localStorage**; on the final step `main.js` serializes `store.cart` into the hidden `items` field and submits `POST checkout` (`frontend.checkout.store`). Errors surface via the shared `<x-toastr />` (mapped onto the storefront `utToast`).
+- **Remaining:** real payment-gateway processing (currently records `payment_status = unpaid`), saved addresses, per-step field validation, and robuster variant matching (currently matches cart size/colour labels against variant attribute values; falls back to the product base price when no variant matches).
 
 ## Step 7: Account Pages
 
@@ -124,13 +126,13 @@ These should be added only after the core storefront no longer depends on `Catal
 - [ ] Header/nav/search fully dynamic.
 - [ ] Home page fully dynamic.
 - [ ] Shop listing fully dynamic.
-- [ ] Product detail fully dynamic.
+- [x] Product detail dynamic (incl. approved reviews + product rating). Specs/care tabs still static.
 - [ ] Cart dynamic cross-sell and real image lines.
-- [ ] Checkout creates real orders.
-- [ ] Confirmation displays real order.
+- [x] Checkout creates real orders (re-priced server-side, stock decremented).
+- [x] Confirmation displays real order.
 - [ ] Account dashboard/orders/addresses/notifications/wishlist dynamic.
 - [ ] Auth forms wired to real routes.
-- [ ] Content pages loaded from admin data/settings.
+- [x] Content pages loaded from admin data/settings (Privacy, Terms, Contact, FAQ; About kept as designed page).
 - [ ] Optional add-ons are prioritized after core dynamic integration.
 - [ ] All frontend pages compile with `php artisan view:cache`.
 - [ ] Full test suite passes.

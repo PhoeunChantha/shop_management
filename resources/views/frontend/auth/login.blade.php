@@ -11,12 +11,8 @@
             <h1 style="font-size:clamp(28px,3vw,34px);margin-bottom:8px">Welcome back</h1>
             <p class="muted" style="margin-bottom:28px;font-size:15px">Sign in to your account to continue shopping.</p>
 
-            {{-- social --}}
-            <div class="ut-row" style="gap:12px">
-                <button type="button" class="ut-btn ut-btn-ghost" style="flex:1" onclick="utToast('Continue with Apple')"><x-frontend.icon n="lock" :size="18" /> Apple</button>
-                <button type="button" class="ut-btn ut-btn-ghost" style="flex:1" onclick="utToast('Continue with Google')"><x-frontend.icon n="mail" :size="18" /> Google</button>
-            </div>
-            <div class="ut-row" style="gap:14px;margin:22px 0"><hr class="divider" style="flex:1"><span class="muted" style="font-size:12.5px;font-family:var(--font-head);font-weight:600">OR</span><hr class="divider" style="flex:1"></div>
+            {{-- social login (managed in Settings → Login) --}}
+            @include('frontend.auth.partials.social')
 
             <form class="ut-col" style="gap:16px" action="{{ route('frontend.account.dashboard') }}" method="GET">
                 <div class="field"><label>Email address</label><input class="ut-input" type="email" value="alex@email.com" placeholder="you@email.com"></div>
