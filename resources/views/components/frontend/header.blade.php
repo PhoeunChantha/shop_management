@@ -43,8 +43,15 @@
             <div class="dropdown ut-account-dropdown">
                 <button class="icon-btn ut-header-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Account"><x-frontend.icon n="user" :size="19" /></button>
                 <div class="dropdown-menu dropdown-menu-end ut-account-menu">
-                    <div class="ut-account-menu-title">Your Urban Thread</div>
-                    <a href="{{ route('frontend.account.dashboard') }}">My account</a><a href="{{ route('frontend.account.orders') }}">Orders & tracking</a><a href="{{ route('frontend.account.wishlist') }}">Saved pieces</a>
+                    @auth
+                        <div class="ut-account-menu-title">Your Urban Thread</div>
+                        <a href="{{ route('frontend.account.dashboard') }}">My account</a><a href="{{ route('frontend.account.orders') }}">Orders & tracking</a><a href="{{ route('frontend.account.wishlist') }}">Saved pieces</a>
+                        <form method="POST" action="{{ route('frontend.logout') }}" class="d-none">@csrf</form>
+                        <a href="{{ route('frontend.logout') }}" onclick="event.preventDefault(); this.closest('.ut-account-menu').querySelector('form').submit();">Sign out</a>
+                    @else
+                        <div class="ut-account-menu-title">Welcome</div>
+                        <a href="{{ route('frontend.login') }}">Sign in</a><a href="{{ route('frontend.register') }}">Create account</a>
+                    @endauth
                 </div>
             </div>
             <a href="{{ route('frontend.account.wishlist') }}" class="icon-btn ut-header-icon ut-hide-mobile" title="Wishlist"><x-frontend.icon n="heart" :size="19" /><span class="ut-badge accent" data-wish-count style="display:none">0</span></a>

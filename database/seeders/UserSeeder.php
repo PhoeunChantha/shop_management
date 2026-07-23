@@ -28,8 +28,8 @@ class UserSeeder extends Seeder
                 ]
             );
 
-            if (! $user->hasRole('user')) {
-                $user->assignRole('user');
+            if (! $user->hasRole('customer')) {
+                $user->assignRole('customer');
             }
         }
     }

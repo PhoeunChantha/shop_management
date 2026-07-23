@@ -26,6 +26,9 @@
         </a>
     @endforeach
     <hr class="divider" style="margin:8px 6px">
-    <a href="{{ route('frontend.login') }}" class="ut-side-link"><x-frontend.icon n="arrowL" :size="18" /> Sign out</a>
+    <form method="POST" action="{{ route('frontend.logout') }}">
+        @csrf
+        <button type="submit" class="ut-side-link" style="width:100%;border:0;background:none;text-align:left;cursor:pointer"><x-frontend.icon n="arrowL" :size="18" /> Sign out</button>
+    </form>
 </aside>
 

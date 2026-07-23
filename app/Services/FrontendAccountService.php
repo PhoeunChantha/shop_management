@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Address;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
@@ -91,18 +92,25 @@ class FrontendAccountService
      */
     public function addresses(): array
     {
-        return collect($this->orders())
-            ->filter(fn (array $order): bool => filled($order['address'] ?? null))
-            ->unique('address')
-            ->values()
-            ->map(fn (array $order, int $index): array => [
-                'label' => $index === 0 ? 'Shipping' : 'Previous',
-                'default' => $index === 0,
-                'name' => $this->user()['name'],
-                'line' => $order['address'],
-                'city' => '',
-                'country' => '',
-                'phone' => $this->user()['phone'],
+        $user = Auth::user();
+
+        if (! $user) {
+            return [];
+        }
+
+        return $user->addresses()
+            ->get()
+            ->map(fn (Address $address): array => [
+                'id' => $address->id,
+                'label' => $address->label ?: 'Address',
+                'default' => $address->is_default,
+                'name' => $address->name,
+                'phone' => $address->phone ?: '',
+                'street' => $address->street,
+                'line' => $address->street,
+                'city' => $address->city ?: '',
+                'zip' => $address->zip ?: '',
+                'country' => $address->country ?: '',
             ])
             ->all();
     }

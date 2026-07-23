@@ -1,51 +1,53 @@
 <?php
 
-use App\Http\Controllers\Backend\DashboardController;
-use App\Http\Controllers\Backend\InventoryController;
+use App\Http\Controllers\Backend\AbandonedCartController;
 use App\Http\Controllers\Backend\ActivityLogController;
 use App\Http\Controllers\Backend\AdminNotificationController;
-use App\Http\Controllers\Backend\AbandonedCartController;
-use App\Http\Controllers\Backend\PermissionAuditController;
-use App\Http\Controllers\Backend\PermissionController;
-use App\Http\Controllers\Backend\ProfileController;
-use App\Http\Controllers\Backend\ReviewController;
-use App\Http\Controllers\Backend\ReturnRequestController;
-use App\Http\Controllers\Backend\RoleController;
 use App\Http\Controllers\Backend\AdminSavedViewController;
-use App\Http\Controllers\Backend\SettingController;
-use App\Http\Controllers\Backend\SetupHealthController;
-use App\Http\Controllers\Backend\SeoManagerController;
-use App\Http\Controllers\Backend\ShippingMethodController;
-use App\Http\Controllers\Backend\TaxRuleController;
-use App\Http\Controllers\Backend\UserController;
 use App\Http\Controllers\Backend\AnnouncementController;
 use App\Http\Controllers\Backend\AttributeController;
 use App\Http\Controllers\Backend\BannerController;
 use App\Http\Controllers\Backend\BrandController;
 use App\Http\Controllers\Backend\CategoryController;
 use App\Http\Controllers\Backend\CollectionController;
+use App\Http\Controllers\Backend\ColorController;
 use App\Http\Controllers\Backend\CommandPaletteController;
 use App\Http\Controllers\Backend\CouponController;
 use App\Http\Controllers\Backend\CustomerController;
+use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\DealCampaignController;
 use App\Http\Controllers\Backend\FaqController;
 use App\Http\Controllers\Backend\FinanceReportController;
+use App\Http\Controllers\Backend\InventoryController;
 use App\Http\Controllers\Backend\MediaAssetController;
 use App\Http\Controllers\Backend\OrderController;
 use App\Http\Controllers\Backend\PageController as AdminPageController;
+use App\Http\Controllers\Backend\PermissionAuditController;
+use App\Http\Controllers\Backend\PermissionController;
 use App\Http\Controllers\Backend\ProductController;
+use App\Http\Controllers\Backend\ProfileController;
 use App\Http\Controllers\Backend\PurchaseOrderController;
+use App\Http\Controllers\Backend\ReturnRequestController;
+use App\Http\Controllers\Backend\ReviewController;
+use App\Http\Controllers\Backend\RoleController;
+use App\Http\Controllers\Backend\SeoManagerController;
+use App\Http\Controllers\Backend\SettingController;
+use App\Http\Controllers\Backend\SetupHealthController;
+use App\Http\Controllers\Backend\ShippingMethodController;
 use App\Http\Controllers\Backend\SizeController;
-use App\Http\Controllers\Backend\ColorController;
 use App\Http\Controllers\Backend\SupplierController;
+use App\Http\Controllers\Backend\TaxRuleController;
+use App\Http\Controllers\Backend\UserController;
 use App\Http\Controllers\Frontend\AccountController;
+use App\Http\Controllers\Frontend\AddressController;
 use App\Http\Controllers\Frontend\AuthController;
 use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\Frontend\CheckoutController;
 use App\Http\Controllers\Frontend\HomeController;
 use App\Http\Controllers\Frontend\PageController;
 use App\Http\Controllers\Frontend\ShopController;
-
+use App\Http\Controllers\Frontend\SocialAuthController;
+use App\Http\Middleware\SetLocale;
 use Illuminate\Support\Facades\Route;
 
 Route::name('frontend.')->group(function () {
@@ -62,18 +64,38 @@ Route::name('frontend.')->group(function () {
     Route::get('/checkout/confirmation', [CheckoutController::class, 'confirmation'])->name('checkout.confirmation');
 
     // ---- Authentication ----
-    Route::get('/login', [AuthController::class, 'login'])->name('login');
-    Route::get('/register', [AuthController::class, 'register'])->name('register');
-    Route::get('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.request');
-    Route::get('/reset-password', [AuthController::class, 'resetPassword'])->name('password.reset');
-    Route::get('/verify-otp', [AuthController::class, 'otp'])->name('otp.verify');
+    // GET pages live at bare paths (/login, /register, …); the POST actions use an
+    // `auth/` prefix so they never collide with Breeze's admin auth routes
+    // (POST /login, /register, … registered later via routes/auth.php).
+    Route::middleware('guest')->group(function () {
+        Route::get('/login', [AuthController::class, 'login'])->name('login');
+        Route::post('/auth/login', [AuthController::class, 'authenticate'])->name('login.store');
+        Route::get('/register', [AuthController::class, 'register'])->name('register');
+        Route::post('/auth/register', [AuthController::class, 'store'])->name('register.store');
+        Route::get('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.request');
+        Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
+        Route::get('/reset-password', [AuthController::class, 'resetPassword'])->name('password.reset');
+        Route::post('/auth/reset-password', [AuthController::class, 'updatePassword'])->name('password.update');
+        Route::get('/verify-otp', [AuthController::class, 'otp'])->name('otp.verify');
+    });
+    Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+
+    // ---- Social login (OAuth via Socialite) ----
+    Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect'])
+        ->whereIn('provider', ['google'])->name('social.redirect');
+    Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback'])
+        ->whereIn('provider', ['google'])->name('social.callback');
 
     // ---- Customer Account ----
-    Route::prefix('account')->name('account.')->group(function () {
+    Route::prefix('account')->name('account.')->middleware('auth')->group(function () {
         Route::get('/', [AccountController::class, 'dashboard'])->name('dashboard');
         Route::get('/profile', [AccountController::class, 'profile'])->name('profile');
         Route::get('/password', [AccountController::class, 'password'])->name('password');
         Route::get('/addresses', [AccountController::class, 'addresses'])->name('addresses');
+        Route::post('/addresses', [AddressController::class, 'store'])->name('addresses.store');
+        Route::put('/addresses/{address}', [AddressController::class, 'update'])->name('addresses.update');
+        Route::delete('/addresses/{address}', [AddressController::class, 'destroy'])->name('addresses.destroy');
+        Route::patch('/addresses/{address}/default', [AddressController::class, 'makeDefault'])->name('addresses.default');
         Route::get('/notifications', [AccountController::class, 'notifications'])->name('notifications');
         Route::get('/wishlist', [AccountController::class, 'wishlist'])->name('wishlist');
         Route::get('/orders', [AccountController::class, 'orders'])->name('orders');
@@ -444,11 +466,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
 // ---- Locale switch (shared) ----
 Route::get('/lang/{locale}', function (string $locale) {
-    if (in_array($locale, \App\Http\Middleware\SetLocale::SUPPORTED, true)) {
+    if (in_array($locale, SetLocale::SUPPORTED, true)) {
         session(['locale' => $locale]);
     }
 
     return redirect()->back();
 })->name('lang.switch');
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

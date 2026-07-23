@@ -6,6 +6,7 @@ use App\Models\Color;
 use App\Models\Size;
 use App\Services\AdminNotificationService;
 use App\Services\FrontendNavigationService;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Schema;
@@ -28,6 +29,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(191);
+
+        // Password-reset emails link to the storefront reset page (not Breeze's).
+        ResetPassword::createUrlUsing(fn ($notifiable, string $token): string => route('frontend.password.reset', [
+            'token' => $token,
+            'email' => $notifiable->getEmailForPasswordReset(),
+        ]));
 
         // Store 'size'/'color' (not full class names) in attribute_values.source_type.
         // Use morphMap (not enforceMorphMap) so other polymorphic models — e.g. the

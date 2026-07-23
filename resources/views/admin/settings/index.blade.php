@@ -165,6 +165,11 @@
                                                     <option value="{{ $optVal }}" @selected($selectedVal === (string) $optVal)>{{ $optLabel }}</option>
                                                 @endforeach
                                             </select>
+                                        @elseif (($field['type'] ?? 'text') === 'password')
+                                            {{-- Never echo the stored secret into page source; blank = keep current. --}}
+                                            <input type="password" name="{{ $fieldKey }}" id="{{ $fieldKey }}"
+                                                value="" autocomplete="new-password"
+                                                class="form-input" placeholder="{{ filled($values[$fieldKey] ?? '') ? '•••••••• saved — leave blank to keep' : ($field['placeholder'] ?? '') }}">
                                         @else
                                             <input type="{{ $field['type'] ?? 'text' }}" name="{{ $fieldKey }}" id="{{ $fieldKey }}"
                                                 value="{{ old($fieldKey, $values[$fieldKey] ?? '') }}"

@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    // Social login (Laravel Socialite). Credentials are managed from
+    // Settings → Login and written to the .env file.
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
+    ],
+
 ];

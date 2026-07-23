@@ -28,7 +28,7 @@ Goal: convert every page under `resources/views/frontend` to dynamic Laravel dat
 | Cart | `cart/index.blade.php`, `CartController.php`, `main.js` | Partial | Cart is localStorage-based. Cross-sell and colors are DB-backed; checkout handoff is not persisted server-side. |
 | Checkout | `checkout/index.blade.php`, `confirmation.blade.php`, `CheckoutController.php`, `FrontendCheckoutService.php` | Mostly dynamic | Shipping methods, payment methods, and tax are admin-backed; totals recompute live (free-over + tax). **Placing an order creates a real `Order` + `OrderDetails` (re-priced server-side), decrements stock, and the confirmation shows the real order.** Remaining: payment-gateway processing, saved addresses, and per-step field validation. |
 | Account | `account/*` | Partial | User, orders, order details, notifications, colors, and products are service/DB-backed. Wishlist remains localStorage and addresses are derived from orders until saved addresses exist. |
-| Auth | `auth/*` | Mostly static forms | Needs real Laravel auth form actions, CSRF, validation errors, old input, and route wiring. |
+| Auth | `auth/*` | Dynamic | **Login, register, logout, forgot + reset password are wired to real Laravel auth** (`Frontend\AuthController`): CSRF, validation errors, old input, `remember`, session regeneration. Register creates a `user`-role customer and signs in. Account routes are `auth`-guarded; post-login redirect is role-aware (admin → admin dashboard, customer → account). OTP page remains a designed stub (no OTP infra yet). |
 | Content Pages | `pages/about.blade.php`, `contact.blade.php`, `faq.blade.php`, `privacy.blade.php`, `terms.blade.php` | Mostly dynamic | FAQ, **Privacy + Terms (from admin CMS Pages), and Contact (from Settings)** are DB-backed. About remains a designed marketing page (kept per "don't redesign"); wire to a CMS page if desired. |
 | Layout/Shared | `layouts/frontend.blade.php`, frontend components | Partial | Global colors and product card colors are DB-backed; store name/social/footer settings still need cleanup. |
 
@@ -131,7 +131,7 @@ These should be added only after the core storefront no longer depends on `Catal
 - [x] Checkout creates real orders (re-priced server-side, stock decremented).
 - [x] Confirmation displays real order.
 - [ ] Account dashboard/orders/addresses/notifications/wishlist dynamic.
-- [ ] Auth forms wired to real routes.
+- [x] Auth forms wired to real routes (login, register, logout, forgot/reset password; account routes guarded; role-aware redirect).
 - [x] Content pages loaded from admin data/settings (Privacy, Terms, Contact, FAQ; About kept as designed page).
 - [ ] Optional add-ons are prioritized after core dynamic integration.
 - [ ] All frontend pages compile with `php artisan view:cache`.

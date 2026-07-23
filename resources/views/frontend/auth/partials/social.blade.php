@@ -6,10 +6,16 @@
 @if (count($socialProviders))
     <div class="ut-row" style="gap:12px">
         @foreach ($socialProviders as $provider)
-            <button type="button" class="ut-btn ut-btn-ghost" style="flex:1"
-                onclick="utToast('Continue with {{ $provider['name'] }}')">
-                <x-frontend.icon :n="$provider['icon']" :size="18" /> {{ $provider['name'] }}
-            </button>
+            @if (!empty($provider['url']))
+                <a href="{{ $provider['url'] }}" class="ut-btn ut-btn-ghost" style="flex:1">
+                    <x-frontend.icon :n="$provider['icon']" :size="18" /> {{ $provider['name'] }}
+                </a>
+            @else
+                <button type="button" class="ut-btn ut-btn-ghost" style="flex:1"
+                    onclick="utToast('Continue with {{ $provider['name'] }}')">
+                    <x-frontend.icon :n="$provider['icon']" :size="18" /> {{ $provider['name'] }}
+                </button>
+            @endif
         @endforeach
     </div>
     <div class="ut-row" style="gap:14px;margin:22px 0">
