@@ -178,7 +178,9 @@ final class SettingService
                 'login_subtitle' => ['label' => 'Login page subtitle', 'type' => 'textarea', 'placeholder' => 'Early access to every drop, free shipping, and 10% off your first order when you join.', 'rules' => 'nullable|string|max:500'],
                 'login_bg_image' => ['label' => 'Login background image', 'type' => 'image', 'folder' => 'settings', 'accept' => 'image/png,image/jpeg,image/webp', 'help' => 'Shown behind the login/register panel — JPG, PNG or WebP, up to 3MB', 'rules' => 'nullable|image|mimes:png,jpg,jpeg,webp|max:3072'],
                 'google_login' => ['label' => 'Google login', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '1', 'help' => 'Show the “Continue with Google” button on login/register.', 'rules' => 'nullable|in:0,1'],
-                'google_client_id' => ['label' => 'Google client ID', 'type' => 'text', 'placeholder' => 'xxxxx.apps.googleusercontent.com', 'rules' => 'nullable|string|max:255'],
+                'google_client_id' => ['label' => 'Google client ID', 'type' => 'text', 'env' => 'GOOGLE_CLIENT_ID', 'placeholder' => 'xxxxx.apps.googleusercontent.com', 'help' => 'From Google Cloud → Credentials → OAuth client. Saved to your .env file.', 'rules' => 'nullable|string|max:255'],
+                'google_client_secret' => ['label' => 'Google client secret', 'type' => 'password', 'env' => 'GOOGLE_CLIENT_SECRET', 'placeholder' => 'GOCSPX-xxxxxxxx', 'help' => 'Kept in .env and never shown in page source.', 'rules' => 'nullable|string|max:255'],
+                'google_redirect_uri' => ['label' => 'Google redirect URI', 'type' => 'text', 'env' => 'GOOGLE_REDIRECT_URI', 'placeholder' => 'http://localhost:8000/auth/google/callback', 'help' => 'Add this exact URL to your Google OAuth client’s “Authorized redirect URIs”.', 'rules' => 'nullable|url|max:255'],
                 'apple_login' => ['label' => 'Apple login', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '1', 'help' => 'Show the “Continue with Apple” button.', 'rules' => 'nullable|in:0,1'],
                 'apple_client_id' => ['label' => 'Apple service ID', 'type' => 'text', 'placeholder' => 'com.yourapp.web', 'rules' => 'nullable|string|max:255'],
                 'facebook_login' => ['label' => 'Facebook login', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '0', 'help' => 'Show the “Continue with Facebook” button.', 'rules' => 'nullable|in:0,1'],
@@ -375,7 +377,44 @@ final class SettingService
      */
     public function values(): array
     {
-        return Setting::map();
+        $values = Setting::map();
+
+        // Overlay .env-backed fields (e.g. Google OAuth credentials) so the
+        // form shows the value currently stored in .env, not the DB.
+        foreach ($this->envBackedFields() as $key => $envKey) {
+            $values[$key] = app(EnvService::class)->get($envKey);
+        }
+
+        return $values;
+    }
+
+    /**
+     * Setting key => .env key for every field that persists to the .env file.
+     *
+     * @return array<string, string>
+     */
+    private function envBackedFields(): array
+    {
+        $map = [];
+
+        foreach ($this->fieldDefinitions() as $fields) {
+            foreach ($fields as $key => $field) {
+                if (! empty($field['env'])) {
+                    $map[$key] = (string) $field['env'];
+                }
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * True when Google OAuth credentials are present so the login button works.
+     */
+    public function googleConfigured(): bool
+    {
+        return filled(config('services.google.client_id'))
+            && filled(config('services.google.client_secret'));
     }
 
     /**
@@ -457,18 +496,26 @@ final class SettingService
      * Enabled social-login providers for the storefront auth buttons.
      * Managed in Settings → Social Login.
      *
-     * @return array<int, array{key: string, name: string, icon: string}>
+     * @return array<int, array{key: string, name: string, icon: string, url: string|null}>
      */
     public function socialProviders(): array
     {
         $providers = [
-            ['key' => 'google', 'name' => 'Google', 'icon' => 'mail'],
-            ['key' => 'apple', 'name' => 'Apple', 'icon' => 'lock'],
-            ['key' => 'facebook', 'name' => 'Facebook', 'icon' => 'user'],
+            ['key' => 'google', 'name' => 'Google', 'icon' => 'mail', 'url' => route('frontend.social.redirect', 'google')],
+            ['key' => 'apple', 'name' => 'Apple', 'icon' => 'lock', 'url' => null],
+            ['key' => 'facebook', 'name' => 'Facebook', 'icon' => 'user', 'url' => null],
         ];
 
         return collect($providers)
-            ->filter(fn (array $p): bool => (string) Setting::get($p['key'].'_login', $p['key'] === 'facebook' ? '0' : '1') === '1')
+            ->filter(function (array $p): bool {
+                $enabled = (string) Setting::get($p['key'].'_login', $p['key'] === 'facebook' ? '0' : '1') === '1';
+
+                // Only surface Google once its OAuth credentials are configured,
+                // so the button never leads to a broken redirect.
+                return $p['key'] === 'google'
+                    ? $enabled && $this->googleConfigured()
+                    : $enabled;
+            })
             ->values()
             ->all();
     }
@@ -495,8 +542,25 @@ final class SettingService
      */
     public function save(array $validated): void
     {
+        $envUpdates = [];
+
         foreach ($this->fieldDefinitions() as $groupValue => $fields) {
             foreach ($fields as $key => $field) {
+                // .env-backed fields (e.g. OAuth credentials) are written to the
+                // .env file instead of the settings table.
+                if (! empty($field['env'])) {
+                    $value = (string) ($validated[$key] ?? '');
+
+                    // A blank password field means "keep the stored secret".
+                    if (($field['type'] ?? '') === 'password' && $value === '') {
+                        continue;
+                    }
+
+                    $envUpdates[(string) $field['env']] = $value;
+
+                    continue;
+                }
+
                 // Image fields: only replace when a new file is uploaded, otherwise
                 // keep the existing file. Stores the filename (ImageManager convention).
                 if (($field['type'] ?? '') === 'image') {
@@ -545,6 +609,10 @@ final class SettingService
             (array) ($validated['payment_method_images'] ?? []),
             (array) ($validated['payment_method_qr_images'] ?? []),
         );
+
+        if ($envUpdates !== []) {
+            app(EnvService::class)->set($envUpdates);
+        }
     }
 
     /**

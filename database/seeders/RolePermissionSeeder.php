@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -38,12 +39,25 @@ class RolePermissionSeeder extends Seeder
 
         // Roles
         $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
-        $userRole = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
+        $customerRole = Role::firstOrCreate(['name' => 'customer', 'guard_name' => 'web']);
 
         // Admin gets every admin-panel permission.
         $adminRole->syncPermissions(Permission::all());
 
-        // The 'user' role is for storefront customers — no admin-panel permissions.
-        $userRole->syncPermissions([]);
+        // The 'customer' role is for storefront shoppers — no admin-panel permissions.
+        $customerRole->syncPermissions([]);
+
+        // Migrate any legacy 'user' role (the former customer role) to 'customer',
+        // move its members over, then retire it so customers live under one role.
+        $legacyRole = Role::where('name', 'user')->where('guard_name', 'web')->first();
+
+        if ($legacyRole) {
+            User::role($legacyRole)->get()->each(function (User $user) use ($customerRole): void {
+                $user->assignRole($customerRole);
+                $user->removeRole('user');
+            });
+
+            $legacyRole->delete();
+        }
     }
 }

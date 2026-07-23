@@ -41,7 +41,10 @@
     </div>
 
     <div style="padding:16px;border-top:1px solid var(--border)">
-        <a href="{{ route('frontend.login') }}" class="ut-btn ut-btn-ghost ut-btn-block"><x-frontend.icon n="arrowL" :size="16" /> Sign out</a>
+        <form method="POST" action="{{ route('frontend.logout') }}">
+            @csrf
+            <button type="submit" class="ut-btn ut-btn-ghost ut-btn-block"><x-frontend.icon n="arrowL" :size="16" /> Sign out</button>
+        </form>
     </div>
 </div>
 

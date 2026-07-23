@@ -14,15 +14,23 @@
             {{-- social login (managed in Settings → Login) --}}
             @include('frontend.auth.partials.social')
 
-            <form class="ut-col" style="gap:16px" action="{{ route('frontend.otp.verify') }}" method="GET">
+            <form class="ut-col" style="gap:16px" action="{{ route('frontend.register.store') }}" method="POST">
+                @csrf
                 <div class="ut-form-2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                    <div class="field"><label>First name</label><input class="ut-input" placeholder="Alex"></div>
-                    <div class="field"><label>Last name</label><input class="ut-input" placeholder="Rivera"></div>
+                    <div class="field"><label>First name</label><input class="ut-input" name="first_name" value="{{ old('first_name') }}" placeholder="Alex" required>
+                        @error('first_name')<span style="color:var(--accent);font-size:12.5px;margin-top:6px;display:block">{{ $message }}</span>@enderror
+                    </div>
+                    <div class="field"><label>Last name</label><input class="ut-input" name="last_name" value="{{ old('last_name') }}" placeholder="Rivera" required>
+                        @error('last_name')<span style="color:var(--accent);font-size:12.5px;margin-top:6px;display:block">{{ $message }}</span>@enderror
+                    </div>
                 </div>
-                <div class="field"><label>Email address</label><input class="ut-input" type="email" placeholder="you@email.com"></div>
+                <div class="field"><label>Email address</label><input class="ut-input" type="email" name="email" value="{{ old('email') }}" placeholder="you@email.com" required>
+                    @error('email')<span style="color:var(--accent);font-size:12.5px;margin-top:6px;display:block">{{ $message }}</span>@enderror
+                </div>
                 <div class="field">
                     <label>Password</label>
-                    <div style="position:relative"><input class="ut-input" type="password" id="regPw" placeholder="Create a password" style="padding-right:64px" oninput="pwStrength(this.value)"><button type="button" data-toggle-pw style="position:absolute;right:12px;top:11px;border:0;background:none;color:var(--text-2);font-family:var(--font-head);font-weight:600;font-size:12.5px">Show</button></div>
+                    <div style="position:relative"><input class="ut-input" type="password" name="password" id="regPw" placeholder="Create a password" style="padding-right:64px" oninput="pwStrength(this.value)" required><button type="button" data-toggle-pw style="position:absolute;right:12px;top:11px;border:0;background:none;color:var(--text-2);font-family:var(--font-head);font-weight:600;font-size:12.5px">Show</button></div>
+                    @error('password')<span style="color:var(--accent);font-size:12.5px;margin-top:6px;display:block">{{ $message }}</span>@enderror
                     <div id="pwMeter" style="display:none;margin-top:8px">
                         <div class="ut-row" style="gap:5px">@for($i=0;$i<4;$i++)<div class="pw-bar" style="flex:1;height:4px;border-radius:4px;background:var(--border)"></div>@endfor</div>
                         <span id="pwLabel" style="font-size:12px;font-family:var(--font-head);font-weight:600"></span>
