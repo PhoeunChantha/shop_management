@@ -33,8 +33,9 @@
                     <h3 style="font-size:20px;margin-bottom:16px">Pairs well with</h3>
                     <div class="hscroll">
                         @foreach($cross as $p)
+                            @php($productUrl = $p['url'] ?? route('frontend.shop.show', $p['slug'] ?? \Illuminate\Support\Str::slug($p['name'])))
                             <div class="ut-card" style="width:200px;padding:12px">
-                                <a href="{{ route('frontend.shop.show', $p['id']) }}"><x-frontend.ph :tint="$p['tint']" :dark="$p['dark']" style="aspect-ratio:1;border-radius:12px;margin-bottom:10px" /></a>
+                                <a href="{{ $productUrl }}"><x-frontend.ph :tint="$p['tint']" :dark="$p['dark']" style="aspect-ratio:1;border-radius:12px;margin-bottom:10px" /></a>
                                 <div style="font-family:var(--font-head);font-weight:600;font-size:14px">{{ $p['name'] }}</div>
                                 <div class="ut-row" style="justify-content:space-between;margin-top:8px">
                                     <span style="font-family:var(--font-head);font-weight:700">${{ $p['price'] }}</span>

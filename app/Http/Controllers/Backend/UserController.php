@@ -3,18 +3,19 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
-
-use Illuminate\Http\Request;
 use App\Models\User;
-use Spatie\Permission\Models\Role;
+use App\Services\UserService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class UserController extends Controller
 {
+    public function __construct(
+        private readonly UserService $users,
+    ) {}
+
     public function index(Request $request): View
     {
         $this->authorize('viewAny', User::class);
@@ -28,135 +29,76 @@ class UserController extends Controller
         ]);
 
         $perPage = (int) ($filters['per_page'] ?? 10);
-        $search = trim($filters['search'] ?? '');
-
-        $users = User::query()
-            ->with('roles')
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                });
-            })
-            ->when(! empty($filters['role']), function ($query) use ($filters) {
-                $query->whereHas('roles', function ($query) use ($filters) {
-                    $query->where('name', $filters['role']);
-                });
-            })
-            ->when(! empty($filters['date_from']), function ($query) use ($filters) {
-                $query->whereDate('created_at', '>=', $filters['date_from']);
-            })
-            ->when(! empty($filters['date_to']), function ($query) use ($filters) {
-                $query->whereDate('created_at', '<=', $filters['date_to']);
-            })
-            ->orderBy('id', 'asc')
-            ->paginate($perPage)
-            ->withQueryString();
-
-        $roles = Role::orderBy('name', 'asc')->get();
 
         return view('admin.users.index', [
-            'users' => $users,
-            'roles' => $roles,
+            'users' => $this->users->paginate($filters, $perPage),
+            'roles' => $this->users->roles(),
             'perPage' => $perPage,
         ]);
     }
 
-    public function create()
+    public function create(): View
     {
         $this->authorize('create', User::class);
 
         return view('admin.users.create', [
-            'roles' => Role::orderBy('name', 'asc')->get(),
+            'roles' => $this->users->roles(),
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $this->authorize('create', User::class);
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|min:3',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:5|same:confirm_password',
-            'confirm_password' => 'required',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'role' => 'required|exists:roles,name',
+        $data = $request->validate([
+            'name' => ['required', 'string', 'min:3', 'max:255'],
+            'email' => ['required', 'email', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:5', 'same:confirm_password'],
+            'confirm_password' => ['required'],
+            'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
+            'role' => ['required', 'exists:roles,name'],
         ]);
 
-        if ($validator->fails()) {
-            return redirect()->route('admin.users.create')
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        $user = new User();
-        $user->name = $request->name;
-        $user->email = $request->email;
-        $user->password = $request->password;
-
-        if ($request->hasFile('avatar')) {
-            $user->avatar = $this->storeAvatar($request);
-        }
-
-        $user->save();
-
-        $user->syncRoles([$request->role]);
+        $this->users->create($data, $request->file('avatar'));
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User created successfully!');
     }
 
-    public function edit(string $id)
+    public function edit(string $id): View
     {
         $this->authorize('update', User::class);
 
-        $user = User::findOrFail($id);
-        $roles = Role::orderBy('id', 'asc')->get();
+        $user = User::with('roles')->findOrFail($id);
         $hasRoles = $user->roles->pluck('name');
 
         return view('admin.users.edit', [
             'user' => $user,
-            'roles' => $roles,
+            'roles' => $this->users->roles('id'),
             'hasRoles' => $hasRoles,
         ]);
     }
 
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id): RedirectResponse
     {
         $this->authorize('update', User::class);
 
         $user = User::findOrFail($id);
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|min:3',
-            'email' => 'required|email|unique:users,email,' . $id,
-            'role' => 'required|exists:roles,name',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        $data = $request->validate([
+            'name' => ['required', 'string', 'min:3', 'max:255'],
+            'email' => ['required', 'email', 'unique:users,email,'.$id],
+            'role' => ['required', 'exists:roles,name'],
+            'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif', 'max:2048'],
         ]);
 
-        if ($validator->fails()) {
-            return redirect()->route('admin.users.edit', $id)
-                ->withErrors($validator)
-                ->withInput();
-        }
+        $this->users->update($user, $data, $request->file('avatar'));
 
-        $user->name = $request->name;
-        $user->email = $request->email;
-
-        if ($request->hasFile('avatar')) {
-            $this->deleteAvatar($user->avatar);
-            $user->avatar = $this->storeAvatar($request);
-        }
-
-        $user->save();
-
-        $user->syncRoles([$request->role]);
         return redirect()->route('admin.users.index')
             ->with('success', 'User update success!!');
     }
 
-    public function destroy(string $id)
+    public function destroy(string $id): RedirectResponse
     {
         $this->authorize('delete', User::class);
 
@@ -167,44 +109,9 @@ class UserController extends Controller
                 ->with('error', 'You cannot delete your own account!');
         }
 
-        $user->roles()->detach();
-        $this->deleteAvatar($user->avatar);
-        $user->delete();
+        $this->users->delete($user);
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User deleted successfully!');
-    }
-
-    private function storeAvatar(Request $request): string
-    {
-        $directory = 'uploads/users';
-        $file = $request->file('avatar');
-        $filename = $file->hashName();
-
-        File::ensureDirectoryExists(public_path($directory));
-        $file->move(public_path($directory), $filename);
-
-        return $filename;
-    }
-
-    private function deleteAvatar(?string $avatar): void
-    {
-        if (! $avatar) {
-            return;
-        }
-
-        if (str_contains($avatar, '/') && str_starts_with($avatar, 'uploads/')) {
-            File::delete(public_path($avatar));
-            return;
-        }
-
-        if (! str_contains($avatar, '/')) {
-            File::delete(public_path("uploads/users/{$avatar}"));
-            return;
-        }
-
-        if (Storage::disk('public')->exists($avatar)) {
-            Storage::disk('public')->delete($avatar);
-        }
     }
 }

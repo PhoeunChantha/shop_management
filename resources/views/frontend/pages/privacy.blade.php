@@ -1,6 +1,8 @@
 @php
-    $title = 'Privacy Policy';
-    $updated = 'June 1, 2026';
+    $page = $page ?? null;
+    $body = ($page && filled($page->content)) ? $page->content : null;
+    $title = $body ? $page->title : 'Privacy Policy';
+    $updated = $body ? ($page->updated_at?->format('F j, Y') ?? 'Recently') : 'June 1, 2026';
     $sections = [
         ['h' => 'Overview', 'p' => ['T-Shirt Shop ("we", "us") respects your privacy. This policy explains what information we collect, how we use it, and the choices you have. By using our store you agree to the practices described here.']],
         ['h' => 'Information we collect', 'p' => ['We collect information you provide directly — such as your name, email, shipping address, and payment details when you create an account or place an order.', 'We also automatically collect device, browser, and usage data through cookies and similar technologies to improve your experience.']],
@@ -11,5 +13,5 @@
         ['h' => 'Contact us', 'p' => ['Questions about this policy? Email privacy@tshirtshop.com and our team will respond within 30 days.']],
     ];
 @endphp
-@include('frontend.pages.partials.legal', compact('title', 'updated', 'sections'))
+@include('frontend.pages.partials.legal', compact('title', 'updated', 'sections', 'body'))
 

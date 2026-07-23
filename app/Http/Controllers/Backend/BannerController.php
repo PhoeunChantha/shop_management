@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Backend;
 
-use App\Helpers\ImageManager;
 use App\Http\Controllers\Backend\Concerns\HandlesBulkActions;
+use App\Http\Controllers\Backend\Concerns\ResolvesMediaSelection;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Banner\StoreBannerRequest;
 use App\Http\Requests\Banner\UpdateBannerRequest;
 use App\Models\Banner;
 use App\Services\BulkActionService;
+use App\Services\ImageFieldService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -17,6 +18,11 @@ use Illuminate\View\View;
 class BannerController extends Controller
 {
     use HandlesBulkActions;
+    use ResolvesMediaSelection;
+
+    public function __construct(
+        private readonly ImageFieldService $images,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -55,12 +61,13 @@ class BannerController extends Controller
         $this->authorize('create', Banner::class);
 
         try {
-            $validated = $request->safe()->except('image');
+            $validated = $request->safe()->except(['image', 'image_media']);
             $banner = Banner::create($validated);
 
             if ($request->hasFile('image')) {
-                $banner->image = ImageManager::upload($request->file('image'), 'banners');
-                $banner->save();
+                $this->images->attachUploaded($banner, $request->file('image'), 'banners');
+            } elseif ($selected = $this->selectedMediaFilename($request, 'image', 'banners')) {
+                $this->images->attachSelected($banner, $selected);
             }
 
             return to_route('admin.banners.index')->with('success', 'Banner created successfully!');
@@ -84,11 +91,12 @@ class BannerController extends Controller
 
         try {
             $banner = Banner::findOrFail($id);
-            $banner->update($request->safe()->except('image'));
+            $banner->update($request->safe()->except(['image', 'image_media']));
 
             if ($request->hasFile('image')) {
-                $banner->image = ImageManager::update($request->file('image'), $banner->image, 'banners');
-                $banner->save();
+                $this->images->replaceUploaded($banner, $request->file('image'), 'banners');
+            } elseif ($selected = $this->selectedMediaFilename($request, 'image', 'banners')) {
+                $this->images->attachSelected($banner, $selected);
             }
 
             return to_route('admin.banners.index')->with('success', 'Banner updated successfully!');
@@ -105,7 +113,7 @@ class BannerController extends Controller
 
         try {
             $banner = Banner::findOrFail($id);
-            ImageManager::delete($banner->image, 'banners');
+            $this->images->delete($banner->image, 'banners');
             $banner->delete();
         } catch (\Exception $e) {
             Log::error('Error deleting banner: '.$e->getMessage(), ['exception' => $e, 'banner_id' => $id]);

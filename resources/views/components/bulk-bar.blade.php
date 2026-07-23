@@ -15,6 +15,10 @@
         <span x-text="count"></span> selected
     </span>
 
+    @isset($actions)
+        {{ $actions }}
+    @endisset
+
     @isset($status)
         <form method="POST" action="{{ $status }}" class="bulk-bar__form">
             @csrf

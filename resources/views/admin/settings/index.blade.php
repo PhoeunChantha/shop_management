@@ -22,6 +22,9 @@
         if ($errors->has('social_links') || collect($errors->keys())->contains(fn ($k) => str_starts_with($k, 'social_links'))) {
             $activeTab = 'social';
         }
+        if ($errors->has('payment_methods') || $errors->has('payment_method_images') || collect($errors->keys())->contains(fn ($k) => str_starts_with($k, 'payment_methods') || str_starts_with($k, 'payment_method_images'))) {
+            $activeTab = 'payment';
+        }
     @endphp
 
     <div class="" x-data="{ tab: '{{ $activeTab }}' }">
@@ -155,10 +158,21 @@
                                         @if (($field['type'] ?? 'text') === 'textarea')
                                             <textarea name="{{ $fieldKey }}" id="{{ $fieldKey }}" rows="3"
                                                 class="form-input" placeholder="{{ $field['placeholder'] ?? '' }}">{{ old($fieldKey, $values[$fieldKey] ?? '') }}</textarea>
+                                        @elseif (($field['type'] ?? 'text') === 'select')
+                                            @php($selectedVal = (string) old($fieldKey, $values[$fieldKey] ?? ($field['default'] ?? '')))
+                                            <select name="{{ $fieldKey }}" id="{{ $fieldKey }}" class="form-input">
+                                                @foreach ($field['options'] ?? [] as $optVal => $optLabel)
+                                                    <option value="{{ $optVal }}" @selected($selectedVal === (string) $optVal)>{{ $optLabel }}</option>
+                                                @endforeach
+                                            </select>
                                         @else
                                             <input type="{{ $field['type'] ?? 'text' }}" name="{{ $fieldKey }}" id="{{ $fieldKey }}"
                                                 value="{{ old($fieldKey, $values[$fieldKey] ?? '') }}"
                                                 class="form-input" placeholder="{{ $field['placeholder'] ?? '' }}">
+                                        @endif
+
+                                        @if (!empty($field['help']))
+                                            <small class="text-gray-400 dark:text-slate-500 d-block mt-1">{{ $field['help'] }}</small>
                                         @endif
 
                                         @error($fieldKey)
@@ -172,12 +186,145 @@
                                     <div class="sm:col-span-2 settings-upload-row">
                                         @foreach ($imageFields as $fieldKey => $field)
                                             <x-image-upload :name="$fieldKey" :label="$field['label']"
+                                                :folder="$field['folder'] ?? 'settings'"
                                                 :value="\App\Helpers\ImageManager::path($values[$fieldKey] ?? null, $field['folder'] ?? 'settings')"
                                                 :accept="$field['accept'] ?? 'image/*'"
                                                 :help="$field['help'] ?? 'PNG, JPG, GIF or SVG — up to 2MB'" />
                                         @endforeach
                                     </div>
                                 @endif
+                            @elseif (($group['type'] ?? '') === 'payment_methods')
+                                <div class="payment-method-builder sm:col-span-2"
+                                    x-data="paymentMethodSettings(@js($paymentRows))">
+                                    <div class="payment-method-builder__head">
+                                        <div>
+                                            <p class="section-kicker">Checkout options</p>
+                                            <h3>Payment methods</h3>
+                                            <span>Manage the methods shown by checkout later. Saved as one settings array.</span>
+                                        </div>
+                                        <button type="button" class="dynamic-add-button" @click="add()">
+                                            <i class="fa-solid fa-plus"></i> Add method
+                                        </button>
+                                    </div>
+
+                                    <div class="payment-method-list">
+                                        <template x-for="(method, i) in methods" :key="method.id || i">
+                                            <article class="payment-method-card">
+                                                <input type="hidden" :name="`payment_methods[${i}][id]`" x-model="method.id">
+                                                <input type="hidden" :name="`payment_methods[${i}][image]`" x-model="method.image">
+                                                <input type="hidden" :name="`payment_methods[${i}][qr_image]`" x-model="method.qr_image">
+
+                                                <div class="payment-method-card__media">
+                                                    <div class="payment-method-thumb">
+                                                        <template x-if="previewUrl(method)">
+                                                            <img :src="previewUrl(method)" alt="">
+                                                        </template>
+                                                        <template x-if="!previewUrl(method)">
+                                                            <span><i class="fa-regular fa-credit-card"></i></span>
+                                                        </template>
+                                                    </div>
+                                                    <label class="payment-method-upload">
+                                                        <i class="fa-solid fa-image"></i>
+                                                        <span x-text="method.image ? 'Replace image' : 'Upload image'"></span>
+                                                        <input type="file" class="visually-hidden" accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                                                            :name="`payment_method_images[${i}]`" @change="pickImage($event, method)">
+                                                    </label>
+                                                    <div class="payment-method-qr" x-show="method.type === 'manual'" x-cloak>
+                                                        <div class="payment-method-qr__preview">
+                                                            <template x-if="qrPreviewUrl(method)">
+                                                                <img :src="qrPreviewUrl(method)" alt="">
+                                                            </template>
+                                                            <template x-if="!qrPreviewUrl(method)">
+                                                                <span><i class="fa-solid fa-qrcode"></i></span>
+                                                            </template>
+                                                        </div>
+                                                        <label class="payment-method-upload payment-method-upload--qr">
+                                                            <i class="fa-solid fa-qrcode"></i>
+                                                            <span x-text="method.qr_image ? 'Replace QR' : 'Upload QR'"></span>
+                                                            <input type="file" class="visually-hidden" accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                                                                :name="`payment_method_qr_images[${i}]`" @change="pickQrImage($event, method)">
+                                                        </label>
+                                                    </div>
+                                                </div>
+
+                                                <div class="payment-method-card__fields">
+                                                    <div class="payment-method-card__top">
+                                                        <label class="payment-toggle">
+                                                            <input type="hidden" :name="`payment_methods[${i}][status]`" value="0">
+                                                            <input type="checkbox" :name="`payment_methods[${i}][status]`" value="1" x-model="method.status">
+                                                            <span></span>
+                                                            <strong x-text="method.status ? 'Enabled' : 'Disabled'"></strong>
+                                                        </label>
+                                                        <button type="button" class="dynamic-remove-button" @click="remove(i)" title="Delete method">
+                                                            <i class="fa-solid fa-trash"></i>
+                                                        </button>
+                                                    </div>
+
+                                                    <div class="payment-method-grid">
+                                                        <div class="form-field">
+                                                            <label>Name</label>
+                                                            <input type="text" class="form-input" :name="`payment_methods[${i}][name]`"
+                                                                x-model="method.name" placeholder="Card">
+                                                        </div>
+                                                        <div class="form-field">
+                                                            <label>Code</label>
+                                                            <input type="text" class="form-input" :name="`payment_methods[${i}][code]`"
+                                                                x-model="method.code" placeholder="card">
+                                                        </div>
+                                                        <div class="form-field">
+                                                            <label>Sort</label>
+                                                            <input type="number" class="form-input" :name="`payment_methods[${i}][sort_order]`"
+                                                                x-model="method.sort_order" min="0" max="999">
+                                                        </div>
+                                                        <div class="form-field">
+                                                            <label>Type</label>
+                                                            <select class="form-input" :name="`payment_methods[${i}][type]`" x-model="method.type">
+                                                                <option value="online">Online</option>
+                                                                <option value="manual">Manual / QR</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="form-field payment-method-grid__wide">
+                                                            <label>Description</label>
+                                                            <input type="text" class="form-input" :name="`payment_methods[${i}][description]`"
+                                                                x-model="method.description" placeholder="Short admin or checkout description">
+                                                        </div>
+                                                        <div class="form-field" x-show="method.type === 'manual'" x-cloak>
+                                                            <label>Bank / wallet</label>
+                                                            <input type="text" class="form-input" :name="`payment_methods[${i}][bank_name]`"
+                                                                x-model="method.bank_name" placeholder="ABA, Wing, ACLEDA">
+                                                        </div>
+                                                        <div class="form-field" x-show="method.type === 'manual'" x-cloak>
+                                                            <label>Account name</label>
+                                                            <input type="text" class="form-input" :name="`payment_methods[${i}][account_name]`"
+                                                                x-model="method.account_name" placeholder="Store account name">
+                                                        </div>
+                                                        <div class="form-field" x-show="method.type === 'manual'" x-cloak>
+                                                            <label>Account number</label>
+                                                            <input type="text" class="form-input" :name="`payment_methods[${i}][account_number]`"
+                                                                x-model="method.account_number" placeholder="Account or phone number">
+                                                        </div>
+                                                        <div class="form-field payment-method-grid__wide">
+                                                            <label>Related field / instructions</label>
+                                                            <textarea rows="2" class="form-input" :name="`payment_methods[${i}][instructions]`"
+                                                                x-model="method.instructions" placeholder="Example: require card number, expiry and CVC"></textarea>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </article>
+                                        </template>
+                                    </div>
+
+                                    <button type="button" class="payment-method-empty-add" x-show="methods.length === 0" x-cloak @click="add()">
+                                        <i class="fa-solid fa-plus"></i>
+                                        <span>Add your first payment method</span>
+                                    </button>
+
+                                    @foreach ($errors->keys() as $errorKey)
+                                        @if (str_starts_with($errorKey, 'payment_methods') || str_starts_with($errorKey, 'payment_method_images'))
+                                            <p class="text-red-500 text-sm mt-1.5">{{ $errors->first($errorKey) }}</p>
+                                        @endif
+                                    @endforeach
+                                </div>
                             @elseif (($group['type'] ?? '') === 'repeater')
                                 {{-- Dynamic social links: icon + title + url, add/remove rows. --}}
                                 <div class="form-field" x-data="{
@@ -277,5 +424,78 @@
             </div>
         </section>
     </div>
+
+    <script>
+        function paymentMethodSettings(initialMethods) {
+            return {
+                methods: Array.isArray(initialMethods) ? initialMethods.map((method, index) => ({
+                    id: method.id || `payment_${index + 1}`,
+                    name: method.name || '',
+                    code: method.code || '',
+                    type: method.type || 'online',
+                    description: method.description || '',
+                    instructions: method.instructions || '',
+                    image: method.image || '',
+                    qr_image: method.qr_image || '',
+                    bank_name: method.bank_name || '',
+                    account_name: method.account_name || '',
+                    account_number: method.account_number || '',
+                    preview: '',
+                    qr_preview: '',
+                    status: Boolean(method.status),
+                    sort_order: method.sort_order || index + 1,
+                })) : [],
+                publicRoot: @js(rtrim(asset(''), '/')),
+                settingsRoot: @js(rtrim(asset('uploads/settings'), '/')),
+                add() {
+                    const index = this.methods.length + 1;
+                    this.methods.push({
+                        id: `payment_${Date.now()}`,
+                        name: '',
+                        code: '',
+                        description: '',
+                        instructions: '',
+                        image: '',
+                        qr_image: '',
+                        preview: '',
+                        qr_preview: '',
+                        type: 'online',
+                        bank_name: '',
+                        account_name: '',
+                        account_number: '',
+                        status: true,
+                        sort_order: index,
+                    });
+                },
+                remove(index) {
+                    this.methods.splice(index, 1);
+                },
+                pickImage(event, method) {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+                    method.preview = URL.createObjectURL(file);
+                },
+                pickQrImage(event, method) {
+                    const file = event.target.files?.[0];
+                    if (!file) return;
+                    method.qr_preview = URL.createObjectURL(file);
+                },
+                previewUrl(method) {
+                    if (method.preview) return method.preview;
+                    if (!method.image) return '';
+                    if (method.image.startsWith('http://') || method.image.startsWith('https://')) return method.image;
+                    if (method.image.startsWith('uploads/')) return `${this.publicRoot}/${method.image}`;
+                    return `${this.settingsRoot}/${method.image}`;
+                },
+                qrPreviewUrl(method) {
+                    if (method.qr_preview) return method.qr_preview;
+                    if (!method.qr_image) return '';
+                    if (method.qr_image.startsWith('http://') || method.qr_image.startsWith('https://')) return method.qr_image;
+                    if (method.qr_image.startsWith('uploads/')) return `${this.publicRoot}/${method.qr_image}`;
+                    return `${this.settingsRoot}/${method.qr_image}`;
+                },
+            };
+        }
+    </script>
 
 </x-app-layout>

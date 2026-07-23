@@ -56,6 +56,8 @@ class Product extends Model
         'sort_order',
         'seo_title',
         'seo_description',
+        'rating_avg',
+        'rating_count',
     ];
 
     protected $casts = [
@@ -71,6 +73,8 @@ class Product extends Model
         'is_best_seller' => 'boolean',
         'is_on_sale' => 'boolean',
         'sort_order' => 'integer',
+        'rating_avg' => 'decimal:2',
+        'rating_count' => 'integer',
     ];
 
     /* ---------------- Relationships ---------------- */
@@ -110,9 +114,19 @@ class Product extends Model
         return $this->hasMany(StockMovement::class)->latest();
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class)->latest();
+    }
+
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(ProductTag::class, 'product_product_tag')->withTimestamps();
+    }
+
+    public function dealCampaigns(): BelongsToMany
+    {
+        return $this->belongsToMany(DealCampaign::class, 'deal_campaign_product')->withTimestamps();
     }
 
     /* ---------------- Scopes ---------------- */

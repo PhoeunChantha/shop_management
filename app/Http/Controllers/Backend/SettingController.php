@@ -28,11 +28,14 @@ final class SettingController extends Controller
             $rows = [['icon' => '', 'title' => '', 'url' => '']];
         }
 
+        $paymentRows = old('payment_methods', $this->settings->paymentMethods());
+
         return view('admin.settings.index', [
             'schema' => $this->settings->schema(),
             'values' => $this->settings->values(),
             'iconChoices' => $this->settings->iconChoices(),
             'socialRows' => array_values($rows),
+            'paymentRows' => array_values($paymentRows),
         ]);
     }
 

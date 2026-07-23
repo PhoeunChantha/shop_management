@@ -17,20 +17,22 @@
             </a>
         </div>
 
-        <section class="premium-card mt-3 orders-panel" x-data="bulkSelect()">
-            <x-table-loader />
-            <x-bulk-bar :destroy="route('admin.taxes.bulk-destroy')" :status="route('admin.taxes.bulk-status')" noun="rule" />
+        <x-admin.table-card class="mt-3 orders-panel" bulk>
+            <x-slot:bulkBar>
+                <x-bulk-bar :destroy="route('admin.taxes.bulk-destroy')" :status="route('admin.taxes.bulk-status')" noun="rule" />
+            </x-slot:bulkBar>
 
-            <x-table-toolbar>
-                <x-slot:left>
-                    <x-per-page-selector :current="$perPage" />
-                </x-slot:left>
-                <x-slot:right>
-                    <x-search-input name="search" placeholder="Search tax rules..." />
-                </x-slot:right>
-            </x-table-toolbar>
+            <x-slot:toolbar>
+                <x-table-toolbar>
+                    <x-slot:left>
+                        <x-per-page-selector :current="$perPage" />
+                    </x-slot:left>
+                    <x-slot:right>
+                        <x-search-input name="search" placeholder="Search tax rules..." />
+                    </x-slot:right>
+                </x-table-toolbar>
+            </x-slot:toolbar>
 
-            <div class="premium-table-wrap">
                 <table class="dash-table">
                     <thead>
                         <tr>
@@ -90,20 +92,18 @@
                         @empty
                             <tr>
                                 <td colspan="8">
-                                    <div class="empty-state">
-                                        <i class="fa-solid fa-percent"></i>
-                                        <strong>No tax rules yet</strong>
-                                        <span>Add a tax rate applied to orders at checkout.</span>
-                                    </div>
+                                    <x-admin.empty-state icon="fa-solid fa-percent" title="No tax rules yet"
+                                        message="Add a tax rate applied to orders at checkout." />
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
-            </div>
 
-            <x-table-footer :paginator="$rules" label="rules" />
-        </section>
+            <x-slot:footer>
+                <x-table-footer :paginator="$rules" label="rules" />
+            </x-slot:footer>
+        </x-admin.table-card>
 
         <x-delete-confirm-modal id="deleteTaxModal" title="Delete this tax rule?"
             message-after="from checkout. This cannot be undone." />

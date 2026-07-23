@@ -63,6 +63,10 @@ final class ImageManager
             return;
         }
 
+        if (self::isExternalUrl($name)) {
+            return;
+        }
+
         $path = self::directory($folder).'/'.$name;
 
         if (File::exists(public_path($path))) {
@@ -75,7 +79,15 @@ final class ImageManager
      */
     public static function path(?string $name, string $folder): ?string
     {
-        return empty($name) ? null : self::directory($folder).'/'.$name;
+        if (empty($name)) {
+            return null;
+        }
+
+        if (self::isExternalUrl($name)) {
+            return $name;
+        }
+
+        return self::directory($folder).'/'.$name;
     }
 
     /**
@@ -83,9 +95,22 @@ final class ImageManager
      */
     public static function url(?string $name, string $folder): ?string
     {
+        if (empty($name)) {
+            return null;
+        }
+
+        if (self::isExternalUrl($name)) {
+            return $name;
+        }
+
         $path = self::path($name, $folder);
 
         return $path ? asset($path) : null;
+    }
+
+    private static function isExternalUrl(string $name): bool
+    {
+        return Str::startsWith($name, ['http://', 'https://']);
     }
 
     /**

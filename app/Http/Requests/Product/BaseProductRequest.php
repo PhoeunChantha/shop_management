@@ -46,10 +46,13 @@ abstract class BaseProductRequest extends FormRequest
             'description' => ['nullable', 'array'],
             'description.*' => ['nullable', 'string'],
             'thumbnail' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
+            'thumbnail_media' => ['nullable', 'string', 'max:255'],
 
             // Gallery
             'images' => ['nullable', 'array'],
             'images.*' => ['image', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
+            'images_media' => ['nullable', 'array'],
+            'images_media.*' => ['string', 'max:255'],
             'removed_images' => ['nullable', 'array'],
             'removed_images.*' => ['integer'],
             'primary_image_id' => ['nullable', 'integer'],
@@ -95,6 +98,7 @@ abstract class BaseProductRequest extends FormRequest
             'variants.*.value_ids.*' => ['integer', 'exists:attribute_values,id'],
             'variants.*.image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
             'variants.*.image_existing' => ['nullable', 'string', 'max:255'],
+            'variants.*.image_media' => ['nullable', 'string', 'max:255'],
             'variants.*.sku' => ['nullable', 'string', 'max:100'],
             'variants.*.barcode' => ['nullable', 'string', 'max:100'],
             'variants.*.stock' => ['required', 'integer', 'min:0'],

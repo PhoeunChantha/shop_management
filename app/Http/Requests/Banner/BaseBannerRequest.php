@@ -24,6 +24,7 @@ abstract class BaseBannerRequest extends FormRequest
     {
         return [
             'image' => [$this->imageRule(), 'image', 'mimes:jpeg,png,jpg,webp', 'max:4096'],
+            'image_media' => ['nullable', 'string', 'max:255'],
             'kicker' => ['nullable', 'string', 'max:120'],
             'title' => ['required', 'string', 'max:255'],
             'subtitle' => ['nullable', 'string', 'max:500'],
@@ -39,6 +40,6 @@ abstract class BaseBannerRequest extends FormRequest
      */
     protected function imageRule(): string
     {
-        return 'required';
+        return 'required_without:image_media';
     }
 }

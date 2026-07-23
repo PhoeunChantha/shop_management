@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers\Backend;
 
-use App\Helpers\ImageManager;
 use App\Http\Controllers\Backend\Concerns\HandlesBulkActions;
+use App\Http\Controllers\Backend\Concerns\ResolvesMediaSelection;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Collection\StoreCollectionRequest;
 use App\Http\Requests\Collection\UpdateCollectionRequest;
 use App\Models\Collection;
 use App\Models\Product;
 use App\Services\BulkActionService;
+use App\Services\ImageFieldService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -19,6 +20,11 @@ use Illuminate\View\View;
 class CollectionController extends Controller
 {
     use HandlesBulkActions;
+    use ResolvesMediaSelection;
+
+    public function __construct(
+        private readonly ImageFieldService $images,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -61,14 +67,15 @@ class CollectionController extends Controller
         $this->authorize('create', Collection::class);
 
         try {
-            $validated = $request->safe()->except(['image', 'products']);
+            $validated = $request->safe()->except(['image', 'image_media', 'products']);
             $validated['slug'] = $this->uniqueSlug($validated['name']);
 
             $collection = Collection::create($validated);
 
             if ($request->hasFile('image')) {
-                $collection->image = ImageManager::upload($request->file('image'), 'collections');
-                $collection->save();
+                $this->images->attachUploaded($collection, $request->file('image'), 'collections');
+            } elseif ($selected = $this->selectedMediaFilename($request, 'image', 'collections')) {
+                $this->images->attachSelected($collection, $selected);
             }
 
             $collection->products()->sync($request->input('products', []));
@@ -101,14 +108,15 @@ class CollectionController extends Controller
         try {
             $collection = Collection::findOrFail($id);
 
-            $validated = $request->safe()->except(['image', 'products']);
+            $validated = $request->safe()->except(['image', 'image_media', 'products']);
             $validated['slug'] = $this->uniqueSlug($validated['name'], $collection->id);
 
             $collection->update($validated);
 
             if ($request->hasFile('image')) {
-                $collection->image = ImageManager::update($request->file('image'), $collection->image, 'collections');
-                $collection->save();
+                $this->images->replaceUploaded($collection, $request->file('image'), 'collections');
+            } elseif ($selected = $this->selectedMediaFilename($request, 'image', 'collections')) {
+                $this->images->attachSelected($collection, $selected);
             }
 
             $collection->products()->sync($request->input('products', []));
@@ -127,7 +135,7 @@ class CollectionController extends Controller
 
         try {
             $collection = Collection::findOrFail($id);
-            ImageManager::delete($collection->image, 'collections');
+            $this->images->delete($collection->image, 'collections');
             $collection->delete(); // pivot rows cascade
         } catch (\Exception $e) {
             Log::error('Error deleting collection: '.$e->getMessage(), ['exception' => $e, 'collection_id' => $id]);

@@ -20,37 +20,39 @@
             </a>
         </div>
 
-        <section class="premium-card" x-data="bulkSelect()">
-            <x-table-loader />
-            <x-bulk-bar :destroy="route('admin.attributes.bulk-destroy')" :status="route('admin.attributes.bulk-status')" noun="attribute" />
+        <x-admin.table-card bulk>
+            <x-slot:bulkBar>
+                <x-bulk-bar :destroy="route('admin.attributes.bulk-destroy')" :status="route('admin.attributes.bulk-status')" noun="attribute" />
+            </x-slot:bulkBar>
 
-            <x-table-toolbar>
-                <x-slot:left>
-                    <x-per-page-selector :current="$perPage" />
-                </x-slot:left>
-                <x-slot:right>
-                    <x-search-input name="search" placeholder="Search attributes..." />
-                </x-slot:right>
-            </x-table-toolbar>
+            <x-slot:toolbar>
+                <x-table-toolbar>
+                    <x-slot:left>
+                        <x-per-page-selector :current="$perPage" />
+                    </x-slot:left>
+                    <x-slot:right>
+                        <x-search-input name="search" placeholder="Search attributes..." />
+                    </x-slot:right>
+                </x-table-toolbar>
+            </x-slot:toolbar>
 
-            <div class="premium-table-wrap">
-                <table class="premium-table">
-                    <thead>
-                        <tr>
-                            <th class="bulk-check-col">
-                                <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
-                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
-                            </th>
-                            <th style="width:70px;">ID</th>
-                            <th>Attribute</th>
-                            <th>Values</th>
-                            <th style="width:110px;">Count</th>
-                            <th style="width:120px;">Status</th>
-                            <th class="text-end" style="width:150px;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($attributes as $attribute)
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th class="bulk-check-col">
+                            <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
+                                :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+                        </th>
+                        <th style="width:70px;">ID</th>
+                        <th>Attribute</th>
+                        <th>Values</th>
+                        <th style="width:110px;">Count</th>
+                        <th style="width:120px;">Status</th>
+                        <th class="text-end" style="width:150px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($attributes as $attribute)
                         <tr>
                             <td class="bulk-check-col">
                                 <input type="checkbox" class="bulk-check" data-row-check value="{{ $attribute->id }}"
@@ -95,23 +97,24 @@
                                 </div>
                             </td>
                         </tr>
-                        @empty
+                    @empty
                         <tr>
                             <td colspan="7">
-                                <div class="empty-state">
-                                    <i class="fa-solid fa-tags"></i>
-                                    <strong>No attributes found</strong>
-                                    <span>Create attributes like Size, Color, Material or Storage to build product variants.</span>
-                                </div>
+                                <x-admin.empty-state
+                                    icon="fa-solid fa-tags"
+                                    title="No attributes found"
+                                    message="Create attributes like Size, Color, Material or Storage to build product variants."
+                                />
                             </td>
                         </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                    @endforelse
+                </tbody>
+            </table>
 
-            <x-table-footer :paginator="$attributes" label="attributes" />
-        </section>
+            <x-slot:footer>
+                <x-table-footer :paginator="$attributes" label="attributes" />
+            </x-slot:footer>
+        </x-admin.table-card>
 
         <x-delete-confirm-modal
             id="deleteAttributeModal"

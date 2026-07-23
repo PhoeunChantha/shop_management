@@ -196,10 +196,10 @@
       const ds = add.dataset;
       // size/color may come from selected controls on PDP, else defaults
       const scope = add.closest('[data-product-scope]') || document;
-      const sizeEl = scope.querySelector('[data-size].is-active');
+      const sizeEl = scope.querySelector('[data-size].is-active') || scope.querySelector('[data-size]');
       const colorEl = scope.querySelector('[data-color].is-active');
       const qtyEl = scope.querySelector('[data-qty-value]');
-      if (add.hasAttribute('data-require-size') && !sizeEl) { toast('Please select a size'); return; }
+      if (add.hasAttribute('data-require-size') && !sizeEl && !ds.size) { toast('Please select a size'); return; }
       addToCart({
         id: Number(ds.id), name: ds.name, price: Number(ds.price), tint: ds.tint || 'linear-gradient(150deg,#eef2f7,#e2e8f0)',
         size: sizeEl ? sizeEl.getAttribute('data-size') : (ds.size || 'M'),
@@ -284,13 +284,13 @@
 
   /* ---------- countdown (flash sale) ---------- */
   document.querySelectorAll('[data-countdown]').forEach(node => {
-    let t = Number(node.getAttribute('data-countdown'));
+    let t = Math.max(0, Math.floor(Number(node.getAttribute('data-countdown')) || 0));
     const h = node.querySelector('[data-h]'), m = node.querySelector('[data-m]'), s = node.querySelector('[data-s]');
     const tick = () => {
       if (t > 0) t--;
       if (h) h.textContent = String(Math.floor(t / 3600)).padStart(2, '0');
       if (m) m.textContent = String(Math.floor((t % 3600) / 60)).padStart(2, '0');
-      if (s) s.textContent = String(t % 60).padStart(2, '0');
+      if (s) s.textContent = String(Math.floor(t % 60)).padStart(2, '0');
     };
     tick(); setInterval(tick, 1000);
   });
@@ -353,7 +353,19 @@
       if (back) back.style.visibility = step > 0 ? 'visible' : 'hidden';
     };
     document.addEventListener('click', (e) => {
-      if (e.target.closest('#coNext')) { if (step < panels.length - 1) { step++; show(); } else { window.location.href = window.UT_URLS.confirm; } }
+      if (e.target.closest('#coNext')) {
+        if (step < panels.length - 1) { step++; show(); }
+        else {
+          var coForm = document.getElementById('checkoutForm');
+          if (coForm) {
+            var itemsInput = document.getElementById('coItems');
+            if (itemsInput) itemsInput.value = JSON.stringify(store.cart);
+            coForm.submit();
+          } else {
+            window.location.href = window.UT_URLS.confirm;
+          }
+        }
+      }
       if (e.target.closest('#coBack')) { if (step > 0) { step--; show(); } }
     });
     show();

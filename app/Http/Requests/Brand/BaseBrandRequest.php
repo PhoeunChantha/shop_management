@@ -17,6 +17,7 @@ abstract class BaseBrandRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'min:2', 'max:255'],
             'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg,webp', 'max:2048'],
+            'image_media' => ['nullable', 'string', 'max:255'],
             'status' => ['required', 'boolean'],
         ];
     }

@@ -3,13 +3,19 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
+use App\Services\PermissionService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
+use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Permission;
 
 class PermissionController extends Controller
 {
+    public function __construct(
+        private readonly PermissionService $permissions,
+    ) {}
+
     public function index(Request $request): View
     {
         $filters = $request->validate([
@@ -18,48 +24,31 @@ class PermissionController extends Controller
         ]);
 
         $perPage = (int) ($filters['per_page'] ?? 10);
-        $search = trim($filters['search'] ?? '');
-
-        $permissions = Permission::query()
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where('name', 'like', "%{$search}%");
-            })
-            ->orderBy('id', 'asc')
-            ->paginate($perPage)
-            ->withQueryString();
 
         return view('admin.permissions.index', [
-            'permissions' => $permissions,
+            'permissions' => $this->permissions->paginate($filters, $perPage),
             'perPage' => $perPage,
         ]);
     }
 
-    public function create()
+    public function create(): View
     {
         return view('admin.permissions.create');
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
-        $validator = Validator::make($request->all(), [
-            'names' => 'required|array|min:1',
-            'names.*' => 'required|string|min:3|distinct|unique:permissions,name',
+        $data = $request->validate([
+            'names' => ['required', 'array', 'min:1'],
+            'names.*' => ['required', 'string', 'min:3', 'distinct', 'unique:permissions,name'],
         ]);
 
-        if ($validator->passes()) {
-            foreach ($request->names as $name) {
-                Permission::create([
-                    'name' => $name,
-                ]);
-            }
+        $this->permissions->createMany($data['names']);
 
-            return redirect()->route('admin.permissions.index')->with('success', 'Permission created successfully!');
-        } else {
-            return redirect()->route('admin.permissions.create')->withInput()->withErrors($validator);
-        }
+        return redirect()->route('admin.permissions.index')->with('success', 'Permission created successfully!');
     }
 
-    public function edit($id)
+    public function edit($id): View
     {
         $permission = Permission::findOrFail($id);
 
@@ -68,29 +57,22 @@ class PermissionController extends Controller
         ]);
     }
 
-    public function update($id, Request $request)
+    public function update($id, Request $request): RedirectResponse
     {
         $permission = Permission::findOrFail($id);
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|min:3|unique:permissions,name,'.$id.'id',
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'min:3', Rule::unique('permissions', 'name')->ignore($permission->id)],
         ]);
 
-        if ($validator->passes()) {
-            $permission->name = $request->name;
-            $permission->save();
+        $permission->update(['name' => $data['name']]);
 
-            
-            return redirect()->route('admin.permissions.index')->with('success', 'Permission updated successfully!');
-        } else {
-            return redirect()->route('admin.permissions.edit', $id)->withInput()->withErrors($validator);
-        }
+        return redirect()->route('admin.permissions.index')->with('success', 'Permission updated successfully!');
     }
 
-    public function destroy($id, Request $request)
+    public function destroy($id): RedirectResponse
     {
         $permission = Permission::findOrFail($id);
-
-
         $permission->delete();
 
         return redirect()->route('admin.permissions.index')->with('success', 'Permission deleted successfully!');

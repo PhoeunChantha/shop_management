@@ -31,12 +31,14 @@
         <x-message />
 
         {{-- Stock levels --}}
-        <section class="premium-card mt-3 orders-panel">
-            <div class="table-titlebar">
-                <div><h3>Stock levels</h3><p>{{ $rows->count() }} stock {{ Str::plural('item', $rows->count()) }}</p></div>
-            </div>
-            <div class="premium-table-wrap">
-                <table class="dash-table">
+        <x-admin.table-card :loader="false" class="mt-3 orders-panel">
+            <x-slot:toolbar>
+                <div class="table-titlebar">
+                    <div><h3>Stock levels</h3><p>{{ $rows->count() }} stock {{ Str::plural('item', $rows->count()) }}</p></div>
+                </div>
+            </x-slot:toolbar>
+
+            <table class="dash-table">
                     <thead>
                         <tr>
                             <th>Item</th>
@@ -69,17 +71,18 @@
                             </tr>
                         @endforeach
                     </tbody>
-                </table>
-            </div>
-        </section>
+            </table>
+        </x-admin.table-card>
 
         {{-- Movement history --}}
-        <section class="premium-card mt-3 orders-panel">
-            <div class="table-titlebar">
-                <div><h3>Movement history</h3><p>Every stock change, most recent first</p></div>
-            </div>
-            <div class="premium-table-wrap">
-                <table class="dash-table">
+        <x-admin.table-card :loader="false" class="mt-3 orders-panel">
+            <x-slot:toolbar>
+                <div class="table-titlebar">
+                    <div><h3>Movement history</h3><p>Every stock change, most recent first</p></div>
+                </div>
+            </x-slot:toolbar>
+
+            <table class="dash-table">
                     <thead>
                         <tr>
                             <th>When</th>
@@ -113,18 +116,17 @@
                         @empty
                             <tr>
                                 <td colspan="7">
-                                    <div class="empty-state">
-                                        <i class="fa-solid fa-clock-rotate-left"></i>
-                                        <strong>No movements yet</strong>
-                                        <span>Adjust a stock item to start the history.</span>
-                                    </div>
+                                    <x-admin.empty-state
+                                        icon="fa-solid fa-clock-rotate-left"
+                                        title="No movements yet"
+                                        message="Adjust a stock item to start the history."
+                                    />
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
-                </table>
-            </div>
-        </section>
+            </table>
+        </x-admin.table-card>
 
         {{-- Adjust modal --}}
         <div class="modal-backdrop-premium" x-show="open" x-cloak style="display:none;"

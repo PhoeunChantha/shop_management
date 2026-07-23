@@ -2,20 +2,21 @@
 
 namespace App\Http\Controllers\Backend;
 
-use App\Exports\ProductsExport;
 use App\Exports\ProductTemplateExport;
+use App\Exports\ProductsExport;
 use App\Http\Controllers\Backend\Concerns\HandlesBulkActions;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Product\StoreProductRequest;
 use App\Http\Requests\Product\UpdateProductRequest;
-use App\Imports\ProductsImport;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\ProductImportService;
 use App\Services\ProductService;
 use App\Services\SettingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -26,6 +27,7 @@ class ProductController extends Controller
 
     public function __construct(
         private readonly ProductService $products,
+        private readonly ProductImportService $imports,
         private readonly SettingService $settings,
     ) {}
 
@@ -33,18 +35,7 @@ class ProductController extends Controller
     {
         $this->authorize('viewAny', Product::class);
 
-        $filters = $request->validate([
-            'search' => ['nullable', 'string', 'max:255'],
-            'category_id' => ['nullable', 'integer'],
-            'brand_id' => ['nullable', 'integer'],
-            'status' => ['nullable', 'in:draft,active,inactive,archived'],
-            'stock' => ['nullable', 'in:in_stock,out_of_stock,low_stock'],
-            'flag' => ['nullable', 'in:featured,new,best_seller,on_sale'],
-            'min_price' => ['nullable', 'numeric', 'min:0'],
-            'max_price' => ['nullable', 'numeric', 'min:0'],
-            'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
-        ]);
-
+        $filters = $request->validate($this->filterRules(withPerPage: true));
         $perPage = (int) ($filters['per_page'] ?? 10);
 
         return view('admin.products.index', [
@@ -76,22 +67,15 @@ class ProductController extends Controller
     {
         $this->authorize('view', Product::class);
 
-        $product = Product::with([
-            'category', 'subCategory', 'brand', 'tags',
-            'images', 'specifications', 'variants.values.attribute',
-        ])->findOrFail($id);
-
-        return view('admin.products.show', ['product' => $product]);
+        return view('admin.products.show', ['product' => $this->products->findForShow($id)]);
     }
 
     public function edit(string $id): View
     {
         $this->authorize('update', Product::class);
 
-        $product = Product::with(['images', 'variants.values', 'specifications', 'tags'])->findOrFail($id);
-
         return view('admin.products.edit', array_merge($this->products->formData(), [
-            'product' => $product,
+            'product' => $this->products->findForEdit($id),
         ]));
     }
 
@@ -110,8 +94,7 @@ class ProductController extends Controller
     {
         $this->authorize('delete', Product::class);
 
-        $product = Product::with('images')->findOrFail($id);
-        $this->products->delete($product);
+        $this->products->delete(Product::with('images')->findOrFail($id));
 
         return to_route('admin.products.index')
             ->with('success', 'Product deleted successfully!');
@@ -121,13 +104,9 @@ class ProductController extends Controller
     {
         $this->authorize('delete', Product::class);
 
-        $ids = $this->validatedIds($request);
+        $count = $this->products->bulkDelete($this->validatedIds($request));
 
-        // Delegate to the service per product so images + variants are cleaned up.
-        $products = Product::with('images')->whereKey($ids)->get();
-        $products->each(fn (Product $product) => $this->products->delete($product));
-
-        return back()->with('success', $products->count().' product(s) deleted successfully!');
+        return back()->with('success', $count.' product(s) deleted successfully!');
     }
 
     public function bulkStatus(Request $request): RedirectResponse
@@ -135,21 +114,131 @@ class ProductController extends Controller
         $this->authorize('update', Product::class);
 
         [$ids, $status] = $this->validatedStatus($request);
-
-        // Product status is a string enum — map Enable/Disable to active/inactive.
-        $value = $status ? 'active' : 'inactive';
-        $count = Product::whereKey($ids)->update(['status' => $value]);
+        $count = $this->products->setStatus($ids, $status);
 
         return back()->with('success', $count.' product(s) '.($status ? 'activated' : 'deactivated').'.');
     }
 
-    /* ---------------- Import / Export ---------------- */
+    public function bulkUpdate(Request $request): RedirectResponse
+    {
+        $this->authorize('update', Product::class);
+
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'exists:products,id'],
+            'operation' => ['required', Rule::in(['status', 'category', 'brand', 'flag'])],
+            'status' => ['nullable', 'required_if:operation,status', Rule::in(['draft', 'active', 'inactive', 'archived'])],
+            'category_id' => ['nullable', 'required_if:operation,category', 'integer', 'exists:categories,id'],
+            'brand_id' => ['nullable', 'required_if:operation,brand', 'integer', 'exists:brands,id'],
+            'flag' => ['nullable', 'required_if:operation,flag', Rule::in(['is_featured', 'is_new', 'is_best_seller', 'is_on_sale'])],
+            'flag_value' => ['nullable', 'required_if:operation,flag', 'boolean'],
+        ]);
+
+        $count = $this->products->bulkUpdate($data);
+
+        return back()->with('success', $count.' product(s) updated.');
+    }
+
+    public function bulkExport(Request $request): BinaryFileResponse
+    {
+        $this->authorize('viewAny', Product::class);
+
+        return Excel::download(
+            new ProductsExport(
+                $this->products,
+                ['ids' => $this->validatedIds($request)],
+                array_keys($this->settings->activeLanguages()),
+                $this->settings->primaryLanguage(),
+            ),
+            'selected-products-'.now()->format('Y-m-d_His').'.xlsx',
+        );
+    }
 
     public function export(Request $request): BinaryFileResponse
     {
         $this->authorize('viewAny', Product::class);
 
-        $filters = $request->validate([
+        $filters = $request->validate($this->filterRules());
+
+        return Excel::download(
+            new ProductsExport(
+                $this->products,
+                $filters,
+                array_keys($this->settings->activeLanguages()),
+                $this->settings->primaryLanguage(),
+            ),
+            'products-'.now()->format('Y-m-d_His').'.xlsx',
+        );
+    }
+
+    public function template(): BinaryFileResponse
+    {
+        $this->authorize('create', Product::class);
+
+        return Excel::download(
+            new ProductTemplateExport(
+                array_keys($this->settings->activeLanguages()),
+                Category::orderBy('name')->pluck('name')->all(),
+                Brand::orderBy('name')->pluck('name')->all(),
+            ),
+            'product-import-template.xlsx',
+        );
+    }
+
+    public function importPreview(Request $request): RedirectResponse
+    {
+        $this->authorize('create', Product::class);
+
+        $request->validate(['file' => ['required', 'file', 'mimes:xlsx,xls,csv,txt', 'max:10240']]);
+        $result = $this->imports->preview($request->file('file'), $request->session());
+
+        return back()->with($result['status'], $result['message']);
+    }
+
+    public function confirmImport(Request $request): RedirectResponse
+    {
+        $this->authorize('create', Product::class);
+
+        $result = $this->imports->confirm($request->session());
+        $redirect = back()->with($result['status'], $result['message']);
+
+        if (! empty($result['errors'])) {
+            $redirect->with('warning', count($result['errors']).' row(s) were skipped. See the details below.');
+            session()->flash('import_errors', $result['errors']);
+        }
+
+        return $redirect;
+    }
+
+    public function cancelImport(Request $request): RedirectResponse
+    {
+        $this->imports->cancel($request->session());
+
+        return back()->with('info', 'Product import preview cancelled.');
+    }
+
+    public function import(Request $request): RedirectResponse
+    {
+        $this->authorize('create', Product::class);
+
+        $request->validate(['file' => ['required', 'file', 'mimes:xlsx,xls,csv,txt', 'max:10240']]);
+        $result = $this->imports->import($request->file('file'));
+        $redirect = back()->with($result['status'], $result['message']);
+
+        if (! empty($result['errors'])) {
+            $redirect->with('warning', count($result['errors']).' row(s) were skipped. See the details below.');
+            session()->flash('import_errors', $result['errors']);
+        }
+
+        return $redirect;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function filterRules(bool $withPerPage = false): array
+    {
+        return array_filter([
             'search' => ['nullable', 'string', 'max:255'],
             'category_id' => ['nullable', 'integer'],
             'brand_id' => ['nullable', 'integer'],
@@ -158,50 +247,7 @@ class ProductController extends Controller
             'flag' => ['nullable', 'in:featured,new,best_seller,on_sale'],
             'min_price' => ['nullable', 'numeric', 'min:0'],
             'max_price' => ['nullable', 'numeric', 'min:0'],
+            'per_page' => $withPerPage ? ['nullable', 'integer', 'in:5,10,25,50'] : null,
         ]);
-
-        $languages = array_keys($this->settings->activeLanguages());
-        $export = new ProductsExport($this->products, $filters, $languages, $this->settings->primaryLanguage());
-
-        return Excel::download($export, 'products-'.now()->format('Y-m-d_His').'.xlsx');
-    }
-
-    public function template(): BinaryFileResponse
-    {
-        $this->authorize('create', Product::class);
-
-        $export = new ProductTemplateExport(
-            array_keys($this->settings->activeLanguages()),
-            Category::orderBy('name')->pluck('name')->all(),
-            Brand::orderBy('name')->pluck('name')->all(),
-        );
-
-        return Excel::download($export, 'product-import-template.xlsx');
-    }
-
-    public function import(Request $request): RedirectResponse
-    {
-        $this->authorize('create', Product::class);
-
-        $request->validate([
-            'file' => ['required', 'file', 'mimes:xlsx,xls,csv,txt', 'max:10240'],
-        ]);
-
-        $import = new ProductsImport($this->settings);
-
-        try {
-            Excel::import($import, $request->file('file'));
-        } catch (\Throwable $e) {
-            return back()->with('error', 'Could not read the file. Make sure it matches the template.');
-        }
-
-        $redirect = back()->with('success', "Import finished — {$import->created} created, {$import->updated} updated.");
-
-        if (! empty($import->errors)) {
-            $redirect->with('warning', count($import->errors).' row(s) were skipped. See the details below.');
-            session()->flash('import_errors', $import->errors);
-        }
-
-        return $redirect;
     }
 }

@@ -33,7 +33,7 @@
         </div>
 
         <div class="col-span-2 md:col-span-2">
-            <x-image-upload name="image" label="Brand Logo" :value="$brand->image ?? null"
+            <x-image-upload name="image" label="Brand Logo" folder="brands" :value="$brand->image ?? null"
                 help="PNG, JPG, GIF, SVG or WEBP — up to 2MB" />
         </div>
     </div>

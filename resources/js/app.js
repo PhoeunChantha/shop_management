@@ -49,13 +49,17 @@ $(function () {
         const format = 'MMMM D, YYYY';
         const label = (s, e) => s.format(format) + ' - ' + e.format(format);
 
-        $('[data-daterange]').each(function () {
+        $('[data-daterange]').each(function (index) {
             const $input = $(this);
             const $form = $input.closest('form');
-            const $from = $form.find('input[name="date_from"]');
-            const $to = $form.find('input[name="date_to"]');
+            const fromName = $input.data('daterangeFrom') || 'date_from';
+            const toName = $input.data('daterangeTo') || 'date_to';
+            const $from = $form.find(`input[name="${fromName}"]`);
+            const $to = $form.find(`input[name="${toName}"]`);
             const start = $from.val() ? moment($from.val(), 'YYYY-MM-DD') : null;
             const end = $to.val() ? moment($to.val(), 'YYYY-MM-DD') : null;
+            const namespace = `.daterange${index}`;
+            let scrollFrame = null;
 
             $input.daterangepicker({
                 autoUpdateInput: false,
@@ -88,6 +92,38 @@ $(function () {
                 $input.val('');
                 $from.val('');
                 $to.val('');
+            });
+
+            const syncPickerPosition = function () {
+                if (scrollFrame) return;
+
+                scrollFrame = window.requestAnimationFrame(function () {
+                    scrollFrame = null;
+
+                    const picker = $input.data('daterangepicker');
+                    if (!picker || !picker.isShowing) return;
+
+                    const rect = $input.get(0).getBoundingClientRect();
+                    const hiddenAbove = rect.bottom < 80;
+                    const hiddenBelow = rect.top > window.innerHeight - 40;
+
+                    if (hiddenAbove || hiddenBelow) {
+                        picker.hide();
+                        return;
+                    }
+
+                    picker.move();
+                });
+            };
+
+            $input.on('show.daterangepicker', function () {
+                $('.admin-workspace').on(`scroll${namespace}`, syncPickerPosition);
+                $(window).on(`resize${namespace}`, syncPickerPosition);
+            });
+
+            $input.on('hide.daterangepicker', function () {
+                $('.admin-workspace').off(namespace);
+                $(window).off(namespace);
             });
         });
     }
@@ -205,6 +241,79 @@ Alpine.data('bulkSelect', () => ({
     clear() {
         this.selected = [];
         this.confirmingDelete = false;
+    },
+}));
+
+Alpine.data('commandPalette', (url) => ({
+    open: false,
+    query: '',
+    groups: [],
+    loading: false,
+    activeUrl: null,
+    timer: null,
+
+    init() {
+        window.addEventListener('keydown', (event) => {
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+                event.preventDefault();
+                this.openPalette();
+            }
+        });
+    },
+
+    openPalette() {
+        this.open = true;
+        this.search();
+        this.$nextTick(() => this.$refs.input?.focus());
+    },
+
+    closePalette() {
+        this.open = false;
+        this.activeUrl = null;
+    },
+
+    visibleGroups() {
+        return this.groups.filter((group) => group.items && group.items.length);
+    },
+
+    flatItems() {
+        return this.visibleGroups().flatMap((group) => group.items);
+    },
+
+    move(step) {
+        const items = this.flatItems();
+        if (!items.length) return;
+
+        const index = Math.max(0, items.findIndex((item) => item.url === this.activeUrl));
+        const next = (index + step + items.length) % items.length;
+        this.activeUrl = items[next].url;
+    },
+
+    goSelected() {
+        const target = this.activeUrl || this.flatItems()[0]?.url;
+        if (target) window.location.href = target;
+    },
+
+    search() {
+        clearTimeout(this.timer);
+        this.timer = setTimeout(async () => {
+            this.loading = true;
+
+            try {
+                const response = await fetch(`${url}?q=${encodeURIComponent(this.query)}`, {
+                    headers: { Accept: 'application/json' },
+                });
+                const payload = await response.json();
+                this.groups = payload.groups || [];
+                this.activeUrl = this.flatItems()[0]?.url || null;
+            } catch (error) {
+                console.error('Command palette search failed.', error);
+                this.groups = [];
+                this.activeUrl = null;
+            } finally {
+                this.loading = false;
+            }
+        }, 120);
     },
 }));
 

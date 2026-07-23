@@ -8,9 +8,9 @@
         </div>
     </x-slot>
 
-    <div class="admin-page">
+    <div class="admin-page order-detail-page">
         {{-- Header --}}
-        <div class="order-detail-head">
+        <div class="order-detail-head order-detail-hero">
             <div>
                 <p class="section-kicker">Order detail</p>
                 <div class="order-detail-head__meta">
@@ -18,6 +18,9 @@
                     <span class="status-chip {{ $order->status->badge() }}">{{ $order->status->label() }}</span>
                     <span class="status-chip {{ $order->payment_status->badge() }}">
                         <i class="fa-solid fa-credit-card me-1"></i>{{ $order->payment_status->label() }}
+                    </span>
+                    <span class="status-chip {{ $order->fulfillment_status->badge() }}">
+                        <i class="fa-solid fa-truck-fast me-1"></i>{{ $order->fulfillment_status->label() }}
                     </span>
                 </div>
                 <p class="text-sm text-gray-500 dark:text-slate-400 mt-2 mb-0">
@@ -31,6 +34,9 @@
                 <a href="{{ route('admin.orders.packing-slip', $order->id) }}" target="_blank" class="ghost-button ghost-button--panel">
                     <i class="fa-solid fa-box-open"></i><span>Packing slip</span>
                 </a>
+                <a href="{{ route('admin.returns.create', ['order_id' => $order->id]) }}" class="ghost-button ghost-button--panel">
+                    <i class="fa-solid fa-rotate-left"></i><span>Create return</span>
+                </a>
                 <a href="{{ route('admin.orders.index') }}" class="ghost-button ghost-button--panel">
                     <i class="fa-solid fa-arrow-left"></i><span>Back</span>
                 </a>
@@ -39,8 +45,27 @@
 
         <x-message />
 
+        <div class="order-detail-summary">
+            <div class="order-detail-summary__card">
+                <span>Total</span>
+                <strong>${{ number_format($order->grand_total, 2) }}</strong>
+            </div>
+            <div class="order-detail-summary__card">
+                <span>Items</span>
+                <strong>{{ $order->details->sum('quantity') }}</strong>
+            </div>
+            <div class="order-detail-summary__card">
+                <span>Customer</span>
+                <strong>{{ $order->user ? 'Account' : 'Guest' }}</strong>
+            </div>
+            <div class="order-detail-summary__card">
+                <span>Fulfillment</span>
+                <strong>{{ $order->fulfillment_status->label() }}</strong>
+            </div>
+        </div>
+
         {{-- Status stepper --}}
-        <section class="premium-card p-4 mt-3">
+        <section class="premium-card p-4 mt-3 order-stepper-card">
             @php($current = $order->status->flowIndex())
             <div class="order-stepper {{ $order->status->isTerminal() ? 'is-cancelled' : '' }}">
                 @if ($order->status->isTerminal())
@@ -67,7 +92,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
             {{-- Left: items + money + activity --}}
             <div class="lg:col-span-2 d-flex flex-column gap-4">
-                <section class="premium-card">
+                <section class="premium-card order-items-card">
                     <div class="table-titlebar">
                         <div>
                             <h3>Items</h3>
@@ -117,14 +142,34 @@
                 </section>
 
                 @if ($order->customer_note)
-                    <section class="premium-card p-4">
+                    <section class="premium-card p-4 order-note-card">
                         <p class="section-kicker mb-1">Customer note</p>
                         <p class="text-sm text-gray-700 dark:text-slate-300 mb-0">{{ $order->customer_note }}</p>
                     </section>
                 @endif
 
+                @if ($order->returnRequests->isNotEmpty())
+                    <section class="premium-card p-4 return-order-history-card">
+                        <div class="table-titlebar">
+                            <div>
+                                <h3>Returns & refunds</h3>
+                                <p>{{ $order->returnRequests->count() }} return workflow(s) linked to this order</p>
+                            </div>
+                        </div>
+                        <div class="return-order-history">
+                            @foreach ($order->returnRequests as $return)
+                                <a href="{{ route('admin.returns.show', $return) }}">
+                                    <strong>{{ $return->return_number }}</strong>
+                                    <span class="status-chip {{ $return->statusBadge() }}">{{ $return->statusLabel() }}</span>
+                                    <em>${{ number_format((float) $return->refund_amount, 2) }}</em>
+                                </a>
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
+
                 {{-- Activity timeline --}}
-                <section class="premium-card p-4">
+                <section class="premium-card p-4 order-activity-card">
                     <p class="section-kicker mb-3">Activity</p>
                     @if ($order->events->isEmpty())
                         <p class="text-sm text-gray-400 mb-0">No activity recorded yet.</p>
@@ -149,11 +194,11 @@
             </div>
 
             {{-- Right: fulfilment + customer + shipping + payment --}}
-            <aside class="d-flex flex-column gap-4">
-                <section class="premium-card form-panel">
+            <aside class="d-flex flex-column gap-4 order-side-rail">
+                <section class="premium-card form-panel order-fulfilment-card">
                     <div class="form-panel-header">
                         <div class="form-panel-icon"><i class="fa-solid fa-truck-fast"></i></div>
-                        <div><h3>Fulfilment</h3><p>Update status, payment, tracking and notes.</p></div>
+                        <div><h3>Fulfillment</h3><p>Update shipping state, carrier, tracking and notes.</p></div>
                     </div>
                     <form action="{{ route('admin.orders.update', $order->id) }}" method="POST" class="form-panel-body d-flex flex-column gap-3">
                         @csrf
@@ -177,10 +222,31 @@
                             @error('payment_status')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-field">
+                            <label for="fulfillment_status">Fulfillment status</label>
+                            <select name="fulfillment_status" id="fulfillment_status" class="form-input">
+                                @foreach (\App\Enums\FulfillmentStatus::options() as $val => $label)
+                                    <option value="{{ $val }}" @selected(old('fulfillment_status', $order->fulfillment_status->value) === $val)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            @error('fulfillment_status')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="form-field">
+                            <label for="carrier">Carrier</label>
+                            <input type="text" name="carrier" id="carrier" class="form-input"
+                                value="{{ old('carrier', $order->carrier) }}" placeholder="e.g. DHL, FedEx, local courier">
+                            @error('carrier')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="form-field">
                             <label for="tracking_number">Tracking number</label>
                             <input type="text" name="tracking_number" id="tracking_number" class="form-input"
                                 value="{{ old('tracking_number', $order->tracking_number) }}" placeholder="e.g. 1Z999AA10123456784">
                             @error('tracking_number')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
+                        </div>
+                        <div class="form-field">
+                            <label for="shipped_at">Shipped date</label>
+                            <input type="date" name="shipped_at" id="shipped_at" class="form-input"
+                                value="{{ old('shipped_at', $order->shipped_at?->format('Y-m-d')) }}">
+                            @error('shipped_at')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-field">
                             <label for="admin_note">Internal note</label>
@@ -191,7 +257,7 @@
                     </form>
                 </section>
 
-                <section class="premium-card p-4">
+                <section class="premium-card p-4 order-side-card">
                     <p class="section-kicker mb-3">Customer</p>
                     <div class="d-flex align-items-center gap-3">
                         <span class="order-avatar">{{ strtoupper(mb_substr($order->customer_name ?: '?', 0, 1)) }}</span>
@@ -219,7 +285,7 @@
                     @endif
                 </section>
 
-                <section class="premium-card p-4">
+                <section class="premium-card p-4 order-side-card">
                     <p class="section-kicker mb-2">Shipping</p>
                     <dl class="mb-0">
                         <div class="order-info-row">
@@ -234,16 +300,38 @@
                             <dt>Method</dt>
                             <dd>{{ $order->shipping_method ? ucfirst($order->shipping_method) : '—' }}</dd>
                         </div>
+                        <div class="order-info-row">
+                            <dt>Fulfillment</dt>
+                            <dd><span class="status-chip {{ $order->fulfillment_status->badge() }}">{{ $order->fulfillment_status->label() }}</span></dd>
+                        </div>
+                        @if ($order->carrier)
+                            <div class="order-info-row">
+                                <dt>Carrier</dt>
+                                <dd>{{ $order->carrier }}</dd>
+                            </div>
+                        @endif
                         @if ($order->tracking_number)
                             <div class="order-info-row">
                                 <dt>Tracking</dt>
                                 <dd class="font-mono">{{ $order->tracking_number }}</dd>
                             </div>
                         @endif
+                        @if ($order->shipped_at)
+                            <div class="order-info-row">
+                                <dt>Shipped on</dt>
+                                <dd>{{ $order->shipped_at->format('M d, Y') }}</dd>
+                            </div>
+                        @endif
+                        @if ($order->fulfilled_at)
+                            <div class="order-info-row">
+                                <dt>Fulfilled on</dt>
+                                <dd>{{ $order->fulfilled_at->format('M d, Y') }}</dd>
+                            </div>
+                        @endif
                     </dl>
                 </section>
 
-                <section class="premium-card p-4">
+                <section class="premium-card p-4 order-side-card">
                     <p class="section-kicker mb-2">Payment</p>
                     <dl class="mb-0">
                         <div class="order-info-row">

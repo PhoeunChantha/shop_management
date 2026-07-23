@@ -1,19 +1,24 @@
 @php
     $locale = app()->getLocale();
-    $notifications = [
-        ['icon' => 'fa-bag-shopping', 'tone' => 'text-blue-600 bg-blue-50 dark:bg-blue-500/15', 'title' => 'New order #3201', 'time' => '2 min ago'],
-        ['icon' => 'fa-user-plus', 'tone' => 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/15', 'title' => 'New customer registered', 'time' => '24 min ago'],
-        ['icon' => 'fa-triangle-exclamation', 'tone' => 'text-amber-600 bg-amber-50 dark:bg-amber-500/15', 'title' => 'Low stock: Classic White Tee', 'time' => '1 hr ago'],
-    ];
+    $headerNotifications = $adminHeaderNotifications ?? collect();
+    $unreadNotifications = $adminUnreadNotifications ?? 0;
 @endphp
 
-<div class="container-fluid py-2 px-4 d-flex justify-content-between align-items-center gap-3">
+<div class="container-fluid py-2 px-4 d-flex justify-content-between align-items-center gap-3"
+    x-data="commandPalette('{{ route('admin.command-palette') }}')"
+    x-init="init()">
 
     <div class="page-title fs-5 fw-bold text-dark min-w-0">
         {{ $header }}
     </div>
 
     <div class="d-flex align-items-center text-secondary small flex-shrink-0 gap-2">
+
+        <button type="button" class="admin-command-trigger" @click="openPalette()" aria-label="Open command palette">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <span class="d-none d-md-inline">Search admin...</span>
+            <kbd class="d-none d-lg-inline">Ctrl K</kbd>
+        </button>
 
         {{-- Language switcher --}}
         <div class="language-switch d-none d-sm-inline-flex align-items-center p-1 rounded-pill">
@@ -37,32 +42,51 @@
 
         {{-- Notifications --}}
         <div class="position-relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
-            <button type="button" class="icon-button btn btn-link p-0 text-decoration-none fs-6 text-secondary position-relative" @click="open = !open" aria-label="Notifications">
+            <button type="button" class="icon-button admin-notification-trigger btn btn-link p-0 text-decoration-none fs-6 text-secondary position-relative" @click="open = !open" aria-label="Notifications">
                 <i class="fa-regular fa-bell"></i>
-                <span class="position-absolute top-0 end-0 d-block rounded-circle bg-danger border-2 border-white dark:border-[#121c31]" style="width: 8px; height: 8px; transform: translate(1px, 0);"></span>
+                @if($unreadNotifications > 0)
+                    <span class="admin-notification-dot">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>
+                @endif
             </button>
 
             <div x-show="open" x-cloak x-transition.origin.top.right
-                class="position-absolute end-0 mt-2 rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-white/10 dark:bg-[#121c31]"
-                style="width: 320px; z-index: 60;">
-                <div class="d-flex align-items-center justify-content-between px-3 py-2.5 border-bottom border-slate-100 dark:border-white/10">
-                    <span class="fw-bold text-slate-900 dark:text-slate-100" style="font-size: 13px;">Notifications</span>
-                    <span class="badge rounded-pill bg-danger" style="font-size: 10px;">{{ count($notifications) }} new</span>
+                class="admin-notification-dropdown position-absolute end-0 mt-2"
+                style="z-index: 60;">
+                <div class="admin-notification-dropdown__head">
+                    <div>
+                        <span>Operations alerts</span>
+                        <small>{{ $unreadNotifications }} unread</small>
+                    </div>
+                    @if($unreadNotifications > 0)
+                        <form method="POST" action="{{ route('admin.notifications.mark-all-read') }}">
+                            @csrf
+                            <button type="submit">Mark all read</button>
+                        </form>
+                    @endif
                 </div>
-                <div class="py-1">
-                    @foreach ($notifications as $n)
-                        <a href="#" class="d-flex align-items-start gap-2.5 px-3 py-2 text-decoration-none hover:bg-slate-50 dark:hover:bg-white/5">
-                            <span class="d-inline-flex align-items-center justify-content-center rounded-xl flex-shrink-0 {{ $n['tone'] }}" style="width: 36px; height: 36px;">
-                                <i class="fa-solid {{ $n['icon'] }}" style="font-size: 13px;"></i>
+
+                <div class="admin-notification-dropdown__list">
+                    @forelse ($headerNotifications as $notification)
+                        <a href="{{ $notification->url ?: route('admin.notifications.index') }}"
+                            class="admin-notification-mini {{ $notification->isUnread() ? 'is-unread' : '' }}">
+                            <span class="admin-notification-mini__icon {{ $notification->tone() }}">
+                                <i class="fa-solid {{ $notification->icon() }}"></i>
                             </span>
-                            <span class="min-w-0">
-                                <span class="d-block fw-semibold text-slate-800 dark:text-slate-200 text-truncate" style="font-size: 12.5px;">{{ $n['title'] }}</span>
-                                <span class="d-block text-slate-400 dark:text-slate-500" style="font-size: 11px;">{{ $n['time'] }}</span>
+                            <span class="admin-notification-mini__copy">
+                                <strong>{{ $notification->title }}</strong>
+                                <small>{{ $notification->created_at?->diffForHumans() }} · {{ $notification->priorityLabel() }}</small>
                             </span>
                         </a>
-                    @endforeach
+                    @empty
+                        <div class="admin-notification-empty">
+                            <i class="fa-regular fa-circle-check"></i>
+                            <strong>No active alerts</strong>
+                            <span>Critical store events will appear here.</span>
+                        </div>
+                    @endforelse
                 </div>
-                <a href="#" class="d-block text-center px-3 py-2.5 border-top border-slate-100 fw-bold text-decoration-none text-teal-700 dark:text-teal-400 dark:border-white/10" style="font-size: 12px;">
+
+                <a href="{{ route('admin.notifications.index') }}" class="admin-notification-dropdown__footer">
                     View all notifications
                 </a>
             </div>
@@ -113,5 +137,67 @@
             </div>
         @endauth
 
+    </div>
+
+    <div class="command-palette-backdrop" x-show="open" x-cloak
+        x-transition:enter="command-palette-backdrop--enter"
+        x-transition:enter-start="command-palette-backdrop--enter-start"
+        x-transition:enter-end="command-palette-backdrop--enter-end"
+        x-transition:leave="command-palette-backdrop--leave"
+        x-transition:leave-start="command-palette-backdrop--leave-start"
+        x-transition:leave-end="command-palette-backdrop--leave-end"
+        @click.self="closePalette()" @keydown.escape.window="closePalette()" style="display:none;">
+        <div class="command-palette-panel"
+            x-transition:enter="command-palette-panel--enter"
+            x-transition:enter-start="command-palette-panel--enter-start"
+            x-transition:enter-end="command-palette-panel--enter-end"
+            x-transition:leave="command-palette-panel--leave"
+            x-transition:leave-start="command-palette-panel--leave-start"
+            x-transition:leave-end="command-palette-panel--leave-end">
+            <div class="command-palette-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="search" x-ref="input" x-model.debounce.180ms="query"
+                    @input="search()" @keydown.arrow-down.prevent="move(1)" @keydown.arrow-up.prevent="move(-1)"
+                    @keydown.enter.prevent="goSelected()" placeholder="Search products, orders, customers, returns, media...">
+                <button type="button" @click="closePalette()" aria-label="Close command palette">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="command-palette-body">
+                <template x-if="loading">
+                    <div class="command-palette-empty">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                        <span>Searching admin...</span>
+                    </div>
+                </template>
+
+                <template x-if="!loading && visibleGroups().length === 0">
+                    <div class="command-palette-empty">
+                        <i class="fa-regular fa-compass"></i>
+                        <strong>No results</strong>
+                        <span>Try an order number, product SKU, customer email, or page name.</span>
+                    </div>
+                </template>
+
+                <template x-for="group in visibleGroups()" :key="group.label">
+                    <section class="command-palette-group">
+                        <p x-text="group.label"></p>
+                        <template x-for="item in group.items" :key="item.url">
+                            <a :href="item.url" class="command-palette-result"
+                                :class="{ 'is-active': activeUrl === item.url }"
+                                @mouseenter="activeUrl = item.url">
+                                <span class="command-palette-result__icon"><i class="fa-solid" :class="item.icon"></i></span>
+                                <span class="command-palette-result__copy">
+                                    <strong x-text="item.title"></strong>
+                                    <small x-text="item.subtitle"></small>
+                                </span>
+                                <i class="fa-solid fa-arrow-right command-palette-result__arrow"></i>
+                            </a>
+                        </template>
+                    </section>
+                </template>
+            </div>
+        </div>
     </div>
 </div>

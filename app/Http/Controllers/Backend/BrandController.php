@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Backend;
 
-use App\Helpers\ImageManager;
 use App\Http\Controllers\Backend\Concerns\HandlesBulkActions;
+use App\Http\Controllers\Backend\Concerns\ResolvesMediaSelection;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Brand\StoreBrandRequest;
 use App\Http\Requests\Brand\UpdateBrandRequest;
 use App\Models\Brand;
 use App\Services\BulkActionService;
+use App\Services\ImageFieldService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -18,6 +19,11 @@ use Illuminate\View\View;
 class BrandController extends Controller
 {
     use HandlesBulkActions;
+    use ResolvesMediaSelection;
+
+    public function __construct(
+        private readonly ImageFieldService $images,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -56,14 +62,15 @@ class BrandController extends Controller
         $this->authorize('create', Brand::class);
 
         try {
-            $validated = $request->safe()->except('image');
+            $validated = $request->safe()->except(['image', 'image_media']);
             $validated['slug'] = $this->uniqueSlug($validated['name']);
 
             $brand = Brand::create($validated);
 
             if ($request->hasFile('image')) {
-                $brand->image = ImageManager::upload($request->file('image'), 'brands');
-                $brand->save();
+                $this->images->attachUploaded($brand, $request->file('image'), 'brands');
+            } elseif ($selected = $this->selectedMediaFilename($request, 'image', 'brands')) {
+                $this->images->attachSelected($brand, $selected);
             }
 
             return to_route('admin.brands.index')
@@ -98,14 +105,15 @@ class BrandController extends Controller
         try {
             $brand = Brand::findOrFail($id);
 
-            $validated = $request->safe()->except('image');
+            $validated = $request->safe()->except(['image', 'image_media']);
             $validated['slug'] = $this->uniqueSlug($validated['name'], $brand->id);
 
             $brand->update($validated);
 
             if ($request->hasFile('image')) {
-                $brand->image = ImageManager::update($request->file('image'), $brand->image, 'brands');
-                $brand->save();
+                $this->images->replaceUploaded($brand, $request->file('image'), 'brands');
+            } elseif ($selected = $this->selectedMediaFilename($request, 'image', 'brands')) {
+                $this->images->attachSelected($brand, $selected);
             }
 
             return to_route('admin.brands.index')
@@ -134,7 +142,7 @@ class BrandController extends Controller
                 return back()->with('error', "Cannot delete “{$brand->name}” because it is assigned to one or more products.");
             }
 
-            ImageManager::delete($brand->image, 'brands');
+            $this->images->delete($brand->image, 'brands');
 
             $brand->delete();
         } catch (\Exception $e) {

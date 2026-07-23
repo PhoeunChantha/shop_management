@@ -20,37 +20,39 @@
             </a>
         </div>
 
-        <section class="premium-card" x-data="bulkSelect()">
-            <x-table-loader />
-            <x-bulk-bar :destroy="route('admin.sizes.bulk-destroy')" :status="route('admin.sizes.bulk-status')" noun="size" />
+        <x-admin.table-card bulk>
+            <x-slot:bulkBar>
+                <x-bulk-bar :destroy="route('admin.sizes.bulk-destroy')" :status="route('admin.sizes.bulk-status')" noun="size" />
+            </x-slot:bulkBar>
 
-            <x-table-toolbar>
-                <x-slot:left>
-                    <x-per-page-selector :current="$perPage" />
-                </x-slot:left>
-                <x-slot:right>
-                    <x-search-input name="search" placeholder="Search sizes..." />
-                </x-slot:right>
-            </x-table-toolbar>
+            <x-slot:toolbar>
+                <x-table-toolbar>
+                    <x-slot:left>
+                        <x-per-page-selector :current="$perPage" />
+                    </x-slot:left>
+                    <x-slot:right>
+                        <x-search-input name="search" placeholder="Search sizes..." />
+                    </x-slot:right>
+                </x-table-toolbar>
+            </x-slot:toolbar>
 
-            <div class="premium-table-wrap">
-                <table class="premium-table">
-                    <thead>
-                        <tr>
-                            <th class="bulk-check-col">
-                                <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
-                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
-                            </th>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Code</th>
-                            <th>Sort Order</th>
-                            <th>Status</th>
-                            <th class="text-end">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($sizes as $size)
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th class="bulk-check-col">
+                            <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
+                                :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+                        </th>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Code</th>
+                        <th>Sort Order</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($sizes as $size)
                         <tr>
                             <td class="bulk-check-col">
                                 <input type="checkbox" class="bulk-check" data-row-check value="{{ $size->id }}"
@@ -90,23 +92,24 @@
                                 </div>
                             </td>
                         </tr>
-                        @empty
+                    @empty
                         <tr>
                             <td colspan="7">
-                                <div class="empty-state">
-                                    <i class="fa-solid fa-ruler-combined"></i>
-                                    <strong>No sizes found</strong>
-                                    <span>Try a different search term or clear the current search.</span>
-                                </div>
+                                <x-admin.empty-state
+                                    icon="fa-solid fa-ruler-combined"
+                                    title="No sizes found"
+                                    message="Try a different search term or clear the current search."
+                                />
                             </td>
                         </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                    @endforelse
+                </tbody>
+            </table>
 
-            <x-table-footer :paginator="$sizes" label="sizes" />
-        </section>
+            <x-slot:footer>
+                <x-table-footer :paginator="$sizes" label="sizes" />
+            </x-slot:footer>
+        </x-admin.table-card>
 
         <x-delete-confirm-modal
             id="deleteSizeModal"

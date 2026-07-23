@@ -27,20 +27,19 @@
                 :options="['in_stock' => 'In stock', 'low_stock' => 'Low stock', 'out_of_stock' => 'Out of stock']" />
         </x-filter-card>
 
-        <section class="premium-card mt-3 orders-panel">
-            <x-table-loader />
+        <x-admin.table-card class="mt-3 orders-panel">
+            <x-slot:toolbar>
+                <x-table-toolbar>
+                    <x-slot:left>
+                        <x-per-page-selector :current="$perPage" />
+                    </x-slot:left>
+                    <x-slot:right>
+                        <x-search-input name="search" placeholder="Search product or SKU..." />
+                    </x-slot:right>
+                </x-table-toolbar>
+            </x-slot:toolbar>
 
-            <x-table-toolbar>
-                <x-slot:left>
-                    <x-per-page-selector :current="$perPage" />
-                </x-slot:left>
-                <x-slot:right>
-                    <x-search-input name="search" placeholder="Search product or SKU..." />
-                </x-slot:right>
-            </x-table-toolbar>
-
-            <div class="premium-table-wrap">
-                <table class="dash-table">
+            <table class="dash-table">
                     <thead>
                         <tr>
                             <th>Product</th>
@@ -93,19 +92,20 @@
                         @empty
                             <tr>
                                 <td colspan="5">
-                                    <div class="empty-state">
-                                        <i class="fa-solid fa-warehouse"></i>
-                                        <strong>No products found</strong>
-                                        <span>Adjust the search or stock filter.</span>
-                                    </div>
+                                    <x-admin.empty-state
+                                        icon="fa-solid fa-warehouse"
+                                        title="No products found"
+                                        message="Adjust the search or stock filter."
+                                    />
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
-                </table>
-            </div>
+            </table>
 
-            <x-table-footer :paginator="$products" label="products" />
-        </section>
+            <x-slot:footer>
+                <x-table-footer :paginator="$products" label="products" />
+            </x-slot:footer>
+        </x-admin.table-card>
     </div>
 </x-app-layout>

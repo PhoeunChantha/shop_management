@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Enums\SettingGroup;
 use App\Helpers\ImageManager;
+use App\Models\MediaAsset;
 use App\Models\Setting;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -27,6 +28,11 @@ final class SettingService
         'admin_info_color' => '#2563eb',
         'admin_light_color' => '#eef2f7',
         'admin_dark_color' => '#101827',
+        'admin_sidebar_bg_color' => '#09111f',
+        'admin_sidebar_panel_color' => '#121c2f',
+        'admin_sidebar_text_color' => '#d8e2f0',
+        'admin_sidebar_muted_color' => '#8fa1bb',
+        'admin_sidebar_active_color' => '#14b8a6',
     ];
 
     /**
@@ -43,6 +49,11 @@ final class SettingService
         'admin_info_color' => ['label' => 'Info', 'hint' => 'View, Details, Preview, Export'],
         'admin_light_color' => ['label' => 'Light', 'hint' => 'Neutral surfaces, table headers'],
         'admin_dark_color' => ['label' => 'Dark', 'hint' => 'Emphasis / high-contrast accents'],
+        'admin_sidebar_bg_color' => ['label' => 'Sidebar background', 'hint' => 'Main admin sidebar background'],
+        'admin_sidebar_panel_color' => ['label' => 'Sidebar panel', 'hint' => 'Module cards, user panel, and brand panel'],
+        'admin_sidebar_text_color' => ['label' => 'Sidebar text', 'hint' => 'Primary sidebar labels'],
+        'admin_sidebar_muted_color' => ['label' => 'Sidebar muted text', 'hint' => 'Section captions and secondary labels'],
+        'admin_sidebar_active_color' => ['label' => 'Sidebar active', 'hint' => 'Active module accent and selected link'],
     ];
 
     /**
@@ -62,6 +73,74 @@ final class SettingService
         'es' => 'Spanish · Español (ES)',
         'ja' => 'Japanese · 日本語 (JA)',
         'ko' => 'Korean · 한국어 (KO)',
+    ];
+
+    /**
+     * Starter checkout payment methods stored as one JSON settings value.
+     *
+     * @var array<int, array<string, mixed>>
+     */
+    private const DEFAULT_PAYMENT_METHODS = [
+        [
+            'id' => 'card',
+            'name' => 'Card',
+            'code' => 'card',
+            'type' => 'online',
+            'description' => 'Visa, Mastercard, and local bank cards.',
+            'instructions' => 'Customer enters card number, expiry, and CVC at checkout.',
+            'image' => '',
+            'qr_image' => '',
+            'bank_name' => '',
+            'account_name' => '',
+            'account_number' => '',
+            'status' => true,
+            'sort_order' => 1,
+        ],
+        [
+            'id' => 'apple_pay',
+            'name' => 'Apple Pay',
+            'code' => 'apple_pay',
+            'type' => 'online',
+            'description' => 'Fast wallet checkout for Apple devices.',
+            'instructions' => 'Show when the customer device supports Apple Pay.',
+            'image' => '',
+            'qr_image' => '',
+            'bank_name' => '',
+            'account_name' => '',
+            'account_number' => '',
+            'status' => true,
+            'sort_order' => 2,
+        ],
+        [
+            'id' => 'google_pay',
+            'name' => 'Google Pay',
+            'code' => 'google_pay',
+            'type' => 'online',
+            'description' => 'Fast wallet checkout for supported browsers.',
+            'instructions' => 'Show when Google Pay is available for the customer.',
+            'image' => '',
+            'qr_image' => '',
+            'bank_name' => '',
+            'account_name' => '',
+            'account_number' => '',
+            'status' => true,
+            'sort_order' => 3,
+        ],
+        [
+            'id' => 'manual_qr',
+            'name' => 'Manual QR Payment',
+            'code' => 'manual_qr',
+            'type' => 'manual',
+            'description' => 'Customer scans your QR code and sends payment proof.',
+            'instructions' => 'Scan the QR code, complete the transfer, then keep the receipt for confirmation.',
+            'image' => '',
+            'qr_image' => '',
+            'bank_name' => '',
+            'account_name' => '',
+            'account_number' => '',
+            'status' => false,
+            'sort_order' => 4,
+        ],
     ];
 
     /**
@@ -92,6 +171,18 @@ final class SettingService
                 'contact_store_name' => ['label' => 'Store name', 'type' => 'text', 'placeholder' => 'Flagship store', 'rules' => 'nullable|string|max:255'],
                 'contact_address' => ['label' => 'Store address', 'type' => 'textarea', 'placeholder' => '211 Wythe Ave, Brooklyn, NY', 'rules' => 'nullable|string|max:500'],
                 'contact_map_url' => ['label' => 'Map embed URL', 'type' => 'url', 'placeholder' => 'https://www.google.com/maps/embed?...', 'rules' => 'nullable|url|max:2000'],
+            ],
+            SettingGroup::SocialLogin->value => [
+                'login_kicker' => ['label' => 'Login page kicker', 'type' => 'text', 'placeholder' => 'Members get more', 'rules' => 'nullable|string|max:120'],
+                'login_title' => ['label' => 'Login page title', 'type' => 'text', 'placeholder' => 'Premium tees, members-only pricing.', 'rules' => 'nullable|string|max:255'],
+                'login_subtitle' => ['label' => 'Login page subtitle', 'type' => 'textarea', 'placeholder' => 'Early access to every drop, free shipping, and 10% off your first order when you join.', 'rules' => 'nullable|string|max:500'],
+                'login_bg_image' => ['label' => 'Login background image', 'type' => 'image', 'folder' => 'settings', 'accept' => 'image/png,image/jpeg,image/webp', 'help' => 'Shown behind the login/register panel — JPG, PNG or WebP, up to 3MB', 'rules' => 'nullable|image|mimes:png,jpg,jpeg,webp|max:3072'],
+                'google_login' => ['label' => 'Google login', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '1', 'help' => 'Show the “Continue with Google” button on login/register.', 'rules' => 'nullable|in:0,1'],
+                'google_client_id' => ['label' => 'Google client ID', 'type' => 'text', 'placeholder' => 'xxxxx.apps.googleusercontent.com', 'rules' => 'nullable|string|max:255'],
+                'apple_login' => ['label' => 'Apple login', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '1', 'help' => 'Show the “Continue with Apple” button.', 'rules' => 'nullable|in:0,1'],
+                'apple_client_id' => ['label' => 'Apple service ID', 'type' => 'text', 'placeholder' => 'com.yourapp.web', 'rules' => 'nullable|string|max:255'],
+                'facebook_login' => ['label' => 'Facebook login', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '0', 'help' => 'Show the “Continue with Facebook” button.', 'rules' => 'nullable|in:0,1'],
+                'facebook_client_id' => ['label' => 'Facebook app ID', 'type' => 'text', 'rules' => 'nullable|string|max:255'],
             ],
             SettingGroup::Localization->value => [
                 'languages' => [
@@ -237,6 +328,24 @@ final class SettingService
             'social_links.*.icon' => ['nullable', 'string', 'max:60'],
             'social_links.*.title' => ['nullable', 'string', 'max:100'],
             'social_links.*.url' => ['nullable', 'url', 'max:255'],
+            'payment_methods' => ['nullable', 'array'],
+            'payment_methods.*.id' => ['nullable', 'string', 'max:80'],
+            'payment_methods.*.name' => ['nullable', 'string', 'max:100'],
+            'payment_methods.*.code' => ['nullable', 'string', 'max:80'],
+            'payment_methods.*.type' => ['nullable', 'string', 'in:online,manual'],
+            'payment_methods.*.description' => ['nullable', 'string', 'max:255'],
+            'payment_methods.*.instructions' => ['nullable', 'string', 'max:1000'],
+            'payment_methods.*.image' => ['nullable', 'string', 'max:255'],
+            'payment_methods.*.qr_image' => ['nullable', 'string', 'max:255'],
+            'payment_methods.*.bank_name' => ['nullable', 'string', 'max:100'],
+            'payment_methods.*.account_name' => ['nullable', 'string', 'max:100'],
+            'payment_methods.*.account_number' => ['nullable', 'string', 'max:100'],
+            'payment_methods.*.status' => ['nullable', 'boolean'],
+            'payment_methods.*.sort_order' => ['nullable', 'integer', 'min:0', 'max:999'],
+            'payment_method_images' => ['nullable', 'array'],
+            'payment_method_images.*' => ['nullable', 'image', 'mimes:png,jpg,jpeg,svg,webp', 'max:2048'],
+            'payment_method_qr_images' => ['nullable', 'array'],
+            'payment_method_qr_images.*' => ['nullable', 'image', 'mimes:png,jpg,jpeg,svg,webp', 'max:2048'],
         ];
 
         foreach ($this->fieldDefinitions() as $fields) {
@@ -249,6 +358,10 @@ final class SettingService
                 }
 
                 $rules[$key] = $field['rules'] ?? 'nullable|string|max:255';
+
+                if (($field['type'] ?? '') === 'image') {
+                    $rules[$key.'_media'] = ['nullable', 'string', 'max:255'];
+                }
             }
         }
 
@@ -273,6 +386,24 @@ final class SettingService
     public function socialLinks(): array
     {
         return json_decode(Setting::get('social_links', '[]'), true) ?: [];
+    }
+
+    /**
+     * Saved payment methods decoded from the JSON settings value.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function paymentMethods(): array
+    {
+        $stored = Setting::get('payment_methods');
+        $decoded = json_decode((string) $stored, true);
+        $methods = is_array($decoded) ? $decoded : self::DEFAULT_PAYMENT_METHODS;
+
+        return collect($methods)
+            ->map(fn (array $method, int $index): array => $this->normalizePaymentMethod($method, $index))
+            ->sortBy('sort_order')
+            ->values()
+            ->all();
     }
 
     /**
@@ -323,6 +454,41 @@ final class SettingService
     }
 
     /**
+     * Enabled social-login providers for the storefront auth buttons.
+     * Managed in Settings → Social Login.
+     *
+     * @return array<int, array{key: string, name: string, icon: string}>
+     */
+    public function socialProviders(): array
+    {
+        $providers = [
+            ['key' => 'google', 'name' => 'Google', 'icon' => 'mail'],
+            ['key' => 'apple', 'name' => 'Apple', 'icon' => 'lock'],
+            ['key' => 'facebook', 'name' => 'Facebook', 'icon' => 'user'],
+        ];
+
+        return collect($providers)
+            ->filter(fn (array $p): bool => (string) Setting::get($p['key'].'_login', $p['key'] === 'facebook' ? '0' : '1') === '1')
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Login/register brand-panel content (managed in Settings → Login).
+     *
+     * @return array{kicker: string, title: string, subtitle: string, bg: string|null}
+     */
+    public function loginPage(): array
+    {
+        return [
+            'kicker' => Setting::get('login_kicker') ?: 'Members get more',
+            'title' => Setting::get('login_title') ?: 'Premium tees, members-only pricing.',
+            'subtitle' => Setting::get('login_subtitle') ?: 'Early access to every drop, free shipping, and 10% off your first order when you join.',
+            'bg' => ImageManager::url(Setting::get('login_bg_image'), 'settings'),
+        ];
+    }
+
+    /**
      * Persist all settings from the validated request payload.
      *
      * @param  array<string, mixed>  $validated
@@ -335,10 +501,13 @@ final class SettingService
                 // keep the existing file. Stores the filename (ImageManager convention).
                 if (($field['type'] ?? '') === 'image') {
                     $file = $validated[$key] ?? null;
+                    $folder = $field['folder'] ?? 'settings';
 
                     if ($file instanceof UploadedFile) {
-                        $newName = ImageManager::update($file, Setting::get($key), $field['folder'] ?? 'settings');
+                        $newName = ImageManager::update($file, Setting::get($key), $folder);
                         Setting::set($key, $newName, $groupValue);
+                    } elseif ($selected = $this->selectedMediaFilename($validated[$key.'_media'] ?? null, $folder)) {
+                        Setting::set($key, $selected, $groupValue);
                     }
 
                     continue;
@@ -370,6 +539,12 @@ final class SettingService
             ->all();
 
         Setting::set('social_links', json_encode($links), SettingGroup::Social->value);
+
+        $this->savePaymentMethods(
+            (array) ($validated['payment_methods'] ?? []),
+            (array) ($validated['payment_method_images'] ?? []),
+            (array) ($validated['payment_method_qr_images'] ?? []),
+        );
     }
 
     /**
@@ -428,5 +603,76 @@ final class SettingService
             'fa-solid fa-location-dot' => 'Location',
             'fa-solid fa-link' => 'Other link',
         ]);
+    }
+
+    private function selectedMediaFilename(?string $filename, string $folder): ?string
+    {
+        $filename = trim((string) $filename);
+
+        if ($filename === '') {
+            return null;
+        }
+
+        return MediaAsset::query()
+            ->where('folder', $folder)
+            ->where('filename', $filename)
+            ->value('filename');
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $methods
+     * @param  array<int|string, UploadedFile|null>  $images
+     * @param  array<int|string, UploadedFile|null>  $qrImages
+     */
+    private function savePaymentMethods(array $methods, array $images, array $qrImages): void
+    {
+        $normalized = collect($methods)
+            ->map(function (array $method, int|string $index) use ($images, $qrImages): array {
+                $method = $this->normalizePaymentMethod($method, (int) $index);
+                $uploaded = $images[$index] ?? null;
+                $uploadedQr = $qrImages[$index] ?? null;
+
+                if ($uploaded instanceof UploadedFile) {
+                    $method['image'] = ImageManager::update($uploaded, $method['image'] ?: null, 'settings');
+                }
+
+                if ($uploadedQr instanceof UploadedFile) {
+                    $method['qr_image'] = ImageManager::update($uploadedQr, $method['qr_image'] ?: null, 'settings');
+                }
+
+                return $method;
+            })
+            ->filter(fn (array $method): bool => filled($method['name']) || filled($method['code']))
+            ->sortBy('sort_order')
+            ->values()
+            ->all();
+
+        Setting::set('payment_methods', json_encode($normalized), SettingGroup::Payment->value);
+    }
+
+    /**
+     * @param  array<string, mixed>  $method
+     * @return array<string, mixed>
+     */
+    private function normalizePaymentMethod(array $method, int $index): array
+    {
+        $name = trim((string) ($method['name'] ?? ''));
+        $code = trim((string) ($method['code'] ?? ''));
+
+        return [
+            'id' => trim((string) ($method['id'] ?? '')) ?: ($code ?: 'payment_'.($index + 1)),
+            'name' => $name,
+            'code' => str($code ?: $name)->slug('_')->toString(),
+            'type' => in_array($method['type'] ?? null, ['online', 'manual'], true) ? $method['type'] : 'online',
+            'description' => trim((string) ($method['description'] ?? '')),
+            'instructions' => trim((string) ($method['instructions'] ?? '')),
+            'image' => trim((string) ($method['image'] ?? '')),
+            'qr_image' => trim((string) ($method['qr_image'] ?? '')),
+            'bank_name' => trim((string) ($method['bank_name'] ?? '')),
+            'account_name' => trim((string) ($method['account_name'] ?? '')),
+            'account_number' => trim((string) ($method['account_number'] ?? '')),
+            'status' => filter_var($method['status'] ?? false, FILTER_VALIDATE_BOOL),
+            'sort_order' => (int) ($method['sort_order'] ?? ($index + 1)),
+        ];
     }
 }

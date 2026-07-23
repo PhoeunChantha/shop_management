@@ -12,7 +12,7 @@
     <div class="form-panel-body grid grid-cols-1 md:grid-cols-2 gap-4">
 
         <div class="form-field col-span-2">
-            <x-image-upload name="image" label="Banner Image *"
+            <x-image-upload name="image" label="Banner Image *" folder="banners"
                 :value="$b && $b->image ? 'uploads/banners/' . $b->image : null"
                 help="Wide/landscape image — JPG, PNG or WebP, up to 4MB" />
         </div>

@@ -9,6 +9,7 @@ use App\Http\Requests\Product\BaseProductRequest;
 use App\Models\Attribute;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\MediaAsset;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductTag;
@@ -56,6 +57,7 @@ class ProductService
         $search = trim($filters['search'] ?? '');
 
         return Product::query()
+            ->when(! empty($filters['ids'] ?? []), fn ($q) => $q->whereKey($filters['ids']))
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('name', 'like', "%{$search}%")
@@ -89,6 +91,53 @@ class ProductService
     public function update(BaseProductRequest $request, Product $product): Product
     {
         return $this->save($request, $product);
+    }
+
+    public function findForShow(string $id): Product
+    {
+        return Product::with([
+            'category', 'subCategory', 'brand', 'tags',
+            'images', 'specifications', 'variants.values.attribute',
+        ])->findOrFail($id);
+    }
+
+    public function findForEdit(string $id): Product
+    {
+        return Product::with(['images', 'variants.values', 'specifications', 'tags'])->findOrFail($id);
+    }
+
+    /**
+     * @param  array<int, int|string>  $ids
+     */
+    public function bulkDelete(array $ids): int
+    {
+        $products = Product::with('images')->whereKey($ids)->get();
+        $products->each(fn (Product $product) => $this->delete($product));
+
+        return $products->count();
+    }
+
+    /**
+     * @param  array<int, int|string>  $ids
+     */
+    public function setStatus(array $ids, bool $status): int
+    {
+        return Product::whereKey($ids)->update(['status' => $status ? 'active' : 'inactive']);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function bulkUpdate(array $data): int
+    {
+        $payload = match ($data['operation']) {
+            'status' => ['status' => $data['status']],
+            'category' => ['category_id' => $data['category_id']],
+            'brand' => ['brand_id' => $data['brand_id']],
+            'flag' => [$data['flag'] => (bool) $data['flag_value']],
+        };
+
+        return Product::whereKey($data['ids'])->update($payload);
     }
 
     /**
@@ -129,6 +178,8 @@ class ProductService
                     $name = ImageManager::update($request->file('thumbnail'), $product->thumbnail, self::FOLDER);
                     $product->thumbnail = $name;
                     $uploaded[] = $name;
+                } elseif ($selected = $this->selectedMediaFilename($request->input('thumbnail_media'), self::FOLDER)) {
+                    $product->thumbnail = $selected;
                 }
 
                 $product->save();
@@ -250,6 +301,22 @@ class ProductService
                 'is_primary' => false,
             ]);
         }
+
+        $mediaNames = array_values(array_unique(array_filter((array) $request->input('images_media', []))));
+
+        foreach ($mediaNames as $offset => $filename) {
+            $name = $this->selectedMediaFilename($filename, self::FOLDER);
+
+            if (! $name || $product->images()->where('image', $name)->exists()) {
+                continue;
+            }
+
+            $product->images()->create([
+                'image' => $name,
+                'sort_order' => $start + count((array) $request->file('images', [])) + $offset + 1,
+                'is_primary' => false,
+            ]);
+        }
     }
 
     private function removeImages(Product $product, BaseProductRequest $request): void
@@ -312,6 +379,8 @@ class ProductService
             if ($imageFile) {
                 $image = ImageManager::upload($imageFile, self::VARIANT_FOLDER);
                 $uploaded[] = $image;
+            } elseif ($selected = $this->selectedMediaFilename($variant['image_media'] ?? null, self::VARIANT_FOLDER)) {
+                $image = $selected;
             } else {
                 $image = ($variant['image_existing'] ?? '') ?: null;
             }
@@ -412,6 +481,20 @@ class ProductService
     private function nullableNumber($value): ?string
     {
         return ($value === null || $value === '') ? null : (string) $value;
+    }
+
+    private function selectedMediaFilename(?string $filename, string $folder): ?string
+    {
+        $filename = trim((string) $filename);
+
+        if ($filename === '') {
+            return null;
+        }
+
+        return MediaAsset::query()
+            ->where('folder', $folder)
+            ->where('filename', $filename)
+            ->value('filename');
     }
 
     private function uniqueSlug(string $name, ?int $ignoreId = null): string

@@ -10,6 +10,8 @@ enum SettingGroup: string
     case Prefix = 'prefix';
     case Contact = 'contact';
     case Social = 'social';
+    case SocialLogin = 'social_login';
+    case Payment = 'payment';
     case Localization = 'localization';
     case Appearance = 'appearance';
 
@@ -23,6 +25,8 @@ enum SettingGroup: string
             self::Prefix => 'Prefix',
             self::Contact => 'Contact',
             self::Social => 'Social links',
+            self::SocialLogin => 'Login',
+            self::Payment => 'Payment Methods',
             self::Localization => 'Languages',
             self::Appearance => 'Theme Colors',
         };
@@ -38,6 +42,8 @@ enum SettingGroup: string
             self::Prefix => 'fa-hashtag',
             self::Contact => 'fa-address-book',
             self::Social => 'fa-share-nodes',
+            self::SocialLogin => 'fa-right-to-bracket',
+            self::Payment => 'fa-credit-card',
             self::Localization => 'fa-language',
             self::Appearance => 'fa-palette',
         };
@@ -48,7 +54,11 @@ enum SettingGroup: string
      */
     public function type(): string
     {
-        return $this === self::Social ? 'repeater' : 'fields';
+        return match ($this) {
+            self::Social => 'repeater',
+            self::Payment => 'payment_methods',
+            default => 'fields',
+        };
     }
 
     public function isRepeater(): bool

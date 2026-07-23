@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Backend;
 use App\Enums\StockMovementType;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Services\InventoryService;
+use App\Services\PurchaseOrderService;
 use App\Services\StockService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,7 +15,11 @@ use Illuminate\View\View;
 
 class InventoryController extends Controller
 {
-    public function __construct(private readonly StockService $stock) {}
+    public function __construct(
+        private readonly InventoryService $inventory,
+        private readonly StockService $stock,
+        private readonly PurchaseOrderService $purchaseOrders,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -26,30 +32,9 @@ class InventoryController extends Controller
         ]);
 
         $perPage = (int) ($filters['per_page'] ?? 10);
-        $search = trim($filters['search'] ?? '');
-        $stock = $filters['stock'] ?? null;
-
-        $products = Product::query()
-            ->with('brand')
-            ->withCount('variants')
-            ->withCount(['variants as low_variants_count' => fn ($v) => $v->where('low_stock_alert', '>', 0)->whereColumn('stock', '<=', 'low_stock_alert')])
-            ->withSum('variants', 'stock')
-            ->when($search !== '', fn ($q) => $q->where('name', 'like', "%{$search}%")->orWhere('sku', 'like', "%{$search}%"))
-            ->when($stock === 'out_of_stock', fn ($q) => $q->where(fn ($q) => $q
-                ->where(fn ($q) => $q->where('product_type', 'single')->where('stock', '<=', 0))
-                ->orWhere(fn ($q) => $q->where('product_type', 'variable')->whereDoesntHave('variants', fn ($v) => $v->where('stock', '>', 0)))))
-            ->when($stock === 'low_stock', fn ($q) => $q->where(fn ($q) => $q
-                ->where(fn ($q) => $q->where('product_type', 'single')->where('low_stock_alert', '>', 0)->whereColumn('stock', '<=', 'low_stock_alert'))
-                ->orWhere(fn ($q) => $q->where('product_type', 'variable')->whereHas('variants', fn ($v) => $v->where('low_stock_alert', '>', 0)->whereColumn('stock', '<=', 'low_stock_alert')))))
-            ->when($stock === 'in_stock', fn ($q) => $q->where(fn ($q) => $q
-                ->where(fn ($q) => $q->where('product_type', 'single')->where('stock', '>', 0))
-                ->orWhere(fn ($q) => $q->where('product_type', 'variable')->whereHas('variants', fn ($v) => $v->where('stock', '>', 0)))))
-            ->orderBy('name')
-            ->paginate($perPage)
-            ->withQueryString();
 
         return view('admin.inventory.index', [
-            'products' => $products,
+            'products' => $this->inventory->paginate($filters, $perPage),
             'perPage' => $perPage,
         ]);
     }
@@ -58,22 +43,80 @@ class InventoryController extends Controller
     {
         $this->authorize('viewAny', Product::class);
 
-        $product = Product::with([
-            'variants.values',
-            'stockMovements.actor',
-            'stockMovements.variant.values',
-        ])->findOrFail($id);
-
         return view('admin.inventory.show', [
-            'product' => $product,
+            'product' => $this->inventory->showProduct($id),
         ]);
+    }
+
+    public function reorder(Request $request): View
+    {
+        $this->authorize('viewAny', Product::class);
+
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'severity' => ['nullable', 'in:low,out'],
+            'per_page' => ['nullable', 'integer', 'in:10,25,50,100'],
+        ]);
+        $perPage = (int) ($filters['per_page'] ?? 10);
+        $dashboard = $this->inventory->reorderDashboard($filters, $perPage);
+
+        return view('admin.inventory.reorder', [
+            'alerts' => $dashboard['rows'],
+            'stats' => $dashboard['stats'],
+            'suppliers' => $this->purchaseOrders->supplierOptions(),
+            'perPage' => $perPage,
+        ]);
+    }
+
+    public function updateReorderRules(Request $request): RedirectResponse
+    {
+        $this->authorize('update', Product::class);
+
+        $data = $request->validate([
+            'rules' => ['required', 'array'],
+            'rules.*.low_stock_alert' => ['required', 'integer', 'min:0', 'max:100000'],
+        ]);
+
+        $updated = $this->inventory->updateReorderRules($data['rules']);
+
+        return back()->with('success', $updated.' reorder '.str('rule')->plural($updated).' updated.');
+    }
+
+    public function createPurchaseOrder(Request $request): RedirectResponse
+    {
+        abort_unless($request->user()->hasPermissionTo('create purchase orders'), 403);
+
+        $data = $request->validate([
+            'supplier_id' => ['required', 'integer', 'exists:suppliers,id'],
+            'status' => ['required', 'in:draft,ordered'],
+            'expected_at' => ['nullable', 'date'],
+            'selected' => ['required', 'array', 'min:1'],
+            'selected.*' => ['string', 'max:50'],
+            'quantities' => ['nullable', 'array'],
+            'quantities.*' => ['nullable', 'integer', 'min:1', 'max:100000'],
+        ]);
+
+        try {
+            $purchaseOrder = $this->purchaseOrders->create([
+                'supplier_id' => $data['supplier_id'],
+                'status' => $data['status'],
+                'expected_at' => $data['expected_at'] ?? null,
+                'notes' => 'Created from inventory reorder alerts.',
+                'items' => $this->inventory->purchaseOrderItems($data['selected'], $data['quantities'] ?? []),
+            ]);
+
+            return to_route('admin.purchase-orders.show', $purchaseOrder)
+                ->with('success', 'Purchase order created from reorder alerts.');
+        } catch (\InvalidArgumentException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
     }
 
     public function adjust(Request $request, string $id): RedirectResponse
     {
         $this->authorize('update', Product::class);
 
-        $product = Product::with('variants')->findOrFail($id);
+        $product = $this->inventory->adjustmentProduct($id);
 
         $data = $request->validate([
             'variant_id' => ['nullable', 'integer'],
@@ -82,18 +125,8 @@ class InventoryController extends Controller
             'note' => ['nullable', 'string', 'max:255'],
         ]);
 
-        // Resolve the stockable: a specific variant, or the single product itself.
-        $item = $product;
-        if (! empty($data['variant_id'])) {
-            $item = $product->variants->firstWhere('id', (int) $data['variant_id']);
-            if (! $item) {
-                return back()->with('error', 'That variant does not belong to this product.');
-            }
-        } elseif ($product->product_type->value !== 'single') {
-            return back()->with('error', 'Pick a variant to adjust for a variable product.');
-        }
-
         try {
+            $item = $this->inventory->resolveStockable($product, ! empty($data['variant_id']) ? (int) $data['variant_id'] : null);
             $movement = $this->stock->adjust(
                 $item,
                 (int) $data['quantity'],
@@ -102,6 +135,8 @@ class InventoryController extends Controller
             );
 
             return back()->with('success', 'Stock updated — now '.$movement->stock_after.' on hand.');
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
         } catch (\Exception $e) {
             Log::error('Error adjusting stock: '.$e->getMessage(), ['exception' => $e, 'product_id' => $id]);
 

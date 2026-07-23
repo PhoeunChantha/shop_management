@@ -23,8 +23,9 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
+    {{-- <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet"> --}}
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,100..700;1,100..700&display=swap" rel="stylesheet">
+    
     {{-- Bootstrap 5 (CDN) --}}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -57,7 +58,7 @@
 
 {{-- Expose data + named routes to plain JS --}}
 <script>
-    window.UT_COLORS = @json(\App\Support\Catalog::colors());
+    window.UT_COLORS = @json(app(\App\Services\FrontendProductService::class)->colors());
     window.UT_URLS = {
         shop: "{{ route('frontend.shop.index') }}",
         cart: "{{ route('frontend.cart.index') }}",
@@ -67,7 +68,16 @@
 </script>
 <script src="{{ asset('assets/frontend/js/main.js') }}?v={{ filemtime(public_path('assets/frontend/js/main.js')) }}"></script>
 
+{{-- Reuse the shared <x-toastr /> flash component on the storefront by mapping
+     window.toastr onto the storefront's native toast (utToast) — no jQuery needed. --}}
+<script>
+    window.toastr = window.toastr || (function () {
+        var t = function (m) { if (window.utToast) { window.utToast(m); } };
+        return { success: t, error: t, warning: t, info: t };
+    })();
+</script>
+<x-toastr />
+
 @stack('scripts')
 </body>
 </html>
-
