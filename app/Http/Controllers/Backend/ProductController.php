@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Backend;
 
-use App\Exports\ProductTemplateExport;
 use App\Exports\ProductsExport;
+use App\Exports\ProductTemplateExport;
 use App\Http\Controllers\Backend\Concerns\HandlesBulkActions;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Product\StoreProductRequest;
@@ -11,9 +11,9 @@ use App\Http\Requests\Product\UpdateProductRequest;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
-use App\Services\ProductImportService;
-use App\Services\ProductService;
-use App\Services\SettingService;
+use App\Services\Admin\ProductImportService;
+use App\Services\Admin\ProductService;
+use App\Services\Admin\SettingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;

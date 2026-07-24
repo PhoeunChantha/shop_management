@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Services\Admin;
 
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
@@ -71,7 +71,7 @@ final class AdminNotificationService
     public function recentForHeader(int $limit = 6): Collection
     {
         if (! $this->ready()) {
-            return new Collection();
+            return new Collection;
         }
 
         return AdminNotification::query()

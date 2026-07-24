@@ -1,6 +1,6 @@
 @props(['active' => 'dashboard'])
 @php
-    $account = app(\App\Services\FrontendAccountService::class);
+    $account = app(\App\Services\Frontend\AccountService::class);
     $u = $account->user();
     $notifUnread = $account->unreadNotifications();
     $nav = [

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Frontend;
 
 use App\Models\Announcement;
 use App\Models\Category;
@@ -9,7 +9,7 @@ use App\Models\Product;
 use App\Models\ProductTag;
 use Illuminate\Support\Str;
 
-class FrontendNavigationService
+class NavigationService
 {
     /**
      * @return array<string, mixed>

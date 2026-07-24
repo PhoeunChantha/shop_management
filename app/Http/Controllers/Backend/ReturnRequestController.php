@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ReturnRequest\StoreReturnRequestRequest;
 use App\Http\Requests\ReturnRequest\UpdateReturnRequestRequest;
 use App\Models\ReturnRequest;
-use App\Services\ReturnRequestService;
+use App\Services\Admin\ReturnRequestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;

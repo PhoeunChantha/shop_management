@@ -65,4 +65,3 @@ class PageController extends Controller
         return Page::query()->where('slug', $slug)->where('status', true)->first();
     }
 }
-

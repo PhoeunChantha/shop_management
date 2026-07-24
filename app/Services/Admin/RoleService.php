@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Services\Admin;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Collection;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 

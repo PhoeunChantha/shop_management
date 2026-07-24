@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Services\Admin;
 
 use App\Enums\AttributeType;
 use App\Models\Attribute;
 use App\Models\Color;
 use App\Models\Size;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -137,7 +138,7 @@ class AttributeService
      * Linked values (Size / Color): mirror the selected master rows, matching by
      * source so existing attribute-value ids survive (product variant links intact).
      *
-     * @param  class-string<\Illuminate\Database\Eloquent\Model>  $model
+     * @param  class-string<Model>  $model
      * @param  array<int, mixed>  $ids
      */
     private function syncLinked(Attribute $attribute, string $morph, string $model, array $ids): void

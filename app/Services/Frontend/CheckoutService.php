@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Services\Frontend;
 
 use App\Enums\StockMovementType;
 use App\Helpers\ImageManager;
@@ -11,6 +11,8 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\ShippingMethod;
 use App\Models\TaxRule;
+use App\Services\Admin\SettingService;
+use App\Services\Admin\StockService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -18,7 +20,7 @@ use Illuminate\Support\Facades\DB;
  * Supplies the storefront checkout with admin-managed shipping methods, payment
  * methods and tax so delivery options + totals reflect real configuration.
  */
-final class FrontendCheckoutService
+final class CheckoutService
 {
     public function __construct(
         private readonly SettingService $settings,

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
-use App\Services\SetupHealthService;
+use App\Services\Admin\SetupHealthService;
 use Illuminate\View\View;
 
 final class SetupHealthController extends Controller

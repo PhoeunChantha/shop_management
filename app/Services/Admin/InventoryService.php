@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Services\Admin;
 
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -176,6 +176,7 @@ final class InventoryService
             ->each(function (Product $product) use ($rows): void {
                 if ($product->isSingle()) {
                     $this->pushReorderRow($rows, $product, null);
+
                     return;
                 }
 

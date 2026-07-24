@@ -58,13 +58,20 @@
 
 {{-- Expose data + named routes to plain JS --}}
 <script>
-    window.UT_COLORS = @json(app(\App\Services\FrontendProductService::class)->colors());
+    window.UT_COLORS = @json(app(\App\Services\Frontend\ProductService::class)->colors());
     window.UT_URLS = {
         shop: "{{ route('frontend.shop.index') }}",
         cart: "{{ route('frontend.cart.index') }}",
         checkout: "{{ route('frontend.checkout.index') }}",
-        confirm: "{{ route('frontend.checkout.confirmation') }}"
+        confirm: "{{ route('frontend.checkout.confirmation') }}",
+        wishToggle: "{{ route('frontend.account.wishlist.toggle') }}",
+        wishSync: "{{ route('frontend.account.wishlist.sync') }}"
     };
+    @auth
+        window.UT_AUTH = { authed: true, wish: @json(auth()->user()->wishlist()->pluck('products.id')->map(fn ($id) => (int) $id)) };
+    @else
+        window.UT_AUTH = { authed: false, wish: [] };
+    @endauth
 </script>
 <script src="{{ asset('assets/frontend/js/main.js') }}?v={{ filemtime(public_path('assets/frontend/js/main.js')) }}"></script>
 

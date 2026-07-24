@@ -1,7 +1,7 @@
 @php
     $currentRoute = $routeName ?? request()->route()?->getName();
     $currentQuery = request()->except('page');
-    $savedViews = app(\App\Services\AdminSavedViewService::class)->forScope($scope, auth()->id());
+    $savedViews = app(\App\Services\Admin\AdminSavedViewService::class)->forScope($scope, auth()->id());
 @endphp
 
 <section class="saved-view-bar">

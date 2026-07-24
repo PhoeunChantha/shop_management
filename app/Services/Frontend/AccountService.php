@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Frontend;
 
 use App\Models\Address;
+use App\Models\CustomerProfile;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
@@ -10,10 +11,10 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
-class FrontendAccountService
+class AccountService
 {
     public function __construct(
-        private readonly FrontendProductService $products,
+        private readonly ProductService $products,
     ) {}
 
     /**
@@ -32,10 +33,27 @@ class FrontendAccountService
             'first' => $first,
             'last' => $last,
             'email' => $user?->email ?: 'guest@example.com',
-            'phone' => '',
+            'phone' => $user ? (string) CustomerProfile::where('email', $user->email)->value('phone') : '',
             'tier' => 'Standard',
             'points' => 0,
         ];
+    }
+
+    /**
+     * Update the customer's name (users table) and phone (customer profile).
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function updateProfile(User $user, array $data): void
+    {
+        $name = trim($data['first_name'].' '.($data['last_name'] ?? ''));
+
+        $user->update(['name' => $name]);
+
+        CustomerProfile::updateOrCreate(
+            ['email' => $user->email],
+            ['name' => $name, 'phone' => $data['phone'] ?? null],
+        );
     }
 
     /**
@@ -76,7 +94,22 @@ class FrontendAccountService
      */
     public function wishlistProducts(): array
     {
-        return $this->products->mappedActiveProducts()->all();
+        $user = Auth::user();
+
+        if (! $user) {
+            return [];
+        }
+
+        $ids = $user->wishlist()->pluck('products.id')->all();
+
+        if ($ids === []) {
+            return [];
+        }
+
+        return $this->products->mappedActiveProducts()
+            ->whereIn('id', $ids)
+            ->values()
+            ->all();
     }
 
     /**

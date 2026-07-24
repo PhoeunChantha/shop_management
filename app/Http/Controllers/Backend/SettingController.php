@@ -7,7 +7,7 @@ namespace App\Http\Controllers\Backend;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateSettingsRequest;
 use App\Models\Setting;
-use App\Services\SettingService;
+use App\Services\Admin\SettingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 

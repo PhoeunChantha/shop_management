@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Frontend;
 
 use App\Models\Color;
 use App\Models\Product;
@@ -8,7 +8,7 @@ use App\Models\Size;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
-class FrontendProductService
+class ProductService
 {
     /**
      * @return array<int, string>

@@ -1,6 +1,6 @@
 <x-guest-layout :bare="true">
     @php
-        $branding = app(\App\Services\SettingService::class);
+        $branding = app(\App\Services\Admin\SettingService::class);
         $loginLogo = $branding->logoUrl();
         $loginName = $branding->siteName();
     @endphp

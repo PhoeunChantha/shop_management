@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        @php($brandingService = app(\App\Services\SettingService::class))
+        @php($brandingService = app(\App\Services\Admin\SettingService::class))
         <title>{{ $brandingService->siteName() }}</title>
 
         @if ($favicon = $brandingService->faviconUrl())

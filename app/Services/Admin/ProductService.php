@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Services\Admin;
 
 use App\Helpers\ImageManager;
 use App\Http\Requests\Product\BaseProductRequest;
@@ -14,13 +14,13 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductTag;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
  * Fields stored per language via spatie/laravel-translatable.
  */
-
 class ProductService
 {
     private const FOLDER = 'products';
@@ -52,7 +52,7 @@ class ProductService
      *
      * @param  array<string, mixed>  $filters
      */
-    public function filteredQuery(array $filters): \Illuminate\Database\Eloquent\Builder
+    public function filteredQuery(array $filters): Builder
     {
         $search = trim($filters['search'] ?? '');
 

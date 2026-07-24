@@ -1,6 +1,6 @@
 {{-- Auth brand panel (left side of split shell) — content + background
      managed in Settings → Login. --}}
-@inject('settingsService', 'App\Services\SettingService')
+@inject('settingsService', 'App\Services\Admin\SettingService')
 @php($login = $settingsService->loginPage())
 
 <div class="ut-auth-brand">

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Admin;
 
 use App\Helpers\ImageManager;
 use App\Models\MediaAsset;
@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 class MediaOptimizationService
 {
     private const MAX_THUMBNAIL_WIDTH = 520;
+
     private const MAX_THUMBNAIL_HEIGHT = 390;
 
     /**

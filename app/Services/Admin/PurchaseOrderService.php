@@ -2,13 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Services\Admin;
 
 use App\Enums\StockMovementType;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\PurchaseOrder;
-use App\Models\PurchaseOrderItem;
 use App\Models\Supplier;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -59,6 +58,7 @@ final class PurchaseOrderService
             ->each(function (Product $product) use (&$options): void {
                 if ($product->product_type->value === 'single') {
                     $options['product:'.$product->id] = $product->name.' - '.($product->sku ?: 'No SKU').' - stock '.$product->stock;
+
                     return;
                 }
 

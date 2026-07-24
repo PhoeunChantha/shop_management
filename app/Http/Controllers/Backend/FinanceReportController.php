@@ -7,7 +7,7 @@ namespace App\Http\Controllers\Backend;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
-use App\Services\FinanceReportService;
+use App\Services\Admin\FinanceReportService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;

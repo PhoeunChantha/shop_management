@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Services\Frontend;
 
 use App\Models\Address;
 use App\Models\User;

@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Services\FrontendCheckoutService;
+use App\Services\Frontend\CheckoutService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -14,7 +14,7 @@ use Illuminate\View\View;
 class CheckoutController extends Controller
 {
     public function __construct(
-        private readonly FrontendCheckoutService $checkout,
+        private readonly CheckoutService $checkout,
     ) {}
 
     public function index(): View

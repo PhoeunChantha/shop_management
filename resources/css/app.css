@@ -790,7 +790,7 @@ body.admin-shell {
 }
 
 .admin-brand {
-    min-height: 116px;
+    min-height: 75px;
     background:
         linear-gradient(180deg, color-mix(in srgb, var(--sidebar-panel-color) 74%, transparent), color-mix(in srgb, var(--sidebar-bg-color) 82%, transparent));
 }
@@ -8847,6 +8847,31 @@ html.dark .ms-option:hover {
     box-shadow: 0 1px 3px rgba(16, 24, 40, 0.12);
 }
 
+/* ---- Date-range period filter ---- */
+.dash-daterange { display: inline-flex; }
+
+.dash-daterange .daterange-control { min-width: 244px; }
+
+.dash-daterange .form-input {
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--admin-line);
+    background: color-mix(in srgb, var(--admin-line) 45%, #fff);
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--admin-ink);
+}
+
+.dash-daterange .form-input::placeholder {
+    color: var(--admin-muted);
+    font-weight: 600;
+}
+
+html.dark .dash-daterange .form-input {
+    background: rgba(255, 255, 255, 0.04);
+    color: #f1f5f9;
+}
+
 /* ---- KPI cards ---- */
 .dash-kpis {
     display: grid;
@@ -9078,7 +9103,7 @@ html.dark .ms-option:hover {
     gap: 16px;
     align-items: start; /* don't stretch cards to equal height */
 }
-.dash-grid--chart { grid-template-columns: minmax(0, 1.7fr) minmax(260px, .78fr) minmax(260px, .78fr); }
+.dash-grid--chart { grid-template-columns: minmax(0, 1.6fr) minmax(340px, 1fr); }
 .dash-grid--feeds { grid-template-columns: minmax(0, 1.45fr) minmax(320px, .95fr) minmax(300px, .8fr); }
 
 /* ---- Panels ---- */
@@ -9236,6 +9261,27 @@ html.dark .ms-option:hover {
 .dash-stack span { display: block; height: 100%; transition: opacity .15s ease; }
 .dash-stack span:hover { opacity: 0.82; }
 
+/* Donut chart + legend side by side (Order status panel). */
+.dash-donut-split {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+.dash-donut-split .dash-apex--donut {
+    flex: 0 0 148px;
+    min-height: 0;
+}
+.dash-donut-split .dash-legend {
+    flex: 1 1 0;
+    min-width: 0;
+    margin-top: 0;
+}
+@media (max-width: 1280px) {
+    .dash-donut-split { flex-direction: column; align-items: stretch; gap: 0; }
+    .dash-donut-split .dash-apex--donut { flex-basis: auto; }
+    .dash-donut-split .dash-legend { margin-top: 10px; }
+}
+
 .dash-legend {
     list-style: none;
     margin: 10px 0 0;
@@ -9322,76 +9368,6 @@ html.dark .ms-option:hover {
     display: flex;
     flex-direction: column;
     gap: 12px;
-}
-
-.dash-product-row {
-    display: grid;
-    grid-template-columns: 34px minmax(0, 1fr);
-    gap: 12px;
-    align-items: center;
-}
-
-.dash-product-row__rank {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    border-radius: 12px;
-    color: #0f766e;
-    background: rgba(20, 184, 166, .1);
-    font-size: 13px;
-    font-weight: 900;
-}
-
-.dash-product-row__body {
-    min-width: 0;
-}
-
-.dash-product-row__top,
-.dash-product-row__meta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-}
-
-.dash-product-row__top strong {
-    overflow: hidden;
-    color: var(--admin-ink);
-    font-size: 13px;
-    font-weight: 800;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.dash-product-row__top span {
-    color: var(--admin-ink);
-    font-size: 12px;
-    font-weight: 900;
-    font-variant-numeric: tabular-nums;
-}
-
-.dash-product-row__meta {
-    margin-top: 2px;
-    color: var(--admin-muted);
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.dash-product-row__bar {
-    height: 5px;
-    margin-top: 8px;
-    overflow: hidden;
-    border-radius: 999px;
-    background: var(--admin-line);
-}
-
-.dash-product-row__bar span {
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-    background: linear-gradient(90deg, #14b8a6, #0ea5e9);
 }
 
 /* ---- Fulfillment pulse ---- */
@@ -9490,7 +9466,9 @@ html.dark .ms-option:hover {
 @media (max-width: 560px) {
     .dash-kpis { grid-template-columns: 1fr; }
     .dash-bar__actions,
-    .dash-segment { width: 100%; }
+    .dash-segment,
+    .dash-daterange,
+    .dash-daterange .daterange-control { width: 100%; }
     .dash-bar__actions { align-items: stretch; flex-direction: column; }
     .dash-segment__item { flex: 1 1 0; text-align: center; }
     .dash-ops-grid { grid-template-columns: 1fr; }
@@ -9533,8 +9511,6 @@ html.dark .dash-fulfillment__stats span {
 }
 html.dark .dash-ops-panel__intro h3,
 html.dark .dash-op__copy strong,
-html.dark .dash-product-row__top strong,
-html.dark .dash-product-row__top span,
 html.dark .dash-fulfillment__meter span,
 html.dark .dash-fulfillment__copy h3,
 html.dark .dash-fulfillment__stats strong {

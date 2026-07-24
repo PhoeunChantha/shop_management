@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Services\Admin;
 
-use App\Enums\OrderStatus;
 use App\Enums\FulfillmentStatus;
+use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;

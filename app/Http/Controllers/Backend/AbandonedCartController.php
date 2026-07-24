@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
 use App\Models\AbandonedCart;
-use App\Services\AbandonedCartService;
+use App\Services\Admin\AbandonedCartService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response as ResponseFactory;

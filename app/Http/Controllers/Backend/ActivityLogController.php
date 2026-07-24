@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
-use App\Services\ActivityLogService;
+use App\Services\Admin\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response as ResponseFactory;
 use Illuminate\View\View;

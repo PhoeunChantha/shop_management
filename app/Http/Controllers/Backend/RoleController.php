@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
-use App\Services\RoleService;
+use App\Services\Admin\RoleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
 use Illuminate\View\View;
+use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
@@ -86,6 +86,7 @@ class RoleController extends Controller
         }
 
         $role->delete();
+
         return redirect()->route('admin.roles.index')->with('success', 'Role deleted successfully!');
     }
 }

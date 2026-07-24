@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Supplier\StoreSupplierRequest;
 use App\Http\Requests\Supplier\UpdateSupplierRequest;
 use App\Models\Supplier;
-use App\Services\SupplierService;
+use App\Services\Admin\SupplierService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -67,6 +67,7 @@ class SupplierController extends Controller
 
         try {
             $this->suppliers->delete($supplier);
+
             return back()->with('success', 'Supplier deleted.');
         } catch (\InvalidArgumentException $e) {
             return back()->with('error', $e->getMessage());

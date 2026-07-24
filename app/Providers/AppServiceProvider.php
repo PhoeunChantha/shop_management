@@ -4,8 +4,8 @@ namespace App\Providers;
 
 use App\Models\Color;
 use App\Models\Size;
-use App\Services\AdminNotificationService;
-use App\Services\FrontendNavigationService;
+use App\Services\Admin\AdminNotificationService;
+use App\Services\Frontend\NavigationService;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Blade;
@@ -68,7 +68,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         View::composer('components.frontend.header', function ($view): void {
-            $view->with('frontendNav', app(FrontendNavigationService::class)->data());
+            $view->with('frontendNav', app(NavigationService::class)->data());
         });
     }
 }

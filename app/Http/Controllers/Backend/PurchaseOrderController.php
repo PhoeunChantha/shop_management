@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Backend;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PurchaseOrder\StorePurchaseOrderRequest;
 use App\Models\PurchaseOrder;
-use App\Services\PurchaseOrderService;
+use App\Services\Admin\PurchaseOrderService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -90,6 +90,7 @@ class PurchaseOrderController extends Controller
     {
         try {
             $action();
+
             return back()->with('success', $message);
         } catch (\InvalidArgumentException $e) {
             return back()->with('error', $e->getMessage());

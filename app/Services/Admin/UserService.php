@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Services\Admin;
 
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
@@ -38,7 +39,7 @@ final class UserService
             ->withQueryString();
     }
 
-    public function roles(string $orderBy = 'name'): \Illuminate\Database\Eloquent\Collection
+    public function roles(string $orderBy = 'name'): Collection
     {
         return Role::orderBy($orderBy)->get();
     }

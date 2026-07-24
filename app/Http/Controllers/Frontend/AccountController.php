@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
-use App\Services\FrontendAccountService;
+use App\Services\Frontend\AccountService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class AccountController extends Controller
 {
     public function __construct(
-        private readonly FrontendAccountService $account,
+        private readonly AccountService $account,
     ) {}
 
     public function dashboard(): View
@@ -31,9 +34,34 @@ class AccountController extends Controller
         return view('frontend.account.profile', ['user' => $this->account->user()]);
     }
 
+    public function updateProfile(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'first_name' => ['required', 'string', 'max:100'],
+            'last_name' => ['nullable', 'string', 'max:100'],
+            'phone' => ['nullable', 'string', 'max:40'],
+        ]);
+
+        $this->account->updateProfile($request->user(), $data);
+
+        return back()->with('success', 'Profile updated.');
+    }
+
     public function password(): View
     {
         return view('frontend.account.password', ['user' => $this->account->user()]);
+    }
+
+    public function updatePassword(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'confirmed', Password::defaults()],
+        ]);
+
+        $request->user()->update(['password' => $request->input('password')]);
+
+        return back()->with('success', 'Password updated.');
     }
 
     public function addresses(): View

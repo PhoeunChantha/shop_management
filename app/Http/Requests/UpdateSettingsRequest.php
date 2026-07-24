@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use App\Services\SettingService;
+use App\Services\Admin\SettingService;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class UpdateSettingsRequest extends FormRequest

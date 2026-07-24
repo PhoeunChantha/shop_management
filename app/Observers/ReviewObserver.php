@@ -3,7 +3,7 @@
 namespace App\Observers;
 
 use App\Models\Review;
-use App\Services\ReviewService;
+use App\Services\Admin\ReviewService;
 
 /**
  * Keeps the product rating aggregate in sync whenever a review is saved or removed.
