@@ -100,6 +100,8 @@ Route::name('frontend.')->group(function () {
         Route::delete('/addresses/{address}', [AddressController::class, 'destroy'])->name('addresses.destroy');
         Route::patch('/addresses/{address}/default', [AddressController::class, 'makeDefault'])->name('addresses.default');
         Route::get('/notifications', [AccountController::class, 'notifications'])->name('notifications');
+        Route::post('/notifications/read-all', [AccountController::class, 'markAllNotificationsRead'])->name('notifications.read-all');
+        Route::patch('/notifications/{id}/read', [AccountController::class, 'markNotificationRead'])->name('notifications.read');
         Route::get('/wishlist', [AccountController::class, 'wishlist'])->name('wishlist');
         Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
         Route::post('/wishlist/sync', [WishlistController::class, 'sync'])->name('wishlist.sync');
@@ -107,6 +109,7 @@ Route::name('frontend.')->group(function () {
         Route::get('/orders/{id}', [AccountController::class, 'orderDetail'])->name('orders.show');
         Route::get('/orders/{id}/tracking', [AccountController::class, 'orderTracking'])->name('orders.tracking');
         Route::get('/orders/{id}/review/{pid}', [AccountController::class, 'review'])->name('orders.review');
+        Route::post('/orders/{id}/review/{pid}', [AccountController::class, 'storeReview'])->name('orders.review.store');
     });
 
     // ---- Information pages ----

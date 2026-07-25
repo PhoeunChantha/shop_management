@@ -2,10 +2,12 @@
 
 namespace App\Services\Frontend;
 
+use App\Enums\ReviewStatus;
 use App\Models\Address;
 use App\Models\CustomerProfile;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\Review;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -153,23 +155,36 @@ class AccountService
      */
     public function notifications(): array
     {
-        return collect($this->orders())
-            ->take(6)
-            ->map(fn (array $order): array => [
-                'type' => 'order',
-                'icon' => 'box',
-                'title' => 'Order #UT-'.$order['id'].' '.$order['status'],
-                'body' => 'Your order total is $'.number_format((float) $order['total'], 2).'.',
-                'time' => $order['date'],
-                'unread' => $order['status'] !== 'Delivered',
-            ])
-            ->values()
+        $user = Auth::user();
+
+        if (! $user) {
+            return [];
+        }
+
+        return $user->notifications()
+            ->latest()
+            ->take(30)
+            ->get()
+            ->map(function ($notification): array {
+                $data = $notification->data;
+
+                return [
+                    'id' => $notification->id,
+                    'type' => $data['type'] ?? 'order',
+                    'icon' => $data['icon'] ?? 'bell',
+                    'title' => $data['title'] ?? 'Notification',
+                    'body' => $data['body'] ?? '',
+                    'url' => $data['url'] ?? null,
+                    'time' => $notification->created_at?->diffForHumans() ?? '',
+                    'unread' => $notification->read_at === null,
+                ];
+            })
             ->all();
     }
 
     public function unreadNotifications(): int
     {
-        return collect($this->notifications())->where('unread', true)->count();
+        return Auth::user()?->unreadNotifications()->count() ?? 0;
     }
 
     public function findProduct(int $id): ?array
@@ -181,6 +196,41 @@ class AccountService
             ->find($id);
 
         return $product ? $this->products->map($product) : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $order  A mapped order (from findOrder).
+     */
+    public function orderContainsProduct(array $order, int $productId): bool
+    {
+        return collect($order['items'] ?? [])
+            ->contains(fn (array $item): bool => (int) ($item['pid'] ?? 0) === $productId);
+    }
+
+    public function hasReviewed(User $user, int $productId): bool
+    {
+        return Review::where('user_id', $user->id)
+            ->where('product_id', $productId)
+            ->exists();
+    }
+
+    /**
+     * Create a verified-buyer review, pending admin moderation.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function submitReview(User $user, int $productId, array $data): Review
+    {
+        return Review::create([
+            'product_id' => $productId,
+            'user_id' => $user->id,
+            'author_name' => $user->name,
+            'rating' => (int) $data['rating'],
+            'title' => $data['title'] ?? null,
+            'body' => $data['body'],
+            'status' => ReviewStatus::Pending,
+            'is_verified' => true,
+        ]);
     }
 
     private function orderQuery()

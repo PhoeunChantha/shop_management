@@ -80,6 +80,20 @@ class AccountController extends Controller
         ]);
     }
 
+    public function markNotificationRead(Request $request, string $id): RedirectResponse
+    {
+        $request->user()->notifications()->whereKey($id)->first()?->markAsRead();
+
+        return back();
+    }
+
+    public function markAllNotificationsRead(Request $request): RedirectResponse
+    {
+        $request->user()->unreadNotifications->markAsRead();
+
+        return back()->with('success', 'All notifications marked as read.');
+    }
+
     public function wishlist(): View
     {
         return view('frontend.account.wishlist', [
@@ -130,5 +144,29 @@ class AccountController extends Controller
             'order' => $order,
             'product' => $product,
         ]);
+    }
+
+    public function storeReview(Request $request, string $id, int $pid): RedirectResponse
+    {
+        $order = $this->account->findOrder($id) ?? abort(404);
+        abort_unless($this->account->orderContainsProduct($order, $pid), 404);
+
+        if ($this->account->hasReviewed($request->user(), $pid)) {
+            return redirect()
+                ->route('frontend.account.orders')
+                ->with('error', 'You have already reviewed this product.');
+        }
+
+        $data = $request->validate([
+            'rating' => ['required', 'integer', 'between:1,5'],
+            'title' => ['nullable', 'string', 'max:120'],
+            'body' => ['required', 'string', 'min:10', 'max:2000'],
+        ]);
+
+        $this->account->submitReview($request->user(), $pid, $data);
+
+        return redirect()
+            ->route('frontend.account.orders')
+            ->with('success', 'Thanks! Your review was submitted and is pending approval.');
     }
 }

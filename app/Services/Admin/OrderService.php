@@ -8,6 +8,7 @@ use App\Enums\FulfillmentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
+use App\Notifications\OrderStatusUpdated;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -154,6 +155,8 @@ final class OrderService
             // Activity log entries for anything that actually changed.
             if ($oldStatus !== $newStatus) {
                 $order->logEvent('status', 'Status → '.$newStatus->label(), 'Was '.$oldStatus->label());
+                // Notify the customer (DB now, real-time broadcast once enabled).
+                $order->user?->notify(new OrderStatusUpdated($order, $newStatus));
             }
             if ($oldPayment !== $newPayment) {
                 $order->logEvent('payment', 'Payment marked '.$newPayment->label());
