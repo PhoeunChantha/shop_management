@@ -35,12 +35,18 @@
                         @foreach($cross as $p)
                             @php($productUrl = $p['url'] ?? route('frontend.shop.show', $p['slug'] ?? \Illuminate\Support\Str::slug($p['name'])))
                             <div class="ut-card" style="width:200px;padding:12px">
-                                <a href="{{ $productUrl }}"><x-frontend.ph :tint="$p['tint']" :dark="$p['dark']" style="aspect-ratio:1;border-radius:12px;margin-bottom:10px" /></a>
+                                <a href="{{ $productUrl }}">
+                                    @if (!empty($p['image_url']))
+                                        <img src="{{ $p['image_url'] }}" alt="{{ $p['name'] }}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;margin-bottom:10px;display:block">
+                                    @else
+                                        <x-frontend.ph :tint="$p['tint']" :dark="$p['dark']" style="aspect-ratio:1;border-radius:12px;margin-bottom:10px" />
+                                    @endif
+                                </a>
                                 <div style="font-family:var(--font-head);font-weight:600;font-size:14px">{{ $p['name'] }}</div>
                                 <div class="ut-row" style="justify-content:space-between;margin-top:8px">
                                     <span style="font-family:var(--font-head);font-weight:700">${{ $p['price'] }}</span>
                                     <button type="button" class="ut-btn ut-btn-ghost ut-btn-sm" data-add-to-cart data-no-open
-                                            data-id="{{ $p['id'] }}" data-name="{{ $p['name'] }}" data-price="{{ $p['price'] }}" data-tint="{{ $p['tint'] }}" data-color="{{ $p['colors'][0] }}" data-size="M">
+                                            data-id="{{ $p['id'] }}" data-name="{{ $p['name'] }}" data-price="{{ $p['price'] }}" data-tint="{{ $p['tint'] }}" data-image="{{ $p['image_url'] ?? '' }}" data-color="{{ $p['colors'][0] }}" data-size="M">
                                         <x-frontend.icon n="plus" :size="14" /> Add
                                     </button>
                                 </div>

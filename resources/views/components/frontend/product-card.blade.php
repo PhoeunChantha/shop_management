@@ -24,7 +24,7 @@
             <div class="ut-pcard-add">
                 <button type="button" class="ut-btn ut-btn-ink ut-btn-block ut-btn-sm"
                         data-add-to-cart data-no-open data-id="{{ $p['id'] }}" data-name="{{ $p['name'] }}"
-                        data-price="{{ $p['price'] }}" data-tint="{{ $p['tint'] }}" data-color="{{ $p['colors'][0] }}" data-size="M">
+                        data-price="{{ $p['price'] }}" data-tint="{{ $p['tint'] }}" data-image="{{ $p['image_url'] ?? '' }}" data-color="{{ $p['colors'][0] }}" data-size="M">
                     <x-frontend.icon n="bag" :size="16" /> Quick add
                 </button>
             </div>

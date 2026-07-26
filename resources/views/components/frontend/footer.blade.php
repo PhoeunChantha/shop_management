@@ -1,6 +1,6 @@
 @php
     $cols = [
-        'Shop' => [['New Arrivals', route('frontend.shop.index')], ['Best Sellers', route('frontend.shop.index')], ['Heavyweight', route('frontend.shop.index')], ['Graphic', route('frontend.shop.index')], ['Sale', route('frontend.shop.index')]],
+        'Shop' => [['New Arrivals', route('frontend.shop.index', ['new' => 1])], ['Best Sellers', route('frontend.shop.index', ['best' => 1])], ['Heavyweight', route('frontend.shop.index')], ['Graphic', route('frontend.shop.index')], ['Sale', route('frontend.shop.index', ['sale' => 1])]],
         'Help' => [['Shipping', route('frontend.pages.faq')], ['Returns', route('frontend.pages.faq')], ['Size Guide', route('frontend.pages.faq')], ['Track Order', route('frontend.account.orders')], ['Contact', route('frontend.pages.contact')]],
         'Brand' => [['Our Story', route('frontend.pages.about')], ['Sustainability', route('frontend.pages.about')], ['FAQ', route('frontend.pages.faq')], ['Contact', route('frontend.pages.contact')], ['Stores', route('frontend.pages.contact')]],
     ];

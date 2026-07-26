@@ -83,9 +83,12 @@
   }
 
   function lineHTML(it) {
+    var media = it.image
+      ? '<img src="' + it.image + '" alt="" style="width:72px;height:90px;border-radius:14px;flex-shrink:0;object-fit:cover">'
+      : '<div class="ph" style="width:72px;height:90px;border-radius:14px;flex-shrink:0;--ph-tint:' + it.tint + '"></div>';
     return '' +
       '<div class="ut-row" style="gap:14px;padding:14px 0;border-bottom:1px solid var(--border-2);align-items:flex-start">' +
-        '<div class="ph" style="width:72px;height:90px;border-radius:14px;flex-shrink:0;--ph-tint:' + it.tint + '"></div>' +
+        media +
         '<div style="flex:1;min-width:0">' +
           '<div class="ut-row" style="justify-content:space-between;gap:8px">' +
             '<div style="font-family:var(--font-head);font-weight:600;font-size:14.5px">' + it.name + '</div>' +
@@ -249,6 +252,7 @@
       if (add.hasAttribute('data-require-size') && !sizeEl && !ds.size) { toast('Please select a size'); return; }
       addToCart({
         id: Number(ds.id), name: ds.name, price: Number(ds.price), tint: ds.tint || 'linear-gradient(150deg,#eef2f7,#e2e8f0)',
+        image: ds.image || '',
         size: sizeEl ? sizeEl.getAttribute('data-size') : (ds.size || 'M'),
         color: colorEl ? colorEl.getAttribute('data-color') : (ds.color || 'black'),
         qty: qtyEl ? Number(qtyEl.textContent) : 1,

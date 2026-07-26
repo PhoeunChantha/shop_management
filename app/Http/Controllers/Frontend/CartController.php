@@ -16,7 +16,7 @@ class CartController extends Controller
     {
         // Cart lines are hydrated client-side from localStorage by main.js.
         return view('frontend.cart.index', [
-            'cross' => $this->products->mappedActiveProducts(4)->all(),
+            'cross' => $this->products->crossSell(4)->all(),
             'colors' => $this->products->colors(),
         ]);
     }

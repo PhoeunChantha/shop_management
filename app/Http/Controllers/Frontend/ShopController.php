@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Frontend;
 use App\Enums\ReviewStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\ProductSpecification;
 use App\Models\Review;
+use App\Services\Admin\SettingService;
 use App\Services\Frontend\ProductService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,6 +17,7 @@ class ShopController extends Controller
 {
     public function __construct(
         private readonly ProductService $products,
+        private readonly SettingService $settings,
     ) {}
 
     public function index(Request $request): View
@@ -115,6 +118,10 @@ class ShopController extends Controller
             'related' => $related,
             'colors' => $product['color_map'] ?? $this->products->colors(),
             'reviews' => $reviews,
+            'specifications' => $dynamicProduct->specifications
+                ->map(fn (ProductSpecification $spec): array => ['name' => $spec->name, 'value' => $spec->value])
+                ->all(),
+            'shippingInfo' => $this->settings->shippingInfo(),
         ]);
     }
 }

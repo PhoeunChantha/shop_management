@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Frontend;
 
+use App\Exceptions\CheckoutException;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Services\Frontend\CheckoutService;
@@ -69,6 +70,9 @@ class CheckoutController extends Controller
                 'shipping_id' => $data['del'] ?? null,
                 'payment' => $data['payment'] ?? 'card',
             ]);
+        } catch (CheckoutException $e) {
+            // Safe, customer-facing message (e.g. an item ran out of stock).
+            return back()->withInput()->with('error', $e->getMessage());
         } catch (\Throwable $e) {
             Log::error('Checkout order failed: '.$e->getMessage(), ['exception' => $e]);
 

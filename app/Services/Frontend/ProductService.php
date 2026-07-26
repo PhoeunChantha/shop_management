@@ -48,6 +48,28 @@ class ProductService
     }
 
     /**
+     * Cross-sell picks for cart/upsell blocks: best sellers and featured
+     * products first, then the newest active items.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function crossSell(int $limit = 4): Collection
+    {
+        return Product::query()
+            ->with($this->relations())
+            ->withSum('variants', 'stock')
+            ->where('status', 'active')
+            ->orderByDesc('is_best_seller')
+            ->orderByDesc('is_featured')
+            ->orderBy('sort_order')
+            ->latest()
+            ->limit($limit)
+            ->get()
+            ->map(fn (Product $product): array => $this->map($product))
+            ->values();
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function map(Product $product): array

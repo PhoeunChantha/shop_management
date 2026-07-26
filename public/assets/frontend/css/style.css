@@ -52,8 +52,8 @@
   --sh-4: 0 30px 70px rgba(28, 22, 12, .20);
 
   --maxw: 1240px;
-  --font-head: 'Fraunces', Georgia, 'Times New Roman', serif;
-  --font-body: 'Hanken Grotesk', system-ui, -apple-system, sans-serif;
+  --font-head: 'Kantumruy Pro', system-ui, -apple-system, sans-serif;
+  --font-body: 'Kantumruy Pro', system-ui, -apple-system, sans-serif;
 
   /* ---- Motion: one consistent timing vocabulary ---- */
   --ease-out: cubic-bezier(.22, 1, .36, 1);
@@ -1802,6 +1802,14 @@ input[type=number]::-webkit-inner-spin-button {
     background .28s var(--ease-out),
     color .28s var(--ease-out),
     box-shadow .28s var(--ease-out);
+}
+
+/* Saved-to-wishlist active state. Needs to out-specify the base
+   .ut-pcard > .icon-btn[data-wish] rule so the filled heart shows its colour. */
+.ut-pcard > .icon-btn[data-wish].is-on {
+  background: rgba(255, 255, 255, .95);
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 .ut-pcard .swatch {

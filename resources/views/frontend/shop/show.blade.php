@@ -121,7 +121,7 @@
                         <button type="button" data-qty-step="1" aria-label="Increase quantity"><x-frontend.icon n="plus" :size="16" /></button>
                     </div>
                     <button type="button" class="ut-btn ut-btn-accent ut-purchase-add"
-                            data-add-to-cart data-require-size data-id="{{ $product['id'] }}" data-name="{{ $product['name'] }}" data-price="{{ $product['price'] }}" data-tint="{{ $product['tint'] }}">
+                            data-add-to-cart data-require-size data-id="{{ $product['id'] }}" data-name="{{ $product['name'] }}" data-price="{{ $product['price'] }}" data-tint="{{ $product['tint'] }}" data-image="{{ $product['image_url'] ?? '' }}">
                         <x-frontend.icon n="bag" :size="18" /> Add to bag
                     </button>
                 </div>
@@ -145,8 +145,19 @@
                         <button type="button" class="ut-tab-btn" onclick="setTab(this,'shipping')">Shipping</button>
                     </div>
                     <p class="muted" id="tab-details" style="font-size:14.5px;line-height:1.7">{{ $product['desc'] }}</p>
-                    <p class="muted" id="tab-fabric" style="display:none;font-size:14.5px;line-height:1.7">100% organic combed cotton, 240gsm. Machine wash cold, tumble dry low. Garment-dyed — minor variation in tone is part of the character.</p>
-                    <p class="muted" id="tab-shipping" style="display:none;font-size:14.5px;line-height:1.7">Free standard shipping on orders over $75 (2–4 business days). Express available at checkout. Free 30-day returns on unworn items.</p>
+                    <div id="tab-fabric" style="display:none">
+                        @if(count($specifications))
+                            <dl style="display:grid;grid-template-columns:auto 1fr;gap:10px 22px;font-size:14.5px;margin:0">
+                                @foreach($specifications as $spec)
+                                    <dt style="font-family:var(--font-head);font-weight:600;color:var(--ink)">{{ $spec['name'] }}</dt>
+                                    <dd class="muted" style="margin:0">{{ $spec['value'] }}</dd>
+                                @endforeach
+                            </dl>
+                        @else
+                            <p class="muted" style="font-size:14.5px;line-height:1.7">100% organic combed cotton, 240gsm. Machine wash cold, tumble dry low. Garment-dyed — minor variation in tone is part of the character.</p>
+                        @endif
+                    </div>
+                    <p class="muted" id="tab-shipping" style="display:none;font-size:14.5px;line-height:1.7">{!! nl2br(e($shippingInfo)) !!}</p>
                 </div>
             </div>
         </div>
@@ -200,7 +211,7 @@
             <div class="ut-row" style="gap:14px">
                 <span class="ut-hide-mobile" style="font-family:var(--font-head);font-weight:700;font-size:20px">${{ $product['price'] }}</span>
                 <button type="button" class="ut-btn ut-btn-accent ut-btn-lg" data-add-to-cart data-require-size
-                        data-id="{{ $product['id'] }}" data-name="{{ $product['name'] }}" data-price="{{ $product['price'] }}" data-tint="{{ $product['tint'] }}">
+                        data-id="{{ $product['id'] }}" data-name="{{ $product['name'] }}" data-price="{{ $product['price'] }}" data-tint="{{ $product['tint'] }}" data-image="{{ $product['image_url'] ?? '' }}">
                     <x-frontend.icon n="bag" :size="17" /> Add to bag
                 </button>
             </div>

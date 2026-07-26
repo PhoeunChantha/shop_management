@@ -44,6 +44,7 @@ use App\Http\Controllers\Frontend\AuthController;
 use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\Frontend\CheckoutController;
 use App\Http\Controllers\Frontend\HomeController;
+use App\Http\Controllers\Frontend\NewsletterController;
 use App\Http\Controllers\Frontend\PageController;
 use App\Http\Controllers\Frontend\ShopController;
 use App\Http\Controllers\Frontend\SocialAuthController;
@@ -53,6 +54,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::name('frontend.')->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
+    Route::post('/newsletter', [NewsletterController::class, 'store'])->name('newsletter.subscribe');
 
     // ---- Shop ----
     Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
