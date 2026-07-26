@@ -1,6 +1,6 @@
 {{-- Social-login buttons — rendered from the enabled providers in
      Settings → Social Login. Renders nothing when none are enabled. --}}
-@inject('settingsService', 'App\Services\SettingService')
+@inject('settingsService', 'App\Services\Admin\SettingService')
 @php($socialProviders = $settingsService->socialProviders())
 
 @if (count($socialProviders))

@@ -6,15 +6,15 @@ use App\Enums\ReviewStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Review;
-use App\Services\FrontendProductService;
-use Illuminate\Http\Request;
+use App\Services\Frontend\ProductService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ShopController extends Controller
 {
     public function __construct(
-        private readonly FrontendProductService $products,
+        private readonly ProductService $products,
     ) {}
 
     public function index(Request $request): View

@@ -9,7 +9,7 @@
     {{-- Site branding + semantic theme colors (Settings). Resolved once and
          reused by the head, sidebar (via @include scope) and theme variables. --}}
     @php
-        $brandingService = app(\App\Services\SettingService::class);
+        $brandingService = app(\App\Services\Admin\SettingService::class);
         $adminTheme = $brandingService->themeColors();
         $adminLogo = $brandingService->logoUrl();
         $adminFavicon = $brandingService->faviconUrl();

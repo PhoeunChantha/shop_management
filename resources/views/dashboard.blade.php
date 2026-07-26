@@ -20,10 +20,10 @@
                 'values' => collect($statusBreakdown)->pluck('count')->all(),
                 'colors' => collect($statusBreakdown)->pluck('color')->all(),
             ],
-            'payment' => [
-                'labels' => collect($paymentBreakdown)->pluck('label')->all(),
-                'values' => collect($paymentBreakdown)->pluck('count')->all(),
-                'colors' => collect($paymentBreakdown)->pluck('color')->all(),
+            'topProducts' => [
+                'labels' => collect($topProducts)->pluck('name')->all(),
+                'sold' => collect($topProducts)->pluck('sold')->all(),
+                'revenue' => collect($topProducts)->pluck('revenue')->all(),
             ],
         ];
     @endphp
@@ -38,12 +38,16 @@
                 <p class="dash-date">{{ now()->format('l, F j, Y') }}</p>
             </div>
             <div class="dash-bar__actions">
-                <div class="dash-segment" role="tablist" aria-label="Period">
-                    @foreach ($ranges as $key => $label)
-                        <a href="{{ route('admin.dashboard', ['range' => $key]) }}"
-                            class="dash-segment__item {{ $range === $key ? 'is-active' : '' }}">{{ $label }}</a>
-                    @endforeach
-                </div>
+                <form method="GET" action="{{ route('admin.dashboard') }}" class="dash-daterange">
+                    <div class="daterange-control">
+                        <i class="fa-regular fa-calendar"></i>
+                        <input type="text" class="form-input" data-daterange data-daterange-submit
+                            placeholder="Select date range" readonly autocomplete="off"
+                            value="{{ $dateFrom && $dateTo ? $rangeLabel : '' }}">
+                    </div>
+                    <input type="hidden" name="date_from" value="{{ $dateFrom }}">
+                    <input type="hidden" name="date_to" value="{{ $dateTo }}">
+                </form>
                 <a href="{{ route('admin.products.create') }}" class="premium-button premium-button--dark">
                     <i class="fa-solid fa-plus"></i><span>New product</span>
                 </a>
@@ -98,7 +102,7 @@
                 <div class="dash-panel__head">
                     <div>
                         <h3>Revenue</h3>
-                        <p>Last {{ $rangeLabel }}</p>
+                        <p>{{ $rangeLabel }}</p>
                     </div>
                     <div class="dash-panel__metric">
                         <strong>{{ $chart['total'] }}</strong>
@@ -117,43 +121,21 @@
                     </div>
                 </div>
                 @if (count($statusBreakdown))
-                    <div id="statusChart" class="dash-apex dash-apex--donut"></div>
-                    <ul class="dash-legend">
-                        @foreach ($statusBreakdown as $s)
-                            <li>
-                                <span class="dash-legend__dot" style="background: {{ $s['color'] }};"></span>
-                                <span class="dash-legend__label">{{ $s['label'] }}</span>
-                                <span class="dash-legend__count">{{ $s['count'] }}</span>
-                                <span class="dash-legend__pct">{{ $s['pct'] }}%</span>
-                            </li>
-                        @endforeach
-                    </ul>
+                    <div class="dash-donut-split">
+                        <div id="statusChart" class="dash-apex dash-apex--donut"></div>
+                        <ul class="dash-legend">
+                            @foreach ($statusBreakdown as $s)
+                                <li>
+                                    <span class="dash-legend__dot" style="background: {{ $s['color'] }};"></span>
+                                    <span class="dash-legend__label">{{ $s['label'] }}</span>
+                                    <span class="dash-legend__count">{{ $s['count'] }}</span>
+                                    <span class="dash-legend__pct">{{ $s['pct'] }}%</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
                 @else
                     <div class="dash-empty"><i class="fa-solid fa-receipt"></i><p>No orders yet.</p></div>
-                @endif
-            </section>
-
-            {{-- Payment mix --}}
-            <section class="dash-panel dash-panel--compact">
-                <div class="dash-panel__head">
-                    <div>
-                        <h3>Payment mix</h3>
-                        <p>All time</p>
-                    </div>
-                </div>
-                @if (count($paymentBreakdown))
-                    <div id="paymentChart" class="dash-apex dash-apex--donut"></div>
-                    <ul class="dash-legend">
-                        @foreach ($paymentBreakdown as $payment)
-                            <li>
-                                <span class="dash-legend__dot" style="background: {{ $payment['color'] }};"></span>
-                                <span class="dash-legend__label">{{ $payment['label'] }}</span>
-                                <span class="dash-legend__count">{{ $payment['count'] }}</span>
-                            </li>
-                        @endforeach
-                    </ul>
-                @else
-                    <div class="dash-empty"><i class="fa-solid fa-credit-card"></i><p>No payments yet.</p></div>
                 @endif
             </section>
         </div>
@@ -203,24 +185,11 @@
                     <a href="{{ route('admin.products.index') }}" class="dash-link">Catalog <i class="fa-solid fa-arrow-right"></i></a>
                 </div>
                 <div class="dash-products">
-                    @forelse ($topProducts as $product)
-                        <div class="dash-product-row">
-                            <div class="dash-product-row__rank">{{ $loop->iteration }}</div>
-                            <div class="dash-product-row__body">
-                                <div class="dash-product-row__top">
-                                    <strong>{{ $product['name'] }}</strong>
-                                    <span>{{ $product['revenue'] }}</span>
-                                </div>
-                                <div class="dash-product-row__meta">
-                                    <span>{{ $product['sku'] }}</span>
-                                    <span>{{ number_format($product['sold']) }} sold</span>
-                                </div>
-                                <div class="dash-product-row__bar"><span style="width: {{ $product['pct'] }}%;"></span></div>
-                            </div>
-                        </div>
-                    @empty
+                    @if ($topProducts->isEmpty())
                         <div class="dash-empty"><i class="fa-solid fa-box-open"></i><p>No product sales in this range.</p></div>
-                    @endforelse
+                    @else
+                        <div id="topProductsChart"></div>
+                    @endif
                 </div>
             </section>
 
@@ -350,7 +319,7 @@
                     if (donut && data.status.values.length) {
                         const total = data.status.values.reduce((a, b) => a + b, 0);
                         new ApexCharts(donut, {
-                            chart: { type: 'donut', height: 210, fontFamily: font },
+                            chart: { type: 'donut', height: 172, fontFamily: font },
                             series: data.status.values,
                             labels: data.status.labels,
                             colors: data.status.colors,
@@ -365,23 +334,26 @@
                         }).render();
                     }
 
-                    // Payment-status donut
-                    const payment = document.getElementById('paymentChart');
-                    if (payment && data.payment.values.length) {
-                        const total = data.payment.values.reduce((a, b) => a + b, 0);
-                        new ApexCharts(payment, {
-                            chart: { type: 'donut', height: 210, fontFamily: font },
-                            series: data.payment.values,
-                            labels: data.payment.labels,
-                            colors: data.payment.colors,
-                            stroke: { width: 2, colors: [dark ? '#121c31' : '#fff'] },
+                    // Top products — units sold (horizontal bars)
+                    const top = document.getElementById('topProductsChart');
+                    if (top && data.topProducts.sold.length) {
+                        const palette = ['#0f766e', '#2563eb', '#7c3aed', '#ea580c', '#059669'];
+                        new ApexCharts(top, {
+                            chart: { type: 'bar', height: Math.max(160, data.topProducts.sold.length * 52), fontFamily: font, toolbar: { show: false },
+                                animations: { enabled: true, easing: 'easeinout', speed: 700 } },
+                            series: [{ name: 'Units sold', data: data.topProducts.sold }],
+                            colors: palette,
+                            plotOptions: { bar: { horizontal: true, borderRadius: 6, barHeight: '58%', distributed: true } },
+                            dataLabels: { enabled: true, textAnchor: 'start', offsetX: 4,
+                                formatter: (v) => Number(v).toLocaleString(),
+                                style: { colors: [dark ? '#e2e8f0' : '#101827'], fontSize: '11px', fontWeight: 700 } },
                             legend: { show: false },
-                            dataLabels: { enabled: false },
-                            plotOptions: { pie: { donut: { size: '72%', labels: { show: true,
-                                name: { color: muted },
-                                value: { color: dark ? '#e2e8f0' : '#101827', fontSize: '22px', fontWeight: 800 },
-                                total: { show: true, label: 'Payments', color: muted, formatter: () => total } } } } },
-                            tooltip: { theme: dark ? 'dark' : 'light' },
+                            grid: { borderColor: grid, strokeDashArray: 4, xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } } },
+                            xaxis: { categories: data.topProducts.labels, axisBorder: { show: false }, axisTicks: { show: false },
+                                labels: { style: { colors: muted, fontSize: '11px' } } },
+                            yaxis: { labels: { style: { colors: muted, fontSize: '12px' } } },
+                            tooltip: { theme: dark ? 'dark' : 'light',
+                                y: { formatter: (v, opts) => Number(v).toLocaleString() + ' sold · ' + data.topProducts.revenue[opts.dataPointIndex] } },
                         }).render();
                     }
                 }

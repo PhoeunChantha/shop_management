@@ -119,11 +119,6 @@
                 <span class="brand-kicker font-medium">Commerce Console</span>
             </div>
         </div>
-        <div class="admin-brand-status">
-            <span class="admin-brand-status-dot"></span>
-            <span>Storefront live</span>
-            <i class="fa-solid fa-arrow-trend-up ms-auto"></i>
-        </div>
     </div>
 
     <div class="admin-nav-scroll flex-grow-1 overflow-auto">

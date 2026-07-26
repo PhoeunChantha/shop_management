@@ -9,8 +9,8 @@ use App\Http\Requests\Attribute\UpdateAttributeRequest;
 use App\Models\Attribute;
 use App\Models\Color;
 use App\Models\Size;
-use App\Services\AttributeService;
-use App\Services\BulkActionService;
+use App\Services\Admin\AttributeService;
+use App\Services\Admin\BulkActionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -152,4 +152,3 @@ class AttributeController extends Controller
         ];
     }
 }
-

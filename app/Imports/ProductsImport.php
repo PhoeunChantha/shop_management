@@ -7,7 +7,7 @@ namespace App\Imports;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
-use App\Services\SettingService;
+use App\Services\Admin\SettingService;
 use App\Support\ProductPorter;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Validator;

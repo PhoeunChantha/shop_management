@@ -20,6 +20,20 @@
     set wish(v) { localStorage.setItem('ut_wish', JSON.stringify(v)); },
   };
 
+  /* ---------- auth-aware backend sync ---------- */
+  // Logged-in customers persist their wishlist server-side; guests keep it in
+  // localStorage. UT_AUTH is emitted by the layout.
+  const AUTH = window.UT_AUTH || { authed: false, wish: [] };
+  const URLS = window.UT_URLS || {};
+  const CSRF = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+  function postJSON(url, data) {
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': CSRF },
+      body: JSON.stringify(data || {}),
+    }).then(r => (r.ok ? r.json() : Promise.reject(r)));
+  }
+
   /* ---------- toast ---------- */
   let toastTimer;
   function toast(msg) {
@@ -172,9 +186,42 @@
   function toggleWish(id) {
     id = Number(id);
     let wish = store.wish;
-    if (wish.includes(id)) wish = wish.filter(x => x !== id); else wish.push(id);
-    store.wish = wish;
+    const adding = wish.indexOf(id) < 0;
+    if (adding) wish.push(id); else wish = wish.filter(x => x !== id);
+    store.wish = wish;                 // optimistic local update
     syncWishButtons(); syncBadges();
+
+    if (AUTH.authed) {
+      postJSON(URLS.wishToggle, { product_id: id })
+        .then(res => {
+          if (res && typeof res.wished === 'boolean') {
+            // reconcile with the server's authoritative state
+            let w = store.wish; const has = w.indexOf(id) > -1;
+            if (res.wished !== has) {
+              if (res.wished) w.push(id); else w = w.filter(x => x !== id);
+              store.wish = w; syncWishButtons(); syncBadges();
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }
+
+  // On load for a logged-in customer: adopt the server wishlist, merging any
+  // items they saved as a guest (in localStorage) into their account.
+  function initWish() {
+    if (!AUTH.authed) return;
+    const server = (AUTH.wish || []).map(Number);
+    const local = store.wish;
+    const guestOnly = local.filter(id => server.indexOf(id) < 0);
+
+    if (guestOnly.length) {
+      postJSON(URLS.wishSync, { ids: local })
+        .then(res => { store.wish = (res.ids || server).map(Number); syncWishButtons(); syncBadges(); })
+        .catch(() => { store.wish = server; syncWishButtons(); syncBadges(); });
+    } else {
+      store.wish = server; syncWishButtons(); syncBadges();
+    }
   }
   function syncWishButtons() {
     const wish = store.wish;
@@ -546,4 +593,5 @@
   syncWishButtons();
   renderCartDrawer();
   renderCartPage();
+  initWish();
 })();

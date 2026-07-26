@@ -38,8 +38,8 @@
 
         <x-filter-card :action="route('admin.abandoned-carts.index')" class="cart-recovery-filter-card">
             <x-select name="status" size="sm" :value="request('status')" placeholder="Any recovery status" :options="\App\Models\AbandonedCart::STATUSES" />
-            <x-select name="age" size="sm" :value="request('age')" placeholder="Any age" :options="\App\Services\AbandonedCartService::AGE_FILTERS" />
-            <x-select name="value" size="sm" :value="request('value')" placeholder="Any value" :options="\App\Services\AbandonedCartService::VALUE_FILTERS" />
+            <x-select name="age" size="sm" :value="request('age')" placeholder="Any age" :options="\App\Services\Admin\AbandonedCartService::AGE_FILTERS" />
+            <x-select name="value" size="sm" :value="request('value')" placeholder="Any value" :options="\App\Services\Admin\AbandonedCartService::VALUE_FILTERS" />
         </x-filter-card>
 
         <x-admin.table-card class="cart-recovery-table-card">

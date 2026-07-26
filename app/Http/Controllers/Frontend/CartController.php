@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
-use App\Services\FrontendProductService;
+use App\Services\Frontend\ProductService;
 use Illuminate\View\View;
 
 class CartController extends Controller
 {
     public function __construct(
-        private readonly FrontendProductService $products,
+        private readonly ProductService $products,
     ) {}
 
     public function index(): View

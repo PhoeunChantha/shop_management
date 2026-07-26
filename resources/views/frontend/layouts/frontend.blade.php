@@ -58,13 +58,20 @@
 
 {{-- Expose data + named routes to plain JS --}}
 <script>
-    window.UT_COLORS = @json(app(\App\Services\FrontendProductService::class)->colors());
+    window.UT_COLORS = @json(app(\App\Services\Frontend\ProductService::class)->colors());
     window.UT_URLS = {
         shop: "{{ route('frontend.shop.index') }}",
         cart: "{{ route('frontend.cart.index') }}",
         checkout: "{{ route('frontend.checkout.index') }}",
-        confirm: "{{ route('frontend.checkout.confirmation') }}"
+        confirm: "{{ route('frontend.checkout.confirmation') }}",
+        wishToggle: "{{ route('frontend.account.wishlist.toggle') }}",
+        wishSync: "{{ route('frontend.account.wishlist.sync') }}"
     };
+    @auth
+        window.UT_AUTH = { authed: true, id: {{ auth()->id() }}, wish: @json(auth()->user()->wishlist()->pluck('products.id')->map(fn ($id) => (int) $id)) };
+    @else
+        window.UT_AUTH = { authed: false, id: null, wish: [] };
+    @endauth
 </script>
 <script src="{{ asset('assets/frontend/js/main.js') }}?v={{ filemtime(public_path('assets/frontend/js/main.js')) }}"></script>
 
@@ -77,6 +84,40 @@
     })();
 </script>
 <x-toastr />
+
+@auth
+    {{-- Real-time notifications over Reverb (websockets). Fail-safe: any load/config
+         error is swallowed so the storefront keeps working without websockets. --}}
+    <script src="https://js.pusher.com/8.4/pusher.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
+    <script>
+        (function () {
+            try {
+                if (!window.Echo || !window.Pusher || !window.UT_AUTH || !window.UT_AUTH.id) return;
+                var EchoCtor = window.Echo.default || window.Echo;
+                window.Echo = new EchoCtor({
+                    broadcaster: 'reverb',
+                    key: '{{ config('broadcasting.connections.reverb.key') }}',
+                    wsHost: '{{ config('broadcasting.connections.reverb.options.host') }}',
+                    wsPort: {{ (int) config('broadcasting.connections.reverb.options.port', 8080) }},
+                    wssPort: {{ (int) config('broadcasting.connections.reverb.options.port', 8080) }},
+                    forceTLS: '{{ config('broadcasting.connections.reverb.options.scheme', 'http') }}' === 'https',
+                    enabledTransports: ['ws', 'wss'],
+                    auth: { headers: { 'X-CSRF-TOKEN': (document.querySelector('meta[name=csrf-token]') || {}).content || '' } },
+                });
+
+                window.Echo.private('App.Models.User.' + window.UT_AUTH.id)
+                    .notification(function (n) {
+                        if (window.utToast) window.utToast(n.title || 'New notification');
+                        document.querySelectorAll('[data-notif-count]').forEach(function (el) {
+                            el.textContent = String((parseInt(el.textContent, 10) || 0) + 1);
+                            el.style.display = '';
+                        });
+                    });
+            } catch (e) { /* websockets unavailable — storefront still works */ }
+        })();
+    </script>
+@endauth
 
 @stack('scripts')
 </body>

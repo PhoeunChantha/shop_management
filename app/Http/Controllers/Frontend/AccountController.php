@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
-use App\Services\FrontendAccountService;
+use App\Services\Frontend\AccountService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class AccountController extends Controller
 {
     public function __construct(
-        private readonly FrontendAccountService $account,
+        private readonly AccountService $account,
     ) {}
 
     public function dashboard(): View
@@ -31,9 +34,34 @@ class AccountController extends Controller
         return view('frontend.account.profile', ['user' => $this->account->user()]);
     }
 
+    public function updateProfile(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'first_name' => ['required', 'string', 'max:100'],
+            'last_name' => ['nullable', 'string', 'max:100'],
+            'phone' => ['nullable', 'string', 'max:40'],
+        ]);
+
+        $this->account->updateProfile($request->user(), $data);
+
+        return back()->with('success', 'Profile updated.');
+    }
+
     public function password(): View
     {
         return view('frontend.account.password', ['user' => $this->account->user()]);
+    }
+
+    public function updatePassword(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'confirmed', Password::defaults()],
+        ]);
+
+        $request->user()->update(['password' => $request->input('password')]);
+
+        return back()->with('success', 'Password updated.');
     }
 
     public function addresses(): View
@@ -50,6 +78,20 @@ class AccountController extends Controller
             'user' => $this->account->user(),
             'notifications' => $this->account->notifications(),
         ]);
+    }
+
+    public function markNotificationRead(Request $request, string $id): RedirectResponse
+    {
+        $request->user()->notifications()->whereKey($id)->first()?->markAsRead();
+
+        return back();
+    }
+
+    public function markAllNotificationsRead(Request $request): RedirectResponse
+    {
+        $request->user()->unreadNotifications->markAsRead();
+
+        return back()->with('success', 'All notifications marked as read.');
     }
 
     public function wishlist(): View
@@ -102,5 +144,29 @@ class AccountController extends Controller
             'order' => $order,
             'product' => $product,
         ]);
+    }
+
+    public function storeReview(Request $request, string $id, int $pid): RedirectResponse
+    {
+        $order = $this->account->findOrder($id) ?? abort(404);
+        abort_unless($this->account->orderContainsProduct($order, $pid), 404);
+
+        if ($this->account->hasReviewed($request->user(), $pid)) {
+            return redirect()
+                ->route('frontend.account.orders')
+                ->with('error', 'You have already reviewed this product.');
+        }
+
+        $data = $request->validate([
+            'rating' => ['required', 'integer', 'between:1,5'],
+            'title' => ['nullable', 'string', 'max:120'],
+            'body' => ['required', 'string', 'min:10', 'max:2000'],
+        ]);
+
+        $this->account->submitReview($request->user(), $pid, $data);
+
+        return redirect()
+            ->route('frontend.account.orders')
+            ->with('success', 'Thanks! Your review was submitted and is pending approval.');
     }
 }

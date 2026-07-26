@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Product;
 
-use App\Services\SettingService;
+use App\Services\Admin\SettingService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Backend;
 use App\Enums\ReviewStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Review;
-use App\Services\ReviewService;
+use App\Services\Admin\ReviewService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;

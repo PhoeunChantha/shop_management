@@ -7,7 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\TaxRule\StoreTaxRuleRequest;
 use App\Http\Requests\TaxRule\UpdateTaxRuleRequest;
 use App\Models\TaxRule;
-use App\Services\BulkActionService;
+use App\Services\Admin\BulkActionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;

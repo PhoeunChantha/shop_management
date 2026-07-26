@@ -82,16 +82,27 @@ $(function () {
                 $input.val(label(start, end));
             }
 
+            // Inputs flagged with `data-daterange-submit` reload their form as soon
+            // as a range is applied or cleared (e.g. the dashboard period filter).
+            const autoSubmit = $input.is('[data-daterange-submit]');
+            const submitForm = () => {
+                if (autoSubmit && $form.length) {
+                    $form.get(0).requestSubmit();
+                }
+            };
+
             $input.on('apply.daterangepicker', function (ev, picker) {
                 $input.val(label(picker.startDate, picker.endDate));
                 $from.val(picker.startDate.format('YYYY-MM-DD'));
                 $to.val(picker.endDate.format('YYYY-MM-DD'));
+                submitForm();
             });
 
             $input.on('cancel.daterangepicker', function () {
                 $input.val('');
                 $from.val('');
                 $to.val('');
+                submitForm();
             });
 
             const syncPickerPosition = function () {

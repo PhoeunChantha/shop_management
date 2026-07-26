@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
-use App\Services\CommandPaletteService;
+use App\Services\Admin\CommandPaletteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

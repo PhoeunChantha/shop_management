@@ -11,7 +11,7 @@ use App\Models\DealCampaign;
 use App\Models\Product;
 use App\Models\Review;
 use App\Models\Setting;
-use App\Services\FrontendProductService;
+use App\Services\Frontend\ProductService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
@@ -19,7 +19,7 @@ use Illuminate\View\View;
 class HomeController extends Controller
 {
     public function __construct(
-        private readonly FrontendProductService $products,
+        private readonly ProductService $products,
     ) {}
 
     public function index(): View

@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 /**
  * Shared validation + flash helpers for the admin bulk table actions.
- * Paired with App\Services\BulkActionService.
+ * Paired with App\Services\Admin\BulkActionService.
  */
 trait HandlesBulkActions
 {

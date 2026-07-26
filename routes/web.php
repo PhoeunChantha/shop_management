@@ -47,6 +47,7 @@ use App\Http\Controllers\Frontend\HomeController;
 use App\Http\Controllers\Frontend\PageController;
 use App\Http\Controllers\Frontend\ShopController;
 use App\Http\Controllers\Frontend\SocialAuthController;
+use App\Http\Controllers\Frontend\WishlistController;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Support\Facades\Route;
 
@@ -90,18 +91,25 @@ Route::name('frontend.')->group(function () {
     Route::prefix('account')->name('account.')->middleware('auth')->group(function () {
         Route::get('/', [AccountController::class, 'dashboard'])->name('dashboard');
         Route::get('/profile', [AccountController::class, 'profile'])->name('profile');
+        Route::put('/profile', [AccountController::class, 'updateProfile'])->name('profile.update');
         Route::get('/password', [AccountController::class, 'password'])->name('password');
+        Route::put('/password', [AccountController::class, 'updatePassword'])->name('password.update');
         Route::get('/addresses', [AccountController::class, 'addresses'])->name('addresses');
         Route::post('/addresses', [AddressController::class, 'store'])->name('addresses.store');
         Route::put('/addresses/{address}', [AddressController::class, 'update'])->name('addresses.update');
         Route::delete('/addresses/{address}', [AddressController::class, 'destroy'])->name('addresses.destroy');
         Route::patch('/addresses/{address}/default', [AddressController::class, 'makeDefault'])->name('addresses.default');
         Route::get('/notifications', [AccountController::class, 'notifications'])->name('notifications');
+        Route::post('/notifications/read-all', [AccountController::class, 'markAllNotificationsRead'])->name('notifications.read-all');
+        Route::patch('/notifications/{id}/read', [AccountController::class, 'markNotificationRead'])->name('notifications.read');
         Route::get('/wishlist', [AccountController::class, 'wishlist'])->name('wishlist');
+        Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+        Route::post('/wishlist/sync', [WishlistController::class, 'sync'])->name('wishlist.sync');
         Route::get('/orders', [AccountController::class, 'orders'])->name('orders');
         Route::get('/orders/{id}', [AccountController::class, 'orderDetail'])->name('orders.show');
         Route::get('/orders/{id}/tracking', [AccountController::class, 'orderTracking'])->name('orders.tracking');
         Route::get('/orders/{id}/review/{pid}', [AccountController::class, 'review'])->name('orders.review');
+        Route::post('/orders/{id}/review/{pid}', [AccountController::class, 'storeReview'])->name('orders.review.store');
     });
 
     // ---- Information pages ----

@@ -134,11 +134,18 @@ middleware from `session('locale')` (supported: `en`, `km`), switched via
   `SettingGroup` enum (drives the settings tabs and the language list).
 - Controllers should stay thin: validate, authorize, call a service, and return a
   response. Query composition, exports, bulk mutations, cross-model workflows, and
-  multi-step persistence belong in `app/Services/*`.
-- Current admin service examples: `ProductService`, `OrderService`,
-  `CustomerService`, `DashboardService`, `StockService`, `ReviewService`,
-  `SettingService`, `MediaOptimizationService`, `MediaUsageService`,
-  `AttributeService`, and `BulkActionService`.
+  multi-step persistence belong in a service.
+- **Services are split by surface**: admin/shared services live in
+  `app/Services/Admin` (`App\Services\Admin\*`); storefront services live in
+  `app/Services/Frontend` (`App\Services\Frontend\*`). There is no `App\Services\`
+  root namespace anymore. Frontend service class names drop any `Frontend` prefix
+  (e.g. `App\Services\Frontend\AccountService`, `ProductService`, `CheckoutService`,
+  `NavigationService`, `AddressService`). Settings/stock/env infrastructure that
+  the storefront also consumes lives under `Admin` (`App\Services\Admin\SettingService`,
+  `StockService`, `EnvService`); frontend code imports those from `Admin`.
+- Current admin service examples: `App\Services\Admin\{ProductService, OrderService,
+  CustomerService, DashboardService, StockService, ReviewService, SettingService,
+  MediaOptimizationService, MediaUsageService, AttributeService, BulkActionService}`.
 - `CustomerController` delegates customer list/profile queries, stats, order
   history, top products, selected export, profile sync, bulk enable/disable, and
   guarded bulk delete to `CustomerService`. Keep future customer CRM features

@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Backend;
 
 use App\Http\Controllers\Controller;
 use App\Models\MediaAsset;
-use App\Services\MediaAssetService;
-use App\Services\MediaUsageService;
-use Illuminate\Http\RedirectResponse;
+use App\Services\Admin\MediaAssetService;
+use App\Services\Admin\MediaUsageService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;

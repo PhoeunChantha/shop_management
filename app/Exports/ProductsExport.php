@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Exports;
 
 use App\Models\Product;
-use App\Services\ProductService;
+use App\Services\Admin\ProductService;
 use App\Support\ProductPorter;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
