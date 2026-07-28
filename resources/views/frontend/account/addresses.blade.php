@@ -82,6 +82,13 @@
     var addrUpdateBase = "{{ url('account/addresses') }}";
     var addrModalEl = document.getElementById('addrModal');
 
+    // The account page wrapper (.anim-up) has a CSS transform, which would make
+    // this position:fixed modal render relative to it instead of the viewport.
+    // Re-parent the modal to <body> so Bootstrap centres/overlays it correctly.
+    if (addrModalEl && addrModalEl.parentElement !== document.body) {
+        document.body.appendChild(addrModalEl);
+    }
+
     function addrModal(){ return bootstrap.Modal.getOrCreateInstance(addrModalEl); }
 
     function openAddrCreate(){

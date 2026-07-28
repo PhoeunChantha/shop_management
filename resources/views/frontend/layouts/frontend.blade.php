@@ -73,13 +73,15 @@
             checkout: "{{ route('frontend.checkout.index') }}",
             confirm: "{{ route('frontend.checkout.confirmation') }}",
             wishToggle: "{{ route('frontend.account.wishlist.toggle') }}",
-            wishSync: "{{ route('frontend.account.wishlist.sync') }}"
+            wishSync: "{{ route('frontend.account.wishlist.sync') }}",
+            cartSync: "{{ route('frontend.cart.sync') }}"
         };
         @auth
         window.UT_AUTH = {
             authed: true,
             id: {{ auth()->id() }},
-            wish: @json(auth()->user()->wishlist()->pluck('products.id')->map(fn($id) => (int) $id))
+            wish: @json(auth()->user()->wishlist()->pluck('products.id')->map(fn($id) => (int) $id)),
+            cart: @json(app(\App\Services\Frontend\CartService::class)->linesFor(auth()->user()))
         };
         @else
             window.UT_AUTH = {

@@ -59,14 +59,44 @@
     store.cart = cart;
     syncBadges();
     renderCartDrawer();
+    syncCart();
   }
   function updateQty(key, qty) {
     const cart = store.cart.map(i => i.key === key ? Object.assign({}, i, { qty: Math.max(1, qty) }) : i);
-    store.cart = cart; syncBadges(); renderCartDrawer(); renderCartPage();
+    store.cart = cart; syncBadges(); renderCartDrawer(); renderCartPage(); syncCart();
   }
   function removeItem(key) {
     store.cart = store.cart.filter(i => i.key !== key);
+    syncBadges(); renderCartDrawer(); renderCartPage(); syncCart();
+  }
+
+  // ---- server-side cart persistence (logged-in customers) ----
+  function syncCart() {
+    if (!AUTH.authed) return;
+    postJSON(URLS.cartSync, { items: store.cart }).catch(function () {});
+  }
+  function mergeCartLines(localLines, serverLines) {
+    var byKey = {};
+    (serverLines || []).forEach(function (l) { byKey[l.key] = Object.assign({}, l); });
+    (localLines || []).forEach(function (l) {
+      if (byKey[l.key]) byKey[l.key].qty = Math.max(byKey[l.key].qty, l.qty);
+      else byKey[l.key] = Object.assign({}, l);
+    });
+    return Object.keys(byKey).map(function (k) { return byKey[k]; });
+  }
+  // On load: merge this device's localStorage cart with the account's saved
+  // cart, then adopt the server's reconciled (re-priced) result.
+  function initCart() {
+    if (!AUTH.authed) return;
+    var merged = mergeCartLines(store.cart, AUTH.cart || []);
+    store.cart = merged;
     syncBadges(); renderCartDrawer(); renderCartPage();
+    if (!merged.length && !(AUTH.cart || []).length) return;
+    postJSON(URLS.cartSync, { items: merged })
+      .then(function (res) {
+        if (res && res.items) { store.cart = res.items; syncBadges(); renderCartDrawer(); renderCartPage(); }
+      })
+      .catch(function () {});
   }
 
   function syncBadges() {
@@ -598,4 +628,5 @@
   renderCartDrawer();
   renderCartPage();
   initWish();
+  initCart();
 })();

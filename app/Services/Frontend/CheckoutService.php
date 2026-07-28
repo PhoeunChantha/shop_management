@@ -7,6 +7,7 @@ namespace App\Services\Frontend;
 use App\Enums\StockMovementType;
 use App\Exceptions\CheckoutException;
 use App\Helpers\ImageManager;
+use App\Models\Cart;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -210,6 +211,11 @@ final class CheckoutService
                 if ($stockable) {
                     $this->stock->adjust($stockable, -$line['qty'], StockMovementType::Sale, 'Order '.$order->order_number);
                 }
+            }
+
+            // Empty the customer's saved cart now that the order is placed.
+            if ($userId = Auth::id()) {
+                Cart::where('user_id', $userId)->first()?->items()->delete();
             }
 
             return $order;
