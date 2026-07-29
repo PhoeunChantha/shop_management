@@ -52,7 +52,7 @@
             'label' => 'Marketing',
             'caption' => 'Campaign surfaces',
             'icon' => 'fa-bullhorn',
-            'routes' => ['admin.coupons.*', 'admin.deals.*', 'admin.banners.*', 'admin.collections.*', 'admin.announcements.*', 'admin.media.*'],
+            'routes' => ['admin.coupons.*', 'admin.deals.*', 'admin.banners.*', 'admin.collections.*', 'admin.announcements.*', 'admin.media.*', 'admin.subscribers.*'],
             'items' => [
                 ['label' => 'Coupons', 'icon' => 'fa-ticket', 'route' => 'admin.coupons.index', 'active' => ['admin.coupons.*']],
                 ['label' => 'Offers & Deals', 'icon' => 'fa-tags', 'route' => 'admin.deals.index', 'active' => ['admin.deals.*']],
@@ -60,6 +60,7 @@
                 ['label' => 'Media Library', 'icon' => 'fa-photo-film', 'route' => 'admin.media.index', 'active' => ['admin.media.*']],
                 ['label' => 'Collections', 'icon' => 'fa-layer-group', 'route' => 'admin.collections.index', 'active' => ['admin.collections.*']],
                 ['label' => 'Announcement Bar', 'icon' => 'fa-bullhorn', 'route' => 'admin.announcements.index', 'active' => ['admin.announcements.*']],
+                ['label' => 'Subscribers', 'icon' => 'fa-envelope', 'route' => 'admin.subscribers.index', 'active' => ['admin.subscribers.*']],
             ],
         ],
         [
