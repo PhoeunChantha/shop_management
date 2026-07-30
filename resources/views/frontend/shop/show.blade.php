@@ -194,6 +194,16 @@
         </div>
     </section>
 
+    {{-- recently viewed --}}
+    @if(count($recentlyViewed))
+        <section class="ut-wrap" style="margin-top:56px">
+            <div class="ut-sec-head"><div><span class="ut-eyebrow">Pick up where you left off</span><h2 style="margin-top:8px">Recently viewed</h2></div></div>
+            <div class="ut-rail">
+                @foreach($recentlyViewed as $p)<x-frontend.product-card :product="$p" />@endforeach
+            </div>
+        </section>
+    @endif
+
     {{-- sticky add-to-cart bar --}}
     <div class="ut-stickybar">
         <div class="ut-wrap ut-row" style="justify-content:space-between;padding:14px 24px;gap:16px">
