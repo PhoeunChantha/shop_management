@@ -6,6 +6,7 @@ use App\Exceptions\CheckoutException;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Services\Frontend\CheckoutService;
+use App\Services\Frontend\PaywayService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -110,6 +111,14 @@ class CheckoutController extends Controller
             Log::error('Checkout order failed: '.$e->getMessage(), ['exception' => $e]);
 
             return back()->with('error', 'We could not place your order. Please try again.');
+        }
+
+        $request->session()->put('pending_order_id', $order->id);
+
+        // Online methods (ABA / wallet) go through the PayWay gateway when it is
+        // configured; manual methods jump straight to the confirmation page.
+        if ($this->checkout->isOnlineMethod($data['payment'] ?? null) && app(PaywayService::class)->configured()) {
+            return redirect()->route('frontend.payment.pay', $order);
         }
 
         return redirect()->route('frontend.checkout.confirmation')->with('order_id', $order->id);

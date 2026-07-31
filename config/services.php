@@ -43,4 +43,18 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    // ABA PayWay gateway (card + ABA PAY wallet + KHQR via one integration).
+    'payway' => [
+        'base_url' => env('PAYWAY_BASE_URL', 'https://checkout-sandbox.payway.com.kh'),
+        'merchant_id' => env('PAYWAY_MERCHANT_ID'),
+        'api_key' => env('PAYWAY_API_KEY'),
+        'currency' => env('PAYWAY_CURRENCY', 'USD'),
+        // Storefront payment-method code => PayWay payment_option.
+        // Any online method not listed here defaults to '' (PayWay shows all).
+        'options' => [
+            'aba' => 'cards',
+            'wallet' => 'abapay',
+        ],
+    ],
+
 ];

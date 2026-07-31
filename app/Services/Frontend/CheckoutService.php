@@ -79,6 +79,20 @@ final class CheckoutService
     }
 
     /**
+     * True when the given payment-method code is an online (gateway) method.
+     */
+    public function isOnlineMethod(?string $code): bool
+    {
+        if (blank($code)) {
+            return false;
+        }
+
+        $method = collect($this->paymentMethods())->firstWhere('code', $code);
+
+        return ($method['type'] ?? '') === 'online';
+    }
+
+    /**
      * Effective tax rate (fraction, e.g. 0.085) from the applicable active,
      * exclusive tax rule (lowest sort order). Inclusive rules are already in
      * the price, so they are not added at checkout.
