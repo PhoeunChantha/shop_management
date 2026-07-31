@@ -54,6 +54,10 @@
                     @endauth
                 </div>
             </div>
+            @auth
+                @php($notifUnread = auth()->user()->unreadNotifications()->count())
+                <a href="{{ route('frontend.account.notifications') }}" class="icon-btn ut-header-icon ut-hide-mobile" title="Notifications"><x-frontend.icon n="bell" :size="19" /><span class="ut-badge accent" data-notif-count style="{{ $notifUnread > 0 ? '' : 'display:none' }}">{{ $notifUnread }}</span></a>
+            @endauth
             <a href="{{ route('frontend.account.wishlist') }}" class="icon-btn ut-header-icon ut-hide-mobile" title="Wishlist"><x-frontend.icon n="heart" :size="19" /><span class="ut-badge accent" data-wish-count style="display:none">0</span></a>
             <button type="button" class="icon-btn ut-cart-button" title="Bag" data-bs-toggle="offcanvas" data-bs-target="#cartDrawer"><x-frontend.icon n="bag" :size="19" /><span class="ut-badge" data-cart-count style="display:none">0</span></button>
         </div>

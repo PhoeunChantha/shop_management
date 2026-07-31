@@ -38,15 +38,15 @@
                 <div data-step>
                     <h3 style="font-size:20px;margin-bottom:20px">Contact & Shipping</h3>
                     <div class="ut-col" style="gap:16px">
-                        <div class="field"><label>Email address</label><input class="ut-input" type="email" name="email" placeholder="you@email.com" required></div>
+                        <div class="field"><label>Email address</label><input class="ut-input" type="email" name="email" value="{{ old('email', $prefill['email'] ?? '') }}" placeholder="you@email.com" required></div>
                         <div class="ut-form-2">
-                            <div class="field"><label>First name</label><input class="ut-input" name="first_name" placeholder="Alex" required></div>
-                            <div class="field"><label>Last name</label><input class="ut-input" name="last_name" placeholder="Rivera" required></div>
+                            <div class="field"><label>First name</label><input class="ut-input" name="first_name" value="{{ old('first_name', $prefill['first_name'] ?? '') }}" placeholder="Alex" required></div>
+                            <div class="field"><label>Last name</label><input class="ut-input" name="last_name" value="{{ old('last_name', $prefill['last_name'] ?? '') }}" placeholder="Rivera" required></div>
                         </div>
-                        <div class="field"><label>Street address</label><input class="ut-input" name="address" placeholder="123 Market St, Apt 4B" required></div>
+                        <div class="field"><label>Street address</label><input class="ut-input" name="address" value="{{ old('address', $prefill['address'] ?? '') }}" placeholder="123 Market St, Apt 4B" required></div>
                         <div class="ut-form-2" style="grid-template-columns:1.6fr 1fr">
-                            <div class="field"><label>City</label><input class="ut-input" name="city" placeholder="San Francisco" required></div>
-                            <div class="field"><label>ZIP code</label><input class="ut-input" name="zip" placeholder="94103"></div>
+                            <div class="field"><label>City</label><input class="ut-input" name="city" value="{{ old('city', $prefill['city'] ?? '') }}" placeholder="San Francisco" required></div>
+                            <div class="field"><label>ZIP code</label><input class="ut-input" name="zip" value="{{ old('zip', $prefill['zip'] ?? '') }}" placeholder="94103"></div>
                         </div>
                     </div>
                 </div>

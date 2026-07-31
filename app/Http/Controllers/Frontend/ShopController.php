@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Frontend;
 use App\Enums\ReviewStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\ProductSpecification;
 use App\Models\Review;
+use App\Services\Admin\SettingService;
 use App\Services\Frontend\ProductService;
+use App\Services\Frontend\RecentlyViewedService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -15,6 +18,8 @@ class ShopController extends Controller
 {
     public function __construct(
         private readonly ProductService $products,
+        private readonly SettingService $settings,
+        private readonly RecentlyViewedService $recentlyViewed,
     ) {}
 
     public function index(Request $request): View
@@ -110,11 +115,20 @@ class ShopController extends Controller
             ->values()
             ->all();
 
+        // Recently-viewed rail from BEFORE we record this one, then record it.
+        $recentlyViewed = $this->recentlyViewed->products(8, $dynamicProduct->id);
+        $this->recentlyViewed->record($dynamicProduct->id);
+
         return view('frontend.shop.show', [
             'product' => $product,
             'related' => $related,
             'colors' => $product['color_map'] ?? $this->products->colors(),
             'reviews' => $reviews,
+            'specifications' => $dynamicProduct->specifications
+                ->map(fn (ProductSpecification $spec): array => ['name' => $spec->name, 'value' => $spec->value])
+                ->all(),
+            'shippingInfo' => $this->settings->shippingInfo(),
+            'recentlyViewed' => $recentlyViewed,
         ]);
     }
 }

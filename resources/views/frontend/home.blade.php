@@ -326,11 +326,12 @@
                     style="color:#fff;font-weight:400;font-size:clamp(30px,3.8vw,46px);margin:14px 0 14px;position:relative">
                     {{ $newsletter['title'] }}</h2>
                 <p style="opacity:.85;max-width:460px;margin:0 auto 26px;font-size:16px">{{ $newsletter['copy'] }}</p>
-                <form
-                    onsubmit="event.preventDefault(); this.innerHTML='<div style=&quot;font-family:var(--font-head);font-weight:600&quot;>✓ You\'re in — check your inbox!</div>';"
-                    style="display:flex;gap:10px;max-width:460px;margin:0 auto;position:relative"><input class="ut-input"
-                        type="email" placeholder="you@email.com" required style="border:0;flex:1"><button
+                <form method="POST" action="{{ route('frontend.newsletter.subscribe') }}"
+                    style="display:flex;gap:10px;max-width:460px;margin:0 auto;position:relative">
+                    @csrf
+                    <input class="ut-input" name="email" type="email" value="{{ old('email') }}" placeholder="you@email.com" required style="border:0;flex:1"><button
                         class="ut-btn ut-btn-ink" type="submit" style="background:var(--ink)">Subscribe</button></form>
+                @error('email')<p style="color:#fca5a5;font-size:13px;margin-top:10px">{{ $message }}</p>@enderror
             </div>
         </section>
 

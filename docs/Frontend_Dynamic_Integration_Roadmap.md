@@ -21,12 +21,12 @@ Goal: convert every page under `resources/views/frontend` to dynamic Laravel dat
 
 | Area | Files | Status | Notes |
 | --- | --- | --- | --- |
-| Home | `home.blade.php`, `HomeController.php` | Partial | Products, collections, reviews partly dynamic; hero/newsletter/trust blocks still use controller/static fallback data. |
-| Shop Listing | `shop/index.blade.php`, `ShopController.php` | Mostly dynamic | Product grid, filters, sorting, category links, colors, and sizes are DB-backed. Needs optional server-side filter refinement. |
-| Product Detail | `shop/show.blade.php` | Mostly dynamic | Slug URL, images, price, colors, sizes, related products, **and approved reviews (with product rating_avg/count)** are DB-backed. Needs shipping copy + fabric/care/specs from product specifications/settings. |
+| Home | `home.blade.php`, `HomeController.php` | Dynamic | Hero (Banners), flash deal (DealCampaign), collections, reviews, and marquee (Announcements) are DB-backed. **Newsletter copy now comes from Settings → Home, and the subscribe form persists to `newsletter_subscribers`.** Trust badges remain static defaults. |
+| Shop Listing | `shop/index.blade.php`, `ShopController.php` | Dynamic | Product grid, filters, sorting, colors, and sizes are DB-backed. Filters are **URL-synced** (category, subcategory, brand, size, color, sale, **new, best seller**, price, **sort, search**) via `history.replaceState` + restore-on-load, so refreshed/shared URLs show the right view. Footer New/Best/Sale links deep-link with params. |
+| Product Detail | `shop/show.blade.php` | Dynamic | Slug URL, images, price, colors, sizes, related products, and approved reviews are DB-backed. **The Fabric & care tab now renders real `ProductSpecification` rows (name/value), and the Shipping tab reads copy from Settings → General (`shippingInfo()`).** |
 | Header/Nav/Search | `components/frontend/header.blade.php`, `FrontendNavigationService.php` | Mostly dynamic | Categories, popular products, and announcements are DB-backed with local text fallbacks. Search chips remain preset suggestions. |
-| Cart | `cart/index.blade.php`, `CartController.php`, `main.js` | Partial | Cart is localStorage-based. Cross-sell and colors are DB-backed; checkout handoff is not persisted server-side. |
-| Checkout | `checkout/index.blade.php`, `confirmation.blade.php`, `CheckoutController.php`, `FrontendCheckoutService.php` | Mostly dynamic | Shipping methods, payment methods, and tax are admin-backed; totals recompute live (free-over + tax). **Placing an order creates a real `Order` + `OrderDetails` (re-priced server-side), decrements stock, and the confirmation shows the real order.** Remaining: payment-gateway processing, saved addresses, and per-step field validation. |
+| Cart | `cart/index.blade.php`, `CartController.php`, `CartService.php`, `main.js` | Dynamic | Guests use localStorage; **logged-in customers get a persisted, cross-device cart** (`carts` + `cart_items`, `CartService`) — localStorage merges into the account on login and syncs on every change, prices/images re-derived server-side. Placing an order **clears the saved cart**. Lines carry the **real product image**, cross-sell prefers **best-sellers**, and **stock is validated server-side** at checkout (`CheckoutException`, no overselling). |
+| Checkout | `checkout/index.blade.php`, `confirmation.blade.php`, `CheckoutController.php`, `FrontendCheckoutService.php` | Mostly dynamic | Shipping methods, payment methods, and tax are admin-backed; totals recompute live (free-over + tax). **Placing an order creates a real `Order` + `OrderDetails` (re-priced server-side), decrements stock, and the confirmation shows the real order.** The shipping form **prefills from the customer's default saved address**. Remaining: payment-gateway processing and per-step field validation. |
 | Account | `account/*` | Dynamic | User, orders, order details, colors, and products are service/DB-backed. **Saved addresses** (CRUD, one default), **persistent wishlist** (per-customer, guest-merge on login), **profile + password edit** (name/phone via `CustomerProfile`), **real notifications** (DB + real-time broadcast over Reverb), and **verified-buyer review submission** (pending moderation, feeds product rating) are all live. |
 | Auth | `auth/*` | Dynamic | **Login, register, logout, forgot + reset password are wired to real Laravel auth** (`Frontend\AuthController`): CSRF, validation errors, old input, `remember`, session regeneration. Register creates a `user`-role customer and signs in. Account routes are `auth`-guarded; post-login redirect is role-aware (admin → admin dashboard, customer → account). OTP page remains a designed stub (no OTP infra yet). |
 | Content Pages | `pages/about.blade.php`, `contact.blade.php`, `faq.blade.php`, `privacy.blade.php`, `terms.blade.php` | Mostly dynamic | FAQ, **Privacy + Terms (from admin CMS Pages), and Contact (from Settings)** are DB-backed. About remains a designed marketing page (kept per "don't redesign"); wire to a CMS page if desired. |
@@ -76,7 +76,7 @@ Goal: convert every page under `resources/views/frontend` to dynamic Laravel dat
 - [x] Create real orders + order details from cart data — **`FrontendCheckoutService::placeOrder`** re-prices every line **server-side** (never trusts client prices), applies shipping+tax, decrements the matched variant/product stock (logs a `sale` `StockMovement`), all in a DB transaction.
 - [x] Confirmation shows the real order (number, lines, totals) and clears the localStorage bag.
 - Approach: cart stays in **localStorage**; on the final step `main.js` serializes `store.cart` into the hidden `items` field and submits `POST checkout` (`frontend.checkout.store`). Errors surface via the shared `<x-toastr />` (mapped onto the storefront `utToast`).
-- **Remaining:** real payment-gateway processing (currently records `payment_status = unpaid`), saved addresses, per-step field validation, and robuster variant matching (currently matches cart size/colour labels against variant attribute values; falls back to the product base price when no variant matches).
+- **Remaining:** real payment-gateway processing (currently records `payment_status = unpaid`), per-step field validation, and robuster variant matching (currently matches cart size/colour labels against variant attribute values; falls back to the product base price when no variant matches). The shipping form now **prefills from the customer's default saved address**.
 
 ## Step 7: Account Pages
 
@@ -124,10 +124,11 @@ These should be added only after the core storefront no longer depends on `Catal
 - [x] Shared storefront services created.
 - [x] No frontend references to `Catalog::` or `ProductPorter`.
 - [ ] Header/nav/search fully dynamic.
-- [ ] Home page fully dynamic.
-- [ ] Shop listing fully dynamic.
-- [x] Product detail dynamic (incl. approved reviews + product rating). Specs/care tabs still static.
-- [ ] Cart dynamic cross-sell and real image lines.
+- [x] Home page dynamic (hero/deal/collections/reviews/marquee DB-backed; newsletter copy from settings + real subscribe capture).
+- [x] Shop listing dynamic + URL-synced filters (incl. new/best-seller toggles, sort, search); deep-linkable.
+- [x] Product detail fully dynamic (approved reviews, product rating, real spec rows in Fabric & care, settings-driven Shipping copy).
+- [x] Cart dynamic cross-sell (best-sellers) and real image lines; server-side stock guard at checkout.
+- [x] Persistent cross-device cart for logged-in customers (`carts`/`cart_items`, merge-on-login, cleared on order).
 - [x] Checkout creates real orders (re-priced server-side, stock decremented).
 - [x] Confirmation displays real order.
 - [x] Account dashboard/orders/addresses/notifications/wishlist/profile/reviews dynamic (Step 7 complete).

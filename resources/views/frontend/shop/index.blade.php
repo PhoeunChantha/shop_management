@@ -49,6 +49,8 @@
                     <div>
                         <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Availability</div>
                         <label class="ut-filter-toggle"><span>Sale only</span><input id="saleOnly" type="checkbox" onchange="window.UT_SALE=this.checked; filterProducts()"><i></i></label>
+                        <label class="ut-filter-toggle"><span>New arrivals</span><input id="newOnly" type="checkbox" onchange="window.UT_NEW=this.checked; filterProducts()"><i></i></label>
+                        <label class="ut-filter-toggle"><span>Best sellers</span><input id="bestOnly" type="checkbox" onchange="window.UT_BEST=this.checked; filterProducts()"><i></i></label>
                     </div>
                     <hr class="divider">
                     <div>
@@ -96,7 +98,7 @@
                     <span class="muted" style="font-size:14px">Showing <b id="shownCount" style="color:var(--ink)">{{ count($products) }}</b> of {{ count($products) }}</span>
                     <div class="ut-row" style="gap:8px">
                         <span class="muted" style="font-size:13px">Sort</span>
-                        <select class="ut-input" style="padding:9px 36px 9px 14px;border-radius:var(--r-pill);font-family:var(--font-head);font-weight:500;font-size:13px;width:auto" onchange="sortProducts(this.value)">
+                        <select id="sortSelect" class="ut-input" style="padding:9px 36px 9px 14px;border-radius:var(--r-pill);font-family:var(--font-head);font-weight:500;font-size:13px;width:auto" onchange="sortProducts(this.value)">
                             <option value="featured">Featured</option>
                             <option value="newest">Newest</option>
                             <option value="low">Price: Low to High</option>
@@ -109,7 +111,7 @@
                 <div class="ut-results-grid" id="productGrid">
                     @foreach($products as $p)
                         <div class="product-cell" data-cat="{{ $p['cat'] }}" data-subcat="{{ $p['subcat'] }}" data-brand="{{ $p['brand'] }}" data-sale="{{ $p['tag'] === 'sale' ? 1 : 0 }}" data-price="{{ $p['price'] }}" data-name="{{ strtolower($p['name']) }}" data-search="{{ strtolower($p['name'].' '.$p['cat'].' '.$p['subcat'].' '.$p['brand']) }}" data-sizes="{{ implode('|', $p['sizes'] ?? []) }}" data-colors="{{ implode('|', $p['colors'] ?? []) }}"
-                             data-rating="{{ $p['rating'] }}" data-new="{{ $p['tag'] === 'new' ? 1 : 0 }}" data-order="{{ $loop->index }}">
+                             data-rating="{{ $p['rating'] }}" data-new="{{ $p['tag'] === 'new' ? 1 : 0 }}" data-best="{{ ($p['badge'] ?? '') === 'Best Seller' ? 1 : 0 }}" data-order="{{ $loop->index }}">
                             <x-frontend.product-card :product="$p" />
                         </div>
                     @endforeach
@@ -127,7 +129,7 @@
 
 @push('scripts')
 <script>
-    window.UT_CAT = 'All'; window.UT_SUBCAT = 'All'; window.UT_BRAND = 'All'; window.UT_SALE = false; window.UT_MAXPRICE = {{ $maxPrice }}; window.UT_PRICE_CEILING = {{ $maxPrice }}; window.UT_SIZES = []; window.UT_COLORS = [];
+    window.UT_CAT = 'All'; window.UT_SUBCAT = 'All'; window.UT_BRAND = 'All'; window.UT_SALE = false; window.UT_NEW = false; window.UT_BEST = false; window.UT_MAXPRICE = {{ $maxPrice }}; window.UT_PRICE_CEILING = {{ $maxPrice }}; window.UT_SIZES = []; window.UT_COLORS = []; window.UT_SORT = 'featured';
     function filterKey(value){
         return String(value || '').trim().toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     }
@@ -166,7 +168,9 @@
         filterProducts();
     }
     function clearFilters(){
-        window.UT_CAT = 'All'; window.UT_SUBCAT = 'All'; window.UT_BRAND = 'All'; window.UT_SALE = false; window.UT_MAXPRICE = window.UT_PRICE_CEILING; window.UT_SIZES = []; window.UT_COLORS = [];
+        window.UT_CAT = 'All'; window.UT_SUBCAT = 'All'; window.UT_BRAND = 'All'; window.UT_SALE = false; window.UT_NEW = false; window.UT_BEST = false; window.UT_MAXPRICE = window.UT_PRICE_CEILING; window.UT_SIZES = []; window.UT_COLORS = [];
+        var newBox = document.getElementById('newOnly'); if(newBox) newBox.checked = false;
+        var bestBox = document.getElementById('bestOnly'); if(bestBox) bestBox.checked = false;
         document.querySelector('.cat-btn[data-cat="All"]').classList.add('is-active');
         document.querySelectorAll('.cat-btn:not([data-cat="All"]), .subcat-btn, .brand-btn, .size-btn').forEach(b => b.classList.remove('is-active'));
         document.querySelectorAll('.color-btn .swatch').forEach(swatch => swatch.classList.remove('is-active'));
@@ -185,6 +189,8 @@
         window.UT_SIZES.forEach(function(size){ filters.push(size); });
         window.UT_COLORS.forEach(function(color){ filters.push(color); });
         if(window.UT_SALE) filters.push('Sale only');
+        if(window.UT_NEW) filters.push('New arrivals');
+        if(window.UT_BEST) filters.push('Best sellers');
         if(window.UT_MAXPRICE < window.UT_PRICE_CEILING) filters.push('Under $' + window.UT_MAXPRICE);
         container.innerHTML = '';
         if(!filters.length) return;
@@ -199,7 +205,12 @@
         if(window.UT_SIZES.length) params.set('sizes', window.UT_SIZES.join(','));
         if(window.UT_COLORS.length) params.set('colors', window.UT_COLORS.join(','));
         if(window.UT_SALE) params.set('sale', '1');
+        if(window.UT_NEW) params.set('new', '1');
+        if(window.UT_BEST) params.set('best', '1');
         if(window.UT_MAXPRICE < window.UT_PRICE_CEILING) params.set('max_price', window.UT_MAXPRICE);
+        var q = (document.getElementById('shopSearch').value || '').trim();
+        if(q) params.set('q', q);
+        if(window.UT_SORT && window.UT_SORT !== 'featured') params.set('sort', window.UT_SORT);
         history.replaceState({}, '', window.location.pathname + (params.toString() ? '?' + params.toString() : ''));
     }
     function filterProducts(){
@@ -212,6 +223,8 @@
                   && (!window.UT_SIZES.length || window.UT_SIZES.some(function(size){ return (cell.dataset.sizes || '').split('|').indexOf(size) > -1; }))
                   && (!window.UT_COLORS.length || window.UT_COLORS.some(function(color){ return (cell.dataset.colors || '').split('|').indexOf(color) > -1; }))
                   && (!window.UT_SALE || cell.dataset.sale === '1')
+                  && (!window.UT_NEW || cell.dataset.new === '1')
+                  && (!window.UT_BEST || cell.dataset.best === '1')
                   && (+cell.dataset.price <= window.UT_MAXPRICE)
                   && (!q || (cell.dataset.search || cell.dataset.name).indexOf(q) > -1);
             cell.style.display = ok ? '' : 'none';
@@ -231,6 +244,7 @@
         renderActiveFilters(); syncFilterUrl();
     }
     function sortProducts(mode){
+        window.UT_SORT = mode || 'featured';
         var grid = document.getElementById('productGrid');
         var cells = [].slice.call(grid.children);
         cells.sort(function(a,b){
@@ -241,6 +255,7 @@
             return a.dataset.order - b.dataset.order;
         });
         cells.forEach(function(c){ grid.appendChild(c); });
+        syncFilterUrl();
     }
     (function restoreFilterState(){
         var params = new URLSearchParams(window.location.search);
@@ -248,9 +263,14 @@
         window.UT_SUBCAT = params.get('subcategory') || 'All';
         window.UT_BRAND = params.get('brand') || 'All';
         window.UT_SALE = params.get('sale') === '1';
+        window.UT_NEW = params.get('new') === '1';
+        window.UT_BEST = params.get('best') === '1';
         window.UT_SIZES = (params.get('sizes') || '').split(',').filter(Boolean);
         window.UT_COLORS = (params.get('colors') || '').split(',').filter(Boolean);
         window.UT_MAXPRICE = +(params.get('max_price') || window.UT_PRICE_CEILING);
+        window.UT_SORT = params.get('sort') || 'featured';
+        var searchBox = document.getElementById('shopSearch');
+        if(searchBox && params.get('q')) searchBox.value = params.get('q');
         document.querySelectorAll('.cat-btn, .subcat-btn, .brand-btn').forEach(function(button){
             var hasCat = Object.prototype.hasOwnProperty.call(button.dataset, 'cat');
             var hasSubcat = Object.prototype.hasOwnProperty.call(button.dataset, 'subcat');
@@ -270,9 +290,14 @@
             button.firstElementChild.classList.toggle('is-active', window.UT_COLORS.indexOf(button.dataset.color) > -1);
         });
         document.getElementById('saleOnly').checked = window.UT_SALE;
+        var newBox = document.getElementById('newOnly'); if(newBox) newBox.checked = window.UT_NEW;
+        var bestBox = document.getElementById('bestOnly'); if(bestBox) bestBox.checked = window.UT_BEST;
         document.querySelector('input[type="range"]').value = window.UT_MAXPRICE;
         document.getElementById('priceVal').textContent = '$' + window.UT_MAXPRICE;
+        var sortSelect = document.getElementById('sortSelect');
+        if(sortSelect){ sortSelect.value = window.UT_SORT; }
         filterProducts();
+        if(window.UT_SORT !== 'featured') sortProducts(window.UT_SORT);
     })();
 </script>
 @endpush

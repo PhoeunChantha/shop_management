@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Backend\AbandonedCartController;
+use App\Http\Controllers\Backend\NewsletterSubscriberController;
 use App\Http\Controllers\Backend\ActivityLogController;
 use App\Http\Controllers\Backend\AdminNotificationController;
 use App\Http\Controllers\Backend\AdminSavedViewController;
@@ -44,6 +45,7 @@ use App\Http\Controllers\Frontend\AuthController;
 use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\Frontend\CheckoutController;
 use App\Http\Controllers\Frontend\HomeController;
+use App\Http\Controllers\Frontend\NewsletterController;
 use App\Http\Controllers\Frontend\PageController;
 use App\Http\Controllers\Frontend\ShopController;
 use App\Http\Controllers\Frontend\SocialAuthController;
@@ -53,6 +55,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::name('frontend.')->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
+    Route::post('/newsletter', [NewsletterController::class, 'store'])->name('newsletter.subscribe');
 
     // ---- Shop ----
     Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
@@ -60,6 +63,7 @@ Route::name('frontend.')->group(function () {
 
     // ---- Cart & Checkout ----
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+    Route::post('/cart/sync', [CartController::class, 'sync'])->middleware('auth')->name('cart.sync');
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
     Route::get('/checkout/confirmation', [CheckoutController::class, 'confirmation'])->name('checkout.confirmation');
@@ -355,6 +359,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/{cart}', [AbandonedCartController::class, 'show'])->name('show');
         Route::patch('/{cart}', [AbandonedCartController::class, 'update'])->name('update');
         Route::delete('/{cart}', [AbandonedCartController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('subscribers')->name('subscribers.')->group(function () {
+        Route::get('/', [NewsletterSubscriberController::class, 'index'])->name('index');
+        Route::get('/export', [NewsletterSubscriberController::class, 'export'])->name('export');
+        Route::delete('/{subscriber}', [NewsletterSubscriberController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('customers')->name('customers.')->group(function () {

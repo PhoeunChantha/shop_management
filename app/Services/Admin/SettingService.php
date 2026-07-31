@@ -158,6 +158,12 @@ final class SettingService
                 'site_copyright' => ['label' => 'Copyright text', 'type' => 'text', 'placeholder' => '© 2026 T-Shirt Shop', 'rules' => 'nullable|string|max:255'],
                 'site_logo' => ['label' => 'Logo', 'type' => 'image', 'folder' => 'settings', 'accept' => 'image/png,image/jpeg,image/svg+xml,image/webp', 'help' => 'PNG, JPG, SVG or WebP — up to 2MB', 'rules' => 'nullable|image|mimes:png,jpg,jpeg,svg,webp|max:2048'],
                 'site_favicon' => ['label' => 'Favicon', 'type' => 'image', 'folder' => 'settings', 'accept' => 'image/png,image/x-icon,image/svg+xml', 'help' => 'ICO, PNG or SVG — square, up to 1MB', 'rules' => 'nullable|mimes:png,ico,svg,jpg,jpeg|max:1024'],
+                'shipping_returns_info' => ['label' => 'Shipping & returns info', 'type' => 'textarea', 'placeholder' => 'Free standard shipping on orders over $75 (2–4 business days)…', 'help' => 'Shown on the product page “Shipping” tab.', 'rules' => 'nullable|string|max:1000'],
+            ],
+            SettingGroup::Home->value => [
+                'newsletter_eyebrow' => ['label' => 'Newsletter kicker', 'type' => 'text', 'placeholder' => 'Members get more', 'help' => 'Small label above the homepage newsletter block.', 'rules' => 'nullable|string|max:120'],
+                'newsletter_title' => ['label' => 'Newsletter title', 'type' => 'text', 'placeholder' => 'Get 10% off your first order', 'rules' => 'nullable|string|max:255'],
+                'newsletter_copy' => ['label' => 'Newsletter text', 'type' => 'textarea', 'placeholder' => 'Early access to drops, members-only pricing, and free shipping.', 'rules' => 'nullable|string|max:500'],
             ],
             SettingGroup::Prefix->value => [
                 'order_prefix' => ['label' => 'Order number prefix', 'type' => 'text', 'placeholder' => 'UT-', 'help' => 'Prepended to every order number — e.g. UT-2026-000123', 'rules' => 'nullable|string|max:20'],
@@ -490,6 +496,29 @@ final class SettingService
         $prefix = Setting::get('product_sku_prefix');
 
         return filled($prefix) ? trim($prefix) : 'PRD-';
+    }
+
+    /**
+     * Shipping & returns copy for the product page (managed in Settings → General).
+     */
+    public function shippingInfo(): string
+    {
+        return Setting::get('shipping_returns_info')
+            ?: 'Free standard shipping on orders over $75 (2–4 business days). Express available at checkout. Free 30-day returns on unworn items.';
+    }
+
+    /**
+     * Homepage newsletter block copy (managed in Settings → Home).
+     *
+     * @return array{eyebrow: string, title: string, copy: string}
+     */
+    public function newsletter(): array
+    {
+        return [
+            'eyebrow' => Setting::get('newsletter_eyebrow') ?: 'Members get more',
+            'title' => Setting::get('newsletter_title') ?: 'Get 10% off your first order',
+            'copy' => Setting::get('newsletter_copy') ?: 'Early access to drops, members-only pricing, and free shipping. No spam — just good tees.',
+        ];
     }
 
     /**

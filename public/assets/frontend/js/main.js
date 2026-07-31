@@ -59,14 +59,44 @@
     store.cart = cart;
     syncBadges();
     renderCartDrawer();
+    syncCart();
   }
   function updateQty(key, qty) {
     const cart = store.cart.map(i => i.key === key ? Object.assign({}, i, { qty: Math.max(1, qty) }) : i);
-    store.cart = cart; syncBadges(); renderCartDrawer(); renderCartPage();
+    store.cart = cart; syncBadges(); renderCartDrawer(); renderCartPage(); syncCart();
   }
   function removeItem(key) {
     store.cart = store.cart.filter(i => i.key !== key);
+    syncBadges(); renderCartDrawer(); renderCartPage(); syncCart();
+  }
+
+  // ---- server-side cart persistence (logged-in customers) ----
+  function syncCart() {
+    if (!AUTH.authed) return;
+    postJSON(URLS.cartSync, { items: store.cart }).catch(function () {});
+  }
+  function mergeCartLines(localLines, serverLines) {
+    var byKey = {};
+    (serverLines || []).forEach(function (l) { byKey[l.key] = Object.assign({}, l); });
+    (localLines || []).forEach(function (l) {
+      if (byKey[l.key]) byKey[l.key].qty = Math.max(byKey[l.key].qty, l.qty);
+      else byKey[l.key] = Object.assign({}, l);
+    });
+    return Object.keys(byKey).map(function (k) { return byKey[k]; });
+  }
+  // On load: merge this device's localStorage cart with the account's saved
+  // cart, then adopt the server's reconciled (re-priced) result.
+  function initCart() {
+    if (!AUTH.authed) return;
+    var merged = mergeCartLines(store.cart, AUTH.cart || []);
+    store.cart = merged;
     syncBadges(); renderCartDrawer(); renderCartPage();
+    if (!merged.length && !(AUTH.cart || []).length) return;
+    postJSON(URLS.cartSync, { items: merged })
+      .then(function (res) {
+        if (res && res.items) { store.cart = res.items; syncBadges(); renderCartDrawer(); renderCartPage(); }
+      })
+      .catch(function () {});
   }
 
   function syncBadges() {
@@ -83,9 +113,12 @@
   }
 
   function lineHTML(it) {
+    var media = it.image
+      ? '<img src="' + it.image + '" alt="" style="width:72px;height:90px;border-radius:14px;flex-shrink:0;object-fit:cover">'
+      : '<div class="ph" style="width:72px;height:90px;border-radius:14px;flex-shrink:0;--ph-tint:' + it.tint + '"></div>';
     return '' +
       '<div class="ut-row" style="gap:14px;padding:14px 0;border-bottom:1px solid var(--border-2);align-items:flex-start">' +
-        '<div class="ph" style="width:72px;height:90px;border-radius:14px;flex-shrink:0;--ph-tint:' + it.tint + '"></div>' +
+        media +
         '<div style="flex:1;min-width:0">' +
           '<div class="ut-row" style="justify-content:space-between;gap:8px">' +
             '<div style="font-family:var(--font-head);font-weight:600;font-size:14.5px">' + it.name + '</div>' +
@@ -249,6 +282,7 @@
       if (add.hasAttribute('data-require-size') && !sizeEl && !ds.size) { toast('Please select a size'); return; }
       addToCart({
         id: Number(ds.id), name: ds.name, price: Number(ds.price), tint: ds.tint || 'linear-gradient(150deg,#eef2f7,#e2e8f0)',
+        image: ds.image || '',
         size: sizeEl ? sizeEl.getAttribute('data-size') : (ds.size || 'M'),
         color: colorEl ? colorEl.getAttribute('data-color') : (ds.color || 'black'),
         qty: qtyEl ? Number(qtyEl.textContent) : 1,
@@ -594,4 +628,5 @@
   renderCartDrawer();
   renderCartPage();
   initWish();
+  initCart();
 })();

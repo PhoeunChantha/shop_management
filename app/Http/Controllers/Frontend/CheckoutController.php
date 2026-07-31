@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers\Frontend;
 
+use App\Exceptions\CheckoutException;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Services\Frontend\CheckoutService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class CheckoutController extends Controller
@@ -23,7 +26,38 @@ class CheckoutController extends Controller
             'shippingMethods' => $this->checkout->shippingMethods(),
             'paymentMethods' => $this->checkout->paymentMethods(),
             'taxRate' => $this->checkout->taxRate(),
+            'prefill' => $this->prefill(),
         ]);
+    }
+
+    /**
+     * Prefill the shipping form from the signed-in customer's default address.
+     *
+     * @return array<string, string>
+     */
+    private function prefill(): array
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return [];
+        }
+
+        $address = $user->addresses()->where('is_default', true)->first()
+            ?? $user->addresses()->first();
+
+        $fullName = trim((string) ($address?->name ?: $user->name));
+        $first = Str::before($fullName, ' ');
+        $last = trim(Str::after($fullName, ' '));
+
+        return [
+            'email' => (string) $user->email,
+            'first_name' => $first,
+            'last_name' => $last !== $first ? $last : '',
+            'address' => (string) ($address?->street ?? ''),
+            'city' => (string) ($address?->city ?? ''),
+            'zip' => (string) ($address?->zip ?? ''),
+        ];
     }
 
     public function store(Request $request): RedirectResponse
@@ -69,6 +103,9 @@ class CheckoutController extends Controller
                 'shipping_id' => $data['del'] ?? null,
                 'payment' => $data['payment'] ?? 'card',
             ]);
+        } catch (CheckoutException $e) {
+            // Safe, customer-facing message (e.g. an item ran out of stock).
+            return back()->withInput()->with('error', $e->getMessage());
         } catch (\Throwable $e) {
             Log::error('Checkout order failed: '.$e->getMessage(), ['exception' => $e]);
 

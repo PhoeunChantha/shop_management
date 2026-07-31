@@ -9103,8 +9103,8 @@ html.dark .dash-daterange .form-input {
     gap: 16px;
     align-items: start; /* don't stretch cards to equal height */
 }
-.dash-grid--chart { grid-template-columns: minmax(0, 1.6fr) minmax(340px, 1fr); }
-.dash-grid--feeds { grid-template-columns: minmax(0, 1.45fr) minmax(320px, .95fr) minmax(300px, .8fr); }
+.dash-grid--chart { grid-template-columns: minmax(0, 1fr) minmax(340px, 1fr); }
+.dash-grid--feeds { grid-template-columns: minmax(0, 1fr) minmax(320px, .1fr) minmax(300px, .8fr); }
 
 /* ---- Panels ---- */
 .dash-panel {

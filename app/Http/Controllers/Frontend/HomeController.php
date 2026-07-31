@@ -11,6 +11,7 @@ use App\Models\DealCampaign;
 use App\Models\Product;
 use App\Models\Review;
 use App\Models\Setting;
+use App\Services\Admin\SettingService;
 use App\Services\Frontend\ProductService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -20,6 +21,7 @@ class HomeController extends Controller
 {
     public function __construct(
         private readonly ProductService $products,
+        private readonly SettingService $settings,
     ) {}
 
     public function index(): View
@@ -44,11 +46,7 @@ class HomeController extends Controller
             'instagramTiles' => $this->instagramTiles($homeProducts, $hasDynamicProducts),
             'instagramHandle' => $this->instagramHandle(),
             'trustItems' => $this->trustItems(),
-            'newsletter' => [
-                'eyebrow' => 'Members get more',
-                'title' => 'Get 10% off your first order',
-                'copy' => 'Early access to drops, members-only pricing, and free shipping. No spam — just good tees.',
-            ],
+            'newsletter' => $this->settings->newsletter(),
         ]);
     }
 

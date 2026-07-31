@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Frontend;
 
 use App\Enums\StockMovementType;
+use App\Exceptions\CheckoutException;
 use App\Helpers\ImageManager;
+use App\Models\Cart;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -107,7 +109,7 @@ final class CheckoutService
             ->filter(fn ($i) => ! empty($i['id']) && (int) ($i['qty'] ?? 0) > 0);
 
         if ($items->isEmpty()) {
-            throw new \RuntimeException('Your cart is empty.');
+            throw new CheckoutException('Your cart is empty.');
         }
 
         $products = Product::query()
@@ -129,6 +131,17 @@ final class CheckoutService
 
                 $qty = max(1, (int) $item['qty']);
                 $variant = $this->matchVariant($product, $item['size'] ?? null, $item['color'] ?? null);
+
+                // Guard against overselling on the stockable being sold.
+                $stockable = $variant ?: ($product->product_type->value === 'single' ? $product : null);
+                if ($stockable && (int) $stockable->stock < $qty) {
+                    throw new CheckoutException(sprintf(
+                        '"%s" only has %d left in stock. Please adjust the quantity.',
+                        $product->name,
+                        max(0, (int) $stockable->stock),
+                    ));
+                }
+
                 $price = $variant && $variant->price !== null ? (float) $variant->price : (float) $product->final_price;
                 $lineTotal = round($price * $qty, 2);
                 $subtotal += $lineTotal;
@@ -144,7 +157,7 @@ final class CheckoutService
             }
 
             if (empty($lines)) {
-                throw new \RuntimeException('None of the cart items are available.');
+                throw new CheckoutException('None of the cart items are available.');
             }
 
             $method = ShippingMethod::query()->where('status', true)->find($data['shipping_id'] ?? null);
@@ -198,6 +211,11 @@ final class CheckoutService
                 if ($stockable) {
                     $this->stock->adjust($stockable, -$line['qty'], StockMovementType::Sale, 'Order '.$order->order_number);
                 }
+            }
+
+            // Empty the customer's saved cart now that the order is placed.
+            if ($userId = Auth::id()) {
+                Cart::where('user_id', $userId)->first()?->items()->delete();
             }
 
             return $order;
