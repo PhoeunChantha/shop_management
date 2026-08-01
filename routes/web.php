@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Backend\AbandonedCartController;
 use App\Http\Controllers\Backend\NewsletterSubscriberController;
+use App\Http\Controllers\Backend\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Backend\ActivityLogController;
 use App\Http\Controllers\Backend\AdminNotificationController;
 use App\Http\Controllers\Backend\AdminSavedViewController;
@@ -372,6 +373,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/', [NewsletterSubscriberController::class, 'index'])->name('index');
         Route::get('/export', [NewsletterSubscriberController::class, 'export'])->name('export');
         Route::delete('/{subscriber}', [NewsletterSubscriberController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('payments')->name('payments.')->group(function () {
+        Route::get('/', [AdminPaymentController::class, 'index'])->name('index');
+        Route::get('/export', [AdminPaymentController::class, 'export'])->name('export');
     });
 
     Route::prefix('customers')->name('customers.')->group(function () {

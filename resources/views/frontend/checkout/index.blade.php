@@ -98,15 +98,12 @@
                             @endforelse
                         </div>
                         @php($firstPay = $paymentMethods[0] ?? ['code' => 'card', 'type' => 'online'])
-                        {{-- Online / card fields --}}
+                        {{-- Online payment (redirect to the ABA PayWay hosted checkout) --}}
                         <div data-pay-online style="{{ ($firstPay['type'] ?? 'online') === 'manual' ? 'display:none' : '' }}">
-                            <div class="ut-col" style="gap:16px">
-                                <div class="field"><label>Card number</label><div style="position:relative"><input class="ut-input" placeholder="4242 4242 4242 4242" style="padding-right:42px"><span style="position:absolute;right:14px;top:14px;color:var(--text-2)"><x-frontend.icon n="card" :size="18" /></span></div></div>
-                                <div class="ut-form-2">
-                                    <div class="field"><label>Expiry</label><input class="ut-input" placeholder="MM / YY"></div>
-                                    <div class="field"><label>CVC</label><input class="ut-input" placeholder="123"></div>
-                                </div>
-                                <div class="ut-row muted" style="gap:8px;font-size:13px"><span style="color:var(--success)"><x-frontend.icon n="lock" :size="15" /></span> Payments are encrypted and secure.</div>
+                            <div style="background:var(--bg);border-radius:var(--r-md);padding:20px;text-align:center">
+                                <div style="width:48px;height:48px;border-radius:14px;background:#dcfce7;color:#15803d;display:grid;place-items:center;margin:0 auto 12px"><x-frontend.icon n="lock" :size="22" /></div>
+                                <p style="font-family:var(--font-head);font-weight:700;margin:0 0 4px">You'll be redirected to ABA PayWay</p>
+                                <p class="muted" style="font-size:13.5px;margin:0;line-height:1.6">Complete your payment securely by card or the ABA Mobile app. Your card details are handled by ABA — we never see or store them.</p>
                             </div>
                         </div>
 
