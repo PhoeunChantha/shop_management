@@ -38,15 +38,27 @@
                 <div data-step>
                     <h3 style="font-size:20px;margin-bottom:20px">Contact & Shipping</h3>
                     <div class="ut-col" style="gap:16px">
-                        <div class="field"><label>Email address</label><input class="ut-input" type="email" name="email" value="{{ old('email', $prefill['email'] ?? '') }}" placeholder="you@email.com" required></div>
-                        <div class="ut-form-2">
-                            <div class="field"><label>First name</label><input class="ut-input" name="first_name" value="{{ old('first_name', $prefill['first_name'] ?? '') }}" placeholder="Alex" required></div>
-                            <div class="field"><label>Last name</label><input class="ut-input" name="last_name" value="{{ old('last_name', $prefill['last_name'] ?? '') }}" placeholder="Rivera" required></div>
+                        <div class="field"><label>Email address</label><input class="ut-input @error('email') is-invalid @enderror" type="email" name="email" value="{{ old('email', $prefill['email'] ?? '') }}" placeholder="you@email.com" required>
+                            @error('email')<span class="ut-field-error">{{ $message }}</span>@enderror
                         </div>
-                        <div class="field"><label>Street address</label><input class="ut-input" name="address" value="{{ old('address', $prefill['address'] ?? '') }}" placeholder="123 Market St, Apt 4B" required></div>
+                        <div class="ut-form-2">
+                            <div class="field"><label>First name</label><input class="ut-input @error('first_name') is-invalid @enderror" name="first_name" value="{{ old('first_name', $prefill['first_name'] ?? '') }}" placeholder="Alex" required>
+                                @error('first_name')<span class="ut-field-error">{{ $message }}</span>@enderror
+                            </div>
+                            <div class="field"><label>Last name</label><input class="ut-input @error('last_name') is-invalid @enderror" name="last_name" value="{{ old('last_name', $prefill['last_name'] ?? '') }}" placeholder="Rivera" required>
+                                @error('last_name')<span class="ut-field-error">{{ $message }}</span>@enderror
+                            </div>
+                        </div>
+                        <div class="field"><label>Street address</label><input class="ut-input @error('address') is-invalid @enderror" name="address" value="{{ old('address', $prefill['address'] ?? '') }}" placeholder="123 Market St, Apt 4B" required>
+                            @error('address')<span class="ut-field-error">{{ $message }}</span>@enderror
+                        </div>
                         <div class="ut-form-2" style="grid-template-columns:1.6fr 1fr">
-                            <div class="field"><label>City</label><input class="ut-input" name="city" value="{{ old('city', $prefill['city'] ?? '') }}" placeholder="San Francisco" required></div>
-                            <div class="field"><label>ZIP code</label><input class="ut-input" name="zip" value="{{ old('zip', $prefill['zip'] ?? '') }}" placeholder="94103"></div>
+                            <div class="field"><label>City</label><input class="ut-input @error('city') is-invalid @enderror" name="city" value="{{ old('city', $prefill['city'] ?? '') }}" placeholder="San Francisco" required>
+                                @error('city')<span class="ut-field-error">{{ $message }}</span>@enderror
+                            </div>
+                            <div class="field"><label>ZIP code</label><input class="ut-input @error('zip') is-invalid @enderror" name="zip" value="{{ old('zip', $prefill['zip'] ?? '') }}" placeholder="94103">
+                                @error('zip')<span class="ut-field-error">{{ $message }}</span>@enderror
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -60,13 +72,14 @@
                             @php($label = $m['type'] === 'free' ? 'Free' : '$'.number_format($m['rate'], 2))
                             <label class="ut-radio-card {{ $i === 0 ? 'sel' : '' }}" onclick="document.querySelectorAll('.ut-radio-card').forEach(c=>c.classList.remove('sel')); this.classList.add('sel');">
                                 <input type="radio" name="del" value="{{ $m['id'] }}" {{ $i === 0 ? 'checked' : '' }}
+                                    data-label="{{ $m['name'] }} · {{ $label }}"
                                     onchange="window.__coRecalc && window.__coRecalc()" style="accent-color:var(--blue);width:18px;height:18px">
                                 <div style="flex:1"><div style="font-family:var(--font-head);font-weight:600">{{ $m['name'] }}</div><div class="muted" style="font-size:13px">{{ $m['description'] ?: 'Standard delivery' }}@if($m['type'] === 'free_over') · free over ${{ number_format($m['free_over'], 0) }}@endif</div></div>
                                 <span style="font-family:var(--font-head);font-weight:700;color:{{ $m['type'] === 'free' ? '#15803d' : 'var(--ink)' }}">{{ $label }}</span>
                             </label>
                         @empty
                             <label class="ut-radio-card sel">
-                                <input type="radio" name="del" value="0" checked onchange="window.__coRecalc && window.__coRecalc()" style="accent-color:var(--blue);width:18px;height:18px">
+                                <input type="radio" name="del" value="0" checked data-label="Standard · Free" onchange="window.__coRecalc && window.__coRecalc()" style="accent-color:var(--blue);width:18px;height:18px">
                                 <div style="flex:1"><div style="font-family:var(--font-head);font-weight:600">Standard</div><div class="muted" style="font-size:13px">2–4 business days</div></div>
                                 <span style="font-family:var(--font-head);font-weight:700;color:#15803d">Free</span>
                             </label>
@@ -107,6 +120,18 @@
                             </div>
                         </div>
 
+                        {{-- Wallet payment --}}
+                        @auth
+                            @if(collect($paymentMethods)->firstWhere('type', 'wallet'))
+                                <div data-pay-wallet style="display:none">
+                                    <div style="background:var(--bg);border-radius:var(--r-md);padding:18px 20px">
+                                        <div class="ut-row" style="justify-content:space-between;margin-bottom:6px"><span class="muted" style="font-size:14px">Wallet balance</span><b style="font-family:var(--font-head)">${{ number_format($walletBalance, 2) }}</b></div>
+                                        <p class="muted" style="font-size:13px;margin:0;line-height:1.6">Your order total is deducted from your wallet balance. If your balance is too low, top up in <a href="{{ route('frontend.account.wallet') }}" style="color:var(--blue);font-weight:600">your wallet</a> or choose another method.</p>
+                                    </div>
+                                </div>
+                            @endif
+                        @endauth
+
                         {{-- Manual / QR payment instructions --}}
                         @foreach($paymentMethods as $p)
                             @if($p['type'] === 'manual')
@@ -129,12 +154,12 @@
                     </div>
                 </div>
 
-                {{-- STEP 4 — review --}}
-                <div data-step style="display:none">
+                {{-- STEP 4 — review (populated from the form by main.js) --}}
+                <div data-step data-review-step style="display:none">
                     <h3 style="font-size:20px;margin-bottom:20px">Review your order</h3>
                     <div class="ut-col" style="gap:0">
-                        @foreach([['Contact', 'you@email.com'], ['Ship to', 'Alex Rivera, 123 Market St'], ['Delivery', 'Standard (Free)'], ['Payment', 'Card •••• 4242']] as [$k, $v])
-                            <div class="ut-row" style="justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-2)"><span class="muted" style="font-size:14px">{{ $k }}</span><span style="font-family:var(--font-head);font-weight:600;font-size:14px;text-align:right">{{ $v }}</span></div>
+                        @foreach([['Contact', 'contact'], ['Ship to', 'ship'], ['Delivery', 'delivery'], ['Payment', 'payment']] as [$k, $key])
+                            <div class="ut-row" style="justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-2);gap:16px"><span class="muted" style="font-size:14px">{{ $k }}</span><span data-review="{{ $key }}" style="font-family:var(--font-head);font-weight:600;font-size:14px;text-align:right">—</span></div>
                         @endforeach
                         <label class="ut-row" style="gap:10px;font-size:14px;margin-top:16px"><input type="checkbox" checked style="accent-color:var(--blue);width:17px;height:17px"> Email me order updates & early drop access</label>
                     </div>
@@ -173,15 +198,25 @@
         window.selectPayment = function (btn) {
             document.querySelectorAll('.pay-tab').forEach(function (b) { b.style.borderColor = 'var(--border)'; });
             btn.style.borderColor = 'var(--ink)';
+            var code = btn.dataset.pay, type = btn.dataset.type;
             var pi = document.getElementById('coPayment');
-            if (pi) pi.value = btn.dataset.pay;
+            if (pi) pi.value = code;
 
-            var manual = btn.dataset.type === 'manual';
+            // Hide every panel, then reveal the one for the selected method.
             var online = document.querySelector('[data-pay-online]');
-            if (online) online.style.display = manual ? 'none' : '';
-            document.querySelectorAll('[data-pay-panel]').forEach(function (p) {
-                p.style.display = (manual && p.getAttribute('data-pay-panel') === btn.dataset.pay) ? 'block' : 'none';
-            });
+            var wallet = document.querySelector('[data-pay-wallet]');
+            if (online) online.style.display = 'none';
+            if (wallet) wallet.style.display = 'none';
+            document.querySelectorAll('[data-pay-panel]').forEach(function (p) { p.style.display = 'none'; });
+
+            if (type === 'manual') {
+                var panel = document.querySelector('[data-pay-panel="' + code + '"]');
+                if (panel) panel.style.display = 'block';
+            } else if (type === 'wallet') {
+                if (wallet) wallet.style.display = 'block';
+            } else if (online) {
+                online.style.display = '';
+            }
         };
     </script>
     <script>

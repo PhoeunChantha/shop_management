@@ -7,6 +7,8 @@ namespace App\Services\Frontend;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\User;
+use App\Models\WalletTopup;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
@@ -92,6 +94,52 @@ final class PaywayService
                 'status' => 'pending',
             ],
         );
+
+        return [
+            'url' => rtrim((string) $this->baseUrl(), '/').'/api/payment-gateway/v1/payments/purchase',
+            'fields' => $fields,
+        ];
+    }
+
+    /**
+     * Build the signed PayWay form for a wallet top-up (not tied to an order).
+     *
+     * @return array{url: string, fields: array<string, string>}
+     */
+    public function purchaseTopup(WalletTopup $topup, User $user, string $returnUrl, string $successUrl, string $cancelUrl): array
+    {
+        $amount = number_format((float) $topup->amount, 2, '.', '');
+        $items = base64_encode((string) json_encode([
+            ['name' => 'Wallet top-up', 'quantity' => 1, 'price' => (float) $topup->amount],
+        ]));
+
+        [$first, $last] = $this->splitName($user->name);
+
+        $fields = [
+            'req_time' => gmdate('YmdHis'),
+            'merchant_id' => (string) $this->merchantId(),
+            'tran_id' => (string) $topup->tran_id,
+            'amount' => $amount,
+            'items' => $items,
+            'shipping' => '0.00',
+            'ctid' => '',
+            'pwt' => '',
+            'firstname' => $first,
+            'lastname' => $last,
+            'email' => (string) $user->email,
+            'phone' => '',
+            'type' => 'purchase',
+            'payment_option' => '',
+            'return_url' => base64_encode($returnUrl),
+            'cancel_url' => $cancelUrl,
+            'continue_success_url' => $successUrl,
+            'return_deeplink' => '',
+            'currency' => $this->currency(),
+            'custom_fields' => '',
+            'return_params' => (string) $topup->tran_id,
+        ];
+
+        $fields['hash'] = $this->hash($fields);
 
         return [
             'url' => rtrim((string) $this->baseUrl(), '/').'/api/payment-gateway/v1/payments/purchase',

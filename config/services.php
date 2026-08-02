@@ -51,9 +51,9 @@ return [
         'currency' => env('PAYWAY_CURRENCY', 'USD'),
         // Storefront payment-method code => PayWay payment_option.
         // Any online method not listed here defaults to '' (PayWay shows all).
+        // (The 'wallet' method is the in-house store wallet, not a PayWay option.)
         'options' => [
             'aba' => 'cards',
-            'wallet' => 'abapay',
         ],
     ],
 

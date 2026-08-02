@@ -3,6 +3,7 @@
 use App\Http\Controllers\Backend\AbandonedCartController;
 use App\Http\Controllers\Backend\NewsletterSubscriberController;
 use App\Http\Controllers\Backend\PaymentController as AdminPaymentController;
+use App\Http\Controllers\Backend\WalletController;
 use App\Http\Controllers\Backend\ActivityLogController;
 use App\Http\Controllers\Backend\AdminNotificationController;
 use App\Http\Controllers\Backend\AdminSavedViewController;
@@ -75,6 +76,8 @@ Route::name('frontend.')->group(function () {
     Route::get('/payment/{order}/success', [PaymentController::class, 'success'])->name('payment.success');
     Route::get('/payment/{order}/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
     Route::post('/payment/callback', [PaymentController::class, 'callback'])->name('payment.callback');
+    Route::get('/wallet/topup/{topup}/pay', [PaymentController::class, 'topupPay'])->middleware('auth')->name('payment.topup.pay');
+    Route::get('/wallet/topup/{topup}/success', [PaymentController::class, 'topupSuccess'])->middleware('auth')->name('payment.topup.success');
 
     // ---- Authentication ----
     // GET pages live at bare paths (/login, /register, …); the POST actions use an
@@ -117,6 +120,8 @@ Route::name('frontend.')->group(function () {
         Route::get('/wishlist', [AccountController::class, 'wishlist'])->name('wishlist');
         Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
         Route::post('/wishlist/sync', [WishlistController::class, 'sync'])->name('wishlist.sync');
+        Route::get('/wallet', [AccountController::class, 'wallet'])->name('wallet');
+        Route::post('/wallet/topup', [AccountController::class, 'walletTopup'])->name('wallet.topup');
         Route::get('/orders', [AccountController::class, 'orders'])->name('orders');
         Route::get('/orders/{id}', [AccountController::class, 'orderDetail'])->name('orders.show');
         Route::get('/orders/{id}/tracking', [AccountController::class, 'orderTracking'])->name('orders.tracking');
@@ -378,6 +383,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::prefix('payments')->name('payments.')->group(function () {
         Route::get('/', [AdminPaymentController::class, 'index'])->name('index');
         Route::get('/export', [AdminPaymentController::class, 'export'])->name('export');
+    });
+
+    Route::prefix('wallets')->name('wallets.')->group(function () {
+        Route::get('/', [WalletController::class, 'index'])->name('index');
+        Route::post('/{user}/adjust', [WalletController::class, 'adjust'])->name('adjust');
     });
 
     Route::prefix('customers')->name('customers.')->group(function () {

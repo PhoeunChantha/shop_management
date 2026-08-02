@@ -23,11 +23,18 @@ class CheckoutController extends Controller
 
     public function index(): View
     {
+        // Wallet is only usable by signed-in customers — hide it from guests.
+        $methods = collect($this->checkout->paymentMethods())
+            ->reject(fn (array $m): bool => ($m['type'] ?? '') === 'wallet' && ! Auth::check())
+            ->values()
+            ->all();
+
         return view('frontend.checkout.index', [
             'shippingMethods' => $this->checkout->shippingMethods(),
-            'paymentMethods' => $this->checkout->paymentMethods(),
+            'paymentMethods' => $methods,
             'taxRate' => $this->checkout->taxRate(),
             'prefill' => $this->prefill(),
+            'walletBalance' => (float) (Auth::user()?->wallet_balance ?? 0),
         ]);
     }
 
@@ -79,8 +86,8 @@ class CheckoutController extends Controller
         ]);
 
         if ($validator->fails()) {
-            // Surface the first message via the shared toast (session flash).
-            return back()->withInput()->with('error', $validator->errors()->first());
+            // Show the messages under each field (step 1 holds the required inputs).
+            return back()->withErrors($validator)->withInput();
         }
 
         $data = $validator->validated();
