@@ -14,7 +14,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'avatar'])]
+#[Fillable(['name', 'email', 'password', 'avatar', 'wallet_balance'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -31,7 +31,16 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'wallet_balance' => 'decimal:2',
         ];
+    }
+
+    /**
+     * @return HasMany<WalletTransaction, $this>
+     */
+    public function walletTransactions(): HasMany
+    {
+        return $this->hasMany(WalletTransaction::class)->latest('id');
     }
 
     /**

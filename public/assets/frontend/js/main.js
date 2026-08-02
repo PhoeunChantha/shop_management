@@ -37,9 +37,9 @@
   /* ---------- toast ---------- */
   let toastTimer;
   function toast(msg) {
-    document.querySelectorAll('.toast').forEach(t => t.remove());
+    document.querySelectorAll('.ut-toast').forEach(t => t.remove());
     const el = document.createElement('div');
-    el.className = 'toast';
+    el.className = 'ut-toast';
     el.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5L16 9"/></svg>' + msg;
     document.body.appendChild(el);
     clearTimeout(toastTimer);
@@ -98,6 +98,7 @@
       })
       .catch(function () {});
   }
+
 
   function syncBadges() {
     const c = cartCount();
@@ -433,9 +434,32 @@
       const back = document.getElementById('coBack');
       if (back) back.style.visibility = step > 0 ? 'visible' : 'hidden';
     };
+    const fillReview = () => {
+      const f = document.getElementById('checkoutForm');
+      if (!f) return;
+      const val = (n) => { const el = f.querySelector('[name="' + n + '"]'); return el ? el.value.trim() : ''; };
+      const set = (key, text) => { const el = document.querySelector('[data-review="' + key + '"]'); if (el) el.textContent = text || '—'; };
+
+      set('contact', val('email'));
+
+      const name = (val('first_name') + ' ' + val('last_name')).trim();
+      const addr = [val('address'), val('city'), val('zip')].filter(Boolean).join(', ');
+      set('ship', [name, addr].filter(Boolean).join(' · '));
+
+      const del = f.querySelector('[name="del"]:checked');
+      set('delivery', del ? (del.getAttribute('data-label') || '') : '');
+
+      const code = (document.getElementById('coPayment') || {}).value || '';
+      const payBtn = document.querySelector('.pay-tab[data-pay="' + code + '"]');
+      set('payment', payBtn ? payBtn.textContent.trim().replace(/\s+/g, ' ') : code);
+    };
+
     document.addEventListener('click', (e) => {
       if (e.target.closest('#coNext')) {
-        if (step < panels.length - 1) { step++; show(); }
+        if (step < panels.length - 1) {
+          step++; show();
+          if (panels[step] && panels[step].hasAttribute('data-review-step')) fillReview();
+        }
         else {
           var coForm = document.getElementById('checkoutForm');
           if (coForm) {

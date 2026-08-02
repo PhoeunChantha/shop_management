@@ -26,6 +26,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // Apply the locale stored in the session on every web request.
         $middleware->appendToGroup('web', SetLocale::class);
 
+        // PayWay posts its result server-to-server (no session/CSRF token).
+        $middleware->validateCsrfTokens(except: ['payment/callback']);
+
         // Send unauthenticated visitors of the admin area to the admin login page.
         $middleware->redirectGuestsTo(
             fn (Request $request) => $request->is('admin', 'admin/*')

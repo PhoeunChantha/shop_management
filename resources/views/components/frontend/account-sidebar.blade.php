@@ -6,6 +6,7 @@
     $nav = [
         ['dashboard', 'Dashboard', 'home', route('frontend.account.dashboard')],
         ['orders', 'Orders', 'box', route('frontend.account.orders')],
+        ['wallet', 'Wallet', 'spark', route('frontend.account.wallet')],
         ['wishlist', 'Wishlist', 'heart', route('frontend.account.wishlist')],
         ['addresses', 'Addresses', 'pin', route('frontend.account.addresses')],
         ['notifications', 'Notifications', 'bell', route('frontend.account.notifications')],

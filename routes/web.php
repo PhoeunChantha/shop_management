@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Backend\AbandonedCartController;
 use App\Http\Controllers\Backend\NewsletterSubscriberController;
+use App\Http\Controllers\Backend\PaymentController as AdminPaymentController;
+use App\Http\Controllers\Backend\WalletController;
 use App\Http\Controllers\Backend\ActivityLogController;
 use App\Http\Controllers\Backend\AdminNotificationController;
 use App\Http\Controllers\Backend\AdminSavedViewController;
@@ -47,6 +49,7 @@ use App\Http\Controllers\Frontend\CheckoutController;
 use App\Http\Controllers\Frontend\HomeController;
 use App\Http\Controllers\Frontend\NewsletterController;
 use App\Http\Controllers\Frontend\PageController;
+use App\Http\Controllers\Frontend\PaymentController;
 use App\Http\Controllers\Frontend\ShopController;
 use App\Http\Controllers\Frontend\SocialAuthController;
 use App\Http\Controllers\Frontend\WishlistController;
@@ -67,6 +70,14 @@ Route::name('frontend.')->group(function () {
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
     Route::get('/checkout/confirmation', [CheckoutController::class, 'confirmation'])->name('checkout.confirmation');
+
+    // ---- Payment (ABA PayWay) ----
+    Route::get('/payment/{order}/pay', [PaymentController::class, 'pay'])->name('payment.pay');
+    Route::get('/payment/{order}/success', [PaymentController::class, 'success'])->name('payment.success');
+    Route::get('/payment/{order}/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
+    Route::post('/payment/callback', [PaymentController::class, 'callback'])->name('payment.callback');
+    Route::get('/wallet/topup/{topup}/pay', [PaymentController::class, 'topupPay'])->middleware('auth')->name('payment.topup.pay');
+    Route::get('/wallet/topup/{topup}/success', [PaymentController::class, 'topupSuccess'])->middleware('auth')->name('payment.topup.success');
 
     // ---- Authentication ----
     // GET pages live at bare paths (/login, /register, …); the POST actions use an
@@ -109,6 +120,8 @@ Route::name('frontend.')->group(function () {
         Route::get('/wishlist', [AccountController::class, 'wishlist'])->name('wishlist');
         Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
         Route::post('/wishlist/sync', [WishlistController::class, 'sync'])->name('wishlist.sync');
+        Route::get('/wallet', [AccountController::class, 'wallet'])->name('wallet');
+        Route::post('/wallet/topup', [AccountController::class, 'walletTopup'])->name('wallet.topup');
         Route::get('/orders', [AccountController::class, 'orders'])->name('orders');
         Route::get('/orders/{id}', [AccountController::class, 'orderDetail'])->name('orders.show');
         Route::get('/orders/{id}/tracking', [AccountController::class, 'orderTracking'])->name('orders.tracking');
@@ -365,6 +378,16 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/', [NewsletterSubscriberController::class, 'index'])->name('index');
         Route::get('/export', [NewsletterSubscriberController::class, 'export'])->name('export');
         Route::delete('/{subscriber}', [NewsletterSubscriberController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('payments')->name('payments.')->group(function () {
+        Route::get('/', [AdminPaymentController::class, 'index'])->name('index');
+        Route::get('/export', [AdminPaymentController::class, 'export'])->name('export');
+    });
+
+    Route::prefix('wallets')->name('wallets.')->group(function () {
+        Route::get('/', [WalletController::class, 'index'])->name('index');
+        Route::post('/{user}/adjust', [WalletController::class, 'adjust'])->name('adjust');
     });
 
     Route::prefix('customers')->name('customers.')->group(function () {

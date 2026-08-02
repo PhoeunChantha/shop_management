@@ -712,7 +712,7 @@ select.ut-input {
 }
 
 /* ---- Toast ---- */
-.toast {
+.ut-toast {
   position: fixed;
   left: 50%;
   bottom: 96px;
@@ -731,6 +731,18 @@ select.ut-input {
   align-items: center;
   gap: 10px;
   animation: pop .26s var(--ease-out) both;
+}
+
+/* ---- Inline field validation ---- */
+.ut-field-error {
+  display: block;
+  color: var(--accent);
+  font-size: 12.5px;
+  margin-top: 6px;
+}
+
+.ut-input.is-invalid {
+  border-color: var(--accent);
 }
 
 /* ---- Utility ---- */

@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\WalletTopup;
 use App\Services\Frontend\AccountService;
+use App\Services\Frontend\PaywayService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
@@ -92,6 +95,37 @@ class AccountController extends Controller
         $request->user()->unreadNotifications->markAsRead();
 
         return back()->with('success', 'All notifications marked as read.');
+    }
+
+    public function wallet(Request $request): View
+    {
+        $user = $request->user();
+
+        return view('frontend.account.wallet', [
+            'user' => $this->account->user(),
+            'balance' => (float) $user->wallet_balance,
+            'transactions' => $user->walletTransactions()->with('order:id,order_number')->limit(40)->get(),
+        ]);
+    }
+
+    public function walletTopup(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'amount' => ['required', 'numeric', 'min:1', 'max:100000'],
+        ]);
+
+        if (! app(PaywayService::class)->configured()) {
+            return back()->with('error', 'Online top-up is not available right now.');
+        }
+
+        $topup = WalletTopup::create([
+            'user_id' => $request->user()->id,
+            'tran_id' => 'WT'.now()->format('ymdHis').Str::upper(Str::random(4)),
+            'amount' => round((float) $data['amount'], 2),
+            'status' => 'pending',
+        ]);
+
+        return redirect()->route('frontend.payment.topup.pay', $topup);
     }
 
     public function wishlist(): View

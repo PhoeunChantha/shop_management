@@ -21,9 +21,11 @@
             'label' => 'Sales',
             'caption' => 'Orders and customers',
             'icon' => 'fa-receipt',
-            'routes' => ['admin.orders.*', 'admin.customers.*', 'admin.returns.*', 'admin.abandoned-carts.*'],
+            'routes' => ['admin.orders.*', 'admin.customers.*', 'admin.returns.*', 'admin.abandoned-carts.*', 'admin.payments.*', 'admin.wallets.*'],
             'items' => [
                 ['label' => 'Orders', 'icon' => 'fa-list-check', 'route' => 'admin.orders.index', 'active' => ['admin.orders.*']],
+                ['label' => 'Payments', 'icon' => 'fa-credit-card', 'route' => 'admin.payments.index', 'active' => ['admin.payments.*']],
+                ['label' => 'Wallets', 'icon' => 'fa-wallet', 'route' => 'admin.wallets.index', 'active' => ['admin.wallets.*']],
                 ['label' => 'Customers', 'icon' => 'fa-user-group', 'route' => 'admin.customers.index', 'active' => ['admin.customers.*']],
                 ['label' => 'Returns & Refunds', 'icon' => 'fa-rotate-left', 'route' => 'admin.returns.index', 'active' => ['admin.returns.*']],
                 ['label' => 'Abandoned Carts', 'icon' => 'fa-cart-arrow-down', 'route' => 'admin.abandoned-carts.index', 'active' => ['admin.abandoned-carts.*']],

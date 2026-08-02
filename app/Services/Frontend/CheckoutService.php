@@ -15,6 +15,7 @@ use App\Models\ShippingMethod;
 use App\Models\TaxRule;
 use App\Services\Admin\SettingService;
 use App\Services\Admin\StockService;
+use App\Services\Admin\WalletService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -27,6 +28,7 @@ final class CheckoutService
     public function __construct(
         private readonly SettingService $settings,
         private readonly StockService $stock,
+        private readonly WalletService $wallet,
     ) {}
 
     /**
@@ -76,6 +78,31 @@ final class CheckoutService
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * True when the given payment-method code is an online (gateway) method.
+     */
+    public function isOnlineMethod(?string $code): bool
+    {
+        return $this->methodType($code) === 'online';
+    }
+
+    /**
+     * True when the given payment-method code is the in-house wallet.
+     */
+    public function isWalletMethod(?string $code): bool
+    {
+        return $this->methodType($code) === 'wallet';
+    }
+
+    private function methodType(?string $code): ?string
+    {
+        if (blank($code)) {
+            return null;
+        }
+
+        return collect($this->paymentMethods())->firstWhere('code', $code)['type'] ?? null;
     }
 
     /**
@@ -211,6 +238,23 @@ final class CheckoutService
                 if ($stockable) {
                     $this->stock->adjust($stockable, -$line['qty'], StockMovementType::Sale, 'Order '.$order->order_number);
                 }
+            }
+
+            // Pay from the store wallet: block unless it covers the whole order,
+            // then debit the balance and mark the order paid immediately.
+            if ($this->isWalletMethod($data['payment'] ?? null)) {
+                $user = Auth::user();
+
+                if (! $user) {
+                    throw new CheckoutException('Please sign in to pay with your wallet.');
+                }
+
+                if (! $this->wallet->hasSufficient($user, (float) $grand)) {
+                    throw new CheckoutException('Your wallet balance is not enough for this order. Please top up or choose another payment method.');
+                }
+
+                $this->wallet->debit($user, (float) $grand, 'payment', 'Order '.$order->order_number, $order->id);
+                $order->forceFill(['payment_status' => 'paid', 'paid_at' => now()])->save();
             }
 
             // Empty the customer's saved cart now that the order is placed.

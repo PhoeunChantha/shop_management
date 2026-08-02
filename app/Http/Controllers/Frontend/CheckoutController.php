@@ -6,6 +6,7 @@ use App\Exceptions\CheckoutException;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Services\Frontend\CheckoutService;
+use App\Services\Frontend\PaywayService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,11 +23,18 @@ class CheckoutController extends Controller
 
     public function index(): View
     {
+        // Wallet is only usable by signed-in customers — hide it from guests.
+        $methods = collect($this->checkout->paymentMethods())
+            ->reject(fn (array $m): bool => ($m['type'] ?? '') === 'wallet' && ! Auth::check())
+            ->values()
+            ->all();
+
         return view('frontend.checkout.index', [
             'shippingMethods' => $this->checkout->shippingMethods(),
-            'paymentMethods' => $this->checkout->paymentMethods(),
+            'paymentMethods' => $methods,
             'taxRate' => $this->checkout->taxRate(),
             'prefill' => $this->prefill(),
+            'walletBalance' => (float) (Auth::user()?->wallet_balance ?? 0),
         ]);
     }
 
@@ -78,8 +86,8 @@ class CheckoutController extends Controller
         ]);
 
         if ($validator->fails()) {
-            // Surface the first message via the shared toast (session flash).
-            return back()->withInput()->with('error', $validator->errors()->first());
+            // Show the messages under each field (step 1 holds the required inputs).
+            return back()->withErrors($validator)->withInput();
         }
 
         $data = $validator->validated();
@@ -110,6 +118,14 @@ class CheckoutController extends Controller
             Log::error('Checkout order failed: '.$e->getMessage(), ['exception' => $e]);
 
             return back()->with('error', 'We could not place your order. Please try again.');
+        }
+
+        $request->session()->put('pending_order_id', $order->id);
+
+        // Online methods (ABA / wallet) go through the PayWay gateway when it is
+        // configured; manual methods jump straight to the confirmation page.
+        if ($this->checkout->isOnlineMethod($data['payment'] ?? null) && app(PaywayService::class)->configured()) {
+            return redirect()->route('frontend.payment.pay', $order);
         }
 
         return redirect()->route('frontend.checkout.confirmation')->with('order_id', $order->id);
