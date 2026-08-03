@@ -19,6 +19,7 @@
         @csrf
         <input type="hidden" name="items" id="coItems">
         <input type="hidden" name="payment" id="coPayment" value="{{ $paymentMethods[0]['code'] ?? 'card' }}">
+        <input type="hidden" name="coupon" id="coCoupon">
         <div>
             <h1 style="font-size:clamp(28px,3.4vw,40px);margin-bottom:22px">Checkout</h1>
 
@@ -177,9 +178,17 @@
         <div class="ut-card summary" style="padding:24px;position:sticky;top:96px">
             <h3 style="font-size:18px;margin-bottom:16px">Order summary</h3>
             <div id="checkoutLines" style="max-height:230px;overflow:auto;margin-bottom:14px"></div>
+
+            {{-- discount code --}}
+            <div class="ut-row" style="gap:8px;margin-bottom:12px">
+                <input id="couponCode" class="ut-input" placeholder="Discount code" style="flex:1;padding:11px 13px" autocomplete="off">
+                <button type="button" class="ut-btn ut-btn-ink" onclick="applyCoupon()" style="padding:11px 18px">Apply</button>
+            </div>
+
             <hr class="divider" style="margin:6px 0 14px">
             <div class="ut-col" style="gap:11px">
                 <div class="ut-row" style="justify-content:space-between;font-size:14.5px"><span class="muted">Subtotal</span><span id="sumSubtotal" style="font-weight:600">$0</span></div>
+                <div class="ut-row" id="sumDiscountRow" style="justify-content:space-between;font-size:14.5px;display:none"><span class="muted">Discount (<span id="sumCouponCode"></span>) <button type="button" onclick="removeCoupon()" style="border:0;background:none;color:var(--text-3);font-size:12px;cursor:pointer;text-decoration:underline">remove</button></span><span id="sumDiscount" style="font-weight:600;color:#15803d">−$0</span></div>
                 <div class="ut-row" style="justify-content:space-between;font-size:14.5px"><span class="muted">Shipping</span><span id="sumShipping" style="font-weight:600">Free</span></div>
                 <div class="ut-row" style="justify-content:space-between;font-size:14.5px"><span class="muted">Estimated tax</span><span id="sumTax" style="font-weight:600">$0</span></div>
                 <hr class="divider" style="margin:6px 0">
@@ -242,6 +251,10 @@
                 }).join('');
             }
 
+            window.UT_DISCOUNT = window.UT_DISCOUNT || { code: '', amount: 0 };
+            var COUPON_URL = "{{ route('frontend.checkout.coupon') }}";
+            var CSRF = (document.querySelector('meta[name=csrf-token]') || {}).content || '';
+
             window.__coRecalc = function(){
                 var items = cart();
                 renderLines(items);
@@ -257,14 +270,64 @@
                     else if(method.type==='free_over') shipping = (method.free_over!=null && sub>=method.free_over) ? 0 : method.rate;
                     else shipping = method.rate;
                 }
-                var tax = Math.round(sub*(cfg.taxRate||0)*100)/100;
-                var total = sub + shipping + tax;
+                var discount = Math.min(window.UT_DISCOUNT.amount || 0, sub);
+                var taxable = Math.max(0, sub - discount);
+                var tax = Math.round(taxable*(cfg.taxRate||0)*100)/100;
+                var total = taxable + shipping + tax;
                 var g = function(id){ return document.getElementById(id); };
                 if(g('sumSubtotal')) g('sumSubtotal').textContent = money(sub);
+                var dRow = g('sumDiscountRow');
+                if(dRow){
+                    if(discount > 0){ dRow.style.display='flex'; if(g('sumDiscount')) g('sumDiscount').textContent='−'+money(discount); if(g('sumCouponCode')) g('sumCouponCode').textContent=window.UT_DISCOUNT.code; }
+                    else dRow.style.display='none';
+                }
                 if(g('sumShipping')) g('sumShipping').textContent = shipping===0 ? 'Free' : money(shipping);
                 if(g('sumTax')) g('sumTax').textContent = money(tax);
                 if(g('sumTotal')) g('sumTotal').textContent = money(total);
             };
+
+            window.applyCoupon = function(silent){
+                var input = document.getElementById('couponCode');
+                var code = (input ? input.value : '').trim();
+                if(!code){ if(silent !== true && window.utToast) utToast('Enter a discount code'); return; }
+                var sub = cart().reduce(function(s,i){ return s + i.price*i.qty; }, 0);
+                fetch(COUPON_URL, {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':CSRF,'X-Requested-With':'XMLHttpRequest'},
+                    body: JSON.stringify({ code: code, subtotal: sub })
+                }).then(function(r){ return r.json(); }).then(function(res){
+                    if(res && res.valid){
+                        window.UT_DISCOUNT = { code: res.code, amount: res.discount };
+                        var h = document.getElementById('coCoupon'); if(h) h.value = res.code;
+                        try { localStorage.setItem('ut_coupon', JSON.stringify({ code: res.code, amount: res.discount })); } catch(e){}
+                        window.__coRecalc();
+                        if(silent !== true && window.utToast) utToast(res.message || 'Coupon applied');
+                    } else {
+                        try { localStorage.removeItem('ut_coupon'); } catch(e){}
+                        if(silent !== true && window.utToast) utToast((res && res.message) || 'Invalid code');
+                    }
+                }).catch(function(){ if(silent !== true && window.utToast) utToast('Could not apply the code'); });
+            };
+
+            window.removeCoupon = function(){
+                window.UT_DISCOUNT = { code: '', amount: 0 };
+                var h = document.getElementById('coCoupon'); if(h) h.value='';
+                var input = document.getElementById('couponCode'); if(input) input.value='';
+                try { localStorage.removeItem('ut_coupon'); } catch(e){}
+                window.__coRecalc();
+            };
+
+            // Pre-apply a coupon carried over from the cart page (re-validated here).
+            (function(){
+                try {
+                    var saved = JSON.parse(localStorage.getItem('ut_coupon') || 'null');
+                    if(saved && saved.code){
+                        var input = document.getElementById('couponCode');
+                        if(input) input.value = saved.code;
+                        window.applyCoupon(true);
+                    }
+                } catch(e){}
+            })();
 
             window.__coRecalc();
         })();

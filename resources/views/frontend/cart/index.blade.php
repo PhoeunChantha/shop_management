@@ -61,7 +61,7 @@
                 <h3 style="font-size:19px;margin-bottom:18px">Order summary</h3>
                 <div class="ut-col" style="gap:11px">
                     <div class="ut-row" style="justify-content:space-between;font-size:14.5px"><span class="muted">Subtotal</span><span id="sumSubtotal" style="font-weight:600">$0</span></div>
-                    <div class="ut-row" id="sumDiscountRow" style="display:none;justify-content:space-between;font-size:14.5px"><span class="muted">Discount (10%)</span><span id="sumDiscount" style="font-weight:600;color:#15803d">-$0</span></div>
+                    <div class="ut-row" id="sumDiscountRow" style="display:none;justify-content:space-between;font-size:14.5px"><span class="muted">Discount (<span id="couponCodeLabel"></span>)</span><span id="sumDiscount" style="font-weight:600;color:#15803d">-$0</span></div>
                     <div class="ut-row" style="justify-content:space-between;font-size:14.5px"><span class="muted">Shipping</span><span id="sumShipping" style="font-weight:600">Free</span></div>
                     <div class="ut-row" style="justify-content:space-between;font-size:14.5px"><span class="muted">Estimated tax</span><span id="sumTax" style="font-weight:600">$0</span></div>
                     <hr class="divider" style="margin:6px 0">
@@ -71,10 +71,10 @@
                 {{-- coupon --}}
                 <form id="couponForm" style="margin:18px 0">
                     <div class="ut-row" style="gap:8px">
-                        <input class="ut-input" placeholder="Promo code (try URBAN10)">
+                        <input class="ut-input" placeholder="Discount code" autocomplete="off">
                         <button class="ut-btn ut-btn-ink" type="submit" style="flex-shrink:0">Apply</button>
                     </div>
-                    <div id="couponApplied" style="display:none;align-items:center;gap:6px;margin-top:10px;color:#15803d;font-size:13px;font-weight:600"><x-frontend.icon n="checkC" :size="15" /> URBAN10 applied — 10% off</div>
+                    <div id="couponApplied" style="display:none;align-items:center;gap:6px;margin-top:10px;color:#15803d;font-size:13px;font-weight:600"><x-frontend.icon n="checkC" :size="15" /> <span id="couponAppliedText"></span> <button type="button" onclick="window.__cartRemoveCoupon()" style="border:0;background:none;color:var(--text-3);font-size:12px;cursor:pointer;text-decoration:underline;font-weight:500">remove</button></div>
                 </form>
 
                 {{-- ship estimate --}}

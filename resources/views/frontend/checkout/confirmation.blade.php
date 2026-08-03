@@ -57,7 +57,7 @@
 </div>
 
 @push('scripts')
-<script>localStorage.removeItem('ut_cart'); /* order placed — clear bag */</script>
+<script>localStorage.removeItem('ut_cart'); localStorage.removeItem('ut_coupon'); /* order placed — clear bag + coupon */</script>
 @endpush
 @endsection
 

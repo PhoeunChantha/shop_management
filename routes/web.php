@@ -69,6 +69,7 @@ Route::name('frontend.')->group(function () {
     Route::post('/cart/sync', [CartController::class, 'sync'])->middleware('auth')->name('cart.sync');
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::post('/checkout/coupon', [CheckoutController::class, 'coupon'])->name('checkout.coupon');
     Route::get('/checkout/confirmation', [CheckoutController::class, 'confirmation'])->name('checkout.confirmation');
 
     // ---- Payment (ABA PayWay) ----

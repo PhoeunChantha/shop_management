@@ -74,7 +74,8 @@
             confirm: "{{ route('frontend.checkout.confirmation') }}",
             wishToggle: "{{ route('frontend.account.wishlist.toggle') }}",
             wishSync: "{{ route('frontend.account.wishlist.sync') }}",
-            cartSync: "{{ route('frontend.cart.sync') }}"
+            cartSync: "{{ route('frontend.cart.sync') }}",
+            coupon: "{{ route('frontend.checkout.coupon') }}"
         };
         @auth
         window.UT_AUTH = {

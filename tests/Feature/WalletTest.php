@@ -59,7 +59,7 @@ it('rejects a debit beyond the balance', function () {
 });
 
 it('pays an order from the wallet and marks it paid', function () {
-    $product = Product::factory()->create(['status' => 'active', 'product_type' => 'single', 'stock' => 5, 'price' => 20]);
+    $product = Product::factory()->create(['status' => 'active', 'product_type' => 'single', 'stock' => 5, 'price' => 20, 'discount_type' => null, 'discount_amount' => 0]);
     app(WalletService::class)->credit($this->customer, 100, 'topup');
 
     $this->actingAs($this->customer);
@@ -70,7 +70,7 @@ it('pays an order from the wallet and marks it paid', function () {
 });
 
 it('blocks a wallet order when the balance is too low', function () {
-    $product = Product::factory()->create(['status' => 'active', 'product_type' => 'single', 'stock' => 5, 'price' => 20]);
+    $product = Product::factory()->create(['status' => 'active', 'product_type' => 'single', 'stock' => 5, 'price' => 20, 'discount_type' => null, 'discount_amount' => 0]);
     app(WalletService::class)->credit($this->customer, 5, 'topup');
 
     $this->actingAs($this->customer);

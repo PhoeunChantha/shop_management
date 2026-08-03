@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Services\Frontend\CheckoutService;
 use App\Services\Frontend\PaywayService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -129,6 +130,16 @@ class CheckoutController extends Controller
         }
 
         return redirect()->route('frontend.checkout.confirmation')->with('order_id', $order->id);
+    }
+
+    public function coupon(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:60'],
+            'subtotal' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        return response()->json($this->checkout->validateCoupon($data['code'], (float) $data['subtotal']));
     }
 
     public function confirmation(Request $request): View|RedirectResponse

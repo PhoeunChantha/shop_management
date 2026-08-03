@@ -18,6 +18,8 @@
     set cart(v) { localStorage.setItem('ut_cart', JSON.stringify(v)); },
     get wish() { try { return JSON.parse(localStorage.getItem('ut_wish') || '[]'); } catch (e) { return []; } },
     set wish(v) { localStorage.setItem('ut_wish', JSON.stringify(v)); },
+    get coupon() { try { return JSON.parse(localStorage.getItem('ut_coupon') || 'null'); } catch (e) { return null; } },
+    set coupon(v) { if (v) localStorage.setItem('ut_coupon', JSON.stringify(v)); else localStorage.removeItem('ut_coupon'); },
   };
 
   /* ---------- auth-aware backend sync ---------- */
@@ -201,7 +203,8 @@
     if (grid) grid.style.display = '';
     wrap.innerHTML = cart.map(lineHTML).join('');
     const sub = cartSubtotal();
-    const discount = window.UT_COUPON ? Math.round(sub * 0.1 * 100) / 100 : 0;
+    const coupon = store.coupon;
+    const discount = coupon ? Math.min(coupon.amount || 0, sub) : 0;
     const shipping = sub === 0 ? 0 : (sub - discount >= SHIP_FREE ? 0 : 6.95);
     const tax = Math.round((sub - discount) * 0.08 * 100) / 100;
     const total = Math.max(0, sub - discount) + shipping + tax;
@@ -210,7 +213,16 @@
     setText('sumTax', money(tax));
     setText('sumTotal', money(total));
     const dRow = document.getElementById('sumDiscountRow');
-    if (dRow) { dRow.style.display = discount > 0 ? '' : 'none'; setText('sumDiscount', '-' + money(discount)); }
+    if (dRow) {
+      dRow.style.display = discount > 0 ? '' : 'none';
+      setText('sumDiscount', '-' + money(discount));
+      if (coupon) setText('couponCodeLabel', coupon.code);
+    }
+    const applied = document.getElementById('couponApplied');
+    if (applied) {
+      applied.style.display = discount > 0 ? 'flex' : 'none';
+      if (coupon) setText('couponAppliedText', coupon.code + ' applied');
+    }
     const cntEl = document.getElementById('cartItemCount');
     if (cntEl) cntEl.textContent = cartCount();
   }
@@ -344,12 +356,29 @@
   document.addEventListener('submit', function (e) {
     if (e.target.matches('#couponForm')) {
       e.preventDefault();
-      const code = (e.target.querySelector('input').value || '').trim().toUpperCase();
-      if (code === 'URBAN10') { window.UT_COUPON = true; toast('Coupon applied — 10% off'); renderCartPage();
-        const ok = document.getElementById('couponApplied'); if (ok) ok.style.display = 'flex';
-      } else toast('Invalid coupon code');
+      const input = e.target.querySelector('input');
+      const code = (input ? input.value : '').trim();
+      if (!code) { toast('Enter a discount code'); return; }
+      postJSON(URLS.coupon, { code: code, subtotal: cartSubtotal() })
+        .then(function (res) {
+          if (res && res.valid) {
+            store.coupon = { code: res.code, amount: res.discount };
+            if (input) input.value = '';
+            renderCartPage();
+            toast(res.message || 'Coupon applied');
+          } else {
+            store.coupon = null;
+            renderCartPage();
+            toast((res && res.message) || 'Invalid code');
+          }
+        })
+        .catch(function () { toast('Could not apply the code'); });
     }
   });
+  window.__cartRemoveCoupon = function () {
+    store.coupon = null;
+    renderCartPage();
+  };
 
   /* ---------- header scroll ---------- */
   const header = document.querySelector('.ut-header');
