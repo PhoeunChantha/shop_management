@@ -67,15 +67,19 @@ Route::name('frontend.')->group(function () {
     // ---- Cart & Checkout ----
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::post('/cart/sync', [CartController::class, 'sync'])->middleware('auth')->name('cart.sync');
-    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    // Coupon validation stays public so guests can preview a code in the cart.
     Route::post('/checkout/coupon', [CheckoutController::class, 'coupon'])->name('checkout.coupon');
-    Route::get('/checkout/confirmation', [CheckoutController::class, 'confirmation'])->name('checkout.confirmation');
+    // Checkout requires an account — every order is tied to a customer.
+    Route::middleware('auth')->group(function () {
+        Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+        Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+        Route::get('/checkout/confirmation', [CheckoutController::class, 'confirmation'])->name('checkout.confirmation');
 
-    // ---- Payment (ABA PayWay) ----
-    Route::get('/payment/{order}/pay', [PaymentController::class, 'pay'])->name('payment.pay');
-    Route::get('/payment/{order}/success', [PaymentController::class, 'success'])->name('payment.success');
-    Route::get('/payment/{order}/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
+        // ---- Payment (ABA PayWay) ----
+        Route::get('/payment/{order}/pay', [PaymentController::class, 'pay'])->name('payment.pay');
+        Route::get('/payment/{order}/success', [PaymentController::class, 'success'])->name('payment.success');
+        Route::get('/payment/{order}/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
+    });
     Route::post('/payment/callback', [PaymentController::class, 'callback'])->name('payment.callback');
     Route::get('/wallet/topup/{topup}/pay', [PaymentController::class, 'topupPay'])->middleware('auth')->name('payment.topup.pay');
     Route::get('/wallet/topup/{topup}/success', [PaymentController::class, 'topupSuccess'])->middleware('auth')->name('payment.topup.success');

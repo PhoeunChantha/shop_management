@@ -463,6 +463,23 @@ final class SettingService
     }
 
     /**
+     * Default SEO/meta values (used as fallbacks when a page has no override).
+     *
+     * @return array{title: string, description: string, image: ?string}
+     */
+    public function seoDefaults(): array
+    {
+        $name = $this->siteName();
+        $tagline = Setting::get('site_tagline');
+
+        return [
+            'title' => filled($tagline) ? $name.' — '.trim($tagline) : $name,
+            'description' => Setting::get('site_description') ?: 'Premium heavyweight t-shirts and streetwear essentials.',
+            'image' => $this->logoUrl(),
+        ];
+    }
+
+    /**
      * Configured order-number prefix (Settings → Prefix), defaulting to 'UT-'.
      */
     public function orderPrefix(): string
