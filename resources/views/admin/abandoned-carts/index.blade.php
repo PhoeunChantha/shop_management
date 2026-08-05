@@ -16,6 +16,7 @@
                 <span><i class="fa-solid fa-user-plus"></i> New leads</span>
                 <strong>{{ number_format($stats['new']) }}</strong>
             </div>
+            
             <div class="cart-recovery-stat">
                 <span><i class="fa-solid fa-sack-dollar"></i> Recoverable value</span>
                 <strong>${{ number_format($stats['value'], 0) }}</strong>

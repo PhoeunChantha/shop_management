@@ -16,6 +16,7 @@
                 <a href="{{ route('admin.abandoned-carts.index') }}" class="ghost-button ghost-button--panel">
                     <i class="fa-solid fa-arrow-left"></i><span>Back</span>
                 </a>
+                
                 <form method="POST" action="{{ route('admin.abandoned-carts.destroy', $cart) }}" onsubmit="return confirm('Delete this abandoned cart?')">
                     @csrf
                     @method('DELETE')

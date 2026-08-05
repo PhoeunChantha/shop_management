@@ -17,4 +17,5 @@
         <span class="d-none d-md-inline opacity-50">·</span>
         <span class="d-none d-md-inline">&copy; {{ date('Y') }} T-Shirt Shop. All rights reserved.</span>
     </div>
+    
 </div>

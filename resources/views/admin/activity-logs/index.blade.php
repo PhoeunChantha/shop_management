@@ -27,6 +27,7 @@
             <table class="w-full">
                 <thead class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
                     <tr>
+                        
                         <th class="ut-th">User</th>
                         <th class="ut-th">Module</th>
                         <th class="ut-th">Action</th>

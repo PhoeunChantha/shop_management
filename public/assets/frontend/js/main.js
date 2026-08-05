@@ -62,6 +62,7 @@
     syncBadges();
     renderCartDrawer();
     syncCart();
+
   }
   function updateQty(key, qty) {
     const cart = store.cart.map(i => i.key === key ? Object.assign({}, i, { qty: Math.max(1, qty) }) : i);
@@ -70,6 +71,7 @@
   function removeItem(key) {
     store.cart = store.cart.filter(i => i.key !== key);
     syncBadges(); renderCartDrawer(); renderCartPage(); syncCart();
+
   }
 
   // ---- server-side cart persistence (logged-in customers) ----
@@ -99,6 +101,7 @@
         if (res && res.items) { store.cart = res.items; syncBadges(); renderCartDrawer(); renderCartPage(); }
       })
       .catch(function () {});
+      
   }
 
 
