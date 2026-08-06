@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
 use App\Models\WalletTopup;
+use App\Services\Admin\SettingService;
 use App\Services\Frontend\AccountService;
 use App\Services\Frontend\PaywayService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
@@ -156,6 +160,25 @@ class AccountController extends Controller
             'products' => $this->account->productsById(),
             'colors' => $this->account->colors(),
         ]);
+    }
+
+    public function invoice(string $id, SettingService $settings): Response
+    {
+        $order = $this->account->findOrderModel($id) ?? abort(404);
+        $order->loadMissing('details');
+
+        $pdf = Pdf::loadView('frontend.account.invoice-pdf', [
+            'order' => $order,
+            'store' => [
+                'name' => $settings->siteName(),
+                'logo' => $settings->logoUrl(),
+                'email' => Setting::get('contact_email'),
+                'phone' => Setting::get('contact_phone'),
+                'address' => Setting::get('contact_address'),
+            ],
+        ])->setPaper('a4');
+
+        return $pdf->download('invoice-'.$order->order_number.'.pdf');
     }
 
     public function orderTracking(string $id): View

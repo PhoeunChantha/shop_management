@@ -187,8 +187,12 @@ final class CheckoutService
                 $qty = max(1, (int) $item['qty']);
                 $variant = $this->matchVariant($product, $item['size'] ?? null, $item['color'] ?? null);
 
-                // Guard against overselling on the stockable being sold.
+                // Row-lock the stockable being sold so two concurrent checkouts
+                // can't both pass the check and oversell the same stock.
                 $stockable = $variant ?: ($product->product_type->value === 'single' ? $product : null);
+                if ($stockable) {
+                    $stockable = $stockable->newQuery()->lockForUpdate()->find($stockable->getKey());
+                }
                 if ($stockable && (int) $stockable->stock < $qty) {
                     throw new CheckoutException(sprintf(
                         '"%s" only has %d left in stock. Please adjust the quantity.',
@@ -204,6 +208,7 @@ final class CheckoutService
                 $lines[] = [
                     'product' => $product,
                     'variant' => $variant,
+                    'stockable' => $stockable,
                     'qty' => $qty,
                     'price' => $price,
                     'line_total' => $lineTotal,
@@ -272,9 +277,8 @@ final class CheckoutService
                     'line_total' => $line['line_total'],
                 ]);
 
-                // Decrement stock on the matched stockable (variant, or single product).
-                $stockable = $variant ?: ($product->product_type->value === 'single' ? $product : null);
-                if ($stockable) {
+                // Decrement the row-locked stockable captured during the check.
+                if ($stockable = $line['stockable']) {
                     $this->stock->adjust($stockable, -$line['qty'], StockMovementType::Sale, 'Order '.$order->order_number);
                 }
             }

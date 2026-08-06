@@ -42,6 +42,9 @@
                         <div class="field"><label>Email address</label><input class="ut-input @error('email') is-invalid @enderror" type="email" name="email" value="{{ old('email', $prefill['email'] ?? '') }}" placeholder="you@email.com" required>
                             @error('email')<span class="ut-field-error">{{ $message }}</span>@enderror
                         </div>
+                        <div class="field"><label>Phone</label><input class="ut-input @error('phone') is-invalid @enderror" name="phone" value="{{ old('phone', $prefill['phone'] ?? '') }}" placeholder="+855 12 345 678">
+                            @error('phone')<span class="ut-field-error">{{ $message }}</span>@enderror
+                        </div>
                         <div class="ut-form-2">
                             <div class="field"><label>First name</label><input class="ut-input @error('first_name') is-invalid @enderror" name="first_name" value="{{ old('first_name', $prefill['first_name'] ?? '') }}" placeholder="Alex" required>
                                 @error('first_name')<span class="ut-field-error">{{ $message }}</span>@enderror

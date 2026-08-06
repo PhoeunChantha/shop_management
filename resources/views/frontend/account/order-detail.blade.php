@@ -22,6 +22,7 @@
         <div class="ut-row" style="gap:10px">
             <span class="ut-tag {{ $order['status'] === 'Delivered' ? 'ut-tag-success' : 'ut-tag-new' }}" style="align-self:center">{{ $order['status'] }}</span>
             <a href="{{ route('frontend.account.orders.tracking', $order['id']) }}" class="ut-btn ut-btn-ink ut-btn-sm"><x-frontend.icon n="truck" :size="15" /> Track</a>
+            <a href="{{ route('frontend.account.orders.invoice', $order['id']) }}" class="ut-btn ut-btn-outline ut-btn-sm"><x-frontend.icon n="download" :size="15" /> Invoice</a>
         </div>
     </div>
 

@@ -130,6 +130,7 @@ Route::name('frontend.')->group(function () {
         Route::get('/orders', [AccountController::class, 'orders'])->name('orders');
         Route::get('/orders/{id}', [AccountController::class, 'orderDetail'])->name('orders.show');
         Route::get('/orders/{id}/tracking', [AccountController::class, 'orderTracking'])->name('orders.tracking');
+        Route::get('/orders/{id}/invoice', [AccountController::class, 'invoice'])->name('orders.invoice');
         Route::get('/orders/{id}/review/{pid}', [AccountController::class, 'review'])->name('orders.review');
         Route::post('/orders/{id}/review/{pid}', [AccountController::class, 'storeReview'])->name('orders.review.store');
     });
