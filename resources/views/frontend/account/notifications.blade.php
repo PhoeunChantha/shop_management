@@ -1,13 +1,13 @@
 @extends('frontend.account.partials.shell', ['active' => 'notifications'])
-@section('title', 'Notifications — T-Shirt Shop')
+@section('title', __('Notifications').' — T-Shirt Shop')
 
 @section('account')
 <div class="ut-row" style="justify-content:space-between;align-items:flex-end;margin-bottom:18px;gap:12px;flex-wrap:wrap">
-    <div><h2 style="font-size:24px">Notifications</h2><p class="muted" style="font-size:14px;margin-top:4px">Order updates, drops, and account activity</p></div>
+    <div><h2 style="font-size:24px">{{ __('Notifications') }}</h2><p class="muted" style="font-size:14px;margin-top:4px">{{ __('Order updates, drops, and account activity') }}</p></div>
     @if(collect($notifications)->where('unread', true)->count())
         <form method="POST" action="{{ route('frontend.account.notifications.read-all') }}">
             @csrf
-            <button type="submit" class="ut-btn ut-btn-ghost ut-btn-sm"><x-frontend.icon n="check" :size="15" /> Mark all read</button>
+            <button type="submit" class="ut-btn ut-btn-ghost ut-btn-sm"><x-frontend.icon n="check" :size="15" /> {{ __('Mark all read') }}</button>
         </form>
     @endif
 </div>
@@ -36,7 +36,7 @@
                         @if($n['unread'])
                             <form method="POST" action="{{ route('frontend.account.notifications.read', $n['id']) }}">
                                 @csrf @method('PATCH')
-                                <button type="submit" style="border:0;background:none;color:var(--blue);font-size:12px;font-family:var(--font-head);font-weight:600;cursor:pointer;padding:0">Mark read</button>
+                                <button type="submit" style="border:0;background:none;color:var(--blue);font-size:12px;font-family:var(--font-head);font-weight:600;cursor:pointer;padding:0">{{ __('Mark read') }}</button>
                             </form>
                         @endif
                     </div>
@@ -47,7 +47,7 @@
 @else
     <div class="ut-card" style="padding:56px;text-align:center">
         <div style="width:64px;height:64px;border-radius:20px;background:var(--bg);display:grid;place-items:center;margin:0 auto 16px;color:var(--text-3)"><x-frontend.icon n="bell" :size="28" /></div>
-        <h3>No notifications yet</h3><p class="muted" style="margin-top:6px">Order updates and account activity will show up here.</p>
+        <h3>{{ __('No notifications yet') }}</h3><p class="muted" style="margin-top:6px">{{ __('Order updates and account activity will show up here.') }}</p>
     </div>
 @endif
 @endsection

@@ -59,7 +59,7 @@ class SizeController extends Controller
             Size::create($validated);
 
             return to_route('admin.sizes.index')
-                ->with('success', 'Size created successfully!');
+                ->with('success', __('Size created successfully!'));
         } catch (\Exception $e) {
             Log::error('Error creating size: '.$e->getMessage(), [
                 'exception' => $e,
@@ -96,7 +96,7 @@ class SizeController extends Controller
             $size->update($validated);
 
             return to_route('admin.sizes.index')
-                ->with('success', 'Size updated successfully!');
+                ->with('success', __('Size updated successfully!'));
         } catch (\Exception $e) {
             Log::error('Error updating size: '.$e->getMessage(), [
                 'exception' => $e,
@@ -133,7 +133,7 @@ class SizeController extends Controller
         }
 
         return to_route('admin.sizes.index')
-            ->with('success', 'Size deleted successfully!');
+            ->with('success', __('Size deleted successfully!'));
     }
 
     public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse

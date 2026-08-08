@@ -41,7 +41,7 @@ class AdminSavedViewController extends Controller
         $this->savedViews->create($request->all(), $request->user()?->id);
 
         return redirect($request->input('return_url') ?: route('admin.saved-views.index'))
-            ->with('success', 'Saved view created.');
+            ->with('success', __('Saved view created.'));
     }
 
     public function destroy(Request $request, AdminSavedView $savedView): RedirectResponse
@@ -51,6 +51,6 @@ class AdminSavedViewController extends Controller
 
         $savedView->delete();
 
-        return back()->with('success', 'Saved view deleted.');
+        return back()->with('success', __('Saved view deleted.'));
     }
 }

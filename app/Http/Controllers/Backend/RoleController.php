@@ -47,7 +47,7 @@ class RoleController extends Controller
 
         $this->roles->create($data);
 
-        return redirect()->route('admin.roles.index')->with('success', 'Role created successfully!');
+        return redirect()->route('admin.roles.index')->with('success', __('Role created successfully!'));
     }
 
     public function edit($id): View
@@ -74,7 +74,7 @@ class RoleController extends Controller
 
         $this->roles->update($role, $data);
 
-        return redirect()->route('admin.roles.index')->with('success', 'Role updated successfully!');
+        return redirect()->route('admin.roles.index')->with('success', __('Role updated successfully!'));
     }
 
     public function destroy($id): RedirectResponse
@@ -87,6 +87,6 @@ class RoleController extends Controller
 
         $role->delete();
 
-        return redirect()->route('admin.roles.index')->with('success', 'Role deleted successfully!');
+        return redirect()->route('admin.roles.index')->with('success', __('Role deleted successfully!'));
     }
 }

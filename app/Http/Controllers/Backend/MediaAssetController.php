@@ -115,6 +115,6 @@ class MediaAssetController extends Controller
             return back()->withErrors(['error' => 'An error occurred while deleting this media file.']);
         }
 
-        return back()->with('success', 'Media file deleted.');
+        return back()->with('success', __('Media file deleted.'));
     }
 }

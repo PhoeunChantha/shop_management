@@ -53,7 +53,7 @@ class ShippingMethodController extends Controller
         try {
             ShippingMethod::create($request->validated());
 
-            return to_route('admin.shipping.index')->with('success', 'Shipping method created successfully!');
+            return to_route('admin.shipping.index')->with('success', __('Shipping method created successfully!'));
         } catch (\Exception $e) {
             Log::error('Error creating shipping method: '.$e->getMessage(), ['exception' => $e, 'request_data' => $request->all()]);
 
@@ -75,7 +75,7 @@ class ShippingMethodController extends Controller
         try {
             ShippingMethod::findOrFail($id)->update($request->validated());
 
-            return to_route('admin.shipping.index')->with('success', 'Shipping method updated successfully!');
+            return to_route('admin.shipping.index')->with('success', __('Shipping method updated successfully!'));
         } catch (\Exception $e) {
             Log::error('Error updating shipping method: '.$e->getMessage(), ['exception' => $e, 'request_data' => $request->all(), 'id' => $id]);
 
@@ -95,7 +95,7 @@ class ShippingMethodController extends Controller
             return back()->withErrors(['error' => 'An error occurred while deleting the shipping method.']);
         }
 
-        return to_route('admin.shipping.index')->with('success', 'Shipping method deleted successfully!');
+        return to_route('admin.shipping.index')->with('success', __('Shipping method deleted successfully!'));
     }
 
     public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse

@@ -1,5 +1,5 @@
 @extends('frontend.layouts.frontend')
-@section('title', 'Order #UT-'.$order['id'].' — T-Shirt Shop')
+@section('title', __('Order').' #UT-'.$order['id'].' — T-Shirt Shop')
 
 @push('head')
 <style>
@@ -16,13 +16,13 @@
     $total = $subtotal + $shipping + $tax;
 @endphp
 <div class="ut-wrap anim-up" style="padding-top:28px;max-width:920px">
-    <a href="{{ route('frontend.account.orders') }}" class="ut-link" style="margin-bottom:18px;display:inline-flex"><x-frontend.icon n="arrowL" :size="16" /> Back to orders</a>
+    <a href="{{ route('frontend.account.orders') }}" class="ut-link" style="margin-bottom:18px;display:inline-flex"><x-frontend.icon n="arrowL" :size="16" /> {{ __('Back to orders') }}</a>
     <div class="ut-row" style="justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:24px">
-        <div><h1 style="font-size:32px">Order #UT-{{ $order['id'] }}</h1><p class="muted" style="margin-top:6px">Placed {{ $order['date'] }} · {{ collect($order['items'])->sum('qty') }} items</p></div>
+        <div><h1 style="font-size:32px">{{ __('Order') }} #UT-{{ $order['id'] }}</h1><p class="muted" style="margin-top:6px">{{ __('Placed') }} {{ $order['date'] }} · {{ collect($order['items'])->sum('qty') }} {{ __('items') }}</p></div>
         <div class="ut-row" style="gap:10px">
             <span class="ut-tag {{ $order['status'] === 'Delivered' ? 'ut-tag-success' : 'ut-tag-new' }}" style="align-self:center">{{ $order['status'] }}</span>
-            <a href="{{ route('frontend.account.orders.tracking', $order['id']) }}" class="ut-btn ut-btn-ink ut-btn-sm"><x-frontend.icon n="truck" :size="15" /> Track</a>
-            <a href="{{ route('frontend.account.orders.invoice', $order['id']) }}" class="ut-btn ut-btn-outline ut-btn-sm"><x-frontend.icon n="download" :size="15" /> Invoice</a>
+            <a href="{{ route('frontend.account.orders.tracking', $order['id']) }}" class="ut-btn ut-btn-ink ut-btn-sm"><x-frontend.icon n="truck" :size="15" /> {{ __('Track') }}</a>
+            <a href="{{ route('frontend.account.orders.invoice', $order['id']) }}" class="ut-btn ut-btn-outline ut-btn-sm"><x-frontend.icon n="download" :size="15" /> {{ __('Invoice') }}</a>
         </div>
     </div>
 
@@ -35,35 +35,35 @@
                         <x-frontend.ph :tint="$p['tint'] ?? ''" :dark="$p['dark'] ?? false" style="width:64px;height:80px;border-radius:12px;flex-shrink:0" />
                         <div style="flex:1">
                             <div style="font-family:var(--font-head);font-weight:600">{{ $it['name'] }}</div>
-                            <div class="muted" style="font-size:13px;margin-top:3px">{{ $colors[$it['color']]['name'] ?? $it['color'] }} · Size {{ $it['size'] }} · Qty {{ $it['qty'] }}</div>
+                            <div class="muted" style="font-size:13px;margin-top:3px">{{ $colors[$it['color']]['name'] ?? $it['color'] }} · {{ __('Size') }} {{ $it['size'] }} · {{ __('Qty') }} {{ $it['qty'] }}</div>
                             @if($order['status'] === 'Delivered')
-                                <a href="{{ route('frontend.account.orders.review', [$order['id'], $it['pid']]) }}" class="ut-link" style="font-size:13px;margin-top:8px;display:inline-flex"><x-frontend.icon n="star" :size="13" /> Write a review</a>
+                                <a href="{{ route('frontend.account.orders.review', [$order['id'], $it['pid']]) }}" class="ut-link" style="font-size:13px;margin-top:8px;display:inline-flex"><x-frontend.icon n="star" :size="13" /> {{ __('Write a review') }}</a>
                             @endif
                         </div>
-                        <span style="font-family:var(--font-head);font-weight:700">${{ $it['price'] * $it['qty'] }}</span>
+                        <span style="font-family:var(--font-head);font-weight:700">{{ money($it['price'] * $it['qty']) }}</span>
                     </div>
                 @endforeach
             </div>
             <div class="ut-card" style="padding:22px">
-                <h3 style="font-size:16px;margin-bottom:14px">Shipping details</h3>
+                <h3 style="font-size:16px;margin-bottom:14px">{{ __('Shipping details') }}</h3>
                 <div class="ut-row" style="gap:12px;align-items:flex-start"><span style="color:var(--text-2);margin-top:2px"><x-frontend.icon n="pin" :size="18" /></span><p class="muted" style="font-size:14px;margin:0;line-height:1.6">{{ $order['address'] }}</p></div>
                 <hr class="divider" style="margin:16px 0">
-                <div class="ut-row" style="gap:12px"><span style="color:var(--text-2)"><x-frontend.icon n="truck" :size="18" /></span><div><div style="font-family:var(--font-head);font-weight:600;font-size:14px">{{ $order['courier'] }}</div><div class="muted" style="font-size:13px">Tracking: <span class="mono">{{ $order['tracking'] }}</span></div></div></div>
+                <div class="ut-row" style="gap:12px"><span style="color:var(--text-2)"><x-frontend.icon n="truck" :size="18" /></span><div><div style="font-family:var(--font-head);font-weight:600;font-size:14px">{{ $order['courier'] }}</div><div class="muted" style="font-size:13px">{{ __('Tracking') }}: <span class="mono">{{ $order['tracking'] }}</span></div></div></div>
             </div>
         </div>
 
         <div class="ut-card" style="padding:24px">
-            <h3 style="font-size:16px;margin-bottom:16px">Payment summary</h3>
+            <h3 style="font-size:16px;margin-bottom:16px">{{ __('Payment summary') }}</h3>
             <div class="ut-col" style="gap:11px">
-                <div class="ut-row" style="justify-content:space-between;font-size:14.5px"><span class="muted">Subtotal</span><span style="font-weight:600">${{ number_format($subtotal, 2) }}</span></div>
-                <div class="ut-row" style="justify-content:space-between;font-size:14.5px"><span class="muted">Shipping</span><span style="font-weight:600;{{ $shipping === 0 ? 'color:#15803d' : '' }}">{{ $shipping === 0 ? 'Free' : '$'.number_format($shipping, 2) }}</span></div>
-                <div class="ut-row" style="justify-content:space-between;font-size:14.5px"><span class="muted">Tax</span><span style="font-weight:600">${{ number_format($tax, 2) }}</span></div>
+                <div class="ut-row" style="justify-content:space-between;font-size:14.5px"><span class="muted">{{ __('Subtotal') }}</span><span style="font-weight:600">{{ money($subtotal) }}</span></div>
+                <div class="ut-row" style="justify-content:space-between;font-size:14.5px"><span class="muted">{{ __('Shipping') }}</span><span style="font-weight:600;{{ $shipping === 0 ? 'color:#15803d' : '' }}">{{ $shipping === 0 ? __('Free') : money($shipping) }}</span></div>
+                <div class="ut-row" style="justify-content:space-between;font-size:14.5px"><span class="muted">{{ __('Tax') }}</span><span style="font-weight:600">{{ money($tax) }}</span></div>
                 <hr class="divider" style="margin:6px 0">
-                <div class="ut-row" style="justify-content:space-between"><span style="font-family:var(--font-head);font-weight:700;font-size:17px">Total</span><span style="font-family:var(--font-head);font-weight:700;font-size:24px">${{ number_format($total, 2) }}</span></div>
+                <div class="ut-row" style="justify-content:space-between"><span style="font-family:var(--font-head);font-weight:700;font-size:17px">{{ __('Total') }}</span><span style="font-family:var(--font-head);font-weight:700;font-size:24px">{{ money($total) }}</span></div>
             </div>
             <div class="ut-row" style="gap:10px;margin-top:16px;padding:12px 14px;background:var(--bg);border-radius:12px"><span style="color:var(--text-2)"><x-frontend.icon n="card" :size="18" /></span><span style="font-size:13.5px;font-family:var(--font-head);font-weight:600">Visa •••• 4242</span></div>
-            <button type="button" class="ut-btn ut-btn-ghost ut-btn-block" style="margin-top:16px" onclick="utToast('Invoice downloaded')">Download invoice</button>
-            <button type="button" class="ut-btn ut-btn-ghost ut-btn-block" style="margin-top:10px" onclick="utToast('Return started')">Return or exchange</button>
+            <button type="button" class="ut-btn ut-btn-ghost ut-btn-block" style="margin-top:16px" onclick="utToast('{{ __('Invoice downloaded') }}')">{{ __('Download invoice') }}</button>
+            <button type="button" class="ut-btn ut-btn-ghost ut-btn-block" style="margin-top:10px" onclick="utToast('{{ __('Return started') }}')">{{ __('Return or exchange') }}</button>
         </div>
     </div>
 </div>

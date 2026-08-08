@@ -13,6 +13,7 @@ enum SettingGroup: string
     case Social = 'social';
     case SocialLogin = 'social_login';
     case Payment = 'payment';
+    case Notifications = 'notifications';
     case Localization = 'localization';
     case Appearance = 'appearance';
 
@@ -29,6 +30,7 @@ enum SettingGroup: string
             self::Social => 'Social links',
             self::SocialLogin => 'Login',
             self::Payment => 'Payment Methods',
+            self::Notifications => 'Notifications',
             self::Localization => 'Languages',
             self::Appearance => 'Theme Colors',
         };
@@ -47,6 +49,7 @@ enum SettingGroup: string
             self::Social => 'fa-share-nodes',
             self::SocialLogin => 'fa-right-to-bracket',
             self::Payment => 'fa-credit-card',
+            self::Notifications => 'fa-envelope',
             self::Localization => 'fa-language',
             self::Appearance => 'fa-palette',
         };

@@ -80,7 +80,7 @@ class CollectionController extends Controller
 
             $collection->products()->sync($request->input('products', []));
 
-            return to_route('admin.collections.index')->with('success', 'Collection created successfully!');
+            return to_route('admin.collections.index')->with('success', __('Collection created successfully!'));
         } catch (\Exception $e) {
             Log::error('Error creating collection: '.$e->getMessage(), ['exception' => $e, 'request_data' => $request->except('image')]);
 
@@ -121,7 +121,7 @@ class CollectionController extends Controller
 
             $collection->products()->sync($request->input('products', []));
 
-            return to_route('admin.collections.index')->with('success', 'Collection updated successfully!');
+            return to_route('admin.collections.index')->with('success', __('Collection updated successfully!'));
         } catch (\Exception $e) {
             Log::error('Error updating collection: '.$e->getMessage(), ['exception' => $e, 'request_data' => $request->except('image'), 'collection_id' => $id]);
 
@@ -143,7 +143,7 @@ class CollectionController extends Controller
             return back()->withErrors(['error' => 'An error occurred while deleting the collection.']);
         }
 
-        return to_route('admin.collections.index')->with('success', 'Collection deleted successfully!');
+        return to_route('admin.collections.index')->with('success', __('Collection deleted successfully!'));
     }
 
     public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse

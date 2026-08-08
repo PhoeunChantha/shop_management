@@ -44,7 +44,7 @@ class AdminNotificationController extends Controller
 
         $this->notifications->markRead($notification);
 
-        return back()->with('success', 'Notification marked as read.');
+        return back()->with('success', __('Notification marked as read.'));
     }
 
     public function markUnread(AdminNotification $notification): RedirectResponse
@@ -53,7 +53,7 @@ class AdminNotificationController extends Controller
 
         $this->notifications->markUnread($notification);
 
-        return back()->with('success', 'Notification marked as unread.');
+        return back()->with('success', __('Notification marked as unread.'));
     }
 
     public function markAllRead(): RedirectResponse

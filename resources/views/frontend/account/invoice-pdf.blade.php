@@ -144,8 +144,8 @@
                         @if ($item->sku)<div class="item-sku">SKU: {{ $item->sku }}</div>@endif
                     </td>
                     <td class="c">{{ $item->quantity }}</td>
-                    <td class="r">${{ number_format($item->price, 2) }}</td>
-                    <td class="r">${{ number_format($item->line_total, 2) }}</td>
+                    <td class="r">{{ money($item->price) }}</td>
+                    <td class="r">{{ money($item->line_total) }}</td>
                 </tr>
             @endforeach
         </tbody>
@@ -157,14 +157,14 @@
             <td class="spacer"></td>
             <td>
                 <table>
-                    <tr><td class="lbl">Subtotal</td><td class="val">${{ number_format($order->subtotal, 2) }}</td></tr>
+                    <tr><td class="lbl">Subtotal</td><td class="val">{{ money($order->subtotal) }}</td></tr>
                     @if ($order->discount_total > 0)
                         <tr><td class="lbl">Discount{{ $order->coupon_code ? ' (' . $order->coupon_code . ')' : '' }}</td>
-                            <td class="val">−${{ number_format($order->discount_total, 2) }}</td></tr>
+                            <td class="val">−{{ money($order->discount_total) }}</td></tr>
                     @endif
-                    <tr><td class="lbl">Shipping</td><td class="val">{{ $order->shipping_total > 0 ? '$' . number_format($order->shipping_total, 2) : 'Free' }}</td></tr>
-                    <tr><td class="lbl">Tax</td><td class="val">${{ number_format($order->tax_total, 2) }}</td></tr>
-                    <tr class="grand"><td class="lbl" style="color:#111827;">Total</td><td class="val">${{ number_format($order->grand_total, 2) }}</td></tr>
+                    <tr><td class="lbl">Shipping</td><td class="val">{{ $order->shipping_total > 0 ? money($order->shipping_total) : 'Free' }}</td></tr>
+                    <tr><td class="lbl">Tax</td><td class="val">{{ money($order->tax_total) }}</td></tr>
+                    <tr class="grand"><td class="lbl" style="color:#111827;">Total</td><td class="val">{{ money($order->grand_total) }}</td></tr>
                 </table>
             </td>
         </tr>

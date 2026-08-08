@@ -20,7 +20,7 @@
         <p style="color:rgba(255,255,255,.78);font-size:16px;max-width:380px;line-height:1.6">{{ $login['subtitle'] }}</p>
         <div class="ut-row" style="gap:26px;margin-top:30px">
             @foreach([['50k+', 'members'], ['4.9★', 'rating'], ['30-day', 'returns']] as [$a, $b])
-                <div><div style="font-family:var(--font-head);font-weight:700;font-size:22px;color:#fff">{{ $a }}</div><div style="opacity:.65;font-size:13px;color:#fff">{{ $b }}</div></div>
+                <div><div style="font-family:var(--font-head);font-weight:700;font-size:22px;color:#fff">{{ $a }}</div><div style="opacity:.65;font-size:13px;color:#fff">{{ __($b) }}</div></div>
             @endforeach
         </div>
     </div>

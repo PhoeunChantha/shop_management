@@ -178,13 +178,16 @@
         </section>
 
         {{-- BEST SELLERS --}}
-        @include('frontend.partials.product-section', [
-            'eyebrow' => 'Most wanted',
-            'title' => 'Best sellers',
-            'items' => $best,
-        ])
+        @if (($sections['best']['enabled'] ?? true) && !empty($best))
+            @include('frontend.partials.product-section', [
+                'eyebrow' => 'Most wanted',
+                'title' => $sections['best']['title'] ?? 'Best sellers',
+                'items' => $best,
+            ])
+        @endif
 
         {{-- FLASH SALE --}}
+        @if (($sections['flash']['enabled'] ?? true) && !empty($flash))
         <section class="ut-wrap" style="margin-top:96px">
             <div data-reveal
                 style="background:var(--ink);border-radius:var(--r-xl);padding:clamp(24px,4vw,44px);color:#fff;position:relative;overflow:hidden"
@@ -221,13 +224,16 @@
                 </div>
             </div>
         </section>
+        @endif
 
         {{-- NEW ARRIVALS --}}
-        @include('frontend.partials.product-section', [
-            'eyebrow' => 'Just dropped',
-            'title' => 'New arrivals',
-            'items' => $fresh,
-        ])
+        @if (($sections['new']['enabled'] ?? true) && !empty($fresh))
+            @include('frontend.partials.product-section', [
+                'eyebrow' => 'Just dropped',
+                'title' => $sections['new']['title'] ?? 'New arrivals',
+                'items' => $fresh,
+            ])
+        @endif
 
         {{-- TRUST BAR --}}
         <section class="ut-wrap" style="margin-top:96px">
@@ -248,11 +254,13 @@
         </section>
 
         {{-- TRENDING --}}
-        @include('frontend.partials.product-section', [
-            'eyebrow' => 'Heating up',
-            'title' => 'Trending now',
-            'items' => $trend,
-        ])
+        @if (($sections['trending']['enabled'] ?? true) && !empty($trend))
+            @include('frontend.partials.product-section', [
+                'eyebrow' => 'Heating up',
+                'title' => $sections['trending']['title'] ?? 'Trending now',
+                'items' => $trend,
+            ])
+        @endif
 
         {{-- REVIEWS --}}
         <section class="ut-wrap" style="margin-top:96px">

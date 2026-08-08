@@ -56,7 +56,7 @@ class AnnouncementController extends Controller
         try {
             Announcement::create($request->validated());
 
-            return to_route('admin.announcements.index')->with('success', 'Announcement created successfully!');
+            return to_route('admin.announcements.index')->with('success', __('Announcement created successfully!'));
         } catch (\Exception $e) {
             Log::error('Error creating announcement: '.$e->getMessage(), ['exception' => $e, 'request_data' => $request->all()]);
 
@@ -78,7 +78,7 @@ class AnnouncementController extends Controller
         try {
             Announcement::findOrFail($id)->update($request->validated());
 
-            return to_route('admin.announcements.index')->with('success', 'Announcement updated successfully!');
+            return to_route('admin.announcements.index')->with('success', __('Announcement updated successfully!'));
         } catch (\Exception $e) {
             Log::error('Error updating announcement: '.$e->getMessage(), ['exception' => $e, 'request_data' => $request->all(), 'announcement_id' => $id]);
 
@@ -98,7 +98,7 @@ class AnnouncementController extends Controller
             return back()->withErrors(['error' => 'An error occurred while deleting the announcement.']);
         }
 
-        return to_route('admin.announcements.index')->with('success', 'Announcement deleted successfully!');
+        return to_route('admin.announcements.index')->with('success', __('Announcement deleted successfully!'));
     }
 
     public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse

@@ -1,28 +1,28 @@
 @extends('frontend.layouts.frontend')
-@section('title', 'Reset Password — T-Shirt Shop')
+@section('title', __('Reset Password').' — T-Shirt Shop')
 @php $bareLayout = true; @endphp
 
 @section('content')
 <div class="ut-auth">
     @include('frontend.auth.partials.brand')
     <div class="ut-auth-form">
-        <a href="{{ route('frontend.home') }}" class="ut-link ut-hide-mobile" style="position:absolute;top:28px;right:32px;font-size:13.5px"><x-frontend.icon n="arrowL" :size="15" /> Back to store</a>
+        <a href="{{ route('frontend.home') }}" class="ut-link ut-hide-mobile" style="position:absolute;top:28px;right:32px;font-size:13.5px"><x-frontend.icon n="arrowL" :size="15" /> {{ __('Back to store') }}</a>
         <div style="width:100%;max-width:400px;margin:0 auto">
-            <h1 style="font-size:clamp(28px,3vw,34px);margin-bottom:8px">Set a new password</h1>
-            <p class="muted" style="margin-bottom:28px;font-size:15px">Choose a strong password you haven't used before.</p>
+            <h1 style="font-size:clamp(28px,3vw,34px);margin-bottom:8px">{{ __('Set a new password') }}</h1>
+            <p class="muted" style="margin-bottom:28px;font-size:15px">{{ __("Choose a strong password you haven't used before.") }}</p>
             <form class="ut-col" style="gap:16px" action="{{ route('frontend.password.update') }}" method="POST" onsubmit="return checkMatch()">
                 @csrf
                 <input type="hidden" name="token" value="{{ $token }}">
-                <div class="field"><label>Email address</label><input class="ut-input" type="email" name="email" value="{{ old('email', $email) }}" placeholder="you@email.com" required>
+                <div class="field"><label>{{ __('Email address') }}</label><input class="ut-input" type="email" name="email" value="{{ old('email', $email) }}" placeholder="you@email.com" required>
                     @error('email')<span style="color:var(--accent);font-size:12.5px;margin-top:6px;display:block">{{ $message }}</span>@enderror
                 </div>
-                <div class="field"><label>New password</label><div style="position:relative"><input class="ut-input" type="password" name="password" id="np" placeholder="New password" style="padding-right:64px" required><button type="button" data-toggle-pw style="position:absolute;right:12px;top:11px;border:0;background:none;color:var(--text-2);font-family:var(--font-head);font-weight:600;font-size:12.5px">Show</button></div>
+                <div class="field"><label>{{ __('New password') }}</label><div style="position:relative"><input class="ut-input" type="password" name="password" id="np" placeholder="{{ __('New password') }}" style="padding-right:64px" required><button type="button" data-toggle-pw style="position:absolute;right:12px;top:11px;border:0;background:none;color:var(--text-2);font-family:var(--font-head);font-weight:600;font-size:12.5px">{{ __('Show') }}</button></div>
                     @error('password')<span style="color:var(--accent);font-size:12.5px;margin-top:6px;display:block">{{ $message }}</span>@enderror
                 </div>
-                <div class="field"><label>Confirm password</label><div style="position:relative"><input class="ut-input" type="password" name="password_confirmation" id="np2" placeholder="Re-enter password" style="padding-right:64px" oninput="matchHint()" required><button type="button" data-toggle-pw style="position:absolute;right:12px;top:11px;border:0;background:none;color:var(--text-2);font-family:var(--font-head);font-weight:600;font-size:12.5px">Show</button></div><span id="matchMsg" style="font-size:12.5px;margin-top:6px;font-weight:500"></span></div>
-                <button class="ut-btn ut-btn-ink ut-btn-block ut-btn-lg" type="submit">Reset password</button>
+                <div class="field"><label>{{ __('Confirm password') }}</label><div style="position:relative"><input class="ut-input" type="password" name="password_confirmation" id="np2" placeholder="{{ __('Re-enter password') }}" style="padding-right:64px" oninput="matchHint()" required><button type="button" data-toggle-pw style="position:absolute;right:12px;top:11px;border:0;background:none;color:var(--text-2);font-family:var(--font-head);font-weight:600;font-size:12.5px">{{ __('Show') }}</button></div><span id="matchMsg" style="font-size:12.5px;margin-top:6px;font-weight:500"></span></div>
+                <button class="ut-btn ut-btn-ink ut-btn-block ut-btn-lg" type="submit">{{ __('Reset password') }}</button>
             </form>
-            <p class="muted" style="text-align:center;margin-top:26px;font-size:14px">Back to <a href="{{ route('frontend.login') }}" style="color:var(--blue);font-weight:600;font-family:var(--font-head)">Sign in</a></p>
+            <p class="muted" style="text-align:center;margin-top:26px;font-size:14px">{{ __('Back to') }} <a href="{{ route('frontend.login') }}" style="color:var(--blue);font-weight:600;font-family:var(--font-head)">{{ __('Sign in') }}</a></p>
         </div>
     </div>
 </div>
@@ -33,13 +33,13 @@
     function matchHint(){
         var a=document.getElementById('np').value, b=document.getElementById('np2').value, m=document.getElementById('matchMsg');
         if(!b){ m.textContent=''; return; }
-        if(a===b){ m.textContent='✓ Passwords match'; m.style.color='#15803d'; }
-        else { m.textContent="Passwords don't match"; m.style.color='var(--accent)'; }
+        if(a===b){ m.textContent='✓ {{ __('Passwords match') }}'; m.style.color='#15803d'; }
+        else { m.textContent="{{ __("Passwords don't match") }}"; m.style.color='var(--accent)'; }
     }
     function checkMatch(){
         var a=document.getElementById('np').value, b=document.getElementById('np2').value;
         if(a && a===b){ return true; }
-        utToast('Passwords must match'); return false;
+        utToast('{{ __('Passwords must match') }}'); return false;
     }
 </script>
 @endpush

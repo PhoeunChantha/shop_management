@@ -7,35 +7,52 @@ use App\Models\Category;
 use App\Models\Collection as ProductCollection;
 use App\Models\Product;
 use App\Models\ProductTag;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class NavigationService
 {
+    public const CACHE_KEY = 'frontend.nav';
+
     /**
+     * Global storefront navigation (mega menu, mobile links, search suggestions).
+     * Derived entirely from the catalog + announcements (no per-user data), so it
+     * is cached for 10 minutes to avoid ~10 queries on every storefront request.
+     *
      * @return array<string, mixed>
      */
     public function data(): array
     {
-        $categoryMenus = $this->categoryMenus();
+        return Cache::remember(self::CACHE_KEY, now()->addMinutes(10), function (): array {
+            $categoryMenus = $this->categoryMenus();
 
-        return [
-            'announcements' => $this->announcements(),
-            'categoryMenus' => $categoryMenus,
-            'menus' => [
-                'new' => $this->newProducts(),
-                'best' => $this->bestSellers(),
-                'tees' => $this->categories(),
-                'graphics' => $this->graphics(),
-                'collections' => $this->collections(),
-            ],
-            'mobile' => $this->mobileLinks($categoryMenus),
-            'search' => [
-                'recent' => $this->recentSearches(),
-                'trending' => $this->trendingSearches(),
-                'categories' => $this->categories(3),
-                'products' => $this->popularProducts(),
-            ],
-        ];
+            return [
+                'announcements' => $this->announcements(),
+                'categoryMenus' => $categoryMenus,
+                'menus' => [
+                    'new' => $this->newProducts(),
+                    'best' => $this->bestSellers(),
+                    'tees' => $this->categories(),
+                    'graphics' => $this->graphics(),
+                    'collections' => $this->collections(),
+                ],
+                'mobile' => $this->mobileLinks($categoryMenus),
+                'search' => [
+                    'recent' => $this->recentSearches(),
+                    'trending' => $this->trendingSearches(),
+                    'categories' => $this->categories(3),
+                    'products' => $this->popularProducts(),
+                ],
+            ];
+        });
+    }
+
+    /**
+     * Drop the cached navigation (call after catalog/announcement changes).
+     */
+    public function flush(): void
+    {
+        Cache::forget(self::CACHE_KEY);
     }
 
     /**

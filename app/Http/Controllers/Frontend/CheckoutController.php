@@ -96,7 +96,7 @@ class CheckoutController extends Controller
         $data = $validator->validated();
         $items = json_decode($data['items'], true);
         if (! is_array($items) || $items === []) {
-            return back()->with('error', 'Your cart is empty.');
+            return back()->with('error', __('Your cart is empty.'));
         }
 
         try {
@@ -121,7 +121,7 @@ class CheckoutController extends Controller
         } catch (\Throwable $e) {
             Log::error('Checkout order failed: '.$e->getMessage(), ['exception' => $e]);
 
-            return back()->with('error', 'We could not place your order. Please try again.');
+            return back()->with('error', __('We could not place your order. Please try again.'));
         }
 
         $request->session()->put('pending_order_id', $order->id);

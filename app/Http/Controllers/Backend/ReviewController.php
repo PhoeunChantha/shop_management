@@ -50,7 +50,7 @@ class ReviewController extends Controller
         } catch (\Exception $e) {
             Log::error('Error moderating review: '.$e->getMessage(), ['exception' => $e, 'review_id' => $id]);
 
-            return back()->with('error', 'An error occurred while updating the review.');
+            return back()->with('error', __('An error occurred while updating the review.'));
         }
     }
 
@@ -66,7 +66,7 @@ class ReviewController extends Controller
             return back()->withErrors(['error' => 'An error occurred while deleting the review.']);
         }
 
-        return back()->with('success', 'Review deleted successfully!');
+        return back()->with('success', __('Review deleted successfully!'));
     }
 
     public function bulkModerate(Request $request): RedirectResponse

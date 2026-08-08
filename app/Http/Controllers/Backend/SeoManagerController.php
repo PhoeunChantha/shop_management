@@ -45,7 +45,7 @@ class SeoManagerController extends Controller
 
         $this->seo->update($type, $id, $data);
 
-        return back()->with('success', 'SEO metadata updated.');
+        return back()->with('success', __('SEO metadata updated.'));
     }
 
     public function export(Request $request): StreamedResponse

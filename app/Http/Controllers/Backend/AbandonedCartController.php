@@ -50,7 +50,7 @@ class AbandonedCartController extends Controller
 
         $this->carts->updateWorkflow($cart, $data);
 
-        return back()->with('success', 'Abandoned cart workflow updated.');
+        return back()->with('success', __('Abandoned cart workflow updated.'));
     }
 
     public function destroy(Request $request, AbandonedCart $cart): RedirectResponse
@@ -59,7 +59,7 @@ class AbandonedCartController extends Controller
 
         $this->carts->delete($cart);
 
-        return to_route('admin.abandoned-carts.index')->with('success', 'Abandoned cart deleted.');
+        return to_route('admin.abandoned-carts.index')->with('success', __('Abandoned cart deleted.'));
     }
 
     public function export(Request $request): StreamedResponse

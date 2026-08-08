@@ -58,7 +58,7 @@ class SupplierController extends Controller
     {
         $this->suppliers->update($supplier, $request->validated() + ['status' => $request->boolean('status')]);
 
-        return to_route('admin.suppliers.index')->with('success', 'Supplier updated.');
+        return to_route('admin.suppliers.index')->with('success', __('Supplier updated.'));
     }
 
     public function destroy(Request $request, Supplier $supplier): RedirectResponse
@@ -68,7 +68,7 @@ class SupplierController extends Controller
         try {
             $this->suppliers->delete($supplier);
 
-            return back()->with('success', 'Supplier deleted.');
+            return back()->with('success', __('Supplier deleted.'));
         } catch (\InvalidArgumentException $e) {
             return back()->with('error', $e->getMessage());
         }

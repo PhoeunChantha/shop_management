@@ -53,7 +53,7 @@ class FaqController extends Controller
         try {
             Faq::create($request->validated());
 
-            return to_route('admin.faqs.index')->with('success', 'FAQ created successfully!');
+            return to_route('admin.faqs.index')->with('success', __('FAQ created successfully!'));
         } catch (\Exception $e) {
             Log::error('Error creating FAQ: '.$e->getMessage(), ['exception' => $e]);
 
@@ -75,7 +75,7 @@ class FaqController extends Controller
         try {
             Faq::findOrFail($id)->update($request->validated());
 
-            return to_route('admin.faqs.index')->with('success', 'FAQ updated successfully!');
+            return to_route('admin.faqs.index')->with('success', __('FAQ updated successfully!'));
         } catch (\Exception $e) {
             Log::error('Error updating FAQ: '.$e->getMessage(), ['exception' => $e, 'faq_id' => $id]);
 
@@ -95,7 +95,7 @@ class FaqController extends Controller
             return back()->withErrors(['error' => 'An error occurred while deleting the FAQ.']);
         }
 
-        return to_route('admin.faqs.index')->with('success', 'FAQ deleted successfully!');
+        return to_route('admin.faqs.index')->with('success', __('FAQ deleted successfully!'));
     }
 
     public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse

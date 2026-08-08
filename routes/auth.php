@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Route;
 // auth pages were removed to avoid URL collisions. This single POST endpoint
 // processes the admin login form (resources/views/auth/login.blade.php).
 Route::post('login', [AuthenticatedSessionController::class, 'store'])
-    ->middleware('guest')
+    ->middleware(['guest', 'throttle:6,1'])
     ->name('login');
 
 Route::middleware('guest')->group(function () {

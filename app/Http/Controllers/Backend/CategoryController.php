@@ -73,7 +73,7 @@ class CategoryController extends Controller
             }
 
             return to_route('admin.categories.index')
-                ->with('success', 'Category created successfully!');
+                ->with('success', __('Category created successfully!'));
         } catch (\Exception $e) {
             Log::error('Error creating category: '.$e->getMessage(), [
                 'exception' => $e,
@@ -115,7 +115,7 @@ class CategoryController extends Controller
             }
 
             return to_route('admin.categories.index')
-                ->with('success', 'Category updated successfully!');
+                ->with('success', __('Category updated successfully!'));
         } catch (\Exception $e) {
             Log::error('Error updating category: '.$e->getMessage(), [
                 'exception' => $e,
@@ -154,7 +154,7 @@ class CategoryController extends Controller
         }
 
         return to_route('admin.categories.index')
-            ->with('success', 'Category deleted successfully!');
+            ->with('success', __('Category deleted successfully!'));
     }
 
     public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse

@@ -6,7 +6,11 @@
 (function () {
   'use strict';
 
-  const money = (n) => '$' + (Number.isInteger(n) ? n : Number(n).toFixed(2));
+  const CURRENCY = window.UT_CURRENCY || { symbol: '$', position: 'before' };
+  const money = (n) => {
+    const amount = Number.isInteger(n) ? n : Number(n).toFixed(2);
+    return CURRENCY.position === 'after' ? amount + CURRENCY.symbol : CURRENCY.symbol + amount;
+  };
   const SHIP_FREE = 75;
   const COLORS = window.UT_COLORS || {};
   const colorName = (k) => (COLORS[k] && COLORS[k].name) || k;

@@ -56,7 +56,7 @@ class CouponController extends Controller
             Coupon::create($request->validated());
 
             return to_route('admin.coupons.index')
-                ->with('success', 'Coupon created successfully!');
+                ->with('success', __('Coupon created successfully!'));
         } catch (\Exception $e) {
             Log::error('Error creating coupon: '.$e->getMessage(), [
                 'exception' => $e,
@@ -90,7 +90,7 @@ class CouponController extends Controller
             $coupon->update($request->validated());
 
             return to_route('admin.coupons.index')
-                ->with('success', 'Coupon updated successfully!');
+                ->with('success', __('Coupon updated successfully!'));
         } catch (\Exception $e) {
             Log::error('Error updating coupon: '.$e->getMessage(), [
                 'exception' => $e,
@@ -122,7 +122,7 @@ class CouponController extends Controller
         }
 
         return to_route('admin.coupons.index')
-            ->with('success', 'Coupon deleted successfully!');
+            ->with('success', __('Coupon deleted successfully!'));
     }
 
     public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse

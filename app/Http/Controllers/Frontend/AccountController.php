@@ -3,12 +3,10 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
-use App\Models\Setting;
 use App\Models\WalletTopup;
-use App\Services\Admin\SettingService;
 use App\Services\Frontend\AccountService;
+use App\Services\Frontend\InvoiceService;
 use App\Services\Frontend\PaywayService;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -51,7 +49,7 @@ class AccountController extends Controller
 
         $this->account->updateProfile($request->user(), $data);
 
-        return back()->with('success', 'Profile updated.');
+        return back()->with('success', __('Profile updated.'));
     }
 
     public function password(): View
@@ -68,7 +66,7 @@ class AccountController extends Controller
 
         $request->user()->update(['password' => $request->input('password')]);
 
-        return back()->with('success', 'Password updated.');
+        return back()->with('success', __('Password updated.'));
     }
 
     public function addresses(): View
@@ -98,7 +96,7 @@ class AccountController extends Controller
     {
         $request->user()->unreadNotifications->markAsRead();
 
-        return back()->with('success', 'All notifications marked as read.');
+        return back()->with('success', __('All notifications marked as read.'));
     }
 
     public function wallet(Request $request): View
@@ -119,7 +117,7 @@ class AccountController extends Controller
         ]);
 
         if (! app(PaywayService::class)->configured()) {
-            return back()->with('error', 'Online top-up is not available right now.');
+            return back()->with('error', __('Online top-up is not available right now.'));
         }
 
         $topup = WalletTopup::create([
@@ -162,23 +160,11 @@ class AccountController extends Controller
         ]);
     }
 
-    public function invoice(string $id, SettingService $settings): Response
+    public function invoice(string $id, InvoiceService $invoices): Response
     {
         $order = $this->account->findOrderModel($id) ?? abort(404);
-        $order->loadMissing('details');
 
-        $pdf = Pdf::loadView('frontend.account.invoice-pdf', [
-            'order' => $order,
-            'store' => [
-                'name' => $settings->siteName(),
-                'logo' => $settings->logoUrl(),
-                'email' => Setting::get('contact_email'),
-                'phone' => Setting::get('contact_phone'),
-                'address' => Setting::get('contact_address'),
-            ],
-        ])->setPaper('a4');
-
-        return $pdf->download('invoice-'.$order->order_number.'.pdf');
+        return $invoices->pdf($order)->download($invoices->filename($order));
     }
 
     public function orderTracking(string $id): View
@@ -211,7 +197,7 @@ class AccountController extends Controller
         if ($this->account->hasReviewed($request->user(), $pid)) {
             return redirect()
                 ->route('frontend.account.orders')
-                ->with('error', 'You have already reviewed this product.');
+                ->with('error', __('You have already reviewed this product.'));
         }
 
         $data = $request->validate([
@@ -224,6 +210,6 @@ class AccountController extends Controller
 
         return redirect()
             ->route('frontend.account.orders')
-            ->with('success', 'Thanks! Your review was submitted and is pending approval.');
+            ->with('success', __('Thanks! Your review was submitted and is pending approval.'));
     }
 }

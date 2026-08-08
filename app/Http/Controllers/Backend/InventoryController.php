@@ -106,7 +106,7 @@ class InventoryController extends Controller
             ]);
 
             return to_route('admin.purchase-orders.show', $purchaseOrder)
-                ->with('success', 'Purchase order created from reorder alerts.');
+                ->with('success', __('Purchase order created from reorder alerts.'));
         } catch (\InvalidArgumentException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }
@@ -140,7 +140,7 @@ class InventoryController extends Controller
         } catch (\Exception $e) {
             Log::error('Error adjusting stock: '.$e->getMessage(), ['exception' => $e, 'product_id' => $id]);
 
-            return back()->with('error', 'An error occurred while adjusting stock.');
+            return back()->with('error', __('An error occurred while adjusting stock.'));
         }
     }
 }

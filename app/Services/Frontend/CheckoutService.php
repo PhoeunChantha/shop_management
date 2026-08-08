@@ -7,6 +7,7 @@ namespace App\Services\Frontend;
 use App\Enums\StockMovementType;
 use App\Exceptions\CheckoutException;
 use App\Helpers\ImageManager;
+use App\Mail\OrderConfirmationMail;
 use App\Models\Cart;
 use App\Models\Coupon;
 use App\Models\Order;
@@ -19,6 +20,7 @@ use App\Services\Admin\StockService;
 use App\Services\Admin\WalletService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * Supplies the storefront checkout with admin-managed shipping methods, payment
@@ -174,7 +176,7 @@ final class CheckoutService
             ->get()
             ->keyBy('id');
 
-        return DB::transaction(function () use ($items, $products, $data) {
+        $order = DB::transaction(function () use ($items, $products, $data) {
             $lines = [];
             $subtotal = 0.0;
 
@@ -307,6 +309,20 @@ final class CheckoutService
 
             return $order;
         });
+
+        // Send the confirmation + invoice once the order is safely committed.
+        // Queued (ShouldQueue), so a mail failure never blocks the checkout.
+        // Honours the admin "order confirmation email" toggle in Settings.
+        if (filled($order->customer_email) && $this->settings->orderEmailEnabled()) {
+            Mail::to($order->customer_email)->send(new OrderConfirmationMail($order));
+        }
+
+        // Optional: copy the order (with invoice) to the admin alert address.
+        if ($adminEmail = $this->settings->adminOrderAlertEmail()) {
+            Mail::to($adminEmail)->send(new OrderConfirmationMail($order));
+        }
+
+        return $order;
     }
 
     /**

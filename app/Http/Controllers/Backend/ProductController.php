@@ -97,7 +97,7 @@ class ProductController extends Controller
         $this->products->delete(Product::with('images')->findOrFail($id));
 
         return to_route('admin.products.index')
-            ->with('success', 'Product deleted successfully!');
+            ->with('success', __('Product deleted successfully!'));
     }
 
     public function bulkDestroy(Request $request): RedirectResponse
@@ -214,7 +214,7 @@ class ProductController extends Controller
     {
         $this->imports->cancel($request->session());
 
-        return back()->with('info', 'Product import preview cancelled.');
+        return back()->with('info', __('Product import preview cancelled.'));
     }
 
     public function import(Request $request): RedirectResponse

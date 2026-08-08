@@ -17,7 +17,7 @@
 <aside class="ut-card ut-acct-side ut-hide-mobile" style="padding:10px;position:sticky;top:96px">
     @foreach($nav as [$key, $label, $ic, $href])
         <a href="{{ $href }}" class="ut-side-link {{ $active === $key ? 'active' : '' }}">
-            <x-frontend.icon :n="$ic" :size="19" /> {{ $label }}
+            <x-frontend.icon :n="$ic" :size="19" /> {{ __($label) }}
             @if($key === 'notifications' && $notifUnread > 0)
                 <span class="ut-tag ut-tag-sale" style="margin-left:auto">{{ $notifUnread }}</span>
             @endif
@@ -29,7 +29,7 @@
     <hr class="divider" style="margin:8px 6px">
     <form method="POST" action="{{ route('frontend.logout') }}">
         @csrf
-        <button type="submit" class="ut-side-link" style="width:100%;border:0;background:none;text-align:left;cursor:pointer"><x-frontend.icon n="arrowL" :size="18" /> Sign out</button>
+        <button type="submit" class="ut-side-link" style="width:100%;border:0;background:none;text-align:left;cursor:pointer"><x-frontend.icon n="arrowL" :size="18" /> {{ __('Sign out') }}</button>
     </form>
 </aside>
 

@@ -23,9 +23,9 @@
 <div class="anim-up">
     <section style="background:#fff;border-bottom:1px solid var(--border)">
         <div class="ut-wrap" style="padding:clamp(40px,6vw,72px) 24px">
-            <span class="ut-eyebrow">Legal</span>
+            <span class="ut-eyebrow">{{ __('Legal') }}</span>
             <h1 style="font-size:clamp(34px,5vw,60px);line-height:1;margin:14px 0 14px;max-width:760px">{{ $title }}</h1>
-            <p style="font-size:18px;max-width:560px" class="muted">Last updated {{ $updated }}</p>
+            <p style="font-size:18px;max-width:560px" class="muted">{{ __('Last updated') }} {{ $updated }}</p>
         </div>
     </section>
 
@@ -35,7 +35,7 @@
         @else
             <div class="ut-legal-grid">
                 <aside class="ut-legal-toc ut-card" style="padding:14px;position:sticky;top:96px">
-                    <div style="font-family:var(--font-head);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-2);padding:6px 10px 10px">On this page</div>
+                    <div style="font-family:var(--font-head);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-2);padding:6px 10px 10px">{{ __('On this page') }}</div>
                     @foreach($sections as $i => $s)
                         <a href="#sec-{{ $i }}" style="display:block;padding:9px 10px;border-radius:10px;font-family:var(--font-head);font-weight:500;font-size:13.5px;color:var(--text-2)">{{ $i + 1 }}. {{ $s['h'] }}</a>
                     @endforeach
