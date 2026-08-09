@@ -16,10 +16,10 @@
 
     <div class="form-panel-body">
         <div class="form-field">
-            <label for="name">Role Name</label>
+            <label for="name">{{ __('Role Name') }}</label>
             <input value="{{ old('name', $role->name ?? '') }}" type="text" name="name" id="name"
                 class="form-input"
-                placeholder="Enter role name">
+                placeholder="{{ __('Enter role name') }}">
             @error('name')
                 <p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>
             @enderror
@@ -28,8 +28,8 @@
         <div class="form-field">
             <div class="permission-section-title">
                 <div>
-                    <label>Assign Permissions</label>
-                    <p>Select the actions this role can perform.</p>
+                    <label>{{ __('Assign Permissions') }}</label>
+                    <p>{{ __('Select the actions this role can perform.') }}</p>
                 </div>
             </div>
 
@@ -62,7 +62,7 @@
     </div>
 
     <div class="form-panel-footer">
-        <a href="{{ route('admin.roles.index') }}" class="form-cancel-button">Cancel</a>
+        <a href="{{ route('admin.roles.index') }}" class="form-cancel-button">{{ __('Cancel') }}</a>
         <button type="submit" class="form-submit-button">
             <i class="fa-solid fa-check"></i>
             {{ $submitText }}

@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Configuration</p>
+            <p class="header-kicker mb-1">{{ __('Configuration') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('Edit Tax Rule') }}</h2>
         </div>
     </x-slot>
@@ -9,11 +9,11 @@
     <div class="admin-page admin-form-page">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Tax setup</p>
-                <h3>Edit Tax Rule</h3>
+                <p class="section-kicker">{{ __('Tax setup') }}</p>
+                <h3>{{ __('Edit Tax Rule') }}</h3>
             </div>
             <a href="{{ route('admin.taxes.index') }}" class="ghost-button ghost-button--panel">
-                <i class="fa-solid fa-arrow-left"></i><span>Back</span>
+                <i class="fa-solid fa-arrow-left"></i><span>{{ __('Back') }}</span>
             </a>
         </div>
 
@@ -23,9 +23,9 @@
             <div class="form-panel-header">
                 <div class="form-panel-icon"><i class="fa-solid fa-percent"></i></div>
                 <div>
-                    <p class="section-kicker">Tax rate</p>
-                    <h3>Tax rule details</h3>
-                    <p>Update this tax rule.</p>
+                    <p class="section-kicker">{{ __('Tax rate') }}</p>
+                    <h3>{{ __('Tax rule details') }}</h3>
+                    <p>{{ __('Update this tax rule.') }}</p>
                 </div>
             </div>
 

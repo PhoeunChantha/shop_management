@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Access Management</p>
+            <p class="header-kicker mb-1">{{ __('Access Management') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">
                 {{ __('Users') }}
             </h2>
@@ -11,12 +11,12 @@
     <div class="admin-page">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">User table</p>
-                <h3>All Users</h3>
+                <p class="section-kicker">{{ __('User table') }}</p>
+                <h3>{{ __('All Users') }}</h3>
             </div>
             <a href="{{ route('admin.users.create') }}" class="premium-button premium-button--dark">
                 <i class="fa-solid fa-plus"></i>
-                <span>New User</span>
+                <span>{{ __('New User') }}</span>
             </a>
         </div>
         {{-- Filters --}}
@@ -28,9 +28,9 @@
             </x-slot:hidden>
 
             <label class="filter-field">
-                <span>Role</span>
+                <span>{{ __('Role') }}</span>
                 <select name="role">
-                    <option value="">All roles</option>
+                    <option value="">{{ __('All roles') }}</option>
                     @foreach ($roles as $role)
                         <option value="{{ $role->name }}" @selected(request('role') === $role->name)>
                             {{ ucfirst($role->name) }}
@@ -40,12 +40,12 @@
             </label>
 
             <label class="filter-field">
-                <span>Created from</span>
+                <span>{{ __('Created from') }}</span>
                 <input type="date" name="date_from" value="{{ request('date_from') }}">
             </label>
 
             <label class="filter-field">
-                <span>Created to</span>
+                <span>{{ __('Created to') }}</span>
                 <input type="date" name="date_to" value="{{ request('date_to') }}">
             </label>
         </x-filter-card>
@@ -57,7 +57,7 @@
                         <x-per-page-selector :current="$perPage" />
                     </x-slot:left>
                     <x-slot:right>
-                        <x-search-input name="search" placeholder="Search users..." />
+                        <x-search-input name="search" placeholder="{{ __('Search users...') }}" />
                     </x-slot:right>
                 </x-table-toolbar>
             </x-slot:toolbar>
@@ -65,11 +65,11 @@
             <table class="premium-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>User</th>
-                        <th>Roles</th>
-                        <th>Created At</th>
-                        <th class="text-end">Actions</th>
+                        <th>{{ __('ID') }}</th>
+                        <th>{{ __('User') }}</th>
+                        <th>{{ __('Roles') }}</th>
+                        <th>{{ __('Created At') }}</th>
+                        <th class="text-end">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -103,7 +103,7 @@
                                     @forelse ($user->roles as $role)
                                         <span class="status-pill">{{ $role->name }}</span>
                                     @empty
-                                        <span class="empty-pill">No role</span>
+                                        <span class="empty-pill">{{ __('No role') }}</span>
                                     @endforelse
                                 </div>
                             </td>
@@ -117,7 +117,7 @@
                                         <a href="{{ route('admin.users.edit', $user->id) }}"
                                             class="table-actions__item table-actions__item--edit" role="menuitem">
                                             <i class="fa-solid fa-pen"></i>
-                                            <span>Edit</span>
+                                            <span>{{ __('Edit') }}</span>
                                         </a>
 
                                         @can('delete users')
@@ -126,7 +126,7 @@
                                                 data-delete-action="{{ route('admin.users.destroy', $user->id) }}"
                                                 data-delete-name="{{ $user->name }}">
                                                 <i class="fa-solid fa-trash"></i>
-                                                <span>Delete</span>
+                                                <span>{{ __('Delete') }}</span>
                                             </button>
                                         @endcan
                                     </x-table-actions>
@@ -138,8 +138,8 @@
                             <td colspan="5">
                                 <x-admin.empty-state
                                     icon="fa-solid fa-users"
-                                    title="No users found"
-                                    message="Try a different search term or clear the current filters."
+                                    title="{{ __('No users found') }}"
+                                    message="{{ __('Try a different search term or clear the current filters.') }}"
                                 />
                             </td>
                         </tr>
@@ -148,13 +148,13 @@
             </table>
 
             <x-slot:footer>
-                <x-table-footer :paginator="$users" label="users" />
+                <x-table-footer :paginator="$users" label="{{ __('users') }}" />
             </x-slot:footer>
         </x-admin.table-card>
 
         <x-delete-confirm-modal
             id="deleteUserModal"
-            title="Delete this user?"
+            title="{{ __('Delete this user?') }}"
         />
     </div>
 

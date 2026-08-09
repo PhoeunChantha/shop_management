@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Restock</p>
+            <p class="header-kicker mb-1">{{ __('Restock') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('New Supplier') }}</h2>
         </div>
     </x-slot>

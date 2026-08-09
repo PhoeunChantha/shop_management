@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Sales</p>
+            <p class="header-kicker mb-1">{{ __('Sales') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">
                 {{ __('Orders') }}
             </h2>
@@ -11,19 +11,19 @@
     <div class="admin-page">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Order table</p>
-                <h3>All Orders</h3>
+                <p class="section-kicker">{{ __('Order table') }}</p>
+                <h3>{{ __('All Orders') }}</h3>
             </div>
         </div>
 
         {{-- KPI stat bar --}}
         <div class="order-stats">
             @php($cards = [
-                ['label' => 'Revenue', 'value' => '$' . number_format($stats['revenue'], 2), 'icon' => 'fa-sack-dollar', 'tone' => 'emerald'],
-                ['label' => 'Orders', 'value' => number_format($stats['orders']), 'icon' => 'fa-receipt', 'tone' => 'blue'],
-                ['label' => 'Pending', 'value' => number_format($stats['pending']), 'icon' => 'fa-clock', 'tone' => 'amber'],
-                ['label' => 'Unfulfilled', 'value' => number_format($stats['unfulfilled']), 'icon' => 'fa-box-open', 'tone' => 'rose'],
-                ['label' => 'Avg. order value', 'value' => '$' . number_format($stats['aov'], 2), 'icon' => 'fa-chart-line', 'tone' => 'violet'],
+                ['label' => __('Revenue'), 'value' => money($stats['revenue']), 'icon' => 'fa-sack-dollar', 'tone' => 'emerald'],
+                ['label' => __('Orders'), 'value' => number_format($stats['orders']), 'icon' => 'fa-receipt', 'tone' => 'blue'],
+                ['label' => __('Pending'), 'value' => number_format($stats['pending']), 'icon' => 'fa-clock', 'tone' => 'amber'],
+                ['label' => __('Unfulfilled'), 'value' => number_format($stats['unfulfilled']), 'icon' => 'fa-box-open', 'tone' => 'rose'],
+                ['label' => __('Avg. order value'), 'value' => money($stats['aov']), 'icon' => 'fa-chart-line', 'tone' => 'violet'],
             ])
             @foreach ($cards as $c)
                 <div class="order-stat">
@@ -45,26 +45,26 @@
                 <input type="hidden" name="per_page" value="{{ $perPage }}">
             </x-slot:hidden>
 
-            <x-select name="status" size="sm" label="Status" :value="request('status')" placeholder="Any status"
+            <x-select name="status" size="sm" :label="__('Status')" :value="request('status')" :placeholder="__('Any status')"
                 :options="\App\Enums\OrderStatus::options()" />
 
-            <x-select name="fulfillment_status" size="sm" label="Fulfillment" :value="request('fulfillment_status')" placeholder="Any fulfillment"
+            <x-select name="fulfillment_status" size="sm" :label="__('Fulfillment')" :value="request('fulfillment_status')" :placeholder="__('Any fulfillment')"
                 :options="\App\Enums\FulfillmentStatus::options()" />
 
-            <x-select name="payment_status" size="sm" label="Payment" :value="request('payment_status')" placeholder="Any payment"
+            <x-select name="payment_status" size="sm" :label="__('Payment')" :value="request('payment_status')" :placeholder="__('Any payment')"
                 :options="\App\Enums\PaymentStatus::options()" />
 
-            <x-select name="customer" size="sm" label="Customer" :value="request('customer')" placeholder="Any customer"
+            <x-select name="customer" size="sm" :label="__('Customer')" :value="request('customer')" :placeholder="__('Any customer')"
                 :options="$customers" searchable />
 
-            <x-select name="price" size="sm" label="Price" :value="request('price')" placeholder="Any price"
+            <x-select name="price" size="sm" :label="__('Price')" :value="request('price')" :placeholder="__('Any price')"
                 :options="$priceRanges" />
 
             <div class="form-field">
-                <label>Date range</label>
+                <label>{{ __('Date range') }}</label>
                 <div class="daterange-control">
                     <i class="fa-regular fa-calendar"></i>
-                    <input type="text" class="form-input" data-daterange placeholder="Any date"
+                    <input type="text" class="form-input" data-daterange placeholder="{{ __('Any date') }}"
                         readonly autocomplete="off"
                         value="{{ request('date_from') && request('date_to') ? \Illuminate\Support\Carbon::parse(request('date_from'))->format('M d, Y') . ' – ' . \Illuminate\Support\Carbon::parse(request('date_to'))->format('M d, Y') : '' }}">
                 </div>
@@ -80,7 +80,7 @@
                         <x-per-page-selector :current="$perPage" />
                     </x-slot:left>
                     <x-slot:right>
-                        <x-search-input name="search" placeholder="Search order #, name or email..." />
+                        <x-search-input name="search" :placeholder="__('Search order #, name or email...')" />
                     </x-slot:right>
                 </x-table-toolbar>
             </x-slot:toolbar>
@@ -88,15 +88,15 @@
             <table class="dash-table">
                     <thead>
                         <tr>
-                            <th>Order</th>
-                            <th>Customer</th>
-                            <th style="width:80px;">Items</th>
-                            <th>Total</th>
-                            <th>Payment</th>
-                            <th>Fulfillment</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                            <th class="text-end" style="width:96px;">Actions</th>
+                            <th>{{ __('Order') }}</th>
+                            <th>{{ __('Customer') }}</th>
+                            <th style="width:80px;">{{ __('Items') }}</th>
+                            <th>{{ __('Total') }}</th>
+                            <th>{{ __('Payment') }}</th>
+                            <th>{{ __('Fulfillment') }}</th>
+                            <th>{{ __('Status') }}</th>
+                            <th>{{ __('Date') }}</th>
+                            <th class="text-end" style="width:96px;">{{ __('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -115,7 +115,7 @@
                                     </div>
                                 </td>
                                 <td style="font-variant-numeric: tabular-nums;">{{ (int) $order->details_sum_quantity }}</td>
-                                <td class="dash-table__amt">${{ number_format($order->grand_total, 2) }}</td>
+                                <td class="dash-table__amt">{{ money($order->grand_total) }}</td>
                                 <td>
                                     <span class="status-chip {{ $order->payment_status->badge() }}">{{ $order->payment_status->label() }}</span>
                                     <div class="orders-pay__method">
@@ -125,7 +125,7 @@
                                 <td>
                                     <span class="status-chip {{ $order->fulfillment_status->badge() }}">{{ $order->fulfillment_status->label() }}</span>
                                     <div class="orders-pay__method">
-                                        <i class="fa-solid fa-truck-fast"></i>{{ $order->carrier ?: ($order->tracking_number ? 'Tracking added' : 'No carrier') }}
+                                        <i class="fa-solid fa-truck-fast"></i>{{ $order->carrier ?: ($order->tracking_number ? __('Tracking added') : __('No carrier')) }}
                                     </div>
                                 </td>
                                 <td><span class="status-chip {{ $order->status->badge() }}">{{ $order->status->label() }}</span></td>
@@ -135,15 +135,15 @@
                                         <x-table-actions>
                                             <a href="{{ route('admin.orders.show', $order->id) }}"
                                                 class="table-actions__item table-actions__item--edit" role="menuitem">
-                                                <i class="fa-solid fa-eye"></i><span>View</span>
+                                                <i class="fa-solid fa-eye"></i><span>{{ __('View') }}</span>
                                             </a>
                                             <a href="{{ route('admin.orders.invoice', $order->id) }}" target="_blank"
                                                 class="table-actions__item" role="menuitem">
-                                                <i class="fa-solid fa-file-invoice"></i><span>Invoice</span>
+                                                <i class="fa-solid fa-file-invoice"></i><span>{{ __('Invoice') }}</span>
                                             </a>
                                             <a href="{{ route('admin.orders.packing-slip', $order->id) }}" target="_blank"
                                                 class="table-actions__item" role="menuitem">
-                                                <i class="fa-solid fa-box-open"></i><span>Packing slip</span>
+                                                <i class="fa-solid fa-box-open"></i><span>{{ __('Packing slip') }}</span>
                                             </a>
                                         </x-table-actions>
                                     </div>
@@ -154,8 +154,8 @@
                                 <td colspan="9">
                                     <x-admin.empty-state
                                         icon="fa-solid fa-receipt"
-                                        title="No orders found"
-                                        message="Orders will appear here once customers check out."
+                                        :title="__('No orders found')"
+                                        :message="__('Orders will appear here once customers check out.')"
                                     />
                                 </td>
                             </tr>
@@ -164,7 +164,7 @@
             </table>
 
             <x-slot:footer>
-                <x-table-footer :paginator="$orders" label="orders" />
+                <x-table-footer :paginator="$orders" :label="__('orders')" />
             </x-slot:footer>
         </x-admin.table-card>
     </div>

@@ -1,34 +1,34 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Sales</p>
+            <p class="header-kicker mb-1">{{ __('Sales') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('Returns & Refunds') }}</h2>
         </div>
     </x-slot>
 
     <div class="admin-page">
         <div class="return-stat-strip">
-            <div class="return-stat"><span>Total returns</span><strong>{{ number_format($stats['total']) }}</strong></div>
-            <div class="return-stat"><span>Requested</span><strong>{{ number_format($stats['requested']) }}</strong></div>
-            <div class="return-stat return-stat--active"><span>In progress</span><strong>{{ number_format($stats['approved']) }}</strong></div>
-            <div class="return-stat"><span>Refunded</span><strong>${{ number_format($stats['refunds'], 2) }}</strong></div>
+            <div class="return-stat"><span>{{ __('Total returns') }}</span><strong>{{ number_format($stats['total']) }}</strong></div>
+            <div class="return-stat"><span>{{ __('Requested') }}</span><strong>{{ number_format($stats['requested']) }}</strong></div>
+            <div class="return-stat return-stat--active"><span>{{ __('In progress') }}</span><strong>{{ number_format($stats['approved']) }}</strong></div>
+            <div class="return-stat"><span>{{ __('Refunded') }}</span><strong>${{ number_format($stats['refunds'], 2) }}</strong></div>
         </div>
 
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Support workflow</p>
-                <h3>All Return Requests</h3>
+                <p class="section-kicker">{{ __('Support workflow') }}</p>
+                <h3>{{ __('All Return Requests') }}</h3>
             </div>
             <a href="{{ route('admin.returns.create') }}" class="premium-button premium-button--dark">
-                <i class="fa-solid fa-plus"></i><span>New Return</span>
+                <i class="fa-solid fa-plus"></i><span>{{ __('New Return') }}</span>
             </a>
         </div>
 
         @include('admin.saved-views._bar', ['scope' => 'returns', 'icon' => 'fa-rotate-left', 'color' => '#dc2626'])
 
         <x-filter-card :action="route('admin.returns.index')" class="return-filter-card">
-            <x-select name="status" size="sm" :value="request('status')" placeholder="Any return status" :options="\App\Models\ReturnRequest::STATUSES" />
-            <x-select name="refund_status" size="sm" :value="request('refund_status')" placeholder="Any refund status" :options="\App\Models\ReturnRequest::REFUND_STATUSES" />
+            <x-select name="status" size="sm" :value="request('status')" placeholder="{{ __('Any return status') }}" :options="\App\Models\ReturnRequest::STATUSES" />
+            <x-select name="refund_status" size="sm" :value="request('refund_status')" placeholder="{{ __('Any refund status') }}" :options="\App\Models\ReturnRequest::REFUND_STATUSES" />
         </x-filter-card>
 
         <x-admin.table-card class="return-table-card">
@@ -36,7 +36,7 @@
                 <x-table-toolbar>
                     <x-slot:left><x-per-page-selector :current="$perPage" /></x-slot:left>
                     <x-slot:right>
-                        <x-search-input name="search" placeholder="Search return, order or customer..." />
+                        <x-search-input name="search" placeholder="{{ __('Search return, order or customer...') }}" />
                     </x-slot:right>
                 </x-table-toolbar>
             </x-slot:toolbar>
@@ -44,14 +44,14 @@
             <table class="premium-table">
                 <thead>
                     <tr>
-                        <th>Return</th>
-                        <th>Order</th>
-                        <th>Customer</th>
-                        <th>Items</th>
-                        <th>Requested</th>
-                        <th>Refund</th>
-                        <th>Status</th>
-                        <th class="text-end">Actions</th>
+                        <th>{{ __('Return') }}</th>
+                        <th>{{ __('Order') }}</th>
+                        <th>{{ __('Customer') }}</th>
+                        <th>{{ __('Items') }}</th>
+                        <th>{{ __('Requested') }}</th>
+                        <th>{{ __('Refund') }}</th>
+                        <th>{{ __('Status') }}</th>
+                        <th class="text-end">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -79,15 +79,15 @@
                             <td><span class="status-chip {{ $return->statusBadge() }}">{{ $return->statusLabel() }}</span></td>
                             <td class="text-end">
                                 <a href="{{ route('admin.returns.show', $return) }}" class="ghost-button ghost-button--panel">
-                                    <i class="fa-solid fa-eye"></i><span>View</span>
+                                    <i class="fa-solid fa-eye"></i><span>{{ __('View') }}</span>
                                 </a>
                             </td>
                         </tr>
                     @empty
                         <tr>
                             <td colspan="8">
-                                <x-admin.empty-state icon="fa-solid fa-rotate-left" title="No returns found"
-                                    message="Create a return request from an order when support needs refund tracking." />
+                                <x-admin.empty-state icon="fa-solid fa-rotate-left" title="{{ __('No returns found') }}"
+                                    message="{{ __('Create a return request from an order when support needs refund tracking.') }}" />
                             </td>
                         </tr>
                     @endforelse
@@ -95,7 +95,7 @@
             </table>
 
             <x-slot:footer>
-                <x-table-footer :paginator="$returns" label="returns" />
+                <x-table-footer :paginator="$returns" label="{{ __('returns') }}" />
             </x-slot:footer>
         </x-admin.table-card>
     </div>

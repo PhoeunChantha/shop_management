@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Product Management</p>
+            <p class="header-kicker mb-1">{{ __('Product Management') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">
                 {{ __('Brands') }}
             </h2>
@@ -11,13 +11,13 @@
     <div class="admin-page">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Brand table</p>
-                <h3>All Brands</h3>
+                <p class="section-kicker">{{ __('Brand table') }}</p>
+                <h3>{{ __('All Brands') }}</h3>
             </div>
             <button type="button" class="premium-button premium-button--dark"
                 onclick="openBrandModal({ mode: 'create' })">
                 <i class="fa-solid fa-plus"></i>
-                <span>New Brand</span>
+                <span>{{ __('New Brand') }}</span>
             </button>
         </div>
 
@@ -32,7 +32,7 @@
                         <x-per-page-selector :current="$perPage" />
                     </x-slot:left>
                     <x-slot:right>
-                        <x-search-input name="search" placeholder="Search brands..." />
+                        <x-search-input name="search" placeholder="{{ __('Search brands...') }}" />
                     </x-slot:right>
                 </x-table-toolbar>
             </x-slot:toolbar>
@@ -42,15 +42,15 @@
                     <tr>
                         <th class="bulk-check-col">
                             <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
-                                :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+                                :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="{{ __('Select all') }}">
                         </th>
-                        <th style="width:70px;">ID</th>
-                        <th style="width:80px;">Logo</th>
-                        <th style="width:26%;">Brand Name</th>
-                        <th>Slug</th>
-                        <th style="width:110px;">Products</th>
-                        <th style="width:120px;">Status</th>
-                        <th class="text-end" style="width:150px;">Actions</th>
+                        <th style="width:70px;">{{ __('ID') }}</th>
+                        <th style="width:80px;">{{ __('Logo') }}</th>
+                        <th style="width:26%;">{{ __('Brand Name') }}</th>
+                        <th>{{ __('Slug') }}</th>
+                        <th style="width:110px;">{{ __('Products') }}</th>
+                        <th style="width:120px;">{{ __('Status') }}</th>
+                        <th class="text-end" style="width:150px;">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -58,7 +58,7 @@
                         <tr>
                             <td class="bulk-check-col">
                                 <input type="checkbox" class="bulk-check" data-row-check value="{{ $brand->id }}"
-                                    x-model="selected" aria-label="Select row">
+                                    x-model="selected" aria-label="{{ __('Select row') }}">
                             </td>
                             <td>
                                 <span class="muted-id">#{{ $brand->id }}</span>
@@ -96,7 +96,7 @@
                                             data-image="{{ $brand->image ? Imageurl($brand->image, 'brands') : '' }}"
                                             onclick="openBrandModal({ mode: 'edit', action: this.dataset.action, name: this.dataset.name, status: this.dataset.status, image: this.dataset.image || null })">
                                             <i class="fa-solid fa-pen"></i>
-                                            <span>Edit</span>
+                                            <span>{{ __('Edit') }}</span>
                                         </button>
 
                                         <button type="button" class="table-actions__item table-actions__item--danger"
@@ -104,7 +104,7 @@
                                             data-delete-action="{{ route('admin.brands.destroy', $brand->id) }}"
                                             data-delete-name="{{ $brand->name }}">
                                             <i class="fa-solid fa-trash"></i>
-                                            <span>Delete</span>
+                                            <span>{{ __('Delete') }}</span>
                                         </button>
                                     </x-table-actions>
                                 </div>
@@ -115,8 +115,8 @@
                             <td colspan="8">
                                 <x-admin.empty-state
                                     icon="fa-solid fa-tags"
-                                    title="No brands found"
-                                    message="Create your first brand or adjust the current search."
+                                    title="{{ __('No brands found') }}"
+                                    message="{{ __('Create your first brand or adjust the current search.') }}"
                                 />
                             </td>
                         </tr>
@@ -125,12 +125,12 @@
             </table>
 
             <x-slot:footer>
-                <x-table-footer :paginator="$brands" label="brands" />
+                <x-table-footer :paginator="$brands" label="{{ __('brands') }}" />
             </x-slot:footer>
         </x-admin.table-card>
 
-        <x-delete-confirm-modal id="deleteBrandModal" title="Delete this brand?"
-            message-after="from the system. This cannot be undone." />
+        <x-delete-confirm-modal id="deleteBrandModal" title="{{ __('Delete this brand?') }}"
+            message-after="{{ __('from the system. This cannot be undone.') }}" />
 
         @include('admin.brands._modal')
     </div>

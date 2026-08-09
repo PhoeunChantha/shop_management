@@ -141,10 +141,10 @@
         {{-- COLLECTIONS --}}
         <section class="ut-wrap" style="margin-top:96px">
             <div class="ut-sec-head" data-reveal>
-                <div><span class="ut-eyebrow">Curated</span>
-                    <h2 style="margin-top:14px">Featured collections</h2>
+                <div><span class="ut-eyebrow">{{ __('Curated') }}</span>
+                    <h2 style="margin-top:14px">{{ __('Featured collections') }}</h2>
                 </div>
-                <a href="{{ route('frontend.shop.index') }}" class="ut-link">All collections <x-frontend.icon n="arrowR"
+                <a href="{{ route('frontend.shop.index') }}" class="ut-link">{{ __('All collections') }} <x-frontend.icon n="arrowR"
                         :size="16" /></a>
             </div>
             <div class="ut-coll-grid">
@@ -167,7 +167,7 @@
                                 style="font-family:var(--font-head);font-weight:700;font-size:{{ $i === 0 ? '28px' : '18px' }}">
                                 {{ $c['name'] }}</div>
                             <div style="opacity:.8;font-size:13px;margin-top:2px">{{ $c['sub'] }} ·
-                                {{ $c['count'] }} styles</div>
+                                {{ $c['count'] }} {{ __('styles') }}</div>
                         </div>
                         <span class="icon-btn ut-coll-arrow"
                             style="position:absolute;top:14px;right:14px;background:#fff"><x-frontend.icon n="arrowR"
@@ -198,11 +198,11 @@
                 <div class="ut-row"
                     style="justify-content:space-between;flex-wrap:wrap;gap:18px;margin-bottom:28px;position:relative">
                     <div><span class="ut-eyebrow" style="color:var(--accent)"><x-frontend.icon n="flame" :size="13"
-                                style="vertical-align:-2px" /> Flash sale</span>
-                        <h2 style="color:#fff;font-size:clamp(26px,3vw,38px);margin-top:8px">{{ $flashDeal['title'] ?? 'Up to 40% off - ends soon' }}</h2>
+                                style="vertical-align:-2px" /> {{ __('Flash sale') }}</span>
+                        <h2 style="color:#fff;font-size:clamp(26px,3vw,38px);margin-top:8px">{{ $flashDeal['title'] ?? __('Up to 40% off - ends soon') }}</h2>
                     </div>
                     <div class="ut-row" style="gap:10px">
-                        @foreach ([['data-h', 'hrs'], ['data-m', 'min'], ['data-s', 'sec']] as $i => [$attr, $lab])
+                        @foreach ([['data-h', __('hrs')], ['data-m', __('min')], ['data-s', __('sec')]] as $i => [$attr, $lab])
                             <div
                                 style="text-align:center;background:rgba(255,255,255,.1);border-radius:14px;padding:12px 14px;min-width:64px">
                                 <div class="mono" style="font-size:28px;font-weight:700;font-variant-numeric:tabular-nums"
@@ -266,7 +266,7 @@
         <section class="ut-wrap" style="margin-top:96px">
             <div class="ut-sec-head ut-testimonial-head" data-reveal>
                 <div><span class="ut-eyebrow">{{ $reviewMeta['eyebrow'] ?? 'Loved by 50,000+' }}</span>
-                    <h2 style="margin-top:14px">What the community says</h2>
+                    <h2 style="margin-top:14px">{{ __('What the community says') }}</h2>
                 </div>
                 <div class="ut-testimonial-controls" aria-label="Review slider controls"><button type="button"
                         data-testimonial-action="prev" aria-label="Previous reviews"><x-frontend.icon n="arrowL"
@@ -279,7 +279,7 @@
                         <article class="ut-card ut-testimonial-card">
                             <div class="ut-row" style="justify-content:space-between"><x-frontend.stars
                                     :value="$r['rating']" /><span class="ut-tag ut-tag-success"><x-frontend.icon n="checkC"
-                                        :size="12" style="vertical-align:-1px" /> Verified</span></div>
+                                        :size="12" style="vertical-align:-1px" /> {{ __('Verified') }}</span></div>
                             <p>&quot;{{ $r['text'] }}&quot;</p>
                             <div class="ut-row" style="gap:11px;margin-top:auto"><span
                                     class="ut-testimonial-avatar">{{ $r['name'][0] }}</span>
@@ -305,8 +305,8 @@
         <section class="ut-wrap" style="margin-top:96px">
             <div class="ut-sec-head" data-reveal>
                 <div><span class="ut-eyebrow">{{ $instagramHandle ?? '@tshirtshop' }}</span>
-                    <h2 style="margin-top:14px">Tag us to be featured</h2>
-                </div><a href="#" class="ut-link">Follow <x-frontend.icon n="arrowR" :size="16" /></a>
+                    <h2 style="margin-top:14px">{{ __('Tag us to be featured') }}</h2>
+                </div><a href="#" class="ut-link">{{ __('Follow') }} <x-frontend.icon n="arrowR" :size="16" /></a>
             </div>
             <div class="ut-insta">
                 @foreach ($instagramTiles as $tile)
@@ -338,7 +338,7 @@
                     style="display:flex;gap:10px;max-width:460px;margin:0 auto;position:relative">
                     @csrf
                     <input class="ut-input" name="email" type="email" value="{{ old('email') }}" placeholder="you@email.com" required style="border:0;flex:1"><button
-                        class="ut-btn ut-btn-ink" type="submit" style="background:var(--ink)">Subscribe</button></form>
+                        class="ut-btn ut-btn-ink" type="submit" style="background:var(--ink)">{{ __('Subscribe') }}</button></form>
                 @error('email')<p style="color:#fca5a5;font-size:13px;margin-top:10px">{{ $message }}</p>@enderror
             </div>
         </section>

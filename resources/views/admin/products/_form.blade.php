@@ -83,7 +83,7 @@
 
             {{-- Language tabs — drive all translatable fields (Settings → Languages) --}}
             <div class="lang-tabs">
-                <span class="lang-tabs__label">Content language</span>
+                <span class="lang-tabs__label">{{ __('Content language') }}</span>
                 <div class="lang-tabs__buttons">
                     @foreach ($locales as $code => $label)
                         <button type="button" class="lang-tab" :class="{ 'is-active': lang === '{{ $code }}' }"
@@ -99,12 +99,12 @@
             <section class="form-section">
                 <div class="form-section__head">
                     <span class="form-section__icon"><i class="fa-solid fa-circle-info"></i></span>
-                    <div><h4>Basic Information</h4><p>Customer-facing content and primary merchandising image.</p></div>
-                    <span class="form-section__badge">Required</span>
+                    <div><h4>{{ __('Basic Information') }}</h4><p>{{ __('Customer-facing content and primary merchandising image.') }}</p></div>
+                    <span class="form-section__badge">{{ __('Required') }}</span>
                 </div>
                 <div class="form-section__body grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="md:col-span-1 product-thumbnail-upload">
-                        <x-image-upload name="thumbnail" label="Product thumbnail"
+                        <x-image-upload name="thumbnail" label="{{ __('Product thumbnail') }}"
                             folder="products"
                             :value="\App\Helpers\ImageManager::path($product->thumbnail ?? null, 'products')"
                             accept="image/*" help="" />
@@ -117,8 +117,8 @@
                                 <input type="text" name="name[{{ $code }}]" class="form-input"
                                     value="{{ old("name.$code", $isEdit ? $product->getTranslation('name', $code, false) : '') }}"
                                     @if ($code === $primaryLang) required @endif
-                                    placeholder="e.g. Heavyweight Oversized Tee">
-                                <p class="form-help">Keep it short and searchable. The primary language is required.</p>
+                                    placeholder="{{ __('e.g. Heavyweight Oversized Tee') }}">
+                                <p class="form-help">{{ __('Keep it short and searchable. The primary language is required.') }}</p>
                                 @error("name.$code")<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                             </div>
                         @endforeach
@@ -129,8 +129,8 @@
                                 <label>Short Description ({{ strtoupper($code) }})</label>
                                 <input type="text" name="short_description[{{ $code }}]" class="form-input" maxlength="500"
                                     value="{{ old("short_description.$code", $isEdit ? $product->getTranslation('short_description', $code, false) : '') }}"
-                                    placeholder="One-line summary shown on listings">
-                                <p class="form-help">Useful for collection cards, quick previews and search snippets.</p>
+                                    placeholder="{{ __('One-line summary shown on listings') }}">
+                                <p class="form-help">{{ __('Useful for collection cards, quick previews and search snippets.') }}</p>
                                 @error("short_description.$code")<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                             </div>
                         @endforeach
@@ -141,8 +141,8 @@
                         <div class="form-field md:col-span-3" x-show="lang === '{{ $code }}'" x-cloak>
                             <label>Description ({{ strtoupper($code) }})</label>
                             <textarea name="description[{{ $code }}]" class="form-input" rows="5"
-                                placeholder="Full product description...">{{ old("description.$code", $isEdit ? $product->getTranslation('description', $code, false) : '') }}</textarea>
-                            <p class="form-help">Include fit, materials, care, and what makes this product different.</p>
+                                placeholder="{{ __('Full product description...') }}">{{ old("description.$code", $isEdit ? $product->getTranslation('description', $code, false) : '') }}</textarea>
+                            <p class="form-help">{{ __('Include fit, materials, care, and what makes this product different.') }}</p>
                             @error("description.$code")<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                     @endforeach
@@ -153,7 +153,7 @@
             <section class="form-section">
                 <div class="form-section__head">
                     <span class="form-section__icon"><i class="fa-solid fa-images"></i></span>
-                    <div><h4>Product Gallery</h4><p>Upload alternate angles, detail shots and campaign images.</p></div>
+                    <div><h4>{{ __('Product Gallery') }}</h4><p>{{ __('Upload alternate angles, detail shots and campaign images.') }}</p></div>
                 </div>
                 <div class="form-section__body">
                     <x-admin::multiple-image-upload name="images" :existing="$product->images ?? null" mediaName="images_media" />
@@ -165,8 +165,8 @@
             <section class="form-section">
                 <div class="form-section__head">
                     <span class="form-section__icon"><i class="fa-solid fa-tags"></i></span>
-                    <div><h4>Pricing</h4><p>Selling price, margin inputs and optional promotion.</p></div>
-                    <span class="form-section__badge">Storefront</span>
+                    <div><h4>{{ __('Pricing') }}</h4><p>{{ __('Selling price, margin inputs and optional promotion.') }}</p></div>
+                    <span class="form-section__badge">{{ __('Storefront') }}</span>
                 </div>
                 <div class="form-section__body"
                     x-data="{
@@ -185,26 +185,26 @@
                             <label for="price">Selling Price ($) <span class="text-red-500">*</span></label>
                             <input type="number" step="0.01" min="0" name="price" id="price" class="form-input"
                                 x-model="price" value="{{ old('price', $product->price ?? '') }}" required>
-                            <p class="form-help">Base price used when a variant does not override it.</p>
+                            <p class="form-help">{{ __('Base price used when a variant does not override it.') }}</p>
                             @error('price')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-field">
                             <label for="cost_price">Cost Price ($)</label>
                             <input type="number" step="0.01" min="0" name="cost_price" id="cost_price" class="form-input"
                                 value="{{ old('cost_price', $product->cost_price ?? '') }}" placeholder="0.00">
-                            <p class="form-help">Internal cost for margin tracking.</p>
+                            <p class="form-help">{{ __('Internal cost for margin tracking.') }}</p>
                             @error('cost_price')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-field">
-                            <label for="discount_type">Discount Type</label>
+                            <label for="discount_type">{{ __('Discount Type') }}</label>
                             <select name="discount_type" id="discount_type" class="form-input" x-model="type">
-                                <option value="">None</option>
+                                <option value="">{{ __('None') }}</option>
                                 <option value="fixed">Fixed ($)</option>
-                                <option value="percentage">Percentage (%)</option>
+                                <option value="percentage">{{ __('Percentage (%)') }}</option>
                             </select>
                         </div>
                         <div class="form-field">
-                            <label for="discount_amount">Discount Amount</label>
+                            <label for="discount_amount">{{ __('Discount Amount') }}</label>
                             <input type="number" step="0.01" min="0" name="discount_amount" id="discount_amount"
                                 class="form-input" x-model="amount" :disabled="type === ''"
                                 value="{{ old('discount_amount', $product->discount_amount ?? '') }}">
@@ -212,7 +212,7 @@
                         </div>
                     </div>
                     <div class="price-preview">
-                        <span>Final price after discount</span>
+                        <span>{{ __('Final price after discount') }}</span>
                         <strong x-text="'$' + final"></strong>
                     </div>
                 </div>
@@ -234,8 +234,8 @@
                 })">
                 <div class="form-section__head">
                     <span class="form-section__icon"><i class="fa-solid fa-layer-group"></i></span>
-                    <div><h4>Variants &amp; Stock</h4><p>Choose a product type, then define stock — a single SKU or attribute-based variants.</p></div>
-                    <span class="form-section__badge">Inventory</span>
+                    <div><h4>{{ __('Variants &amp; Stock') }}</h4><p>{{ __('Choose a product type, then define stock — a single SKU or attribute-based variants.') }}</p></div>
+                    <span class="form-section__badge">{{ __('Inventory') }}</span>
                 </div>
                 <div class="form-section__body d-flex flex-column gap-4">
 
@@ -253,9 +253,9 @@
                     {{-- Single product --}}
                     <div class="variant-single-grid" x-show="type === 'single'" x-cloak>
                         <div class="form-field">
-                            <label>SKU</label>
+                            <label>{{ __('SKU') }}</label>
                             <input type="text" class="form-input" name="sku" x-model="single.sku"
-                                :disabled="type !== 'single'" placeholder="Optional, must be unique">
+                                :disabled="type !== 'single'" placeholder="{{ __('Optional, must be unique') }}">
                             @error('sku')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-field">
@@ -264,7 +264,7 @@
                             @error('stock')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-field">
-                            <label>Low Stock Alert</label>
+                            <label>{{ __('Low Stock Alert') }}</label>
                             <input type="number" min="0" class="form-input" name="low_stock_alert" x-model="single.low_stock_alert" :disabled="type !== 'single'">
                             @error('low_stock_alert')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
@@ -277,19 +277,19 @@
                         <div class="attr-panel">
                             <div class="attr-panel__head">
                                 <div>
-                                    <h5>Attributes</h5>
-                                    <p>Add attributes like Size or Color, choose their values, then generate variants.</p>
+                                    <h5>{{ __('Attributes') }}</h5>
+                                    <p>{{ __('Add attributes like Size or Color, choose their values, then generate variants.') }}</p>
                                 </div>
                                 <button type="button" class="attr-add-btn" @click="openAdd()">
-                                    <i class="fa-solid fa-plus"></i> Add Attribute
+                                    <i class="fa-solid fa-plus"></i> {{ __('Add Attribute') }}
                                 </button>
                             </div>
 
                             <template x-if="selected.length === 0">
                                 <div class="attr-empty">
                                     <i class="fa-solid fa-diagram-project"></i>
-                                    <strong>No attributes selected</strong>
-                                    <span>Add your first attribute to start building variants.</span>
+                                    <strong>{{ __('No attributes selected') }}</strong>
+                                    <span>{{ __('Add your first attribute to start building variants.') }}</span>
                                 </div>
                             </template>
 
@@ -310,8 +310,8 @@
                                             </div>
                                         </div>
                                         <div class="attr-selected-card__actions">
-                                            <button type="button" class="attr-mini-btn" @click="openEdit(sel)"><i class="fa-solid fa-pen"></i> Edit</button>
-                                            <button type="button" class="attr-mini-btn attr-mini-btn--danger" @click="removeAttribute(sel.attributeId)"><i class="fa-solid fa-xmark"></i> Remove</button>
+                                            <button type="button" class="attr-mini-btn" @click="openEdit(sel)"><i class="fa-solid fa-pen"></i> {{ __('Edit') }}</button>
+                                            <button type="button" class="attr-mini-btn attr-mini-btn--danger" @click="removeAttribute(sel.attributeId)"><i class="fa-solid fa-xmark"></i> {{ __('Remove') }}</button>
                                         </div>
                                     </div>
                                 </template>
@@ -325,7 +325,7 @@
                                 <span x-text="variants.length ? 'Regenerate Variants' : 'Generate Variants'"></span>
                             </button>
                             <span class="attr-generate-hint" x-show="dirty && variants.length" x-cloak>
-                                <i class="fa-solid fa-triangle-exclamation"></i> Attributes changed — regenerate to update the table.
+                                <i class="fa-solid fa-triangle-exclamation"></i> {{ __('Attributes changed — regenerate to update the table.') }}
                             </span>
                         </div>
 
@@ -334,8 +334,8 @@
                             <div class="variant-view-bar">
                                 <span class="variant-count"><strong x-text="variants.length"></strong> variant<span x-text="variants.length === 1 ? '' : 's'"></span></span>
                                 <div class="variant-view-toggle" x-show="canMatrix()">
-                                    <button type="button" :class="{ 'is-on': view === 'table' }" @click="view = 'table'"><i class="fa-solid fa-table-list"></i> Table</button>
-                                    <button type="button" :class="{ 'is-on': view === 'matrix' }" @click="view = 'matrix'"><i class="fa-solid fa-table-cells"></i> Matrix</button>
+                                    <button type="button" :class="{ 'is-on': view === 'table' }" @click="view = 'table'"><i class="fa-solid fa-table-list"></i> {{ __('Table') }}</button>
+                                    <button type="button" :class="{ 'is-on': view === 'matrix' }" @click="view = 'matrix'"><i class="fa-solid fa-table-cells"></i> {{ __('Matrix') }}</button>
                                 </div>
                             </div>
 
@@ -344,8 +344,8 @@
                                 <table class="erp-table">
                                     <thead>
                                         <tr>
-                                            <th>Image</th><th>Variant</th><th>SKU</th><th>Barcode</th><th>Price</th>
-                                            <th>Cost</th><th>Stock</th><th>Low</th><th>Status</th><th></th>
+                                            <th>{{ __('Image') }}</th><th>{{ __('Variant') }}</th><th>{{ __('SKU') }}</th><th>{{ __('Barcode') }}</th><th>{{ __('Price') }}</th>
+                                            <th>{{ __('Cost') }}</th><th>{{ __('Stock') }}</th><th>{{ __('Low') }}</th><th>{{ __('Status') }}</th><th></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -354,13 +354,13 @@
                                                 <td>
                                                     <input type="hidden" :name="`variants[${i}][image_existing]`" :value="v.image" :disabled="type !== 'variable'">
                                                     <input type="hidden" :name="`variants[${i}][image_media]`" :value="v.image_media || ''" :disabled="type !== 'variable'">
-                                                    <label class="erp-img" title="Upload variant image">
+                                                    <label class="erp-img" title="{{ __('Upload variant image') }}">
                                                         <template x-if="v.preview"><img :src="v.preview" alt=""></template>
                                                         <template x-if="!v.preview"><i class="fa-regular fa-image"></i></template>
                                                         <input type="file" accept="image/*" class="visually-hidden"
                                                             :name="`variants[${i}][image]`" @change="pickVariantImage($event, v)" :disabled="type !== 'variable'">
                                                     </label>
-                                                    <button type="button" class="variant-media-btn" @click="openVariantMedia(v)" :disabled="type !== 'variable'" title="Choose from media library">
+                                                    <button type="button" class="variant-media-btn" @click="openVariantMedia(v)" :disabled="type !== 'variable'" title="{{ __('Choose from media library') }}">
                                                         <i class="fa-solid fa-photo-film"></i>
                                                     </button>
                                                 </td>
@@ -371,19 +371,19 @@
                                                     <input type="hidden" :name="`variants[${i}][weight]`" :value="v.weight" :disabled="type !== 'variable'">
                                                     <span class="erp-variant-badge" x-text="variantLabel(v)"></span>
                                                 </td>
-                                                <td><input type="text" class="form-input" placeholder="Auto" :name="`variants[${i}][sku]`" x-model="v.sku" :disabled="type !== 'variable'"></td>
+                                                <td><input type="text" class="form-input" placeholder="{{ __('Auto') }}" :name="`variants[${i}][sku]`" x-model="v.sku" :disabled="type !== 'variable'"></td>
                                                 <td><input type="text" class="form-input" placeholder="—" :name="`variants[${i}][barcode]`" x-model="v.barcode" :disabled="type !== 'variable'"></td>
-                                                <td><input type="number" step="0.01" min="0" class="form-input" placeholder="Base" :name="`variants[${i}][price]`" x-model="v.price" :disabled="type !== 'variable'"></td>
+                                                <td><input type="number" step="0.01" min="0" class="form-input" placeholder="{{ __('Base') }}" :name="`variants[${i}][price]`" x-model="v.price" :disabled="type !== 'variable'"></td>
                                                 <td><input type="number" step="0.01" min="0" class="form-input" placeholder="—" :name="`variants[${i}][cost_price]`" x-model="v.cost_price" :disabled="type !== 'variable'"></td>
                                                 <td><input type="number" min="0" class="form-input" :name="`variants[${i}][stock]`" x-model="v.stock" :disabled="type !== 'variable'"></td>
                                                 <td><input type="number" min="0" class="form-input" :name="`variants[${i}][low_stock_alert]`" x-model="v.low_stock_alert" :disabled="type !== 'variable'"></td>
                                                 <td>
                                                     <select class="form-input" :name="`variants[${i}][status]`" x-model="v.status" :disabled="type !== 'variable'">
-                                                        <option value="1">Active</option>
-                                                        <option value="0">Inactive</option>
+                                                        <option value="1">{{ __('Active') }}</option>
+                                                        <option value="0">{{ __('Inactive') }}</option>
                                                     </select>
                                                 </td>
-                                                <td><button type="button" class="erp-row-del" @click="removeVariant(i)" title="Remove"><i class="fa-solid fa-trash"></i></button></td>
+                                                <td><button type="button" class="erp-row-del" @click="removeVariant(i)" title="{{ __('Remove') }}"><i class="fa-solid fa-trash"></i></button></td>
                                             </tr>
                                         </template>
                                     </tbody>
@@ -420,7 +420,7 @@
                                         </template>
                                     </tbody>
                                 </table>
-                                <p class="form-help mt-2">Matrix edits stock only. Switch to Table for SKU, price and status.</p>
+                                <p class="form-help mt-2">{{ __('Matrix edits stock only. Switch to Table for SKU, price and status.') }}</p>
                             </div>
                         </div>
                     </div>
@@ -440,28 +440,28 @@
                                 <div class="attr-modal__head">
                                     <div>
                                         <h3 x-text="modalMode === 'edit' ? 'Edit Attribute' : 'Add Attribute'"></h3>
-                                        <p>Select an attribute and the values this product offers.</p>
+                                        <p>{{ __('Select an attribute and the values this product offers.') }}</p>
                                     </div>
                                     <button type="button" class="form-modal__close" @click="closeModal()"><i class="fa-solid fa-xmark"></i></button>
                                 </div>
                                 <div class="attr-modal__body">
                                     <div class="form-field">
-                                        <label>Attribute</label>
+                                        <label>{{ __('Attribute') }}</label>
                                         <select class="form-input" x-model="draftAttributeId" @change="onDraftAttributeChange()" :disabled="modalMode === 'edit'">
-                                            <option value="">Select attribute…</option>
+                                            <option value="">{{ __('Select attribute…') }}</option>
                                             <template x-for="a in availableAttributes()" :key="a.id">
                                                 <option :value="a.id" x-text="a.name"></option>
                                             </template>
                                         </select>
                                         <template x-if="attributes.length === 0">
-                                            <p class="form-help mt-1">No attributes exist yet — create some under Catalog → Attributes.</p>
+                                            <p class="form-help mt-1">{{ __('No attributes exist yet — create some under Catalog → Attributes.') }}</p>
                                         </template>
                                     </div>
 
                                     <div x-show="draftAttributeId" x-cloak class="attr-modal__values">
                                         <div class="attr-value-search">
                                             <i class="fa-solid fa-magnifying-glass"></i>
-                                            <input type="text" x-model="valueSearch" placeholder="Search values…">
+                                            <input type="text" x-model="valueSearch" placeholder="{{ __('Search values…') }}">
                                         </div>
                                         <div class="attr-check-list">
                                             <template x-for="v in draftValues()" :key="v.id">
@@ -473,15 +473,15 @@
                                                 </label>
                                             </template>
                                             <template x-if="draftAttributeId && draftValues().length === 0">
-                                                <p class="text-sm text-gray-400 p-2">No values match.</p>
+                                                <p class="text-sm text-gray-400 p-2">{{ __('No values match.') }}</p>
                                             </template>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="attr-modal__foot">
-                                    <button type="button" class="modal-cancel" @click="closeModal()">Cancel</button>
+                                    <button type="button" class="modal-cancel" @click="closeModal()">{{ __('Cancel') }}</button>
                                     <button type="button" class="form-submit-button" :disabled="!draftAttributeId || draftValueIds.length === 0" @click="saveModal()">
-                                        <i class="fa-solid fa-check"></i> Save
+                                        <i class="fa-solid fa-check"></i> {{ __('Save') }}
                                     </button>
                                 </div>
                             </div>
@@ -496,15 +496,15 @@
                             <div class="attr-modal product-variant-media-modal">
                                 <div class="attr-modal__head">
                                     <div>
-                                        <h3>Choose Variant Image</h3>
-                                        <p>Select an image from the variant media folder.</p>
+                                        <h3>{{ __('Choose Variant Image') }}</h3>
+                                        <p>{{ __('Select an image from the variant media folder.') }}</p>
                                     </div>
                                     <button type="button" class="form-modal__close" @click="variantMediaOpen = false"><i class="fa-solid fa-xmark"></i></button>
                                 </div>
                                 <div class="attr-modal__body">
                                     <div class="media-picker-panel__search">
                                         <i class="fa-solid fa-magnifying-glass"></i>
-                                        <input type="search" x-model="variantMediaSearch" placeholder="Search variant media">
+                                        <input type="search" x-model="variantMediaSearch" placeholder="{{ __('Search variant media') }}">
                                     </div>
                                     <div class="product-variant-media-grid">
                                         <template x-if="variantMediaLoading">
@@ -537,33 +537,33 @@
                 x-data="{ specs: @js($specRows), add() { this.specs.push({ name: '', value: '' }); }, remove(i) { this.specs.splice(i, 1); if (this.specs.length === 0) this.add(); } }">
                 <div class="form-section__head">
                     <span class="form-section__icon"><i class="fa-solid fa-list-check"></i></span>
-                    <div><h4>Specifications</h4><p>Shipping weight and structured product attributes.</p></div>
+                    <div><h4>{{ __('Specifications') }}</h4><p>{{ __('Shipping weight and structured product attributes.') }}</p></div>
                 </div>
                 <div class="form-section__body">
                     <div class="spec-grid">
                         <div class="form-field">
-                            <label for="weight">Product Weight (kg)</label>
+                            <label for="weight">{{ __('Product Weight (kg)') }}</label>
                             <input type="number" step="0.01" min="0" name="weight" id="weight" class="form-input"
                                 value="{{ old('weight', $product->weight ?? '') }}" placeholder="0.00">
-                            <p class="form-help">Optional shipping weight for fulfillment and carrier estimates.</p>
+                            <p class="form-help">{{ __('Optional shipping weight for fulfillment and carrier estimates.') }}</p>
                             @error('weight')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
 
                         <div class="spec-note">
-                            <strong>Recommended specs</strong>
-                            <span>Material, fit, care instructions, origin, package contents.</span>
+                            <strong>{{ __('Recommended specs') }}</strong>
+                            <span>{{ __('Material, fit, care instructions, origin, package contents.') }}</span>
                         </div>
                     </div>
 
                     <div class="dynamic-field-header mt-4">
-                        <label>Specifications <span class="text-gray-400 font-normal">(e.g. Material → 100% Cotton)</span></label>
-                        <button type="button" class="dynamic-add-button" @click="add()"><i class="fa-solid fa-plus"></i> Add row</button>
+                        <label>Specifications <span class="text-gray-400 font-normal">{{ __('(e.g. Material → 100% Cotton)') }}</span></label>
+                        <button type="button" class="dynamic-add-button" @click="add()"><i class="fa-solid fa-plus"></i> {{ __('Add row') }}</button>
                     </div>
                     <div class="spec-row-list mt-2">
                         <template x-for="(row, i) in specs" :key="i">
                             <div class="spec-row">
-                                <input type="text" class="form-input" x-model="row.name" :name="`specifications[${i}][name]`" placeholder="Name (e.g. Material)">
-                                <input type="text" class="form-input" x-model="row.value" :name="`specifications[${i}][value]`" placeholder="Value (e.g. 100% Cotton)">
+                                <input type="text" class="form-input" x-model="row.name" :name="`specifications[${i}][name]`" placeholder="{{ __('Name (e.g. Material)') }}">
+                                <input type="text" class="form-input" x-model="row.value" :name="`specifications[${i}][value]`" placeholder="{{ __('Value (e.g. 100% Cotton)') }}">
                                 <button type="button" class="dynamic-remove-button" @click="remove(i)"><i class="fa-solid fa-trash"></i></button>
                             </div>
                         </template>
@@ -575,7 +575,7 @@
             <section class="form-section">
                 <div class="form-section__head">
                     <span class="form-section__icon"><i class="fa-solid fa-magnifying-glass-chart"></i></span>
-                    <div><h4>SEO</h4><p>Search engine title and description per language.</p></div>
+                    <div><h4>{{ __('SEO') }}</h4><p>{{ __('Search engine title and description per language.') }}</p></div>
                 </div>
                 <div class="form-section__body d-flex flex-column gap-3">
                     @foreach ($locales as $code => $label)
@@ -583,15 +583,15 @@
                             <label>SEO Title ({{ strtoupper($code) }})</label>
                             <input type="text" name="seo_title[{{ $code }}]" class="form-input" maxlength="255"
                                 value="{{ old("seo_title.$code", $isEdit ? $product->getTranslation('seo_title', $code, false) : '') }}"
-                                placeholder="Meta title">
-                            <p class="form-help">Aim for 50-60 characters. Leave blank to let the product name carry search.</p>
+                                placeholder="{{ __('Meta title') }}">
+                            <p class="form-help">{{ __('Aim for 50-60 characters. Leave blank to let the product name carry search.') }}</p>
                             @error("seo_title.$code")<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-field" x-show="lang === '{{ $code }}'" x-cloak>
                             <label>SEO Description ({{ strtoupper($code) }})</label>
                             <textarea name="seo_description[{{ $code }}]" class="form-input" rows="2" maxlength="500"
-                                placeholder="Meta description">{{ old("seo_description.$code", $isEdit ? $product->getTranslation('seo_description', $code, false) : '') }}</textarea>
-                            <p class="form-help">Summarize benefits, material and audience in one concise sentence.</p>
+                                placeholder="{{ __('Meta description') }}">{{ old("seo_description.$code", $isEdit ? $product->getTranslation('seo_description', $code, false) : '') }}</textarea>
+                            <p class="form-help">{{ __('Summarize benefits, material and audience in one concise sentence.') }}</p>
                             @error("seo_description.$code")<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                     @endforeach
@@ -606,7 +606,7 @@
             <section class="form-section form-section--side">
                 <div class="form-section__head">
                     <span class="form-section__icon"><i class="fa-solid fa-rocket"></i></span>
-                    <div><h4>Publishing</h4><p>Control availability and merchandising flags.</p></div>
+                    <div><h4>{{ __('Publishing') }}</h4><p>{{ __('Control availability and merchandising flags.') }}</p></div>
                 </div>
                 <div class="form-section__body d-flex flex-column gap-3">
                     <div class="form-field">
@@ -616,7 +616,7 @@
                                 <option value="{{ $val }}" @selected(old('status', $product->status ?? 'draft') === $val)>{{ $label }}</option>
                             @endforeach
                         </select>
-                        <p class="form-help">Draft products stay hidden until published.</p>
+                        <p class="form-help">{{ __('Draft products stay hidden until published.') }}</p>
                     </div>
 
                     @php($flags = ['is_featured' => 'Featured', 'is_new' => 'New Arrival', 'is_best_seller' => 'Best Seller', 'is_on_sale' => 'On Sale'])
@@ -631,7 +631,7 @@
                     </div>
 
                     <div class="form-field">
-                        <label for="sort_order">Sort Order</label>
+                        <label for="sort_order">{{ __('Sort Order') }}</label>
                         <input type="number" min="0" name="sort_order" id="sort_order" class="form-input"
                             value="{{ old('sort_order', $product->sort_order ?? 0) }}">
                     </div>
@@ -642,40 +642,40 @@
             <section class="form-section form-section--side">
                 <div class="form-section__head">
                     <span class="form-section__icon"><i class="fa-solid fa-sitemap"></i></span>
-                    <div><h4>Organization</h4><p>Catalog placement, brand and tags.</p></div>
+                    <div><h4>{{ __('Organization') }}</h4><p>{{ __('Catalog placement, brand and tags.') }}</p></div>
                 </div>
                 <div class="form-section__body d-flex flex-column gap-3">
                     <div class="form-field">
                         <label for="category_id">Category <span class="text-red-500">*</span></label>
                         <select name="category_id" id="category_id" class="form-input" required>
-                            <option value="">Select category</option>
+                            <option value="">{{ __('Select category') }}</option>
                             @foreach ($categories as $category)
                                 <option value="{{ $category->id }}" @selected(old('category_id', $product->category_id ?? '') == $category->id)>{{ $category->name }}</option>
                             @endforeach
                         </select>
-                        <p class="form-help">Required for storefront navigation and filters.</p>
+                        <p class="form-help">{{ __('Required for storefront navigation and filters.') }}</p>
                         @error('category_id')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                     </div>
                     <div class="form-field">
-                        <label for="sub_category_id">Sub Category</label>
+                        <label for="sub_category_id">{{ __('Sub Category') }}</label>
                         <select name="sub_category_id" id="sub_category_id" class="form-input">
-                            <option value="">None</option>
+                            <option value="">{{ __('None') }}</option>
                             @foreach ($categories as $category)
                                 <option value="{{ $category->id }}" @selected(old('sub_category_id', $product->sub_category_id ?? '') == $category->id)>{{ $category->name }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="form-field">
-                        <label for="brand_id">Brand</label>
+                        <label for="brand_id">{{ __('Brand') }}</label>
                         <select name="brand_id" id="brand_id" class="form-input">
-                            <option value="">None</option>
+                            <option value="">{{ __('None') }}</option>
                             @foreach ($brands as $brand)
                                 <option value="{{ $brand->id }}" @selected(old('brand_id', $product->brand_id ?? '') == $brand->id)>{{ $brand->name }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="form-field">
-                        <label>Tags</label>
+                        <label>{{ __('Tags') }}</label>
                         <div class="tag-chips">
                             @foreach ($tags as $tag)
                                 <label class="tag-chip">
@@ -684,24 +684,24 @@
                                 </label>
                             @endforeach
                         </div>
-                        <input type="text" name="new_tags" class="form-input mt-2" placeholder="Add new tags, comma separated"
+                        <input type="text" name="new_tags" class="form-input mt-2" placeholder="{{ __('Add new tags, comma separated') }}"
                             value="{{ old('new_tags') }}">
-                        <p class="form-help">Tags improve admin search, campaigns and product grouping.</p>
+                        <p class="form-help">{{ __('Tags improve admin search, campaigns and product grouping.') }}</p>
                     </div>
                 </div>
             </section>
 
             {{-- Actions --}}
             <div class="form-section product-form-actions">
-                <a href="{{ route('admin.products.index') }}" class="form-cancel-button">Cancel</a>
+                <a href="{{ route('admin.products.index') }}" class="form-cancel-button">{{ __('Cancel') }}</a>
                 @if ($isEdit)
                     <button type="submit" class="form-submit-button"><i class="fa-solid fa-check"></i> {{ __('Update Product') }}</button>
                 @else
                     <button type="submit" class="btn-light" onclick="document.getElementById('status').value='draft';">
-                        <i class="fa-solid fa-file-lines"></i> Save Draft
+                        <i class="fa-solid fa-file-lines"></i> {{ __('Save Draft') }}
                     </button>
                     <button type="submit" class="form-submit-button" onclick="document.getElementById('status').value='active';">
-                        <i class="fa-solid fa-rocket"></i> Publish Product
+                        <i class="fa-solid fa-rocket"></i> {{ __('Publish Product') }}
                     </button>
                 @endif
             </div>

@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Catalog</p>
+            <p class="header-kicker mb-1">{{ __('Catalog') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">
                 {{ __('Attributes') }}
             </h2>
@@ -11,12 +11,12 @@
     <div class="admin-page">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Attribute table</p>
-                <h3>Product Attributes</h3>
+                <p class="section-kicker">{{ __('Attribute table') }}</p>
+                <h3>{{ __('Product Attributes') }}</h3>
             </div>
             <a href="{{ route('admin.attributes.create') }}" class="premium-button premium-button--dark">
                 <i class="fa-solid fa-plus"></i>
-                <span>New Attribute</span>
+                <span>{{ __('New Attribute') }}</span>
             </a>
         </div>
 
@@ -31,7 +31,7 @@
                         <x-per-page-selector :current="$perPage" />
                     </x-slot:left>
                     <x-slot:right>
-                        <x-search-input name="search" placeholder="Search attributes..." />
+                        <x-search-input name="search" placeholder="{{ __('Search attributes...') }}" />
                     </x-slot:right>
                 </x-table-toolbar>
             </x-slot:toolbar>
@@ -41,14 +41,14 @@
                     <tr>
                         <th class="bulk-check-col">
                             <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
-                                :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+                                :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="{{ __('Select all') }}">
                         </th>
-                        <th style="width:70px;">ID</th>
-                        <th>Attribute</th>
-                        <th>Values</th>
-                        <th style="width:110px;">Count</th>
-                        <th style="width:120px;">Status</th>
-                        <th class="text-end" style="width:150px;">Actions</th>
+                        <th style="width:70px;">{{ __('ID') }}</th>
+                        <th>{{ __('Attribute') }}</th>
+                        <th>{{ __('Values') }}</th>
+                        <th style="width:110px;">{{ __('Count') }}</th>
+                        <th style="width:120px;">{{ __('Status') }}</th>
+                        <th class="text-end" style="width:150px;">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -56,7 +56,7 @@
                         <tr>
                             <td class="bulk-check-col">
                                 <input type="checkbox" class="bulk-check" data-row-check value="{{ $attribute->id }}"
-                                    x-model="selected" aria-label="Select row">
+                                    x-model="selected" aria-label="{{ __('Select row') }}">
                             </td>
                             <td><span class="muted-id">#{{ $attribute->id }}</span></td>
                             <td><strong class="text-gray-900 dark:text-slate-100">{{ $attribute->name }}</strong></td>
@@ -85,13 +85,13 @@
                                 <div class="action-group">
                                     <x-table-actions>
                                         <a href="{{ route('admin.attributes.edit', $attribute->id) }}" class="table-actions__item table-actions__item--edit" role="menuitem">
-                                            <i class="fa-solid fa-pen"></i><span>Edit</span>
+                                            <i class="fa-solid fa-pen"></i><span>{{ __('Edit') }}</span>
                                         </a>
                                         <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
                                             data-delete-modal-target="deleteAttributeModal"
                                             data-delete-action="{{ route('admin.attributes.destroy', $attribute->id) }}"
                                             data-delete-name="{{ $attribute->name }}">
-                                            <i class="fa-solid fa-trash"></i><span>Delete</span>
+                                            <i class="fa-solid fa-trash"></i><span>{{ __('Delete') }}</span>
                                         </button>
                                     </x-table-actions>
                                 </div>
@@ -102,8 +102,8 @@
                             <td colspan="7">
                                 <x-admin.empty-state
                                     icon="fa-solid fa-tags"
-                                    title="No attributes found"
-                                    message="Create attributes like Size, Color, Material or Storage to build product variants."
+                                    title="{{ __('No attributes found') }}"
+                                    message="{{ __('Create attributes like Size, Color, Material or Storage to build product variants.') }}"
                                 />
                             </td>
                         </tr>
@@ -112,13 +112,13 @@
             </table>
 
             <x-slot:footer>
-                <x-table-footer :paginator="$attributes" label="attributes" />
+                <x-table-footer :paginator="$attributes" label="{{ __('attributes') }}" />
             </x-slot:footer>
         </x-admin.table-card>
 
         <x-delete-confirm-modal
             id="deleteAttributeModal"
-            title="Delete this attribute?"
-            message-after="and all of its values. Variants using it will lose that attribute. This cannot be undone." />
+            title="{{ __('Delete this attribute?') }}"
+            message-after="{{ __('and all of its values. Variants using it will lose that attribute. This cannot be undone.') }}" />
     </div>
 </x-app-layout>

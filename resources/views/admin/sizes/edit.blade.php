@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Product Management</p>
+            <p class="header-kicker mb-1">{{ __('Product Management') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">
                 {{ __('Edit Size') }}
             </h2>
@@ -12,12 +12,12 @@
         
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Size setup</p>
+                <p class="section-kicker">{{ __('Size setup') }}</p>
                 <h3>Edit Size: {{ $size->name }}</h3>
             </div>
             <a href="{{ route('admin.sizes.index') }}" class="ghost-button ghost-button--panel">
                 <i class="fa-solid fa-arrow-left"></i>
-                <span>Back</span>
+                <span>{{ __('Back') }}</span>
             </a>
         </div>
 
@@ -29,9 +29,9 @@
                     <i class="fa-solid fa-pen-to-square"></i>
                 </div>
                 <div>
-                    <p class="section-kicker">Update product size</p>
-                    <h3>Size details</h3>
-                    <p>Modify the size details and configurations.</p>
+                    <p class="section-kicker">{{ __('Update product size') }}</p>
+                    <h3>{{ __('Size details') }}</h3>
+                    <p>{{ __('Modify the size details and configurations.') }}</p>
                 </div>
             </div>
 

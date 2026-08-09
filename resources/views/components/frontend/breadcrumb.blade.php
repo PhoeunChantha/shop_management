@@ -4,9 +4,9 @@
     @foreach($items as $i => [$label, $url])
         @if($i > 0)<span style="color:var(--text-3)">/</span>@endif
         @if($url && $i < count($items) - 1)
-            <a href="{{ $url }}" style="color:inherit">{{ $label }}</a>
+            <a href="{{ $url }}" style="color:inherit">{{ __($label) }}</a>
         @else
-            <span style="color:var(--ink)">{{ $label }}</span>
+            <span style="color:var(--ink)">{{ __($label) }}</span>
         @endif
     @endforeach
 </nav>

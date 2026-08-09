@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Sales</p>
+            <p class="header-kicker mb-1">{{ __('Sales') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">
                 {{ __('Customers') }}
             </h2>
@@ -11,27 +11,27 @@
     <div class="admin-page customers-page">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Customer management</p>
-                <h3>Customers</h3>
-                <p class="customers-lede">Review lifetime spend, order frequency, and recent activity from checkout history.</p>
+                <p class="section-kicker">{{ __('Customer management') }}</p>
+                <h3>{{ __('Customers') }}</h3>
+                <p class="customers-lede">{{ __('Review lifetime spend, order frequency, and recent activity from checkout history.') }}</p>
             </div>
         </div>
 
         <div class="customer-stat-strip">
             <div class="customer-stat">
-                <span>Total customers</span>
+                <span>{{ __('Total customers') }}</span>
                 <strong>{{ number_format($stats['customers']) }}</strong>
             </div>
             <div class="customer-stat">
-                <span>Repeat buyers</span>
+                <span>{{ __('Repeat buyers') }}</span>
                 <strong>{{ number_format($stats['repeat']) }}</strong>
             </div>
             <div class="customer-stat">
-                <span>Registered</span>
+                <span>{{ __('Registered') }}</span>
                 <strong>{{ number_format($stats['registered']) }}</strong>
             </div>
             <div class="customer-stat customer-stat--revenue">
-                <span>Customer revenue</span>
+                <span>{{ __('Customer revenue') }}</span>
                 <strong>${{ number_format($stats['revenue'], 2) }}</strong>
             </div>
         </div>
@@ -45,13 +45,13 @@
                 <input type="hidden" name="search" value="{{ request('search') }}">
             </x-slot:hidden>
 
-            <x-select name="spend" size="sm" :value="request('spend')" placeholder="All customers"
+            <x-select name="spend" size="sm" :value="request('spend')" placeholder="{{ __('All customers') }}"
                 :options="['new' => 'One-time buyers', 'repeat' => 'Repeat buyers', 'vip' => 'VIP $500+']" />
 
-            <x-select name="tag_id" size="sm" :value="request('tag_id')" placeholder="All tags"
+            <x-select name="tag_id" size="sm" :value="request('tag_id')" placeholder="{{ __('All tags') }}"
                 :options="$tags->pluck('name', 'id')->all()" />
 
-            <x-select name="sort" size="sm" :value="request('sort', 'last_order')" placeholder="Sort by"
+            <x-select name="sort" size="sm" :value="request('sort', 'last_order')" placeholder="{{ __('Sort by') }}"
                 :options="['last_order' => 'Last order', 'lifetime_spend' => 'Lifetime spend', 'orders_count' => 'Order count', 'customer_name' => 'Customer name']" />
 
         </x-filter-card>
@@ -61,7 +61,7 @@
                 <div class="bulk-bar customer-bulk-bar" x-show="count > 0" x-cloak>
                     <span class="bulk-bar__count">
                         <i class="fa-solid fa-check-double"></i>
-                        <span x-text="count"></span> selected
+                        <span x-text="count"></span> {{ __('selected') }}
                     </span>
                     <form method="POST" action="{{ route('admin.customers.bulk-status') }}" class="bulk-bar__form">
                         @csrf
@@ -71,7 +71,7 @@
                             <input type="hidden" name="emails[]" :value="email">
                         </template>
                         <button type="submit" class="bulk-btn">
-                            <i class="fa-solid fa-toggle-on"></i> Enable
+                            <i class="fa-solid fa-toggle-on"></i> {{ __('Enable') }}
                         </button>
                     </form>
                     <form method="POST" action="{{ route('admin.customers.bulk-status') }}" class="bulk-bar__form">
@@ -82,7 +82,7 @@
                             <input type="hidden" name="emails[]" :value="email">
                         </template>
                         <button type="submit" class="bulk-btn">
-                            <i class="fa-solid fa-toggle-off"></i> Disable
+                            <i class="fa-solid fa-toggle-off"></i> {{ __('Disable') }}
                         </button>
                     </form>
                     <form method="POST" action="{{ route('admin.customers.bulk-export') }}" class="bulk-bar__form">
@@ -91,14 +91,14 @@
                             <input type="hidden" name="emails[]" :value="email">
                         </template>
                         <button type="submit" class="bulk-btn">
-                            <i class="fa-solid fa-file-export"></i> Export selected
+                            <i class="fa-solid fa-file-export"></i> {{ __('Export selected') }}
                         </button>
                     </form>
                     <button type="button" class="bulk-btn bulk-btn--danger" @click="confirmingDelete = true">
-                        <i class="fa-solid fa-trash"></i> Delete
+                        <i class="fa-solid fa-trash"></i> {{ __('Delete') }}
                     </button>
                     <button type="button" class="bulk-bar__clear" @click="clear()">
-                        <i class="fa-solid fa-xmark"></i> Clear
+                        <i class="fa-solid fa-xmark"></i> {{ __('Clear') }}
                     </button>
                 </div>
 
@@ -109,14 +109,14 @@
                             <i class="fa-solid fa-triangle-exclamation"></i>
                         </div>
                         <div>
-                            <h3>Delete selected customers?</h3>
+                            <h3>{{ __('Delete selected customers?') }}</h3>
                             <p>
-                                This removes <strong><span x-text="count"></span> selected customer(s)</strong> from the admin customer list.
+                                This removes <strong><span x-text="count"></span> {{ __('selected customer(s)') }}</strong> from the admin customer list.
                                 Their order history will stay available in Orders.
                             </p>
                         </div>
                         <div class="modal-actions">
-                            <button type="button" class="modal-cancel" @click="confirmingDelete = false">Cancel</button>
+                            <button type="button" class="modal-cancel" @click="confirmingDelete = false">{{ __('Cancel') }}</button>
                             <form method="POST" action="{{ route('admin.customers.bulk-destroy') }}" class="mb-0">
                                 @csrf
                                 @method('DELETE')
@@ -125,7 +125,7 @@
                                 </template>
                                 <button type="submit" class="modal-delete">
                                     <i class="fa-solid fa-trash"></i>
-                                    <span>Delete Customers</span>
+                                    <span>{{ __('Delete Customers') }}</span>
                                 </button>
                             </form>
                         </div>
@@ -140,8 +140,8 @@
                     </x-slot:left>
                     <x-slot:right>
                         <div class="customers-toolbar-right">
-                            <span class="customers-toolbar-note">Grouped by checkout email</span>
-                            <x-search-input name="search" placeholder="Search name, email or phone..." />
+                            <span class="customers-toolbar-note">{{ __('Grouped by checkout email') }}</span>
+                            <x-search-input name="search" placeholder="{{ __('Search name, email or phone...') }}" />
                         </div>
                     </x-slot:right>
                 </x-table-toolbar>
@@ -152,17 +152,17 @@
                     <tr>
                         <th class="bulk-check-col">
                             <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
-                                :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all customers">
+                                :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="{{ __('Select all customers') }}">
                         </th>
-                        <th>Customer</th>
-                        <th>Contact</th>
-                        <th>Orders</th>
-                        <th>Lifetime spend</th>
-                        <th>Avg. order</th>
-                        <th>First order</th>
-                        <th>Last order</th>
-                        <th>Status</th>
-                        <th class="text-end">Actions</th>
+                        <th>{{ __('Customer') }}</th>
+                        <th>{{ __('Contact') }}</th>
+                        <th>{{ __('Orders') }}</th>
+                        <th>{{ __('Lifetime spend') }}</th>
+                        <th>{{ __('Avg. order') }}</th>
+                        <th>{{ __('First order') }}</th>
+                        <th>{{ __('Last order') }}</th>
+                        <th>{{ __('Status') }}</th>
+                        <th class="text-end">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -170,7 +170,7 @@
                         <tr>
                             <td class="bulk-check-col">
                                 <input type="checkbox" class="bulk-check" data-row-check value="{{ $customer->email_key }}"
-                                    x-model="selected" aria-label="Select customer">
+                                    x-model="selected" aria-label="{{ __('Select customer') }}">
                             </td>
                             <td>
                                 <div class="customer-cell">
@@ -208,7 +208,7 @@
                             </td>
                             <td class="text-end">
                                 <a href="{{ route('admin.customers.show', $customer->email_key) }}" class="orders-view">
-                                    <i class="fa-solid fa-eye"></i><span>View</span>
+                                    <i class="fa-solid fa-eye"></i><span>{{ __('View') }}</span>
                                 </a>
                             </td>
                         </tr>
@@ -217,8 +217,8 @@
                             <td colspan="10">
                                 <x-admin.empty-state
                                     icon="fa-solid fa-user-group"
-                                    title="No customers found"
-                                    message="Customers will appear here after orders are placed."
+                                    title="{{ __('No customers found') }}"
+                                    message="{{ __('Customers will appear here after orders are placed.') }}"
                                 />
                             </td>
                         </tr>
@@ -227,7 +227,7 @@
             </table>
 
             <x-slot:footer>
-                <x-table-footer :paginator="$customers" label="customers" />
+                <x-table-footer :paginator="$customers" label="{{ __('customers') }}" />
             </x-slot:footer>
         </x-admin.table-card>
     </div>

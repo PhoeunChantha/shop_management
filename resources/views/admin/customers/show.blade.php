@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Sales</p>
+            <p class="header-kicker mb-1">{{ __('Sales') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">
                 {{ __('Customer Profile') }}
             </h2>
@@ -13,7 +13,7 @@
             <div class="customer-profile-identity">
                 <span class="customer-profile-avatar">{{ strtoupper(mb_substr($profile->customer_name ?: $profile->customer_email, 0, 1)) }}</span>
                 <div>
-                    <p class="section-kicker">Customer profile</p>
+                    <p class="section-kicker">{{ __('Customer profile') }}</p>
                     <h3>{{ $profile->customer_name ?: 'Guest customer' }}</h3>
                     <div class="customer-profile-meta">
                         <span><i class="fa-regular fa-envelope"></i>{{ $profile->customer_email }}</span>
@@ -34,25 +34,25 @@
                 </div>
             </div>
             <a href="{{ route('admin.customers.index') }}" class="ghost-button ghost-button--panel">
-                <i class="fa-solid fa-arrow-left"></i><span>Back</span>
+                <i class="fa-solid fa-arrow-left"></i><span>{{ __('Back') }}</span>
             </a>
         </div>
 
         <div class="customer-stat-strip">
             <div class="customer-stat">
-                <span>Total orders</span>
+                <span>{{ __('Total orders') }}</span>
                 <strong>{{ number_format($profile->orders_count) }}</strong>
             </div>
             <div class="customer-stat customer-stat--revenue">
-                <span>Lifetime spend</span>
+                <span>{{ __('Lifetime spend') }}</span>
                 <strong>${{ number_format((float) $profile->lifetime_spend, 2) }}</strong>
             </div>
             <div class="customer-stat">
-                <span>Average order</span>
+                <span>{{ __('Average order') }}</span>
                 <strong>${{ number_format((float) $profile->average_order_value, 2) }}</strong>
             </div>
             <div class="customer-stat">
-                <span>Last order</span>
+                <span>{{ __('Last order') }}</span>
                 <strong>{{ \Illuminate\Support\Carbon::parse($profile->last_order_at)->format('M d') }}</strong>
             </div>
         </div>
@@ -65,7 +65,7 @@
                             <x-slot:left>
                                 <div class="table-titlebar p-0">
                                     <div>
-                                        <h3>Order History</h3>
+                                        <h3>{{ __('Order History') }}</h3>
                                         <p>{{ $orders->total() }} order{{ $orders->total() === 1 ? '' : 's' }} from this customer</p>
                                     </div>
                                 </div>
@@ -76,13 +76,13 @@
                     <table class="premium-table customer-order-table">
                         <thead>
                             <tr>
-                                <th>Order</th>
-                                <th>Items</th>
-                                <th>Total</th>
-                                <th>Payment</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                                <th class="text-end">Action</th>
+                                <th>{{ __('Order') }}</th>
+                                <th>{{ __('Items') }}</th>
+                                <th>{{ __('Total') }}</th>
+                                <th>{{ __('Payment') }}</th>
+                                <th>{{ __('Status') }}</th>
+                                <th>{{ __('Date') }}</th>
+                                <th class="text-end">{{ __('Action') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -96,7 +96,7 @@
                                     <td>{{ ($order->placed_at ?? $order->created_at)?->format('M d, Y') }}</td>
                                     <td class="text-end">
                                         <a href="{{ route('admin.orders.show', $order->id) }}" class="orders-view">
-                                            <i class="fa-solid fa-eye"></i><span>View</span>
+                                            <i class="fa-solid fa-eye"></i><span>{{ __('View') }}</span>
                                         </a>
                                     </td>
                                 </tr>
@@ -105,23 +105,23 @@
                     </table>
 
                     <x-slot:footer>
-                        <x-table-footer :paginator="$orders" label="orders" />
+                        <x-table-footer :paginator="$orders" label="{{ __('orders') }}" />
                     </x-slot:footer>
                 </x-admin.table-card>
             </div>
 
             <aside class="d-flex flex-column gap-4">
                 <section class="premium-card customer-side-card">
-                    <p class="section-kicker mb-3">CRM Notes</p>
+                    <p class="section-kicker mb-3">{{ __('CRM Notes') }}</p>
                     <form method="POST" action="{{ route('admin.customers.crm.update', $profile->customer_email) }}" class="customer-crm-form">
                         @csrf
                         @method('PATCH')
 
-                        <label class="customer-crm-label" for="customer-notes">Internal notes</label>
+                        <label class="customer-crm-label" for="customer-notes">{{ __('Internal notes') }}</label>
                         <textarea id="customer-notes" name="notes" class="form-input customer-crm-notes"
-                            placeholder="Add preferences, support context, delivery notes, or account risk details.">{{ old('notes', $crmProfile->notes) }}</textarea>
+                            placeholder="{{ __('Add preferences, support context, delivery notes, or account risk details.') }}">{{ old('notes', $crmProfile->notes) }}</textarea>
 
-                        <label class="customer-crm-label">Tags</label>
+                        <label class="customer-crm-label">{{ __('Tags') }}</label>
                         <div class="customer-crm-tags">
                             @foreach ($tags as $tag)
                                 <label style="--tag-color: {{ $tag->color }}">
@@ -134,30 +134,30 @@
 
                         <button type="submit" class="premium-button premium-button--dark w-100 justify-center mt-3">
                             <i class="fa-solid fa-floppy-disk"></i>
-                            <span>Save CRM details</span>
+                            <span>{{ __('Save CRM details') }}</span>
                         </button>
                     </form>
                 </section>
 
                 <section class="premium-card customer-side-card">
-                    <p class="section-kicker mb-3">Customer Type</p>
+                    <p class="section-kicker mb-3">{{ __('Customer Type') }}</p>
                     <div class="customer-tag-stack">
                         <span class="{{ $profile->orders_count > 1 ? 'is-repeat' : '' }}">
                             <i class="fa-solid {{ $profile->orders_count > 1 ? 'fa-rotate' : 'fa-user-plus' }}"></i>
                             {{ $profile->orders_count > 1 ? 'Repeat buyer' : 'First-time buyer' }}
                         </span>
                         @if ((float) $profile->lifetime_spend >= 500)
-                            <span class="is-vip"><i class="fa-solid fa-crown"></i> VIP customer</span>
+                            <span class="is-vip"><i class="fa-solid fa-crown"></i> {{ __('VIP customer') }}</span>
                         @endif
                     </div>
                     <div class="customer-date-list">
-                        <div><span>First order</span><strong>{{ \Illuminate\Support\Carbon::parse($profile->first_order_at)->format('M d, Y') }}</strong></div>
-                        <div><span>Last order</span><strong>{{ \Illuminate\Support\Carbon::parse($profile->last_order_at)->format('M d, Y') }}</strong></div>
+                        <div><span>{{ __('First order') }}</span><strong>{{ \Illuminate\Support\Carbon::parse($profile->first_order_at)->format('M d, Y') }}</strong></div>
+                        <div><span>{{ __('Last order') }}</span><strong>{{ \Illuminate\Support\Carbon::parse($profile->last_order_at)->format('M d, Y') }}</strong></div>
                     </div>
                 </section>
 
                 <section class="premium-card customer-side-card">
-                    <p class="section-kicker mb-3">Top Products</p>
+                    <p class="section-kicker mb-3">{{ __('Top Products') }}</p>
                     @forelse ($topProducts as $product)
                         <div class="customer-top-product">
                             <div>
@@ -167,7 +167,7 @@
                             <em>{{ number_format($product->quantity) }} sold</em>
                         </div>
                     @empty
-                        <p class="text-sm text-gray-400 mb-0">No product history yet.</p>
+                        <p class="text-sm text-gray-400 mb-0">{{ __('No product history yet.') }}</p>
                     @endforelse
                 </section>
             </aside>

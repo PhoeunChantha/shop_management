@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Configuration</p>
+            <p class="header-kicker mb-1">{{ __('Configuration') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('Tax Rules') }}</h2>
         </div>
     </x-slot>
@@ -9,11 +9,11 @@
     <div class="admin-page">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Tax rates</p>
-                <h3>Tax rules</h3>
+                <p class="section-kicker">{{ __('Tax rates') }}</p>
+                <h3>{{ __('Tax rules') }}</h3>
             </div>
             <a href="{{ route('admin.taxes.create') }}" class="premium-button premium-button--dark">
-                <i class="fa-solid fa-plus"></i><span>New Tax Rule</span>
+                <i class="fa-solid fa-plus"></i><span>{{ __('New Tax Rule') }}</span>
             </a>
         </div>
 
@@ -28,7 +28,7 @@
                         <x-per-page-selector :current="$perPage" />
                     </x-slot:left>
                     <x-slot:right>
-                        <x-search-input name="search" placeholder="Search tax rules..." />
+                        <x-search-input name="search" placeholder="{{ __('Search tax rules...') }}" />
                     </x-slot:right>
                 </x-table-toolbar>
             </x-slot:toolbar>
@@ -38,15 +38,15 @@
                         <tr>
                             <th class="bulk-check-col">
                                 <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
-                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="{{ __('Select all') }}">
                             </th>
-                            <th>Name</th>
-                            <th style="width:100px;">Rate</th>
-                            <th style="width:150px;">Pricing</th>
-                            <th>Country</th>
-                            <th style="width:80px;">Order</th>
-                            <th style="width:120px;">Status</th>
-                            <th class="text-end" style="width:96px;">Actions</th>
+                            <th>{{ __('Name') }}</th>
+                            <th style="width:100px;">{{ __('Rate') }}</th>
+                            <th style="width:150px;">{{ __('Pricing') }}</th>
+                            <th>{{ __('Country') }}</th>
+                            <th style="width:80px;">{{ __('Order') }}</th>
+                            <th style="width:120px;">{{ __('Status') }}</th>
+                            <th class="text-end" style="width:96px;">{{ __('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -54,7 +54,7 @@
                             <tr>
                                 <td class="bulk-check-col">
                                     <input type="checkbox" class="bulk-check" data-row-check value="{{ $rule->id }}"
-                                        x-model="selected" aria-label="Select row">
+                                        x-model="selected" aria-label="{{ __('Select row') }}">
                                 </td>
                                 <td><div class="orders-cust__name">{{ $rule->name }}</div></td>
                                 <td class="dash-table__amt">{{ rtrim(rtrim(number_format($rule->rate, 2), '0'), '.') }}%</td>
@@ -77,13 +77,13 @@
                                         <x-table-actions>
                                             <a href="{{ route('admin.taxes.edit', $rule->id) }}"
                                                 class="table-actions__item table-actions__item--edit" role="menuitem">
-                                                <i class="fa-solid fa-pen"></i><span>Edit</span>
+                                                <i class="fa-solid fa-pen"></i><span>{{ __('Edit') }}</span>
                                             </a>
                                             <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
                                                 data-delete-modal-target="deleteTaxModal"
                                                 data-delete-action="{{ route('admin.taxes.destroy', $rule->id) }}"
                                                 data-delete-name="{{ $rule->name }}">
-                                                <i class="fa-solid fa-trash"></i><span>Delete</span>
+                                                <i class="fa-solid fa-trash"></i><span>{{ __('Delete') }}</span>
                                             </button>
                                         </x-table-actions>
                                     </div>
@@ -92,8 +92,8 @@
                         @empty
                             <tr>
                                 <td colspan="8">
-                                    <x-admin.empty-state icon="fa-solid fa-percent" title="No tax rules yet"
-                                        message="Add a tax rate applied to orders at checkout." />
+                                    <x-admin.empty-state icon="fa-solid fa-percent" title="{{ __('No tax rules yet') }}"
+                                        message="{{ __('Add a tax rate applied to orders at checkout.') }}" />
                                 </td>
                             </tr>
                         @endforelse
@@ -101,11 +101,11 @@
                 </table>
 
             <x-slot:footer>
-                <x-table-footer :paginator="$rules" label="rules" />
+                <x-table-footer :paginator="$rules" label="{{ __('rules') }}" />
             </x-slot:footer>
         </x-admin.table-card>
 
-        <x-delete-confirm-modal id="deleteTaxModal" title="Delete this tax rule?"
-            message-after="from checkout. This cannot be undone." />
+        <x-delete-confirm-modal id="deleteTaxModal" title="{{ __('Delete this tax rule?') }}"
+            message-after="{{ __('from checkout. This cannot be undone.') }}" />
     </div>
 </x-app-layout>

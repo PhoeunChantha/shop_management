@@ -2,105 +2,105 @@
     $modules = [
         [
             'type' => 'link',
-            'label' => 'Dashboard',
-            'caption' => 'Store overview',
+            'label' => __('Dashboard'),
+            'caption' => __('Store overview'),
             'icon' => 'fa-gauge-high',
             'route' => 'admin.dashboard',
             'routes' => ['admin.dashboard'],
         ],
         [
-            'label' => 'Reports',
-            'caption' => 'Analytics and exports',
+            'label' => __('Reports'),
+            'caption' => __('Analytics and exports'),
             'icon' => 'fa-chart-column',
             'routes' => ['admin.reports.*'],
             'items' => [
-                ['label' => 'Reports', 'icon' => 'fa-chart-column', 'route' => 'admin.reports.index', 'active' => ['admin.reports.*']],
+                ['label' => __('Reports'), 'icon' => 'fa-chart-column', 'route' => 'admin.reports.index', 'active' => ['admin.reports.*']],
             ],
         ],
         [
-            'label' => 'Sales',
-            'caption' => 'Orders and customers',
+            'label' => __('Sales'),
+            'caption' => __('Orders and customers'),
             'icon' => 'fa-receipt',
             'routes' => ['admin.orders.*', 'admin.customers.*', 'admin.returns.*', 'admin.abandoned-carts.*', 'admin.payments.*', 'admin.wallets.*'],
             'items' => [
-                ['label' => 'Orders', 'icon' => 'fa-list-check', 'route' => 'admin.orders.index', 'active' => ['admin.orders.*']],
-                ['label' => 'Payments', 'icon' => 'fa-credit-card', 'route' => 'admin.payments.index', 'active' => ['admin.payments.*']],
-                ['label' => 'Wallets', 'icon' => 'fa-wallet', 'route' => 'admin.wallets.index', 'active' => ['admin.wallets.*']],
-                ['label' => 'Customers', 'icon' => 'fa-user-group', 'route' => 'admin.customers.index', 'active' => ['admin.customers.*']],
-                ['label' => 'Returns & Refunds', 'icon' => 'fa-rotate-left', 'route' => 'admin.returns.index', 'active' => ['admin.returns.*']],
-                ['label' => 'Abandoned Carts', 'icon' => 'fa-cart-arrow-down', 'route' => 'admin.abandoned-carts.index', 'active' => ['admin.abandoned-carts.*']],
+                ['label' => __('Orders'), 'icon' => 'fa-list-check', 'route' => 'admin.orders.index', 'active' => ['admin.orders.*']],
+                ['label' => __('Payments'), 'icon' => 'fa-credit-card', 'route' => 'admin.payments.index', 'active' => ['admin.payments.*']],
+                ['label' => __('Wallets'), 'icon' => 'fa-wallet', 'route' => 'admin.wallets.index', 'active' => ['admin.wallets.*']],
+                ['label' => __('Customers'), 'icon' => 'fa-user-group', 'route' => 'admin.customers.index', 'active' => ['admin.customers.*']],
+                ['label' => __('Returns & Refunds'), 'icon' => 'fa-rotate-left', 'route' => 'admin.returns.index', 'active' => ['admin.returns.*']],
+                ['label' => __('Abandoned Carts'), 'icon' => 'fa-cart-arrow-down', 'route' => 'admin.abandoned-carts.index', 'active' => ['admin.abandoned-carts.*']],
             ],
         ],
         [
-            'label' => 'Catalog',
-            'caption' => 'Products and stock',
+            'label' => __('Catalog'),
+            'caption' => __('Products and stock'),
             'icon' => 'fa-store',
             'routes' => ['admin.products.*', 'admin.inventory.*', 'admin.suppliers.*', 'admin.purchase-orders.*', 'admin.reviews.*', 'admin.brands.*', 'admin.categories.*', 'admin.attributes.*', 'admin.sizes.*', 'admin.colors.*'],
             'items' => [
-                ['label' => 'Products', 'icon' => 'fa-box-open', 'route' => 'admin.products.index', 'active' => ['admin.products.*']],
-                ['label' => 'Inventory', 'icon' => 'fa-warehouse', 'route' => 'admin.inventory.index', 'active' => ['admin.inventory.index', 'admin.inventory.show', 'admin.inventory.adjust']],
-                ['label' => 'Reorder Alerts', 'icon' => 'fa-truck-ramp-box', 'route' => 'admin.inventory.reorder', 'active' => ['admin.inventory.reorder', 'admin.inventory.reorder.*']],
-                ['label' => 'Purchase Orders', 'icon' => 'fa-clipboard-list', 'route' => 'admin.purchase-orders.index', 'active' => ['admin.purchase-orders.*']],
-                ['label' => 'Suppliers', 'icon' => 'fa-truck-field', 'route' => 'admin.suppliers.index', 'active' => ['admin.suppliers.*']],
-                ['label' => 'Reviews', 'icon' => 'fa-star', 'route' => 'admin.reviews.index', 'active' => ['admin.reviews.*']],
-                ['label' => 'Brands', 'icon' => 'fa-tags', 'route' => 'admin.brands.index', 'active' => ['admin.brands.*']],
-                ['label' => 'Categories', 'icon' => 'fa-layer-group', 'route' => 'admin.categories.index', 'active' => ['admin.categories.*']],
-                ['label' => 'Attributes', 'icon' => 'fa-sliders', 'route' => 'admin.attributes.index', 'active' => ['admin.attributes.*']],
-                ['label' => 'Sizes', 'icon' => 'fa-ruler-combined', 'route' => 'admin.sizes.index', 'active' => ['admin.sizes.*']],
-                ['label' => 'Colors', 'icon' => 'fa-palette', 'route' => 'admin.colors.index', 'active' => ['admin.colors.*']],
+                ['label' => __('Products'), 'icon' => 'fa-box-open', 'route' => 'admin.products.index', 'active' => ['admin.products.*']],
+                ['label' => __('Inventory'), 'icon' => 'fa-warehouse', 'route' => 'admin.inventory.index', 'active' => ['admin.inventory.index', 'admin.inventory.show', 'admin.inventory.adjust']],
+                ['label' => __('Reorder Alerts'), 'icon' => 'fa-truck-ramp-box', 'route' => 'admin.inventory.reorder', 'active' => ['admin.inventory.reorder', 'admin.inventory.reorder.*']],
+                ['label' => __('Purchase Orders'), 'icon' => 'fa-clipboard-list', 'route' => 'admin.purchase-orders.index', 'active' => ['admin.purchase-orders.*']],
+                ['label' => __('Suppliers'), 'icon' => 'fa-truck-field', 'route' => 'admin.suppliers.index', 'active' => ['admin.suppliers.*']],
+                ['label' => __('Reviews'), 'icon' => 'fa-star', 'route' => 'admin.reviews.index', 'active' => ['admin.reviews.*']],
+                ['label' => __('Brands'), 'icon' => 'fa-tags', 'route' => 'admin.brands.index', 'active' => ['admin.brands.*']],
+                ['label' => __('Categories'), 'icon' => 'fa-layer-group', 'route' => 'admin.categories.index', 'active' => ['admin.categories.*']],
+                ['label' => __('Attributes'), 'icon' => 'fa-sliders', 'route' => 'admin.attributes.index', 'active' => ['admin.attributes.*']],
+                ['label' => __('Sizes'), 'icon' => 'fa-ruler-combined', 'route' => 'admin.sizes.index', 'active' => ['admin.sizes.*']],
+                ['label' => __('Colors'), 'icon' => 'fa-palette', 'route' => 'admin.colors.index', 'active' => ['admin.colors.*']],
             ],
         ],
         [
-            'label' => 'Marketing',
-            'caption' => 'Campaign surfaces',
+            'label' => __('Marketing'),
+            'caption' => __('Campaign surfaces'),
             'icon' => 'fa-bullhorn',
             'routes' => ['admin.coupons.*', 'admin.deals.*', 'admin.banners.*', 'admin.collections.*', 'admin.announcements.*', 'admin.media.*', 'admin.subscribers.*'],
             'items' => [
-                ['label' => 'Coupons', 'icon' => 'fa-ticket', 'route' => 'admin.coupons.index', 'active' => ['admin.coupons.*']],
-                ['label' => 'Offers & Deals', 'icon' => 'fa-tags', 'route' => 'admin.deals.index', 'active' => ['admin.deals.*']],
-                ['label' => 'Banners', 'icon' => 'fa-images', 'route' => 'admin.banners.index', 'active' => ['admin.banners.*']],
-                ['label' => 'Media Library', 'icon' => 'fa-photo-film', 'route' => 'admin.media.index', 'active' => ['admin.media.*']],
-                ['label' => 'Collections', 'icon' => 'fa-layer-group', 'route' => 'admin.collections.index', 'active' => ['admin.collections.*']],
-                ['label' => 'Announcement Bar', 'icon' => 'fa-bullhorn', 'route' => 'admin.announcements.index', 'active' => ['admin.announcements.*']],
-                ['label' => 'Subscribers', 'icon' => 'fa-envelope', 'route' => 'admin.subscribers.index', 'active' => ['admin.subscribers.*']],
+                ['label' => __('Coupons'), 'icon' => 'fa-ticket', 'route' => 'admin.coupons.index', 'active' => ['admin.coupons.*']],
+                ['label' => __('Offers & Deals'), 'icon' => 'fa-tags', 'route' => 'admin.deals.index', 'active' => ['admin.deals.*']],
+                ['label' => __('Banners'), 'icon' => 'fa-images', 'route' => 'admin.banners.index', 'active' => ['admin.banners.*']],
+                ['label' => __('Media Library'), 'icon' => 'fa-photo-film', 'route' => 'admin.media.index', 'active' => ['admin.media.*']],
+                ['label' => __('Collections'), 'icon' => 'fa-layer-group', 'route' => 'admin.collections.index', 'active' => ['admin.collections.*']],
+                ['label' => __('Announcement Bar'), 'icon' => 'fa-bullhorn', 'route' => 'admin.announcements.index', 'active' => ['admin.announcements.*']],
+                ['label' => __('Subscribers'), 'icon' => 'fa-envelope', 'route' => 'admin.subscribers.index', 'active' => ['admin.subscribers.*']],
             ],
         ],
         [
-            'label' => 'Content',
-            'caption' => 'Pages and SEO',
+            'label' => __('Content'),
+            'caption' => __('Pages and SEO'),
             'icon' => 'fa-file-lines',
             'routes' => ['admin.pages.*', 'admin.faqs.*', 'admin.seo.*'],
             'items' => [
-                ['label' => 'Pages', 'icon' => 'fa-file-lines', 'route' => 'admin.pages.index', 'active' => ['admin.pages.*']],
-                ['label' => 'SEO Manager', 'icon' => 'fa-magnifying-glass-chart', 'route' => 'admin.seo.index', 'active' => ['admin.seo.*']],
-                ['label' => 'FAQ', 'icon' => 'fa-circle-question', 'route' => 'admin.faqs.index', 'active' => ['admin.faqs.*']],
+                ['label' => __('Pages'), 'icon' => 'fa-file-lines', 'route' => 'admin.pages.index', 'active' => ['admin.pages.*']],
+                ['label' => __('SEO Manager'), 'icon' => 'fa-magnifying-glass-chart', 'route' => 'admin.seo.index', 'active' => ['admin.seo.*']],
+                ['label' => __('FAQ'), 'icon' => 'fa-circle-question', 'route' => 'admin.faqs.index', 'active' => ['admin.faqs.*']],
             ],
         ],
         [
-            'label' => 'Access',
-            'caption' => 'Team permissions',
+            'label' => __('Access'),
+            'caption' => __('Team permissions'),
             'icon' => 'fa-shield-halved',
             'routes' => ['admin.users.*', 'admin.roles.*', 'admin.permissions.*', 'admin.permission-audit.*'],
             'items' => [
-                ['label' => 'Users', 'icon' => 'fa-users', 'route' => 'admin.users.index', 'active' => ['admin.users.*']],
-                ['label' => 'Roles', 'icon' => 'fa-user-shield', 'route' => 'admin.roles.index', 'active' => ['admin.roles.*']],
-                ['label' => 'Permissions', 'icon' => 'fa-key', 'route' => 'admin.permissions.index', 'active' => ['admin.permissions.*']],
-                ['label' => 'Permission Audit', 'icon' => 'fa-clipboard-check', 'route' => 'admin.permission-audit.index', 'active' => ['admin.permission-audit.*']],
+                ['label' => __('Users'), 'icon' => 'fa-users', 'route' => 'admin.users.index', 'active' => ['admin.users.*']],
+                ['label' => __('Roles'), 'icon' => 'fa-user-shield', 'route' => 'admin.roles.index', 'active' => ['admin.roles.*']],
+                ['label' => __('Permissions'), 'icon' => 'fa-key', 'route' => 'admin.permissions.index', 'active' => ['admin.permissions.*']],
+                ['label' => __('Permission Audit'), 'icon' => 'fa-clipboard-check', 'route' => 'admin.permission-audit.index', 'active' => ['admin.permission-audit.*']],
             ],
         ],
         [
-            'label' => 'Operations',
-            'caption' => 'Store configuration',
+            'label' => __('Operations'),
+            'caption' => __('Store configuration'),
             'icon' => 'fa-gear',
             'routes' => ['admin.setup-health.*', 'admin.shipping.*', 'admin.taxes.*', 'admin.saved-views.*', 'admin.notifications.*', 'admin.settings.*', 'admin.activity.*'],
             'items' => [
-                ['label' => 'Setup Health', 'icon' => 'fa-list-check', 'route' => 'admin.setup-health.index', 'active' => ['admin.setup-health.*']],
-                ['label' => 'Shipping Methods', 'icon' => 'fa-truck', 'route' => 'admin.shipping.index', 'active' => ['admin.shipping.*']],
-                ['label' => 'Tax Rules', 'icon' => 'fa-percent', 'route' => 'admin.taxes.index', 'active' => ['admin.taxes.*']],
-                ['label' => 'Saved Views', 'icon' => 'fa-bookmark', 'route' => 'admin.saved-views.index', 'active' => ['admin.saved-views.*']],
-                ['label' => 'Notifications', 'icon' => 'fa-bell', 'route' => 'admin.notifications.index', 'active' => ['admin.notifications.*']],
-                ['label' => 'Settings', 'icon' => 'fa-gear', 'route' => 'admin.settings.index', 'active' => ['admin.settings.*']],
-                ['label' => 'Activity Log', 'icon' => 'fa-clock-rotate-left', 'route' => 'admin.activity.index', 'active' => ['admin.activity.*']],
+                ['label' => __('Setup Health'), 'icon' => 'fa-list-check', 'route' => 'admin.setup-health.index', 'active' => ['admin.setup-health.*']],
+                ['label' => __('Shipping Methods'), 'icon' => 'fa-truck', 'route' => 'admin.shipping.index', 'active' => ['admin.shipping.*']],
+                ['label' => __('Tax Rules'), 'icon' => 'fa-percent', 'route' => 'admin.taxes.index', 'active' => ['admin.taxes.*']],
+                ['label' => __('Saved Views'), 'icon' => 'fa-bookmark', 'route' => 'admin.saved-views.index', 'active' => ['admin.saved-views.*']],
+                ['label' => __('Notifications'), 'icon' => 'fa-bell', 'route' => 'admin.notifications.index', 'active' => ['admin.notifications.*']],
+                ['label' => __('Settings'), 'icon' => 'fa-gear', 'route' => 'admin.settings.index', 'active' => ['admin.settings.*']],
+                ['label' => __('Activity Log'), 'icon' => 'fa-clock-rotate-left', 'route' => 'admin.activity.index', 'active' => ['admin.activity.*']],
             ],
         ],
     ];
@@ -119,13 +119,13 @@
             @endif
             <div class="ms-3 admin-brand-copy">
                 <h1 class="fw-bold text-white fs-6 mb-0 lh-sm">{{ $adminSiteName ?? 'T-Shirt Shop' }}</h1>
-                <span class="brand-kicker font-medium">Commerce Console</span>
+                <span class="brand-kicker font-medium">{{ __('Commerce Console') }}</span>
             </div>
         </div>
     </div>
 
     <div class="admin-nav-scroll flex-grow-1 overflow-auto">
-        <p class="admin-nav-heading admin-nav-heading--module">Modules</p>
+        <p class="admin-nav-heading admin-nav-heading--module">{{ __('Modules') }}</p>
 
         @foreach ($modules as $module)
             @php($moduleActive = request()->routeIs(...$module['routes']))
@@ -181,7 +181,7 @@
 
         <form method="POST" action="{{ route('logout') }}" class="mb-0">
             @csrf
-            <button type="submit" class="btn btn-link p-1 text-secondary hover-danger" title="Logout" style="text-decoration: none;">
+            <button type="submit" class="btn btn-link p-1 text-secondary hover-danger" title="{{ __('Logout') }}" style="text-decoration: none;">
                 <i class="fa-solid fa-right-from-bracket"></i>
             </button>
         </form>

@@ -80,15 +80,15 @@
         {{-- Upload tile — always first --}}
         <button type="button" class="gallery-tile" @click="$refs.input.click()">
             <span class="gallery-tile__icon"><i class="fa-regular fa-image"></i><i class="fa-solid fa-arrow-up-from-bracket"></i></span>
-            <span class="gallery-tile__title">Click to upload</span>
-            <span class="gallery-tile__hint">or drag and drop</span>
+            <span class="gallery-tile__title">{{ __('Click to upload') }}</span>
+            <span class="gallery-tile__hint">{{ __('or drag and drop') }}</span>
         </button>
 
         @if ($mediaPicker)
             <button type="button" class="gallery-tile gallery-tile--library" @click="openMedia()">
                 <span class="gallery-tile__icon"><i class="fa-solid fa-photo-film"></i></span>
-                <span class="gallery-tile__title">Choose from library</span>
-                <span class="gallery-tile__hint">reuse existing media</span>
+                <span class="gallery-tile__title">{{ __('Choose from library') }}</span>
+                <span class="gallery-tile__hint">{{ __('reuse existing media') }}</span>
             </button>
         @endif
 
@@ -96,11 +96,11 @@
         @foreach ($existing as $img)
             <div class="gallery-item" x-show="!removed.includes({{ $img->id }})">
                 <img src="{{ Imageurl($img->image, $folder) }}" alt="image">
-                <label class="gallery-item__star" title="Set as primary" @click.stop>
+                <label class="gallery-item__star" title="{{ __('Set as primary') }}" @click.stop>
                     <input type="radio" name="{{ $primaryName }}" value="{{ $img->id }}" @checked($currentPrimary === $img->id)>
                     <i class="fa-solid fa-star"></i>
                 </label>
-                <button type="button" class="gallery-item__x" @click.stop="removed.push({{ $img->id }})" title="Remove">
+                <button type="button" class="gallery-item__x" @click.stop="removed.push({{ $img->id }})" title="{{ __('Remove') }}">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -110,7 +110,7 @@
         <template x-for="f in files" :key="f.url">
             <div class="gallery-item">
                 <img :src="f.url" :alt="f.name">
-                <button type="button" class="gallery-item__x" @click.stop="removeNew(f.i)" title="Remove">
+                <button type="button" class="gallery-item__x" @click.stop="removeNew(f.i)" title="{{ __('Remove') }}">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -121,7 +121,7 @@
             <div class="gallery-item">
                 <img :src="asset.url" :alt="asset.name">
                 <input type="hidden" name="{{ $mediaName }}[]" :value="asset.filename">
-                <button type="button" class="gallery-item__x" @click.stop="removeMedia(asset.filename)" title="Remove">
+                <button type="button" class="gallery-item__x" @click.stop="removeMedia(asset.filename)" title="{{ __('Remove') }}">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -132,7 +132,7 @@
         <div class="media-picker-panel gallery-media-panel" x-show="mediaOpen" x-cloak @click.outside="mediaOpen = false">
             <div class="media-picker-panel__search">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="search" x-model="mediaSearch" placeholder="Search product media">
+                <input type="search" x-model="mediaSearch" placeholder="{{ __('Search product media') }}">
             </div>
             <div class="media-picker-panel__body">
                 <template x-if="mediaLoading">

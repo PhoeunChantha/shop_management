@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Configuration</p>
+            <p class="header-kicker mb-1">{{ __('Configuration') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">
                 {{ __('Settings') }}
             </h2>
@@ -30,8 +30,8 @@
     <div class="" x-data="{ tab: '{{ $activeTab }}' }">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Site setup</p>
-                <h3>Manage settings</h3>
+                <p class="section-kicker">{{ __('Site setup') }}</p>
+                <h3>{{ __('Manage settings') }}</h3>
             </div>
         </div>
 
@@ -90,9 +90,9 @@
 
                                 <div class="sm:col-span-2 color-reset-row">
                                     <button type="button" class="form-cancel-button" @click="reset()">
-                                        <i class="fa-solid fa-rotate-left"></i> Reset to defaults
+                                        <i class="fa-solid fa-rotate-left"></i> {{ __('Reset to defaults') }}
                                     </button>
-                                    <span class="color-reset-hint">Resets the colors above — click “Save changes” to apply.</span>
+                                    <span class="color-reset-hint">{{ __('Resets the colors above — click “Save changes” to apply.') }}</span>
                                 </div>
                             </div>
                         @else
@@ -123,10 +123,10 @@
                                                     <template x-for="code in selected" :key="code">
                                                         <span class="ms-tag" @click.stop>
                                                             <span x-text="label(code)"></span>
-                                                            <button type="button" @click="remove(code)" aria-label="Remove">&times;</button>
+                                                            <button type="button" @click="remove(code)" aria-label="{{ __('Remove') }}">{{ __('&times;') }}</button>
                                                         </span>
                                                     </template>
-                                                    <span class="ms-select__placeholder" x-show="selected.length === 0">Select languages…</span>
+                                                    <span class="ms-select__placeholder" x-show="selected.length === 0">{{ __('Select languages…') }}</span>
                                                 </div>
                                                 <i class="fa-solid fa-chevron-down ms-select__caret"></i>
                                             </div>
@@ -203,12 +203,12 @@
                                     x-data="paymentMethodSettings(@js($paymentRows))">
                                     <div class="payment-method-builder__head">
                                         <div>
-                                            <p class="section-kicker">Checkout options</p>
-                                            <h3>Payment methods</h3>
-                                            <span>Manage the methods shown by checkout later. Saved as one settings array.</span>
+                                            <p class="section-kicker">{{ __('Checkout options') }}</p>
+                                            <h3>{{ __('Payment methods') }}</h3>
+                                            <span>{{ __('Manage the methods shown by checkout later. Saved as one settings array.') }}</span>
                                         </div>
                                         <button type="button" class="dynamic-add-button" @click="add()">
-                                            <i class="fa-solid fa-plus"></i> Add method
+                                            <i class="fa-solid fa-plus"></i> {{ __('Add method') }}
                                         </button>
                                     </div>
 
@@ -260,58 +260,58 @@
                                                             <span></span>
                                                             <strong x-text="method.status ? 'Enabled' : 'Disabled'"></strong>
                                                         </label>
-                                                        <button type="button" class="dynamic-remove-button" @click="remove(i)" title="Delete method">
+                                                        <button type="button" class="dynamic-remove-button" @click="remove(i)" title="{{ __('Delete method') }}">
                                                             <i class="fa-solid fa-trash"></i>
                                                         </button>
                                                     </div>
 
                                                     <div class="payment-method-grid">
                                                         <div class="form-field">
-                                                            <label>Name</label>
+                                                            <label>{{ __('Name') }}</label>
                                                             <input type="text" class="form-input" :name="`payment_methods[${i}][name]`"
-                                                                x-model="method.name" placeholder="Card">
+                                                                x-model="method.name" placeholder="{{ __('Card') }}">
                                                         </div>
                                                         <div class="form-field">
-                                                            <label>Code</label>
+                                                            <label>{{ __('Code') }}</label>
                                                             <input type="text" class="form-input" :name="`payment_methods[${i}][code]`"
-                                                                x-model="method.code" placeholder="card">
+                                                                x-model="method.code" placeholder="{{ __('card') }}">
                                                         </div>
                                                         <div class="form-field">
-                                                            <label>Sort</label>
+                                                            <label>{{ __('Sort') }}</label>
                                                             <input type="number" class="form-input" :name="`payment_methods[${i}][sort_order]`"
                                                                 x-model="method.sort_order" min="0" max="999">
                                                         </div>
                                                         <div class="form-field">
-                                                            <label>Type</label>
+                                                            <label>{{ __('Type') }}</label>
                                                             <select class="form-input" :name="`payment_methods[${i}][type]`" x-model="method.type">
-                                                                <option value="online">Online</option>
-                                                                <option value="manual">Manual / QR</option>
+                                                                <option value="online">{{ __('Online') }}</option>
+                                                                <option value="manual">{{ __('Manual / QR') }}</option>
                                                             </select>
                                                         </div>
                                                         <div class="form-field payment-method-grid__wide">
-                                                            <label>Description</label>
+                                                            <label>{{ __('Description') }}</label>
                                                             <input type="text" class="form-input" :name="`payment_methods[${i}][description]`"
-                                                                x-model="method.description" placeholder="Short admin or checkout description">
+                                                                x-model="method.description" placeholder="{{ __('Short admin or checkout description') }}">
                                                         </div>
                                                         <div class="form-field" x-show="method.type === 'manual'" x-cloak>
-                                                            <label>Bank / wallet</label>
+                                                            <label>{{ __('Bank / wallet') }}</label>
                                                             <input type="text" class="form-input" :name="`payment_methods[${i}][bank_name]`"
-                                                                x-model="method.bank_name" placeholder="ABA, Wing, ACLEDA">
+                                                                x-model="method.bank_name" placeholder="{{ __('ABA, Wing, ACLEDA') }}">
                                                         </div>
                                                         <div class="form-field" x-show="method.type === 'manual'" x-cloak>
-                                                            <label>Account name</label>
+                                                            <label>{{ __('Account name') }}</label>
                                                             <input type="text" class="form-input" :name="`payment_methods[${i}][account_name]`"
-                                                                x-model="method.account_name" placeholder="Store account name">
+                                                                x-model="method.account_name" placeholder="{{ __('Store account name') }}">
                                                         </div>
                                                         <div class="form-field" x-show="method.type === 'manual'" x-cloak>
-                                                            <label>Account number</label>
+                                                            <label>{{ __('Account number') }}</label>
                                                             <input type="text" class="form-input" :name="`payment_methods[${i}][account_number]`"
-                                                                x-model="method.account_number" placeholder="Account or phone number">
+                                                                x-model="method.account_number" placeholder="{{ __('Account or phone number') }}">
                                                         </div>
                                                         <div class="form-field payment-method-grid__wide">
-                                                            <label>Related field / instructions</label>
+                                                            <label>{{ __('Related field / instructions') }}</label>
                                                             <textarea rows="2" class="form-input" :name="`payment_methods[${i}][instructions]`"
-                                                                x-model="method.instructions" placeholder="Example: require card number, expiry and CVC"></textarea>
+                                                                x-model="method.instructions" placeholder="{{ __('Example: require card number, expiry and CVC') }}"></textarea>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -321,7 +321,7 @@
 
                                     <button type="button" class="payment-method-empty-add" x-show="methods.length === 0" x-cloak @click="add()">
                                         <i class="fa-solid fa-plus"></i>
-                                        <span>Add your first payment method</span>
+                                        <span>{{ __('Add your first payment method') }}</span>
                                     </button>
 
                                     @foreach ($errors->keys() as $errorKey)
@@ -347,9 +347,9 @@
                                     }
                                 }">
                                     <div class="dynamic-field-header">
-                                        <label>Social links</label>
+                                        <label>{{ __('Social links') }}</label>
                                         <button type="button" class="dynamic-add-button" @click="add()">
-                                            <i class="fa-solid fa-plus"></i> Add link
+                                            <i class="fa-solid fa-plus"></i> {{ __('Add link') }}
                                         </button>
                                     </div>
 
@@ -368,7 +368,7 @@
                                                         @click.outside="openPicker = null">
                                                         <div class="icon-picker__search">
                                                             <i class="fa-solid fa-magnifying-glass"></i>
-                                                            <input type="text" x-model="query" placeholder="Search icons…">
+                                                            <input type="text" x-model="query" placeholder="{{ __('Search icons…') }}">
                                                         </div>
 
                                                         <div class="icon-picker__grid">
@@ -379,26 +379,26 @@
                                                                     <i :class="ic.c"></i>
                                                                 </button>
                                                             </template>
-                                                            <p class="icon-picker__empty" x-show="filtered().length === 0">No icons found</p>
+                                                            <p class="icon-picker__empty" x-show="filtered().length === 0">{{ __('No icons found') }}</p>
                                                         </div>
 
                                                         <div class="icon-picker__custom">
-                                                            <span>Or paste any FontAwesome class</span>
+                                                            <span>{{ __('Or paste any FontAwesome class') }}</span>
                                                             <div class="icon-picker__custom-row">
                                                                 <i :class="row.icon || 'fa-regular fa-square'"></i>
-                                                                <input type="text" x-model="row.icon" placeholder="fa-brands fa-figma">
+                                                                <input type="text" x-model="row.icon" placeholder="{{ __('fa-brands fa-figma') }}">
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
 
                                                 <input type="text" class="form-input" :name="`social_links[${i}][title]`"
-                                                    x-model="row.title" placeholder="Title (e.g. Facebook)">
+                                                    x-model="row.title" placeholder="{{ __('Title (e.g. Facebook)') }}">
 
                                                 <input type="url" class="form-input" :name="`social_links[${i}][url]`"
-                                                    x-model="row.url" placeholder="https://...">
+                                                    x-model="row.url" placeholder="{{ __('https://...') }}">
 
-                                                <button type="button" class="dynamic-remove-button" @click="remove(i)" title="Remove">
+                                                <button type="button" class="dynamic-remove-button" @click="remove(i)" title="{{ __('Remove') }}">
                                                     <i class="fa-solid fa-trash"></i>
                                                 </button>
                                             </div>

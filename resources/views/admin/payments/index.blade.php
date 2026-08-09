@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Sales</p>
+            <p class="header-kicker mb-1">{{ __('Sales') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('Payments') }}</h2>
         </div>
     </x-slot>
@@ -9,31 +9,31 @@
     <div class="admin-page">
         <div class="cart-recovery-strip">
             <div class="cart-recovery-stat">
-                <span><i class="fa-solid fa-receipt"></i> Transactions</span>
+                <span><i class="fa-solid fa-receipt"></i> {{ __('Transactions') }}</span>
                 <strong>{{ number_format($stats['total']) }}</strong>
             </div>
             <div class="cart-recovery-stat cart-recovery-stat--active">
-                <span><i class="fa-solid fa-check-double"></i> Completed</span>
+                <span><i class="fa-solid fa-check-double"></i> {{ __('Completed') }}</span>
                 <strong>{{ number_format($stats['completed']) }}</strong>
             </div>
             <div class="cart-recovery-stat">
-                <span><i class="fa-solid fa-sack-dollar"></i> Collected</span>
+                <span><i class="fa-solid fa-sack-dollar"></i> {{ __('Collected') }}</span>
                 <strong>${{ number_format($stats['collected'], 2) }}</strong>
             </div>
         </div>
 
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Gateway</p>
-                <h3>Payment Transactions</h3>
+                <p class="section-kicker">{{ __('Gateway') }}</p>
+                <h3>{{ __('Payment Transactions') }}</h3>
             </div>
             <a href="{{ route('admin.payments.export', request()->query()) }}" class="premium-button premium-button--dark">
-                <i class="fa-solid fa-file-export"></i><span>Export CSV</span>
+                <i class="fa-solid fa-file-export"></i><span>{{ __('Export CSV') }}</span>
             </a>
         </div>
 
         <x-filter-card :action="route('admin.payments.index')">
-            <x-select name="status" size="sm" :value="request('status')" placeholder="Any status"
+            <x-select name="status" size="sm" :value="request('status')" placeholder="{{ __('Any status') }}"
                 :options="['pending' => 'Pending', 'completed' => 'Completed', 'failed' => 'Failed']" />
         </x-filter-card>
 
@@ -41,19 +41,19 @@
             <x-slot:toolbar>
                 <x-table-toolbar>
                     <x-slot:left><x-per-page-selector :current="$perPage" /></x-slot:left>
-                    <x-slot:right><x-search-input name="search" placeholder="Search order # / transaction / email..." /></x-slot:right>
+                    <x-slot:right><x-search-input name="search" placeholder="{{ __('Search order # / transaction / email...') }}" /></x-slot:right>
                 </x-table-toolbar>
             </x-slot:toolbar>
 
             <table class="premium-table">
                 <thead>
                     <tr>
-                        <th>Order</th>
-                        <th>Gateway</th>
-                        <th>Transaction</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                        <th>Date</th>
+                        <th>{{ __('Order') }}</th>
+                        <th>{{ __('Gateway') }}</th>
+                        <th>{{ __('Transaction') }}</th>
+                        <th>{{ __('Amount') }}</th>
+                        <th>{{ __('Status') }}</th>
+                        <th>{{ __('Date') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -85,15 +85,15 @@
                     @empty
                         <tr>
                             <td colspan="6">
-                                <x-admin.empty-state icon="fa-solid fa-credit-card" title="No payments yet"
-                                    message="Gateway transactions (ABA PayWay) will appear here once customers pay online." />
+                                <x-admin.empty-state icon="fa-solid fa-credit-card" title="{{ __('No payments yet') }}"
+                                    message="{{ __('Gateway transactions (ABA PayWay) will appear here once customers pay online.') }}" />
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
 
-            <x-slot:footer><x-table-footer :paginator="$payments" label="payments" /></x-slot:footer>
+            <x-slot:footer><x-table-footer :paginator="$payments" label="{{ __('payments') }}" /></x-slot:footer>
         </x-admin.table-card>
     </div>
 </x-app-layout>

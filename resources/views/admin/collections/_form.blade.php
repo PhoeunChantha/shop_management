@@ -13,7 +13,7 @@
     <div class="form-panel-body grid grid-cols-1 md:grid-cols-2 gap-4">
 
         <div class="form-field col-span-2">
-            <x-image-upload name="image" label="Cover image" folder="collections"
+            <x-image-upload name="image" label="{{ __('Cover image') }}" folder="collections"
                 :value="$c && $c->image ? 'uploads/collections/' . $c->image : null"
                 help="Optional — JPG, PNG or WebP, up to 4MB" />
         </div>
@@ -21,31 +21,31 @@
         <div class="form-field col-span-2 md:col-span-1">
             <label for="name">Name <span class="text-red-500">*</span></label>
             <input value="{{ old('name', $c->name ?? '') }}" type="text" name="name" id="name"
-                class="form-input" placeholder="e.g. Summer Essentials" required>
-            <small class="text-gray-400 dark:text-slate-500 d-block mt-1">The URL slug is generated automatically.</small>
+                class="form-input" placeholder="{{ __('e.g. Summer Essentials') }}" required>
+            <small class="text-gray-400 dark:text-slate-500 d-block mt-1">{{ __('The URL slug is generated automatically.') }}</small>
             @error('name')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
         </div>
 
         <div class="form-field col-span-2 md:col-span-1">
-            <label for="sort_order">Sort order</label>
+            <label for="sort_order">{{ __('Sort order') }}</label>
             <input value="{{ old('sort_order', $c->sort_order ?? 0) }}" type="number" min="0" name="sort_order"
                 id="sort_order" class="form-input" placeholder="0">
-            <small class="text-gray-400 dark:text-slate-500 d-block mt-1">Lower numbers show first.</small>
+            <small class="text-gray-400 dark:text-slate-500 d-block mt-1">{{ __('Lower numbers show first.') }}</small>
             @error('sort_order')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
         </div>
 
         <div class="form-field col-span-2">
-            <label for="description">Description</label>
+            <label for="description">{{ __('Description') }}</label>
             <textarea name="description" id="description" class="form-input" rows="2"
-                placeholder="Short description shown on the collection card">{{ old('description', $c->description ?? '') }}</textarea>
+                placeholder="{{ __('Short description shown on the collection card') }}">{{ old('description', $c->description ?? '') }}</textarea>
             @error('description')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
         </div>
 
         <div class="form-field col-span-2 md:col-span-1">
-            <label for="status">Status</label>
+            <label for="status">{{ __('Status') }}</label>
             <select name="status" id="status" class="form-input">
-                <option value="1" {{ old('status', $c->status ?? 1) == 1 ? 'selected' : '' }}>Enabled</option>
-                <option value="0" {{ old('status', $c->status ?? 1) == 0 ? 'selected' : '' }}>Disabled</option>
+                <option value="1" {{ old('status', $c->status ?? 1) == 1 ? 'selected' : '' }}>{{ __('Enabled') }}</option>
+                <option value="0" {{ old('status', $c->status ?? 1) == 0 ? 'selected' : '' }}>{{ __('Disabled') }}</option>
             </select>
             @error('status')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
         </div>
@@ -53,18 +53,18 @@
         {{-- Product picker --}}
         <div class="form-field col-span-2"
             x-data="collectionProductPicker(@js($products), @js($selectedIds))" @click.outside="open = false">
-            <label>Products in this collection</label>
+            <label>{{ __('Products in this collection') }}</label>
 
             <div class="picker__control" @click="open = true">
                 <template x-for="p in chosen" :key="p.id">
                     <span class="picker__chip">
                         <template x-if="p.thumb"><img :src="p.thumb" alt=""></template>
                         <span x-text="p.name"></span>
-                        <button type="button" @click.stop="remove(p.id)" aria-label="Remove"><i class="fa-solid fa-xmark"></i></button>
+                        <button type="button" @click.stop="remove(p.id)" aria-label="{{ __('Remove') }}"><i class="fa-solid fa-xmark"></i></button>
                     </span>
                 </template>
                 <input type="text" class="picker__search" x-model="query" @focus="open = true"
-                    placeholder="Search products to add…">
+                    placeholder="{{ __('Search products to add…') }}">
             </div>
 
             <div class="picker__menu" x-show="open && results.length" x-cloak>
@@ -85,7 +85,7 @@
     </div>
 
     <div class="form-panel-footer mt-6">
-        <a href="{{ route('admin.collections.index') }}" class="form-cancel-button">Cancel</a>
+        <a href="{{ route('admin.collections.index') }}" class="form-cancel-button">{{ __('Cancel') }}</a>
         <button type="submit" class="form-submit-button">
             <i class="fa-solid fa-check"></i>
             {{ $submitText }}

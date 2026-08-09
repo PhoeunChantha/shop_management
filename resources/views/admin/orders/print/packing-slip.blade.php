@@ -8,8 +8,8 @@
 </head>
 <body>
     <div class="toolbar no-print">
-        <a href="{{ route('admin.orders.show', $order->id) }}"><span>&larr;</span> Back to order</a>
-        <button type="button" class="btn-print" onclick="window.print()">🖨 Print / Save PDF</button>
+        <a href="{{ route('admin.orders.show', $order->id) }}"><span>{{ __('&larr;') }}</span> {{ __('Back to order') }}</a>
+        <button type="button" class="btn-print" onclick="window.print()">{{ __('🖨 Print / Save PDF') }}</button>
     </div>
 
     <div class="sheet">
@@ -25,7 +25,7 @@
                 </div>
             </div>
             <div class="doc-title">
-                <h1>PACKING SLIP</h1>
+                <h1>{{ __('PACKING SLIP') }}</h1>
                 <div class="num">{{ $order->order_number }}</div>
                 <div class="date">{{ ($order->placed_at ?? $order->created_at)?->format('F j, Y') }}</div>
             </div>
@@ -34,7 +34,7 @@
         {{-- Parties --}}
         <div class="parties">
             <div class="party">
-                <h3>Ship to</h3>
+                <h3>{{ __('Ship to') }}</h3>
                 <p class="name">{{ $order->customer_name }}</p>
                 <p>
                     {{ $order->shipping_address }}<br>
@@ -44,14 +44,14 @@
                 </p>
             </div>
             <div class="party">
-                <h3>Order</h3>
+                <h3>{{ __('Order') }}</h3>
                 <p>
-                    <strong>Number:</strong> {{ $order->order_number }}<br>
-                    <strong>Method:</strong> {{ $order->shipping_method ? ucfirst($order->shipping_method) : 'Standard' }}<br>
-                    @if ($order->carrier)<strong>Carrier:</strong> {{ $order->carrier }}<br>@endif
-                    @if ($order->tracking_number)<strong>Tracking:</strong> {{ $order->tracking_number }}<br>@endif
-                    @if ($order->shipped_at)<strong>Shipped:</strong> {{ $order->shipped_at->format('M d, Y') }}<br>@endif
-                    <strong>Items:</strong> {{ $order->details->sum('quantity') }} units
+                    <strong>{{ __('Number:') }}</strong> {{ $order->order_number }}<br>
+                    <strong>{{ __('Method:') }}</strong> {{ $order->shipping_method ? ucfirst($order->shipping_method) : 'Standard' }}<br>
+                    @if ($order->carrier)<strong>{{ __('Carrier:') }}</strong> {{ $order->carrier }}<br>@endif
+                    @if ($order->tracking_number)<strong>{{ __('Tracking:') }}</strong> {{ $order->tracking_number }}<br>@endif
+                    @if ($order->shipped_at)<strong>{{ __('Shipped:') }}</strong> {{ $order->shipped_at->format('M d, Y') }}<br>@endif
+                    <strong>{{ __('Items:') }}</strong> {{ $order->details->sum('quantity') }} units
                 </p>
             </div>
         </div>
@@ -61,9 +61,9 @@
             <thead>
                 <tr>
                     <th style="width:34px;" class="c">#</th>
-                    <th>Product</th>
-                    <th style="width:130px;">SKU</th>
-                    <th class="c" style="width:70px;">Qty</th>
+                    <th>{{ __('Product') }}</th>
+                    <th style="width:130px;">{{ __('SKU') }}</th>
+                    <th class="c" style="width:70px;">{{ __('Qty') }}</th>
                     <th class="c" style="width:60px;">✓</th>
                 </tr>
             </thead>
@@ -85,7 +85,7 @@
 
         @if ($order->customer_note)
             <div class="note-box">
-                <strong>Customer note</strong>
+                <strong>{{ __('Customer note') }}</strong>
                 {{ $order->customer_note }}
             </div>
         @endif
