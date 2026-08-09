@@ -60,7 +60,7 @@ class ColorController extends Controller
             Color::create($validated);
 
             return to_route('admin.colors.index')
-                ->with('success', 'Color created successfully!');
+                ->with('success', __('Color created successfully!'));
         } catch (\Exception $e) {
             Log::error('Error creating color: '.$e->getMessage(), [
                 'exception' => $e,
@@ -98,7 +98,7 @@ class ColorController extends Controller
             $color->update($validated);
 
             return to_route('admin.colors.index')
-                ->with('success', 'Color updated successfully!');
+                ->with('success', __('Color updated successfully!'));
         } catch (\Exception $e) {
             Log::error('Error updating color: '.$e->getMessage(), [
                 'exception' => $e,
@@ -135,7 +135,7 @@ class ColorController extends Controller
         }
 
         return to_route('admin.colors.index')
-            ->with('success', 'Color deleted successfully!');
+            ->with('success', __('Color deleted successfully!'));
     }
 
     public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse

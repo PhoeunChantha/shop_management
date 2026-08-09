@@ -41,7 +41,7 @@
                 <h3 x-text="mode === 'edit' ? 'Edit Brand' : 'New Brand'"></h3>
                 <p x-text="mode === 'edit' ? 'Update the brand details below.' : 'Add a new brand to organize your products.'"></p>
             </div>
-            <button type="button" class="form-modal__close" @click="close()" aria-label="Close">
+            <button type="button" class="form-modal__close" @click="close()" aria-label="{{ __('Close') }}">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
@@ -56,18 +56,18 @@
             <div class="form-field">
                 <label for="brand_modal_name">Brand Name <span class="text-red-500">*</span></label>
                 <input type="text" name="name" id="brand_modal_name" x-ref="name" x-model="name"
-                    class="form-input" placeholder="e.g. Nike, Adidas, Atelier" required>
-                <small class="text-gray-400 dark:text-slate-500 d-block mt-1">The URL slug is generated automatically from the name.</small>
+                    class="form-input" placeholder="{{ __('e.g. Nike, Adidas, Atelier') }}" required>
+                <small class="text-gray-400 dark:text-slate-500 d-block mt-1">{{ __('The URL slug is generated automatically from the name.') }}</small>
                 @error('name')
                     <p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>
                 @enderror
             </div>
 
             <div class="form-field">
-                <label for="brand_modal_status">Status</label>
+                <label for="brand_modal_status">{{ __('Status') }}</label>
                 <select name="status" id="brand_modal_status" x-model="status" class="form-input">
-                    <option value="1">Enable</option>
-                    <option value="0">Disable</option>
+                    <option value="1">{{ __('Enable') }}</option>
+                    <option value="0">{{ __('Disable') }}</option>
                 </select>
                 @error('status')
                     <p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>
@@ -75,7 +75,7 @@
             </div>
 
             <div class="form-field">
-                <label>Brand Logo</label>
+                <label>{{ __('Brand Logo') }}</label>
                 <input type="file" name="image" x-ref="file" accept="image/*" class="hidden" @change="pickFile($event)">
                 <label for="" @click.prevent="$refs.file.click()"
                     class="flex cursor-pointer items-center gap-4 rounded-xl border border-dashed border-slate-300 bg-slate-50/60 p-3 transition hover:border-teal-400 hover:bg-white dark:border-white/15 dark:bg-white/5 dark:hover:border-teal-500/50 dark:hover:bg-white/10">
@@ -90,14 +90,14 @@
                     <span class="min-w-0 flex-1">
                         <span class="block text-sm font-bold text-slate-700 dark:text-slate-200">
                             <i class="fa-solid fa-arrow-up-from-bracket mr-1.5 text-xs text-teal-600 dark:text-teal-400"></i>
-                            Click to upload
+                            {{ __('Click to upload') }}
                         </span>
                         <span class="mt-0.5 block truncate text-xs text-slate-400 dark:text-slate-500"
                             x-text="filename || 'PNG, JPG, GIF, SVG or WEBP — up to 2MB'"></span>
                     </span>
                     <button type="button" x-show="filename" x-cloak @click.stop.prevent="clearFile()"
                         class="flex-shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10">
-                        <i class="fa-solid fa-xmark"></i> Remove
+                        <i class="fa-solid fa-xmark"></i> {{ __('Remove') }}
                     </button>
                 </label>
                 @error('image')
@@ -106,7 +106,7 @@
             </div>
 
             <div class="form-modal__foot">
-                <button type="button" class="modal-cancel" @click="close()">Cancel</button>
+                <button type="button" class="modal-cancel" @click="close()">{{ __('Cancel') }}</button>
                 <button type="submit" class="form-submit-button">
                     <i class="fa-solid fa-check"></i>
                     <span x-text="mode === 'edit' ? 'Update Brand' : 'Create Brand'"></span>

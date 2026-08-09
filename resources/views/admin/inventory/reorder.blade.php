@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Catalog</p>
+            <p class="header-kicker mb-1">{{ __('Catalog') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('Reorder Alerts') }}</h2>
         </div>
     </x-slot>
@@ -9,23 +9,23 @@
     <div class="admin-page inventory-reorder-page" x-data="{ selected: [] }">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Inventory planning</p>
-                <h3>Reorder Alerts</h3>
-                <p class="text-secondary mb-0">Review products and variants below their low-stock threshold.</p>
+                <p class="section-kicker">{{ __('Inventory planning') }}</p>
+                <h3>{{ __('Reorder Alerts') }}</h3>
+                <p class="text-secondary mb-0">{{ __('Review products and variants below their low-stock threshold.') }}</p>
             </div>
             <a href="{{ route('admin.inventory.index') }}" class="ghost-button ghost-button--panel">
-                <i class="fa-solid fa-warehouse"></i><span>Inventory</span>
+                <i class="fa-solid fa-warehouse"></i><span>{{ __('Inventory') }}</span>
             </a>
         </div>
 
         <x-message />
 
         <div class="reorder-stat-strip">
-            <article><span>Alerts</span><strong>{{ number_format($stats['alerts']) }}</strong></article>
-            <article><span>Out of stock</span><strong>{{ number_format($stats['out']) }}</strong></article>
-            <article><span>Low stock</span><strong>{{ number_format($stats['low']) }}</strong></article>
-            <article><span>Suggested units</span><strong>{{ number_format($stats['units']) }}</strong></article>
-            <article><span>Est. cost</span><strong>${{ number_format($stats['cost'], 2) }}</strong></article>
+            <article><span>{{ __('Alerts') }}</span><strong>{{ number_format($stats['alerts']) }}</strong></article>
+            <article><span>{{ __('Out of stock') }}</span><strong>{{ number_format($stats['out']) }}</strong></article>
+            <article><span>{{ __('Low stock') }}</span><strong>{{ number_format($stats['low']) }}</strong></article>
+            <article><span>{{ __('Suggested units') }}</span><strong>{{ number_format($stats['units']) }}</strong></article>
+            <article><span>{{ __('Est. cost') }}</span><strong>${{ number_format($stats['cost'], 2) }}</strong></article>
         </div>
 
         <div class="reorder-layout">
@@ -38,9 +38,9 @@
                         <x-slot:right>
                             <form method="GET" action="{{ route('admin.inventory.reorder') }}" class="toolbar-form">
                                 <input type="hidden" name="per_page" value="{{ $perPage }}">
-                                <x-select name="severity" size="sm" :value="request('severity')" placeholder="Any alert"
+                                <x-select name="severity" size="sm" :value="request('severity')" placeholder="{{ __('Any alert') }}"
                                     :options="['out' => 'Out of stock', 'low' => 'Low stock']" />
-                                <x-search-input name="search" placeholder="Search product, SKU, brand..." />
+                                <x-search-input name="search" placeholder="{{ __('Search product, SKU, brand...') }}" />
                             </form>
                         </x-slot:right>
                     </x-table-toolbar>
@@ -54,13 +54,13 @@
                                     <input type="checkbox" class="form-check-input"
                                         @change="selected = $event.target.checked ? @js($alerts->pluck('key')->values()) : []">
                                 </th>
-                                <th>Item</th>
-                                <th>SKU</th>
-                                <th>Stock</th>
-                                <th>Alert</th>
-                                <th>Target</th>
-                                <th>Reorder</th>
-                                <th>Status</th>
+                                <th>{{ __('Item') }}</th>
+                                <th>{{ __('SKU') }}</th>
+                                <th>{{ __('Stock') }}</th>
+                                <th>{{ __('Alert') }}</th>
+                                <th>{{ __('Target') }}</th>
+                                <th>{{ __('Reorder') }}</th>
+                                <th>{{ __('Status') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -104,8 +104,8 @@
                             @empty
                                 <tr>
                                     <td colspan="8">
-                                        <x-admin.empty-state icon="fa-solid fa-circle-check" title="No reorder alerts"
-                                            message="Products with stock at or below their low-stock threshold will appear here." />
+                                        <x-admin.empty-state icon="fa-solid fa-circle-check" title="{{ __('No reorder alerts') }}"
+                                            message="{{ __('Products with stock at or below their low-stock threshold will appear here.') }}" />
                                     </td>
                                 </tr>
                             @endforelse
@@ -114,7 +114,7 @@
                 </div>
 
                 <x-slot:footer>
-                    <x-table-footer :paginator="$alerts" label="alerts" />
+                    <x-table-footer :paginator="$alerts" label="{{ __('alerts') }}" />
                 </x-slot:footer>
             </x-admin.table-card>
 
@@ -124,29 +124,29 @@
                     <div class="form-section__header">
                         <span class="form-section__icon"><i class="fa-solid fa-truck-ramp-box"></i></span>
                         <div>
-                            <p class="section-kicker">Purchase order</p>
-                            <h3>Create from selected</h3>
+                            <p class="section-kicker">{{ __('Purchase order') }}</p>
+                            <h3>{{ __('Create from selected') }}</h3>
                         </div>
                     </div>
                     <div class="form-grid form-grid--single">
-                        <x-select name="supplier_id" label="Supplier" :options="$suppliers" optionValue="id" optionLabel="name"
-                            :value="old('supplier_id')" placeholder="Select supplier" searchable />
-                        <x-select name="status" label="Initial status" :options="['draft' => 'Draft', 'ordered' => 'Ordered']"
+                        <x-select name="supplier_id" label="{{ __('Supplier') }}" :options="$suppliers" optionValue="id" optionLabel="name"
+                            :value="old('supplier_id')" placeholder="{{ __('Select supplier') }}" searchable />
+                        <x-select name="status" label="{{ __('Initial status') }}" :options="['draft' => 'Draft', 'ordered' => 'Ordered']"
                             :value="old('status', 'draft')" />
                         <div class="form-field">
-                            <label for="expected_at">Expected arrival</label>
+                            <label for="expected_at">{{ __('Expected arrival') }}</label>
                             <input type="date" name="expected_at" id="expected_at" class="form-input" value="{{ old('expected_at') }}">
                         </div>
                     </div>
                     <div class="reorder-selection">
                         <span x-text="selected.length"></span>
-                        <small>selected alert(s)</small>
+                        <small>{{ __('selected alert(s)') }}</small>
                     </div>
                     <button type="submit" class="premium-button premium-button--dark w-100">
-                        <i class="fa-solid fa-clipboard-list"></i><span>Create purchase order</span>
+                        <i class="fa-solid fa-clipboard-list"></i><span>{{ __('Create purchase order') }}</span>
                     </button>
                     <button type="submit" form="reorder-rules-form" class="ghost-button ghost-button--panel w-100 mt-2">
-                        <i class="fa-solid fa-sliders"></i><span>Save rule changes</span>
+                        <i class="fa-solid fa-sliders"></i><span>{{ __('Save rule changes') }}</span>
                     </button>
                 </form>
             </aside>

@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Restock</p>
+            <p class="header-kicker mb-1">{{ __('Restock') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('New Purchase Order') }}</h2>
         </div>
     </x-slot>
@@ -14,19 +14,19 @@
                 <div class="form-section__header">
                     <span class="form-section__icon"><i class="fa-solid fa-clipboard-list"></i></span>
                     <div>
-                        <p class="section-kicker">Purchase order</p>
-                        <h3>Order details</h3>
+                        <p class="section-kicker">{{ __('Purchase order') }}</p>
+                        <h3>{{ __('Order details') }}</h3>
                     </div>
                 </div>
                 <div class="form-grid">
-                    <x-select name="supplier_id" label="Supplier" :options="$suppliers" optionValue="id" optionLabel="name" :value="old('supplier_id')" placeholder="Select supplier" searchable required />
-                    <x-select name="status" label="Initial status" :options="['draft' => 'Draft', 'ordered' => 'Ordered']" :value="old('status', 'draft')" required />
+                    <x-select name="supplier_id" label="{{ __('Supplier') }}" :options="$suppliers" optionValue="id" optionLabel="name" :value="old('supplier_id')" placeholder="{{ __('Select supplier') }}" searchable required />
+                    <x-select name="status" label="{{ __('Initial status') }}" :options="['draft' => 'Draft', 'ordered' => 'Ordered']" :value="old('status', 'draft')" required />
                     <div class="form-field">
-                        <label for="expected_at">Expected arrival</label>
+                        <label for="expected_at">{{ __('Expected arrival') }}</label>
                         <input type="date" name="expected_at" id="expected_at" class="form-input" value="{{ old('expected_at') }}">
                     </div>
                     <div class="form-field form-field--wide">
-                        <label for="notes">Notes</label>
+                        <label for="notes">{{ __('Notes') }}</label>
                         <textarea name="notes" id="notes" class="form-input" rows="2">{{ old('notes') }}</textarea>
                     </div>
                 </div>
@@ -36,16 +36,16 @@
                 <div class="form-section__header">
                     <span class="form-section__icon"><i class="fa-solid fa-boxes-stacked"></i></span>
                     <div>
-                        <p class="section-kicker">Incoming items</p>
-                        <h3>Products to restock</h3>
+                        <p class="section-kicker">{{ __('Incoming items') }}</p>
+                        <h3>{{ __('Products to restock') }}</h3>
                     </div>
                 </div>
                 <div class="restock-items">
                     @for ($i = 0; $i < 6; $i++)
                         <div class="restock-item-row">
-                            <x-select name="items[{{ $i }}][stockable]" size="sm" :options="$stockables" :value="old("items.$i.stockable")" placeholder="Select product or variant" searchable />
-                            <input type="number" name="items[{{ $i }}][quantity_ordered]" class="form-input" min="1" placeholder="Qty" value="{{ old("items.$i.quantity_ordered") }}">
-                            <input type="number" step="0.01" name="items[{{ $i }}][unit_cost]" class="form-input" min="0" placeholder="Unit cost" value="{{ old("items.$i.unit_cost") }}">
+                            <x-select name="items[{{ $i }}][stockable]" size="sm" :options="$stockables" :value="old("items.$i.stockable")" placeholder="{{ __('Select product or variant') }}" searchable />
+                            <input type="number" name="items[{{ $i }}][quantity_ordered]" class="form-input" min="1" placeholder="{{ __('Qty') }}" value="{{ old("items.$i.quantity_ordered") }}">
+                            <input type="number" step="0.01" name="items[{{ $i }}][unit_cost]" class="form-input" min="0" placeholder="{{ __('Unit cost') }}" value="{{ old("items.$i.unit_cost") }}">
                         </div>
                     @endfor
                 </div>
@@ -54,10 +54,10 @@
 
             <div class="form-actions-sticky">
                 <a href="{{ route('admin.purchase-orders.index') }}" class="ghost-button ghost-button--panel">
-                    <i class="fa-solid fa-arrow-left"></i><span>Cancel</span>
+                    <i class="fa-solid fa-arrow-left"></i><span>{{ __('Cancel') }}</span>
                 </a>
                 <button type="submit" class="premium-button premium-button--dark">
-                    <i class="fa-solid fa-floppy-disk"></i><span>Create purchase order</span>
+                    <i class="fa-solid fa-floppy-disk"></i><span>{{ __('Create purchase order') }}</span>
                 </button>
             </div>
         </form>

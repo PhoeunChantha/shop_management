@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Product Management</p>
+            <p class="header-kicker mb-1">{{ __('Product Management') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">
                 {{ __('Sizes') }}
             </h2>
@@ -11,12 +11,12 @@
     <div class="admin-page">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Size table</p>
-                <h3>All Sizes</h3>
+                <p class="section-kicker">{{ __('Size table') }}</p>
+                <h3>{{ __('All Sizes') }}</h3>
             </div>
             <a href="{{ route('admin.sizes.create') }}" class="premium-button premium-button--dark">
                 <i class="fa-solid fa-plus"></i>
-                <span>New Size</span>
+                <span>{{ __('New Size') }}</span>
             </a>
         </div>
 
@@ -31,7 +31,7 @@
                         <x-per-page-selector :current="$perPage" />
                     </x-slot:left>
                     <x-slot:right>
-                        <x-search-input name="search" placeholder="Search sizes..." />
+                        <x-search-input name="search" placeholder="{{ __('Search sizes...') }}" />
                     </x-slot:right>
                 </x-table-toolbar>
             </x-slot:toolbar>
@@ -41,14 +41,14 @@
                     <tr>
                         <th class="bulk-check-col">
                             <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
-                                :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+                                :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="{{ __('Select all') }}">
                         </th>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Code</th>
-                        <th>Sort Order</th>
-                        <th>Status</th>
-                        <th class="text-end">Actions</th>
+                        <th>{{ __('ID') }}</th>
+                        <th>{{ __('Name') }}</th>
+                        <th>{{ __('Code') }}</th>
+                        <th>{{ __('Sort Order') }}</th>
+                        <th>{{ __('Status') }}</th>
+                        <th class="text-end">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -56,7 +56,7 @@
                         <tr>
                             <td class="bulk-check-col">
                                 <input type="checkbox" class="bulk-check" data-row-check value="{{ $size->id }}"
-                                    x-model="selected" aria-label="Select row">
+                                    x-model="selected" aria-label="{{ __('Select row') }}">
                             </td>
                             <td>
                                 <span class="muted-id">#{{ $size->id }}</span>
@@ -78,7 +78,7 @@
                                     <x-table-actions>
                                         <a href="{{ route('admin.sizes.edit', $size->id) }}" class="table-actions__item table-actions__item--edit" role="menuitem">
                                             <i class="fa-solid fa-pen"></i>
-                                            <span>Edit</span>
+                                            <span>{{ __('Edit') }}</span>
                                         </a>
 
                                         <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
@@ -86,7 +86,7 @@
                                             data-delete-action="{{ route('admin.sizes.destroy', $size->id) }}"
                                             data-delete-name="{{ $size->name }}">
                                             <i class="fa-solid fa-trash"></i>
-                                            <span>Delete</span>
+                                            <span>{{ __('Delete') }}</span>
                                         </button>
                                     </x-table-actions>
                                 </div>
@@ -97,8 +97,8 @@
                             <td colspan="7">
                                 <x-admin.empty-state
                                     icon="fa-solid fa-ruler-combined"
-                                    title="No sizes found"
-                                    message="Try a different search term or clear the current search."
+                                    title="{{ __('No sizes found') }}"
+                                    message="{{ __('Try a different search term or clear the current search.') }}"
                                 />
                             </td>
                         </tr>
@@ -107,13 +107,13 @@
             </table>
 
             <x-slot:footer>
-                <x-table-footer :paginator="$sizes" label="sizes" />
+                <x-table-footer :paginator="$sizes" label="{{ __('sizes') }}" />
             </x-slot:footer>
         </x-admin.table-card>
 
         <x-delete-confirm-modal
             id="deleteSizeModal"
-            title="Delete this size?"
-            message-after="from the system. This cannot be undone." />
+            title="{{ __('Delete this size?') }}"
+            message-after="{{ __('from the system. This cannot be undone.') }}" />
     </div>
 </x-app-layout>

@@ -14,9 +14,9 @@
 
     <div class="d-flex align-items-center text-secondary small flex-shrink-0 gap-2">
 
-        <button type="button" class="admin-command-trigger" @click="openPalette()" aria-label="Open command palette">
+        <button type="button" class="admin-command-trigger" @click="openPalette()" aria-label="{{ __('Open command palette') }}">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <span class="d-none d-md-inline">Search admin...</span>
+            <span class="d-none d-md-inline">{{ __('Search admin...') }}</span>
             <kbd class="d-none d-lg-inline">Ctrl K</kbd>
         </button>
 
@@ -28,21 +28,21 @@
             </a>
             <a href="{{ route('lang.switch', 'en') }}"
                 class="btn btn-sm border-0 px-2.5 py-0.5 rounded-pill fs-7 text-decoration-none {{ $locale === 'en' ? 'fw-bold bg-white shadow-sm text-dark' : 'fw-medium bg-transparent text-secondary' }}">
-                EN
+                {{ __('EN') }}
             </a>
         </div>
 
         {{-- Dark mode toggle --}}
-        <button class="icon-button btn btn-link p-0 text-decoration-none fs-6 text-secondary" type="button" aria-label="Toggle dark mode"
+        <button class="icon-button btn btn-link p-0 text-decoration-none fs-6 text-secondary" type="button" aria-label="{{ __('Toggle dark mode') }}"
             x-data="{ dark: document.documentElement.classList.contains('dark') }"
             @click="dark = !dark; document.documentElement.classList.toggle('dark', dark); localStorage.setItem('admin-theme', dark ? 'dark' : 'light')"
-            :title="dark ? 'Switch to light mode' : 'Switch to dark mode'">
+            :title="dark ? '{{ __('Switch to light mode') }}' : '{{ __('Switch to dark mode') }}'">
             <i class="fa-regular" :class="dark ? 'fa-sun' : 'fa-moon'"></i>
         </button>
 
         {{-- Notifications --}}
         <div class="position-relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
-            <button type="button" class="icon-button admin-notification-trigger btn btn-link p-0 text-decoration-none fs-6 text-secondary position-relative" @click="open = !open" aria-label="Notifications">
+            <button type="button" class="icon-button admin-notification-trigger btn btn-link p-0 text-decoration-none fs-6 text-secondary position-relative" @click="open = !open" aria-label="{{ __('Notifications') }}">
                 <i class="fa-regular fa-bell"></i>
                 @if($unreadNotifications > 0)
                     <span class="admin-notification-dot">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>
@@ -54,13 +54,13 @@
                 style="z-index: 60;">
                 <div class="admin-notification-dropdown__head">
                     <div>
-                        <span>Operations alerts</span>
-                        <small>{{ $unreadNotifications }} unread</small>
+                        <span>{{ __('Operations alerts') }}</span>
+                        <small>{{ $unreadNotifications }} {{ __('unread') }}</small>
                     </div>
                     @if($unreadNotifications > 0)
                         <form method="POST" action="{{ route('admin.notifications.mark-all-read') }}">
                             @csrf
-                            <button type="submit">Mark all read</button>
+                            <button type="submit">{{ __('Mark all read') }}</button>
                         </form>
                     @endif
                 </div>
@@ -80,14 +80,14 @@
                     @empty
                         <div class="admin-notification-empty">
                             <i class="fa-regular fa-circle-check"></i>
-                            <strong>No active alerts</strong>
-                            <span>Critical store events will appear here.</span>
+                            <strong>{{ __('No active alerts') }}</strong>
+                            <span>{{ __('Critical store events will appear here.') }}</span>
                         </div>
                     @endforelse
                 </div>
 
                 <a href="{{ route('admin.notifications.index') }}" class="admin-notification-dropdown__footer">
-                    View all notifications
+                    {{ __('View all notifications') }}
                 </a>
             </div>
         </div>
@@ -120,17 +120,17 @@
 
                     <div class="py-1">
                         <a href="{{ route('admin.profile.edit') }}" class="d-flex align-items-center gap-2.5 px-3 py-2 text-decoration-none text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5" style="font-size: 13px;">
-                            <i class="fa-regular fa-user text-secondary" style="width: 16px;"></i> My profile
+                            <i class="fa-regular fa-user text-secondary" style="width: 16px;"></i> {{ __('My profile') }}
                         </a>
                         <a href="{{ route('admin.settings.index') }}" class="d-flex align-items-center gap-2.5 px-3 py-2 text-decoration-none text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5" style="font-size: 13px;">
-                            <i class="fa-solid fa-gear text-secondary" style="width: 16px;"></i> Settings
+                            <i class="fa-solid fa-gear text-secondary" style="width: 16px;"></i> {{ __('Settings') }}
                         </a>
                     </div>
 
                     <form method="POST" action="{{ route('logout') }}" class="border-top border-slate-100 dark:border-white/10 m-0">
                         @csrf
                         <button type="submit" class="w-100 d-flex align-items-center gap-2.5 px-3 py-2.5 border-0 bg-transparent text-danger fw-semibold hover:bg-red-50 dark:hover:bg-red-500/10" style="font-size: 13px;">
-                            <i class="fa-solid fa-right-from-bracket" style="width: 16px;"></i> Sign out
+                            <i class="fa-solid fa-right-from-bracket" style="width: 16px;"></i> {{ __('Sign out') }}
                         </button>
                     </form>
                 </div>
@@ -158,8 +158,8 @@
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="search" x-ref="input" x-model.debounce.180ms="query"
                     @input="search()" @keydown.arrow-down.prevent="move(1)" @keydown.arrow-up.prevent="move(-1)"
-                    @keydown.enter.prevent="goSelected()" placeholder="Search products, orders, customers, returns, media...">
-                <button type="button" @click="closePalette()" aria-label="Close command palette">
+                    @keydown.enter.prevent="goSelected()" placeholder="{{ __('Search products, orders, customers, returns, media...') }}">
+                <button type="button" @click="closePalette()" aria-label="{{ __('Close command palette') }}">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -168,15 +168,15 @@
                 <template x-if="loading">
                     <div class="command-palette-empty">
                         <i class="fa-solid fa-spinner fa-spin"></i>
-                        <span>Searching admin...</span>
+                        <span>{{ __('Searching admin...') }}</span>
                     </div>
                 </template>
 
                 <template x-if="!loading && visibleGroups().length === 0">
                     <div class="command-palette-empty">
                         <i class="fa-regular fa-compass"></i>
-                        <strong>No results</strong>
-                        <span>Try an order number, product SKU, customer email, or page name.</span>
+                        <strong>{{ __('No results') }}</strong>
+                        <span>{{ __('Try an order number, product SKU, customer email, or page name.') }}</span>
                     </div>
                 </template>
 

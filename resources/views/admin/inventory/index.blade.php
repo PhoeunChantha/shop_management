@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Catalog</p>
+            <p class="header-kicker mb-1">{{ __('Catalog') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">
                 {{ __('Inventory') }}
             </h2>
@@ -11,8 +11,8 @@
     <div class="admin-page">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Stock control</p>
-                <h3>Inventory</h3>
+                <p class="section-kicker">{{ __('Stock control') }}</p>
+                <h3>{{ __('Inventory') }}</h3>
             </div>
         </div>
 
@@ -23,7 +23,7 @@
                 <input type="hidden" name="per_page" value="{{ $perPage }}">
             </x-slot:hidden>
 
-            <x-select name="stock" size="sm" label="Stock status" :value="request('stock')" placeholder="Any stock"
+            <x-select name="stock" size="sm" label="{{ __('Stock status') }}" :value="request('stock')" placeholder="{{ __('Any stock') }}"
                 :options="['in_stock' => 'In stock', 'low_stock' => 'Low stock', 'out_of_stock' => 'Out of stock']" />
         </x-filter-card>
 
@@ -34,7 +34,7 @@
                         <x-per-page-selector :current="$perPage" />
                     </x-slot:left>
                     <x-slot:right>
-                        <x-search-input name="search" placeholder="Search product or SKU..." />
+                        <x-search-input name="search" placeholder="{{ __('Search product or SKU...') }}" />
                     </x-slot:right>
                 </x-table-toolbar>
             </x-slot:toolbar>
@@ -42,11 +42,11 @@
             <table class="dash-table">
                     <thead>
                         <tr>
-                            <th>Product</th>
-                            <th>Type</th>
-                            <th style="width:110px;">On hand</th>
-                            <th style="width:150px;">Status</th>
-                            <th class="text-end" style="width:120px;">Actions</th>
+                            <th>{{ __('Product') }}</th>
+                            <th>{{ __('Type') }}</th>
+                            <th style="width:110px;">{{ __('On hand') }}</th>
+                            <th style="width:150px;">{{ __('Status') }}</th>
+                            <th class="text-end" style="width:120px;">{{ __('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -85,7 +85,7 @@
                                 <td><span class="status-chip {{ $stClass }}">{{ $stLabel }}</span></td>
                                 <td class="text-end">
                                     <a href="{{ route('admin.inventory.show', $product->id) }}" class="orders-view">
-                                        <i class="fa-solid fa-sliders"></i><span>Manage</span>
+                                        <i class="fa-solid fa-sliders"></i><span>{{ __('Manage') }}</span>
                                     </a>
                                 </td>
                             </tr>
@@ -94,8 +94,8 @@
                                 <td colspan="5">
                                     <x-admin.empty-state
                                         icon="fa-solid fa-warehouse"
-                                        title="No products found"
-                                        message="Adjust the search or stock filter."
+                                        title="{{ __('No products found') }}"
+                                        message="{{ __('Adjust the search or stock filter.') }}"
                                     />
                                 </td>
                             </tr>
@@ -104,7 +104,7 @@
             </table>
 
             <x-slot:footer>
-                <x-table-footer :paginator="$products" label="products" />
+                <x-table-footer :paginator="$products" label="{{ __('products') }}" />
             </x-slot:footer>
         </x-admin.table-card>
     </div>

@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Marketing</p>
+            <p class="header-kicker mb-1">{{ __('Marketing') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('Deal Details') }}</h2>
         </div>
     </x-slot>
@@ -27,21 +27,21 @@
             </div>
             <div class="deal-show-actions">
                 <a href="{{ route('admin.deals.edit', $deal) }}" class="premium-button premium-button--dark">
-                    <i class="fa-solid fa-pen"></i><span>Edit</span>
+                    <i class="fa-solid fa-pen"></i><span>{{ __('Edit') }}</span>
                 </a>
                 <a href="{{ route('admin.deals.index') }}" class="ghost-button ghost-button--panel">
-                    <i class="fa-solid fa-arrow-left"></i><span>Back</span>
+                    <i class="fa-solid fa-arrow-left"></i><span>{{ __('Back') }}</span>
                 </a>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
             <section class="premium-card deal-detail-card lg:col-span-1">
-                <p class="section-kicker mb-3">Campaign settings</p>
+                <p class="section-kicker mb-3">{{ __('Campaign settings') }}</p>
                 <dl class="deal-detail-list">
-                    <div><dt>Status</dt><dd>{{ ucfirst($deal->lifecycle) }}</dd></div>
-                    <div><dt>Badge</dt><dd>{{ $deal->badge ?: 'None' }}</dd></div>
-                    <div><dt>Discount</dt><dd>
+                    <div><dt>{{ __('Status') }}</dt><dd>{{ ucfirst($deal->lifecycle) }}</dd></div>
+                    <div><dt>{{ __('Badge') }}</dt><dd>{{ $deal->badge ?: 'None' }}</dd></div>
+                    <div><dt>{{ __('Discount') }}</dt><dd>
                         @if ($deal->discount_type === 'percentage')
                             {{ rtrim(rtrim(number_format((float) $deal->discount_value, 2), '0'), '.') }}%
                         @elseif ($deal->discount_type === 'fixed')
@@ -50,17 +50,17 @@
                             Campaign only
                         @endif
                     </dd></div>
-                    <div><dt>Priority</dt><dd>{{ $deal->priority }}</dd></div>
-                    <div><dt>CTA</dt><dd>{{ $deal->cta_text ?: 'None' }}</dd></div>
-                    <div><dt>CTA URL</dt><dd>{{ $deal->cta_url ?: 'None' }}</dd></div>
+                    <div><dt>{{ __('Priority') }}</dt><dd>{{ $deal->priority }}</dd></div>
+                    <div><dt>{{ __('CTA') }}</dt><dd>{{ $deal->cta_text ?: 'None' }}</dd></div>
+                    <div><dt>{{ __('CTA URL') }}</dt><dd>{{ $deal->cta_url ?: 'None' }}</dd></div>
                 </dl>
             </section>
 
             <section class="premium-card deal-detail-card lg:col-span-2">
                 <div class="page-section-header mb-3">
                     <div>
-                        <p class="section-kicker">Products</p>
-                        <h3>Products in this deal</h3>
+                        <p class="section-kicker">{{ __('Products') }}</p>
+                        <h3>{{ __('Products in this deal') }}</h3>
                     </div>
                 </div>
                 <div class="deal-product-grid">
@@ -78,8 +78,8 @@
                             <em>${{ number_format((float) $product->price, 2) }}</em>
                         </article>
                     @empty
-                        <x-admin.empty-state icon="fa-solid fa-box-open" title="No products attached"
-                            message="Edit this campaign and select products to promote." />
+                        <x-admin.empty-state icon="fa-solid fa-box-open" title="{{ __('No products attached') }}"
+                            message="{{ __('Edit this campaign and select products to promote.') }}" />
                     @endforelse
                 </div>
             </section>

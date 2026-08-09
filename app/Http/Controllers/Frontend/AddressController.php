@@ -18,7 +18,7 @@ class AddressController extends Controller
     {
         $this->addresses->create($request->user(), $this->validated($request));
 
-        return back()->with('success', 'Address added.');
+        return back()->with('success', __('Address added.'));
     }
 
     public function update(Request $request, Address $address): RedirectResponse
@@ -26,7 +26,7 @@ class AddressController extends Controller
         $this->authorizeOwner($request, $address);
         $this->addresses->update($address, $this->validated($request));
 
-        return back()->with('success', 'Address updated.');
+        return back()->with('success', __('Address updated.'));
     }
 
     public function destroy(Request $request, Address $address): RedirectResponse
@@ -34,7 +34,7 @@ class AddressController extends Controller
         $this->authorizeOwner($request, $address);
         $this->addresses->delete($address);
 
-        return back()->with('success', 'Address removed.');
+        return back()->with('success', __('Address removed.'));
     }
 
     public function makeDefault(Request $request, Address $address): RedirectResponse
@@ -42,7 +42,7 @@ class AddressController extends Controller
         $this->authorizeOwner($request, $address);
         $this->addresses->makeDefault($request->user(), $address);
 
-        return back()->with('success', 'Default address updated.');
+        return back()->with('success', __('Default address updated.'));
     }
 
     /**

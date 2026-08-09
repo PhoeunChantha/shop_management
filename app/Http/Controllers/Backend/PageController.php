@@ -56,7 +56,7 @@ class PageController extends Controller
 
             Page::create($validated);
 
-            return to_route('admin.pages.index')->with('success', 'Page created successfully!');
+            return to_route('admin.pages.index')->with('success', __('Page created successfully!'));
         } catch (\Exception $e) {
             Log::error('Error creating page: '.$e->getMessage(), ['exception' => $e]);
 
@@ -82,7 +82,7 @@ class PageController extends Controller
 
             $page->update($validated);
 
-            return to_route('admin.pages.index')->with('success', 'Page updated successfully!');
+            return to_route('admin.pages.index')->with('success', __('Page updated successfully!'));
         } catch (\Exception $e) {
             Log::error('Error updating page: '.$e->getMessage(), ['exception' => $e, 'page_id' => $id]);
 
@@ -102,7 +102,7 @@ class PageController extends Controller
             return back()->withErrors(['error' => 'An error occurred while deleting the page.']);
         }
 
-        return to_route('admin.pages.index')->with('success', 'Page deleted successfully!');
+        return to_route('admin.pages.index')->with('success', __('Page deleted successfully!'));
     }
 
     public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse

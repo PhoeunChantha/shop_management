@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Product Management</p>
+            <p class="header-kicker mb-1">{{ __('Product Management') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">
                 {{ __('Products') }}
             </h2>
@@ -13,42 +13,42 @@
     <div class="admin-page products-index-page" x-data="{ importOpen: false, importPreviewOpen: @js((bool) $importPreview) }">
         <div class="page-section-header products-index-hero">
             <div class="products-index-hero__copy">
-                <p class="section-kicker">Product table</p>
-                <h3>All Products</h3>
-                <p>Manage catalog visibility, stock position, pricing, and merchandising flags from one clean workspace.</p>
+                <p class="section-kicker">{{ __('Product table') }}</p>
+                <h3>{{ __('All Products') }}</h3>
+                <p>{{ __('Manage catalog visibility, stock position, pricing, and merchandising flags from one clean workspace.') }}</p>
             </div>
             <div class="products-index-actions">
                 <a href="{{ route('admin.products.template') }}" class="ghost-button product-action-link">
-                    <i class="fa-solid fa-file-arrow-down"></i><span>Template</span>
+                    <i class="fa-solid fa-file-arrow-down"></i><span>{{ __('Template') }}</span>
                 </a>
                 <a href="{{ route('admin.products.export', request()->query()) }}" class="ghost-button product-action-link">
-                    <i class="fa-solid fa-file-export"></i><span>Export</span>
+                    <i class="fa-solid fa-file-export"></i><span>{{ __('Export') }}</span>
                 </a>
                 <button type="button" class="ghost-button product-action-link" @click="importOpen = true">
-                    <i class="fa-solid fa-file-import"></i><span>Import</span>
+                    <i class="fa-solid fa-file-import"></i><span>{{ __('Import') }}</span>
                 </button>
                 <a href="{{ route('admin.products.create') }}" class="premium-button premium-button--dark product-create-button">
                     <i class="fa-solid fa-plus"></i>
-                    <span>New Product</span>
+                    <span>{{ __('New Product') }}</span>
                 </a>
             </div>
         </div>
 
         <div class="product-metric-strip">
             <div class="product-metric">
-                <span>Total catalog</span>
+                <span>{{ __('Total catalog') }}</span>
                 <strong>{{ number_format($products->total()) }}</strong>
             </div>
             <div class="product-metric">
-                <span>Categories</span>
+                <span>{{ __('Categories') }}</span>
                 <strong>{{ number_format($categories->count()) }}</strong>
             </div>
             <div class="product-metric">
-                <span>Brands</span>
+                <span>{{ __('Brands') }}</span>
                 <strong>{{ number_format($brands->count()) }}</strong>
             </div>
             <div class="product-metric product-metric--muted">
-                <span>Current view</span>
+                <span>{{ __('Current view') }}</span>
                 <strong>{{ number_format($products->count()) }}</strong>
             </div>
         </div>
@@ -59,7 +59,7 @@
         @if (session('import_errors'))
             <div class="premium-card p-4 mt-3" style="border-left: 3px solid var(--danger-color);">
                 <p class="section-kicker mb-2" style="color: var(--danger-color);">
-                    <i class="fa-solid fa-triangle-exclamation"></i> Skipped rows from last import
+                    <i class="fa-solid fa-triangle-exclamation"></i> {{ __('Skipped rows from last import') }}
                 </p>
                 <ul class="text-sm text-gray-600 dark:text-slate-300 mb-0 ps-3" style="max-height:220px; overflow:auto; list-style:disc;">
                     @foreach (session('import_errors') as $err)
@@ -76,10 +76,10 @@
                 <div class="form-modal__head">
                     <div class="form-modal__icon"><i class="fa-solid fa-file-import"></i></div>
                     <div class="flex-grow-1">
-                        <h3>Import Products</h3>
-                        <p>Upload a filled-in template. Rows are matched by SKU (upsert).</p>
+                        <h3>{{ __('Import Products') }}</h3>
+                        <p>{{ __('Upload a filled-in template. Rows are matched by SKU (upsert).') }}</p>
                     </div>
-                    <button type="button" class="form-modal__close" @click="importOpen = false" aria-label="Close">
+                    <button type="button" class="form-modal__close" @click="importOpen = false" aria-label="{{ __('Close') }}">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
@@ -91,14 +91,14 @@
                         @error('file')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         <small class="text-gray-400 dark:text-slate-500 d-block mt-1">
                             .xlsx or .csv, up to 10MB. Need the format?
-                            <a href="{{ route('admin.products.template') }}" class="text-blue-500">Download the template</a>.
+                            <a href="{{ route('admin.products.template') }}" class="text-blue-500">{{ __('Download the template') }}</a>.
                         </small>
                     </div>
                     <div class="form-modal__foot">
-                        <button type="button" class="modal-cancel" @click="importOpen = false">Cancel</button>
+                        <button type="button" class="modal-cancel" @click="importOpen = false">{{ __('Cancel') }}</button>
                         <button type="submit" class="form-submit-button">
                             <i class="fa-solid fa-magnifying-glass-chart"></i>
-                            <span>Preview import</span>
+                            <span>{{ __('Preview import') }}</span>
                         </button>
                     </div>
                 </form>
@@ -112,10 +112,10 @@
                     <div class="form-modal__head">
                         <div class="form-modal__icon"><i class="fa-solid fa-clipboard-check"></i></div>
                         <div class="flex-grow-1 min-w-0">
-                            <h3>Review Product Import</h3>
+                            <h3>{{ __('Review Product Import') }}</h3>
                             <p>{{ $importPreview['filename'] ?? 'Uploaded spreadsheet' }}</p>
                         </div>
-                        <button type="button" class="form-modal__close" @click="importPreviewOpen = false" aria-label="Close">
+                        <button type="button" class="form-modal__close" @click="importPreviewOpen = false" aria-label="{{ __('Close') }}">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
@@ -134,14 +134,14 @@
                                 <table>
                                     <thead>
                                         <tr>
-                                            <th>Row</th>
-                                            <th>Action</th>
-                                            <th>SKU</th>
-                                            <th>Product</th>
-                                            <th>Category</th>
-                                            <th>Brand</th>
-                                            <th>Price</th>
-                                            <th>Status</th>
+                                            <th>{{ __('Row') }}</th>
+                                            <th>{{ __('Action') }}</th>
+                                            <th>{{ __('SKU') }}</th>
+                                            <th>{{ __('Product') }}</th>
+                                            <th>{{ __('Category') }}</th>
+                                            <th>{{ __('Brand') }}</th>
+                                            <th>{{ __('Price') }}</th>
+                                            <th>{{ __('Status') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -164,7 +164,7 @@
 
                         @if (! empty($importPreview['errors']))
                             <div class="product-import-review__errors">
-                                <strong><i class="fa-solid fa-triangle-exclamation"></i> Fix or skip these rows</strong>
+                                <strong><i class="fa-solid fa-triangle-exclamation"></i> {{ __('Fix or skip these rows') }}</strong>
                                 <ul>
                                     @foreach (array_slice($importPreview['errors'], 0, 8) as $error)
                                         <li><b>Row {{ $error['row'] }}:</b> {{ implode(' ', $error['messages']) }}</li>
@@ -177,13 +177,13 @@
                     <div class="form-modal__foot">
                         <form method="POST" action="{{ route('admin.products.import.cancel') }}" class="mb-0">
                             @csrf
-                            <button type="submit" class="modal-cancel">Cancel import</button>
+                            <button type="submit" class="modal-cancel">{{ __('Cancel import') }}</button>
                         </form>
                         <form method="POST" action="{{ route('admin.products.import.confirm') }}" class="mb-0">
                             @csrf
                             <button type="submit" class="form-submit-button" @disabled(($importPreview['valid'] ?? 0) < 1)>
                                 <i class="fa-solid fa-file-import"></i>
-                                <span>Confirm import</span>
+                                <span>{{ __('Confirm import') }}</span>
                             </button>
                         </form>
                     </div>
@@ -200,18 +200,18 @@
             </x-slot:hidden>
 
             <x-select name="category_id" size="sm" :options="$categories" :value="request('category_id')"
-                placeholder="All categories" searchable />
+                placeholder="{{ __('All categories') }}" searchable />
 
             <x-select name="brand_id" size="sm" :options="$brands" :value="request('brand_id')"
-                placeholder="All brands" searchable />
+                placeholder="{{ __('All brands') }}" searchable />
 
-            <x-select name="status" size="sm" :value="request('status')" placeholder="Any status"
+            <x-select name="status" size="sm" :value="request('status')" placeholder="{{ __('Any status') }}"
                 :options="['draft' => 'Draft', 'active' => 'Active', 'inactive' => 'Inactive', 'archived' => 'Archived']" />
 
-            <x-select name="stock" size="sm" :value="request('stock')" placeholder="Any stock"
+            <x-select name="stock" size="sm" :value="request('stock')" placeholder="{{ __('Any stock') }}"
                 :options="['in_stock' => 'In stock', 'low_stock' => 'Low stock', 'out_of_stock' => 'Out of stock']" />
 
-            <x-select name="flag" size="sm" :value="request('flag')" placeholder="Any flag"
+            <x-select name="flag" size="sm" :value="request('flag')" placeholder="{{ __('Any flag') }}"
                 :options="['featured' => 'Featured', 'new' => 'New Arrival', 'best_seller' => 'Best Seller', 'on_sale' => 'On Sale']" />
         </x-filter-card>
 
@@ -224,13 +224,13 @@
                             @method('PATCH')
                             <template x-for="id in selected" :key="'bulk-status-' + id"><input type="hidden" name="ids[]" :value="id"></template>
                             <input type="hidden" name="operation" value="status">
-                            <select name="status" class="bulk-select" aria-label="Bulk product status">
-                                <option value="active">Active</option>
-                                <option value="draft">Draft</option>
-                                <option value="inactive">Inactive</option>
-                                <option value="archived">Archived</option>
+                            <select name="status" class="bulk-select" aria-label="{{ __('Bulk product status') }}">
+                                <option value="active">{{ __('Active') }}</option>
+                                <option value="draft">{{ __('Draft') }}</option>
+                                <option value="inactive">{{ __('Inactive') }}</option>
+                                <option value="archived">{{ __('Archived') }}</option>
                             </select>
-                            <button type="submit" class="bulk-btn"><i class="fa-solid fa-toggle-on"></i> Status</button>
+                            <button type="submit" class="bulk-btn"><i class="fa-solid fa-toggle-on"></i> {{ __('Status') }}</button>
                         </form>
 
                         <form method="POST" action="{{ route('admin.products.bulk-update') }}" class="bulk-bar__form product-bulk-form">
@@ -238,13 +238,13 @@
                             @method('PATCH')
                             <template x-for="id in selected" :key="'bulk-category-' + id"><input type="hidden" name="ids[]" :value="id"></template>
                             <input type="hidden" name="operation" value="category">
-                            <select name="category_id" class="bulk-select" aria-label="Bulk product category" required>
-                                <option value="">Category</option>
+                            <select name="category_id" class="bulk-select" aria-label="{{ __('Bulk product category') }}" required>
+                                <option value="">{{ __('Category') }}</option>
                                 @foreach ($categories as $category)
                                     <option value="{{ $category->id }}">{{ $category->name }}</option>
                                 @endforeach
                             </select>
-                            <button type="submit" class="bulk-btn"><i class="fa-solid fa-layer-group"></i> Move</button>
+                            <button type="submit" class="bulk-btn"><i class="fa-solid fa-layer-group"></i> {{ __('Move') }}</button>
                         </form>
 
                         <form method="POST" action="{{ route('admin.products.bulk-update') }}" class="bulk-bar__form product-bulk-form">
@@ -252,13 +252,13 @@
                             @method('PATCH')
                             <template x-for="id in selected" :key="'bulk-brand-' + id"><input type="hidden" name="ids[]" :value="id"></template>
                             <input type="hidden" name="operation" value="brand">
-                            <select name="brand_id" class="bulk-select" aria-label="Bulk product brand" required>
-                                <option value="">Brand</option>
+                            <select name="brand_id" class="bulk-select" aria-label="{{ __('Bulk product brand') }}" required>
+                                <option value="">{{ __('Brand') }}</option>
                                 @foreach ($brands as $brand)
                                     <option value="{{ $brand->id }}">{{ $brand->name }}</option>
                                 @endforeach
                             </select>
-                            <button type="submit" class="bulk-btn"><i class="fa-solid fa-copyright"></i> Brand</button>
+                            <button type="submit" class="bulk-btn"><i class="fa-solid fa-copyright"></i> {{ __('Brand') }}</button>
                         </form>
 
                         <form method="POST" action="{{ route('admin.products.bulk-update') }}" class="bulk-bar__form product-bulk-form">
@@ -266,23 +266,23 @@
                             @method('PATCH')
                             <template x-for="id in selected" :key="'bulk-flag-' + id"><input type="hidden" name="ids[]" :value="id"></template>
                             <input type="hidden" name="operation" value="flag">
-                            <select name="flag" class="bulk-select" aria-label="Bulk product flag">
-                                <option value="is_featured">Featured</option>
-                                <option value="is_new">New</option>
-                                <option value="is_best_seller">Best seller</option>
-                                <option value="is_on_sale">On sale</option>
+                            <select name="flag" class="bulk-select" aria-label="{{ __('Bulk product flag') }}">
+                                <option value="is_featured">{{ __('Featured') }}</option>
+                                <option value="is_new">{{ __('New') }}</option>
+                                <option value="is_best_seller">{{ __('Best seller') }}</option>
+                                <option value="is_on_sale">{{ __('On sale') }}</option>
                             </select>
-                            <select name="flag_value" class="bulk-select bulk-select--mini" aria-label="Bulk product flag value">
-                                <option value="1">On</option>
-                                <option value="0">Off</option>
+                            <select name="flag_value" class="bulk-select bulk-select--mini" aria-label="{{ __('Bulk product flag value') }}">
+                                <option value="1">{{ __('On') }}</option>
+                                <option value="0">{{ __('Off') }}</option>
                             </select>
-                            <button type="submit" class="bulk-btn"><i class="fa-solid fa-tags"></i> Flag</button>
+                            <button type="submit" class="bulk-btn"><i class="fa-solid fa-tags"></i> {{ __('Flag') }}</button>
                         </form>
 
                         <form method="POST" action="{{ route('admin.products.bulk-export') }}" class="bulk-bar__form">
                             @csrf
                             <template x-for="id in selected" :key="'bulk-export-' + id"><input type="hidden" name="ids[]" :value="id"></template>
-                            <button type="submit" class="bulk-btn"><i class="fa-solid fa-file-export"></i> Export</button>
+                            <button type="submit" class="bulk-btn"><i class="fa-solid fa-file-export"></i> {{ __('Export') }}</button>
                         </form>
                     </x-slot:actions>
                 </x-bulk-bar>
@@ -294,7 +294,7 @@
                         <x-per-page-selector :current="$perPage" />
                     </x-slot:left>
                     <x-slot:right>
-                        <x-search-input name="search" placeholder="Search products by name, SKU or barcode..." />
+                        <x-search-input name="search" placeholder="{{ __('Search products by name, SKU or barcode...') }}" />
                     </x-slot:right>
                 </x-table-toolbar>
             </x-slot:toolbar>
@@ -304,19 +304,19 @@
                         <tr>
                             <th class="bulk-check-col">
                                 <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
-                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="{{ __('Select all') }}">
                             </th>
                             <th class="text-center" style="width:56px;">#</th>
-                            <th>Image</th>
-                            <th>Product</th>
-                            <th>Category</th>
-                            <th>Brand</th>
-                            <th>Price</th>
-                            <th>Stock</th>
-                            <th>Flags</th>
-                            <th>Status</th>
-                            <th>Created</th>
-                            <th class="text-end">Actions</th>
+                            <th>{{ __('Image') }}</th>
+                            <th>{{ __('Product') }}</th>
+                            <th>{{ __('Category') }}</th>
+                            <th>{{ __('Brand') }}</th>
+                            <th>{{ __('Price') }}</th>
+                            <th>{{ __('Stock') }}</th>
+                            <th>{{ __('Flags') }}</th>
+                            <th>{{ __('Status') }}</th>
+                            <th>{{ __('Created') }}</th>
+                            <th class="text-end">{{ __('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -324,7 +324,7 @@
                             <tr class="product-row">
                                 <td class="bulk-check-col">
                                     <input type="checkbox" class="bulk-check" data-row-check value="{{ $product->id }}"
-                                        x-model="selected" aria-label="Select row">
+                                        x-model="selected" aria-label="{{ __('Select row') }}">
                                 </td>
                                 <td class="text-center text-sm text-gray-500 dark:text-slate-400">{{ ($products->firstItem() ?? 0) + $loop->index }}</td>
                                 <td>
@@ -354,10 +354,10 @@
                                 <td><span class="product-stock">{{ $product->total_stock }}</span></td>
                                 <td>
                                     <div class="d-flex flex-wrap gap-1">
-                                        @if ($product->is_featured)<span class="pill-badge pill-featured">Featured</span>@endif
-                                        @if ($product->is_new)<span class="pill-badge pill-new">New</span>@endif
-                                        @if ($product->is_best_seller)<span class="pill-badge pill-best">Best</span>@endif
-                                        @if ($product->is_on_sale)<span class="pill-badge pill-sale">Sale</span>@endif
+                                        @if ($product->is_featured)<span class="pill-badge pill-featured">{{ __('Featured') }}</span>@endif
+                                        @if ($product->is_new)<span class="pill-badge pill-new">{{ __('New') }}</span>@endif
+                                        @if ($product->is_best_seller)<span class="pill-badge pill-best">{{ __('Best') }}</span>@endif
+                                        @if ($product->is_on_sale)<span class="pill-badge pill-sale">{{ __('Sale') }}</span>@endif
                                     </div>
                                 </td>
                                 <td>
@@ -369,16 +369,16 @@
                                     <div class="action-group">
                                         <x-table-actions>
                                             <a href="{{ route('admin.products.show', $product->id) }}" class="table-actions__item" role="menuitem">
-                                                <i class="fa-solid fa-eye"></i><span>View</span>
+                                                <i class="fa-solid fa-eye"></i><span>{{ __('View') }}</span>
                                             </a>
                                             <a href="{{ route('admin.products.edit', $product->id) }}" class="table-actions__item" role="menuitem">
-                                                <i class="fa-solid fa-pen"></i><span>Edit</span>
+                                                <i class="fa-solid fa-pen"></i><span>{{ __('Edit') }}</span>
                                             </a>
                                             <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
                                                 data-delete-modal-target="deleteProductModal"
                                                 data-delete-action="{{ route('admin.products.destroy', $product->id) }}"
                                                 data-delete-name="{{ $product->name }}">
-                                                <i class="fa-solid fa-trash"></i><span>Delete</span>
+                                                <i class="fa-solid fa-trash"></i><span>{{ __('Delete') }}</span>
                                             </button>
                                         </x-table-actions>
                                     </div>
@@ -387,8 +387,8 @@
                         @empty
                             <tr>
                                 <td colspan="12">
-                                    <x-admin.empty-state icon="fa-solid fa-box-open" title="No products found"
-                                        message="Create your first product or adjust the filters." />
+                                    <x-admin.empty-state icon="fa-solid fa-box-open" title="{{ __('No products found') }}"
+                                        message="{{ __('Create your first product or adjust the filters.') }}" />
                                 </td>
                             </tr>
                         @endforelse
@@ -396,11 +396,11 @@
                 </table>
 
             <x-slot:footer>
-                <x-table-footer :paginator="$products" label="products" />
+                <x-table-footer :paginator="$products" label="{{ __('products') }}" />
             </x-slot:footer>
         </x-admin.table-card>
 
-        <x-delete-confirm-modal id="deleteProductModal" title="Delete this product?"
-            message-after="and all its images, variants and specifications. This cannot be undone." />
+        <x-delete-confirm-modal id="deleteProductModal" title="{{ __('Delete this product?') }}"
+            message-after="{{ __('and all its images, variants and specifications. This cannot be undone.') }}" />
     </div>
 </x-app-layout>

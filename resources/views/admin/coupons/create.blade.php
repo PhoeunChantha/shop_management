@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Marketing</p>
+            <p class="header-kicker mb-1">{{ __('Marketing') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">
                 {{ __('Create Coupon') }}
             </h2>
@@ -12,16 +12,14 @@
 
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Coupon setup</p>
-                <h3>New Coupon</h3>
+                <p class="section-kicker">{{ __('Coupon setup') }}</p>
+                <h3>{{ __('New Coupon') }}</h3>
             </div>
             <a href="{{ route('admin.coupons.index') }}" class="ghost-button ghost-button--panel">
                 <i class="fa-solid fa-arrow-left"></i>
-                <span>Back</span>
+                <span>{{ __('Back') }}</span>
             </a>
         </div>
-
-        <x-message />
 
         <section class="premium-card form-panel">
             <div class="form-panel-header">
@@ -29,9 +27,9 @@
                     <i class="fa-solid fa-ticket"></i>
                 </div>
                 <div>
-                    <p class="section-kicker">Create discount coupon</p>
-                    <h3>Coupon details</h3>
-                    <p>Set up a promo code with its discount, limits and validity window.</p>
+                    <p class="section-kicker">{{ __('Create discount coupon') }}</p>
+                    <h3>{{ __('Coupon details') }}</h3>
+                    <p>{{ __('Set up a promo code with its discount, limits and validity window.') }}</p>
                 </div>
             </div>
 

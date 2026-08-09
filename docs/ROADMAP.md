@@ -30,9 +30,14 @@ the **admin/backend** can be finished before touching the **storefront/frontend*
   pagination / bulk actions), table loader, custom select, image + gallery upload, product picker,
   form modal, delete modal
 
-## ✅ Frontend (view-only stubs — no logic yet)
-- Shop list/detail, Cart, Checkout, Account (dashboard/orders/wishlist/addresses),
-  Auth (login/register/forgot/otp), info pages. **All render static Blade only.**
+## ✅ Frontend (storefront — now fully functional)
+- ✅ Shop list/detail (gallery, variant picker, stock state, specs, related, reviews),
+  Cart (DB + guest merge), **Checkout → order → payment**, Account
+  (dashboard/orders/wishlist/addresses/wallet/notifications), Auth
+  (login/register/forgot/reset/OTP + Google OAuth), info pages, storefront search.
+- ✅ Real-time order notifications (Reverb), SEO meta on shop/product, **XML sitemap**.
+- ⬜ Remaining: wire admin-managed home content (banners/collections/announcement)
+  fully into the home page rails config.
 
 ---
 
@@ -67,11 +72,12 @@ the **admin/backend** can be finished before touching the **storefront/frontend*
 - ✅ `[A]` Recent orders feed + low-stock feed
 
 ### 1.6 Content & config (admin)
-- ⬜ `[B]` `Address` model + migration (shared, used by checkout later)
+- ✅ `[B]` `Address` model + migration (customer address book, used by checkout)
 - ✅ `[A]` Shipping methods & rates (flat / free / free-over-threshold) — `ShippingMethod` + `costFor()`
 - ✅ `[A]` Tax rules (rate, inclusive/exclusive)
 - ✅ `[A]` CMS pages (about/privacy/terms) backed by DB + **FAQ manager** (Q&A by category)
-- ⬜ `[A]` Email templates / notification settings
+- ✅ `[A]` Email / notification settings (Settings → **Notifications** tab: order-email
+  toggle, sender name/address, admin order-alert copy) — drives `OrderConfirmationMail`
 
 ### 1.7 Content & merchandising (discovered from the storefront review)
 The **entire home page is hardcoded** today — a shop owner can't change it. Needs admin.
@@ -80,80 +86,83 @@ _Admin management is built; rendering these on the storefront home is a Phase 2 
 - ✅ `[A]` **Collections** — curated groups (name, image, linked products) with searchable product picker
 - ⬜ `[A]` **Homepage sections** config — which product rails show (best sellers / new / trending / flash sale + countdown)
 - ✅ `[A]` **Announcement bar** messages
-- ⬜ `[B]` **Newsletter subscribers** — capture signups + admin list/export
-- ⬜ `[A]` Payment method toggles (Card / Apple / Google / COD) + free-ship threshold in Settings
+- ✅ `[B]` **Newsletter subscribers** — capture signups + admin list/export
+- ✅ `[A]` Payment method toggles (online / manual QR / wallet) in Settings → Payment
 
-### 1.8 Reviews (admin side — storefront shows ratings everywhere)
-- 🔜 `[B]` `Review` model (product, user, rating, title, body, status, verified-purchase)
-- 🔜 `[A]` Admin **moderation** (approve/reject), product **rating aggregation** (avg + count)
-- ⬜ `[F]` (later) storefront submit-review + display (Phase 4)
-
----
-
-# PHASE 2 — Storefront foundation  `[F]` (start here after admin is done)
-
-### 2.1 Customer auth (currently GET stubs only)
-- ⬜ `[F]` Wire `AuthController` POST: register, login, logout
-- ⬜ `[F]` Forgot / reset password flow
-- ⬜ `[F]` OTP / email verification (if kept)
-
-### 2.2 Shop browsing
-- ⬜ `[F]` Product listing: filters (category/brand/size/color/price), sort, pagination
-- ⬜ `[F]` Product detail: gallery, variant picker, stock state, specs, related products
-- ⬜ `[F]` Storefront search
-
-### 2.3 Cart
-- ⬜ `[B]` `carts` + `cart_items` tables; `CartService` (add/update/remove/clear/totals)
-- ⬜ `[F]` Guest cart (session) + logged-in cart (DB) with merge-on-login
-- ⬜ `[F]` Add-to-cart with variant + qty; stock validation
-- ⬜ `[F]` Cart page (line items, qty steppers, remove, subtotal)
-- ⬜ `[F]` Header cart badge (live count)
+### 1.8 Reviews  ✅
+- ✅ `[B]` `Review` model (product, user, rating, title, body, status, verified-purchase)
+- ✅ `[A]` Admin **moderation** (approve/reject), product **rating aggregation** (avg + count)
+- ✅ `[F]` storefront submit-review (delivered orders) + display
 
 ---
 
-# PHASE 3 — Checkout & Payment  `[F]` / `[B]`
+# PHASE 2 — Storefront foundation  `[F]`  ✅
 
-- ⬜ `[F]` Checkout: address → shipping → payment → review
-- ⬜ `[F]` Address book (create/select) at checkout + guest checkout
-- ⬜ `[B]` Place order: create Order+OrderItems, snapshot prices, decrement stock, apply coupon/shipping/tax
-- ⬜ `[F]` Payment gateway (Stripe / PayPal / local e.g. ABA/Bakong) + COD
-- ⬜ `[B]` Payment webhooks → order status; failure/retry handling
-- ⬜ `[F]` Order confirmation page + confirmation email
+### 2.1 Customer auth  ✅
+- ✅ `[F]` Wire `AuthController` POST: register, login, logout (+ Google OAuth)
+- ✅ `[F]` Forgot / reset password flow
+- ✅ `[F]` OTP / email verification
+
+### 2.2 Shop browsing  ✅
+- ✅ `[F]` Product listing: filters (category/brand/size/color/price), sort, pagination
+- ✅ `[F]` Product detail: gallery, variant picker, stock state, specs, related products
+- ✅ `[F]` Storefront search
+
+### 2.3 Cart  ✅
+- ✅ `[B]` `carts` + `cart_items` tables; `CartService` (add/update/remove/clear/totals)
+- ✅ `[F]` Guest cart (localStorage) + logged-in cart (DB) with merge-on-login
+- ✅ `[F]` Add-to-cart with variant + qty; stock validation
+- ✅ `[F]` Cart page (line items, qty steppers, remove, subtotal)
+- ✅ `[F]` Header cart badge (live count)
 
 ---
 
-# PHASE 4 — Customer account  `[F]`
+# PHASE 3 — Checkout & Payment  `[F]` / `[B]`  ✅
 
-- ⬜ `[F]` Orders list + detail + tracking (real data)
-- ⬜ `[F]` Address book CRUD
-- ⬜ `[B]` `Wishlist` model → ⬜ `[F]` wishlist add/remove, move to cart
-- ⬜ `[F]` Profile & password update
-- ⬜ `[B]` `Review` model → ⬜ `[F]` submit review (delivered orders) → ⬜ `[A]` moderation + product rating display
+- ✅ `[F]` Checkout: address → shipping → payment → review (multi-step)
+- ✅ `[F]` Address book (create/select) at checkout; **login required (no guest checkout)** + phone capture
+- ✅ `[B]` Place order: create Order+OrderDetails, snapshot prices, **concurrency-safe** stock decrement, apply coupon/shipping/tax
+- ✅ `[F]` Payment gateway (ABA PayWay, HMAC-signed) + in-house **Wallet** + manual QR
+- ✅ `[B]` Payment callback → order status; idempotent confirm
+- ✅ `[F]` Order confirmation page + **confirmation email w/ PDF invoice** + customer invoice download
+
+---
+
+# PHASE 4 — Customer account  `[F]`  ✅
+
+- ✅ `[F]` Orders list + detail + tracking (real data) + invoice PDF download
+- ✅ `[F]` Address book CRUD
+- ✅ `[B]` `Wishlist` model → ✅ `[F]` wishlist add/remove, move to cart
+- ✅ `[F]` Profile & password update
+- ✅ `[B]` `Review` model → ✅ `[F]` submit review (delivered orders) → ✅ `[A]` moderation + product rating display
+- ✅ `[F]` **Wallet** (balance, top-up via gateway, transaction ledger)
 
 ---
 
 # PHASE 5 — Production hardening
 
-- ⬜ `[F]` SEO: meta tags, OG, sitemap, canonical
-- ⬜ `[B]` Notifications: order emails (customer + admin), DB notifications page
-- ⬜ `[B]` i18n / multi-currency (locale switch already exists)
-- ⬜ `[B]` Tests (Pest): cart, checkout, order lifecycle, coupons
-- ⬜ `[B]` Performance: eager loading, query/index review, caching, image optimization
-- ⬜ `[B]` Security review + rate limiting on auth/checkout
+- ✅ `[F]` SEO: meta tags, OG/Twitter cards, **XML sitemap**, canonical, robots.txt
+- ✅ `[B]` Notifications: order emails (customer + admin copy), admin DB notifications page + Reverb
+- 🔜 `[B]` i18n / multi-currency: locale switch + translatable content exist; **currency config
+  (symbol/code/position) + `money()` helper + `window.UT_CURRENCY` done**. Remaining: FX conversion
+  rates + per-currency switching + migrating remaining hardcoded `$` price outputs in views to `money()`
+- ✅ `[B]` Tests (Pest): cart, checkout, order lifecycle, coupons, wallet, email, sitemap, currency (115 passing)
+- ✅ `[B]` Performance: orders lookup indexes; **cached settings map (1 query/request) + 10-min nav cache**. Remaining: image optimization audit
+- ✅ `[B]` Security: rate limiting (auth/checkout/coupon/newsletter) + **baseline security headers middleware** (nosniff, frame, referrer, permissions, HSTS on https)
 
 ---
 
-## Remaining Phase 1 admin items (to finish before Phase 2)
-1. 🔜 **1.8 Reviews** — `Review` model + moderation + rating aggregation.
-2. **1.7 Newsletter subscribers** — capture + admin list/export.
-3. **1.7 Payment method toggles + free-ship threshold** (in Settings).
-4. **1.6 `Address` model** + migration (shared, for checkout).
-5. **1.7 Homepage sections** config (which product rails show).
-6. **1.6 Email templates / notification settings**.
-7. *(optional polish)* **1.1 shared `<x-form-modal>`** + modal for Sizes/Colors.
+## Remaining work (Phases 1–4 essentially complete)
+Admin panel, storefront, cart, checkout, payment, wallet, account, reviews, and
+notifications are all built and tested (109 Pest tests passing). What's left:
 
-Then **Phase 2** storefront — note most admin-managed content (banners, collections,
-announcement bar, CMS pages, FAQ) is **not yet rendered on the storefront**; wiring it up
-is part of Phase 2.
+1. ✅ **1.7 Homepage sections config** — admin toggles which product rails (best / flash /
+   new / trending) show + their headings (Settings → Home); banners/collections/announcements
+   already render on the home page.
+2. 🔜 **Multi-currency (full)** — FX rates, per-currency switching, migrate remaining
+   hardcoded `$` price outputs in views to the `money()` helper. Currency config foundation done.
+3. 🔜 **Performance** — image optimization audit (caching + indexes done).
+4. 🔜 **Security review** — full pass / authz spot-checks (rate limiting + headers done).
+5. *(optional polish)* shared `<x-form-modal>` + modal for Sizes/Colors.
 
-> Critical path to a working shop (once frontend starts): **Cart → Checkout → Order → Payment.**
+> Critical path **done**: Cart → Checkout → Order → Payment all work end to end.

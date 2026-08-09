@@ -14,7 +14,7 @@
         <div class="form-field col-span-2 md:col-span-1">
             <label for="name">Color Name <span class="text-red-500">*</span></label>
             <input value="{{ old('name', $color->name ?? '') }}" type="text" name="name" id="name"
-                class="form-input" placeholder="e.g. Red, Black, Royal Blue" required>
+                class="form-input" placeholder="{{ __('e.g. Red, Black, Royal Blue') }}" required>
             @error('name')
                 <p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>
             @enderror
@@ -30,7 +30,7 @@
                     class="w-11 h-11 p-0.5 border border-gray-300 rounded cursor-pointer">
                 
                 <input value="{{ old('code', $color->code ?? '#000000') }}" type="text" name="code" id="code"
-                    class="form-input font-mono" placeholder="e.g. #FF0000, #000000" required>
+                    class="form-input font-mono" placeholder="{{ __('e.g. #FF0000, #000000') }}" required>
             </div>
             @error('code')
                 <p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>
@@ -39,9 +39,9 @@
 
         {{-- Sort Order Input --}}
         <div class="form-field col-span-2 md:col-span-1">
-            <label for="sort_order">Sort Order</label>
+            <label for="sort_order">{{ __('Sort Order') }}</label>
             <input value="{{ old('sort_order', $color->sort_order ?? 0) }}" type="number" name="sort_order" id="sort_order"
-                class="form-input" min="0" placeholder="e.g. 0, 1, 2">
+                class="form-input" min="0" placeholder="{{ __('e.g. 0, 1, 2') }}">
             @error('sort_order')
                 <p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>
             @enderror
@@ -49,10 +49,10 @@
 
         {{-- Status Input --}}
         <div class="form-field col-span-2 md:col-span-1">
-            <label for="status">Status</label>
+            <label for="status">{{ __('Status') }}</label>
             <select name="status" id="status" class="form-input">
-                <option value="1" {{ old('status', $color->status ?? 1) == 1 ? 'selected' : '' }}>Enable</option>
-                <option value="0" {{ old('status', $color->status ?? 1) == 0 ? 'selected' : '' }}>Disable</option>
+                <option value="1" {{ old('status', $color->status ?? 1) == 1 ? 'selected' : '' }}>{{ __('Enable') }}</option>
+                <option value="0" {{ old('status', $color->status ?? 1) == 0 ? 'selected' : '' }}>{{ __('Disable') }}</option>
             </select>
             @error('status')
                 <p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>
@@ -62,7 +62,7 @@
     </div>
 
     <div class="form-panel-footer mt-6">
-        <a href="{{ route('admin.colors.index') }}" class="form-cancel-button">Cancel</a>
+        <a href="{{ route('admin.colors.index') }}" class="form-cancel-button">{{ __('Cancel') }}</a>
         <button type="submit" class="form-submit-button">
             <i class="fa-solid fa-check"></i>
             {{ $submitText }}

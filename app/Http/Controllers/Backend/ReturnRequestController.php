@@ -58,7 +58,7 @@ class ReturnRequestController extends Controller
 
         $return = $this->returns->create($request->validated());
 
-        return to_route('admin.returns.show', $return)->with('success', 'Return request created.');
+        return to_route('admin.returns.show', $return)->with('success', __('Return request created.'));
     }
 
     public function show(ReturnRequest $return): View
@@ -76,6 +76,6 @@ class ReturnRequestController extends Controller
 
         $this->returns->update($return, $request->validated());
 
-        return back()->with('success', 'Return request updated.');
+        return back()->with('success', __('Return request updated.'));
     }
 }

@@ -50,7 +50,7 @@ class PurchaseOrderController extends Controller
         try {
             $purchaseOrder = $this->purchaseOrders->create($request->validated());
 
-            return to_route('admin.purchase-orders.show', $purchaseOrder)->with('success', 'Purchase order created.');
+            return to_route('admin.purchase-orders.show', $purchaseOrder)->with('success', __('Purchase order created.'));
         } catch (\InvalidArgumentException $e) {
             return back()->withInput()->with('error', $e->getMessage());
         }

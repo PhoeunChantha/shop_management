@@ -15,6 +15,7 @@
         'close'   => '<path d="M6 6l12 12M18 6 6 18"/>',
         'arrowR'  => '<path d="M5 12h14M13 6l6 6-6 6"/>',
         'arrowL'  => '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+        'download' => '<path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"/>',
         'chevD'   => '<path d="m6 9 6 6 6-6"/>',
         'chevR'   => '<path d="m9 6 6 6-6 6"/>',
         'plus'    => '<path d="M12 5v14M5 12h14"/>',

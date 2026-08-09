@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Overview</p>
+            <p class="header-kicker mb-1">{{ __('Overview') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('Dashboard') }}</h2>
         </div>
     </x-slot>
@@ -9,7 +9,7 @@
     @php
         $admin = Auth::user();
         $hour = (int) now()->format('G');
-        $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good evening');
+        $greeting = $hour < 12 ? __('Good morning') : ($hour < 18 ? __('Good afternoon') : __('Good evening'));
 
         // Compact payload consumed by ApexCharts (rendered client-side).
         $dashData = [
@@ -42,14 +42,14 @@
                     <div class="daterange-control">
                         <i class="fa-regular fa-calendar"></i>
                         <input type="text" class="form-input" data-daterange data-daterange-submit
-                            placeholder="Select date range" readonly autocomplete="off"
+                            placeholder="{{ __('Select date range') }}" readonly autocomplete="off"
                             value="{{ $dateFrom && $dateTo ? $rangeLabel : '' }}">
                     </div>
                     <input type="hidden" name="date_from" value="{{ $dateFrom }}">
                     <input type="hidden" name="date_to" value="{{ $dateTo }}">
                 </form>
                 <a href="{{ route('admin.products.create') }}" class="premium-button premium-button--dark">
-                    <i class="fa-solid fa-plus"></i><span>New product</span>
+                    <i class="fa-solid fa-plus"></i><span>{{ __('New product') }}</span>
                 </a>
             </div>
         </div>
@@ -77,8 +77,8 @@
             <div class="dash-ops-panel__intro">
                 <span class="dash-ops-panel__icon"><i class="fa-solid fa-command"></i></span>
                 <div>
-                    <h3>Today&apos;s control queue</h3>
-                    <p>High-signal tasks from orders, support, inventory, reviews, and alerts.</p>
+                    <h3>{{ __("Today's control queue") }}</h3>
+                    <p>{{ __('High-signal tasks from orders, support, inventory, reviews, and alerts.') }}</p>
                 </div>
             </div>
             <div class="dash-ops-grid">
@@ -101,12 +101,12 @@
             <section class="dash-panel">
                 <div class="dash-panel__head">
                     <div>
-                        <h3>Revenue</h3>
+                        <h3>{{ __('Revenue') }}</h3>
                         <p>{{ $rangeLabel }}</p>
                     </div>
                     <div class="dash-panel__metric">
                         <strong>{{ $chart['total'] }}</strong>
-                        <span>total · peak {{ $chart['peak'] }}</span>
+                        <span>{{ __('total · peak') }} {{ $chart['peak'] }}</span>
                     </div>
                 </div>
                 <div id="revChart" class="dash-apex"></div>
@@ -116,8 +116,8 @@
             <section class="dash-panel dash-panel--compact">
                 <div class="dash-panel__head">
                     <div>
-                        <h3>Order status</h3>
-                        <p>All time</p>
+                        <h3>{{ __('Order status') }}</h3>
+                        <p>{{ __('All time') }}</p>
                     </div>
                 </div>
                 @if (count($statusBreakdown))
@@ -135,7 +135,7 @@
                         </ul>
                     </div>
                 @else
-                    <div class="dash-empty"><i class="fa-solid fa-receipt"></i><p>No orders yet.</p></div>
+                    <div class="dash-empty"><i class="fa-solid fa-receipt"></i><p>{{ __('No orders yet.') }}</p></div>
                 @endif
             </section>
         </div>
@@ -146,15 +146,15 @@
             <section class="dash-panel">
                 <div class="dash-panel__head">
                     <div>
-                        <h3>Recent orders</h3>
-                        <p>Latest activity</p>
+                        <h3>{{ __('Recent orders') }}</h3>
+                        <p>{{ __('Latest activity') }}</p>
                     </div>
-                    <a href="{{ route('admin.orders.index') }}" class="dash-link">View all <i class="fa-solid fa-arrow-right"></i></a>
+                    <a href="{{ route('admin.orders.index') }}" class="dash-link">{{ __('View all') }} <i class="fa-solid fa-arrow-right"></i></a>
                 </div>
                 <div class="dash-table-wrap">
                     <table class="dash-table">
                         <thead>
-                            <tr><th>Order</th><th>Customer</th><th>Status</th><th class="text-end">Total</th><th class="text-end">Date</th></tr>
+                            <tr><th>{{ __('Order') }}</th><th>{{ __('Customer') }}</th><th>{{ __('Status') }}</th><th class="text-end">{{ __('Total') }}</th><th class="text-end">{{ __('Date') }}</th></tr>
                         </thead>
                         <tbody>
                             @forelse ($recentOrders as $order)
@@ -164,11 +164,11 @@
                                     </td>
                                     <td>{{ $order->customer_name }}</td>
                                     <td><span class="status-chip {{ $order->status->badge() }}">{{ $order->status->label() }}</span></td>
-                                    <td class="text-end dash-table__amt">${{ number_format($order->grand_total, 2) }}</td>
+                                    <td class="text-end dash-table__amt">{{ money($order->grand_total) }}</td>
                                     <td class="text-end dash-table__date">{{ ($order->placed_at ?? $order->created_at)?->format('d M') }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="5"><div class="dash-empty"><i class="fa-solid fa-receipt"></i><p>No orders yet.</p></div></td></tr>
+                                <tr><td colspan="5"><div class="dash-empty"><i class="fa-solid fa-receipt"></i><p>{{ __('No orders yet.') }}</p></div></td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -179,14 +179,14 @@
             <section class="dash-panel">
                 <div class="dash-panel__head">
                     <div>
-                        <h3>Top products</h3>
-                        <p>Best sellers in this range</p>
+                        <h3>{{ __('Top products') }}</h3>
+                        <p>{{ __('Best sellers in this range') }}</p>
                     </div>
-                    <a href="{{ route('admin.products.index') }}" class="dash-link">Catalog <i class="fa-solid fa-arrow-right"></i></a>
+                    <a href="{{ route('admin.products.index') }}" class="dash-link">{{ __('Catalog') }} <i class="fa-solid fa-arrow-right"></i></a>
                 </div>
                 <div class="dash-products">
                     @if ($topProducts->isEmpty())
-                        <div class="dash-empty"><i class="fa-solid fa-box-open"></i><p>No product sales in this range.</p></div>
+                        <div class="dash-empty"><i class="fa-solid fa-box-open"></i><p>{{ __('No product sales in this range.') }}</p></div>
                     @else
                         <div id="topProductsChart"></div>
                     @endif
@@ -197,8 +197,8 @@
             <section class="dash-panel">
                 <div class="dash-panel__head">
                     <div>
-                        <h3>Low stock</h3>
-                        <p>Running out soon</p>
+                        <h3>{{ __('Low stock') }}</h3>
+                        <p>{{ __('Running out soon') }}</p>
                     </div>
                     <span class="dash-panel__badge"><i class="fa-solid fa-triangle-exclamation"></i></span>
                 </div>
@@ -216,7 +216,7 @@
                     @empty
                         <div class="dash-empty dash-empty--ok">
                             <i class="fa-solid fa-circle-check"></i>
-                            <p>All stock levels are healthy.</p>
+                            <p>{{ __('All stock levels are healthy.') }}</p>
                         </div>
                     @endforelse
                 </div>
@@ -228,14 +228,14 @@
                 <span>{{ $fulfillment['health'] }}%</span>
             </div>
             <div class="dash-fulfillment__copy">
-                <p class="section-kicker mb-1">Fulfillment pulse</p>
-                <h3>Shipping workload is {{ $fulfillment['open'] > 0 ? 'active' : 'clear' }}</h3>
-                <p>{{ number_format($fulfillment['open']) }} open orders, {{ number_format($fulfillment['shipped']) }} shipped, {{ number_format($fulfillment['delivered']) }} delivered in this range.</p>
+                <p class="section-kicker mb-1">{{ __('Fulfillment pulse') }}</p>
+                <h3>{{ __('Shipping workload is') }} {{ $fulfillment['open'] > 0 ? __('active') : __('clear') }}</h3>
+                <p>{{ number_format($fulfillment['open']) }} {{ __('open orders') }}, {{ number_format($fulfillment['shipped']) }} {{ __('shipped') }}, {{ number_format($fulfillment['delivered']) }} {{ __('delivered in this range.') }}</p>
             </div>
             <div class="dash-fulfillment__stats">
-                <span><strong>{{ number_format($fulfillment['open']) }}</strong>Open</span>
-                <span><strong>{{ number_format($fulfillment['shipped']) }}</strong>Shipped</span>
-                <span><strong>{{ number_format($fulfillment['cancelled']) }}</strong>Cancelled</span>
+                <span><strong>{{ number_format($fulfillment['open']) }}</strong>{{ __('Open') }}</span>
+                <span><strong>{{ number_format($fulfillment['shipped']) }}</strong>{{ __('Shipped') }}</span>
+                <span><strong>{{ number_format($fulfillment['cancelled']) }}</strong>{{ __('Cancelled') }}</span>
             </div>
         </section>
     </div>
@@ -329,7 +329,7 @@
                             plotOptions: { pie: { donut: { size: '72%', labels: { show: true,
                                 name: { color: muted },
                                 value: { color: dark ? '#e2e8f0' : '#101827', fontSize: '22px', fontWeight: 800 },
-                                total: { show: true, label: 'Orders', color: muted, formatter: () => total } } } } },
+                                total: { show: true, label: '{{ __('Orders') }}', color: muted, formatter: () => total } } } } },
                             tooltip: { theme: dark ? 'dark' : 'light' },
                         }).render();
                     }
@@ -353,7 +353,7 @@
                                 labels: { style: { colors: muted, fontSize: '11px' } } },
                             yaxis: { labels: { style: { colors: muted, fontSize: '12px' } } },
                             tooltip: { theme: dark ? 'dark' : 'light',
-                                y: { formatter: (v, opts) => Number(v).toLocaleString() + ' sold · ' + data.topProducts.revenue[opts.dataPointIndex] } },
+                                y: { formatter: (v, opts) => Number(v).toLocaleString() + ' {{ __('sold') }} · ' + data.topProducts.revenue[opts.dataPointIndex] } },
                         }).render();
                     }
                 }

@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Sales</p>
+            <p class="header-kicker mb-1">{{ __('Sales') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">
                 {{ __('Order') }} {{ $order->order_number }}
             </h2>
@@ -12,7 +12,7 @@
         {{-- Header --}}
         <div class="order-detail-head order-detail-hero">
             <div>
-                <p class="section-kicker">Order detail</p>
+                <p class="section-kicker">{{ __('Order detail') }}</p>
                 <div class="order-detail-head__meta">
                     <span class="order-detail-head__num">{{ $order->order_number }}</span>
                     <span class="status-chip {{ $order->status->badge() }}">{{ $order->status->label() }}</span>
@@ -29,16 +29,16 @@
             </div>
             <div class="d-flex align-items-center flex-wrap gap-2">
                 <a href="{{ route('admin.orders.invoice', $order->id) }}" target="_blank" class="ghost-button ghost-button--panel">
-                    <i class="fa-solid fa-file-invoice"></i><span>Invoice</span>
+                    <i class="fa-solid fa-file-invoice"></i><span>{{ __('Invoice') }}</span>
                 </a>
                 <a href="{{ route('admin.orders.packing-slip', $order->id) }}" target="_blank" class="ghost-button ghost-button--panel">
-                    <i class="fa-solid fa-box-open"></i><span>Packing slip</span>
+                    <i class="fa-solid fa-box-open"></i><span>{{ __('Packing slip') }}</span>
                 </a>
                 <a href="{{ route('admin.returns.create', ['order_id' => $order->id]) }}" class="ghost-button ghost-button--panel">
-                    <i class="fa-solid fa-rotate-left"></i><span>Create return</span>
+                    <i class="fa-solid fa-rotate-left"></i><span>{{ __('Create return') }}</span>
                 </a>
                 <a href="{{ route('admin.orders.index') }}" class="ghost-button ghost-button--panel">
-                    <i class="fa-solid fa-arrow-left"></i><span>Back</span>
+                    <i class="fa-solid fa-arrow-left"></i><span>{{ __('Back') }}</span>
                 </a>
             </div>
         </div>
@@ -47,19 +47,19 @@
 
         <div class="order-detail-summary">
             <div class="order-detail-summary__card">
-                <span>Total</span>
+                <span>{{ __('Total') }}</span>
                 <strong>${{ number_format($order->grand_total, 2) }}</strong>
             </div>
             <div class="order-detail-summary__card">
-                <span>Items</span>
+                <span>{{ __('Items') }}</span>
                 <strong>{{ $order->details->sum('quantity') }}</strong>
             </div>
             <div class="order-detail-summary__card">
-                <span>Customer</span>
+                <span>{{ __('Customer') }}</span>
                 <strong>{{ $order->user ? 'Account' : 'Guest' }}</strong>
             </div>
             <div class="order-detail-summary__card">
-                <span>Fulfillment</span>
+                <span>{{ __('Fulfillment') }}</span>
                 <strong>{{ $order->fulfillment_status->label() }}</strong>
             </div>
         </div>
@@ -95,14 +95,14 @@
                 <section class="premium-card order-items-card">
                     <div class="table-titlebar">
                         <div>
-                            <h3>Items</h3>
+                            <h3>{{ __('Items') }}</h3>
                             <p>{{ $order->details->count() }} line{{ $order->details->count() === 1 ? '' : 's' }} · {{ $order->details->sum('quantity') }} units</p>
                         </div>
                     </div>
                     <div class="premium-table-wrap">
                         <table class="premium-table">
                             <thead>
-                                <tr><th>Product</th><th>SKU</th><th>Price</th><th>Qty</th><th class="text-end">Total</th></tr>
+                                <tr><th>{{ __('Product') }}</th><th>{{ __('SKU') }}</th><th>{{ __('Price') }}</th><th>{{ __('Qty') }}</th><th class="text-end">{{ __('Total') }}</th></tr>
                             </thead>
                             <tbody>
                                 @foreach ($order->details as $item)
@@ -131,19 +131,19 @@
                     </div>
 
                     <div class="order-money">
-                        <div><span>Subtotal</span><span>${{ number_format($order->subtotal, 2) }}</span></div>
+                        <div><span>{{ __('Subtotal') }}</span><span>${{ number_format($order->subtotal, 2) }}</span></div>
                         @if ($order->discount_total > 0)
                             <div><span>Discount {{ $order->coupon_code ? "($order->coupon_code)" : '' }}</span><span class="text-green-600">−${{ number_format($order->discount_total, 2) }}</span></div>
                         @endif
-                        <div><span>Shipping</span><span>{{ $order->shipping_total > 0 ? '$'.number_format($order->shipping_total, 2) : 'Free' }}</span></div>
-                        <div><span>Tax</span><span>${{ number_format($order->tax_total, 2) }}</span></div>
-                        <div class="order-money__total"><span>Total</span><span>${{ number_format($order->grand_total, 2) }}</span></div>
+                        <div><span>{{ __('Shipping') }}</span><span>{{ $order->shipping_total > 0 ? '$'.number_format($order->shipping_total, 2) : 'Free' }}</span></div>
+                        <div><span>{{ __('Tax') }}</span><span>${{ number_format($order->tax_total, 2) }}</span></div>
+                        <div class="order-money__total"><span>{{ __('Total') }}</span><span>${{ number_format($order->grand_total, 2) }}</span></div>
                     </div>
                 </section>
 
                 @if ($order->customer_note)
                     <section class="premium-card p-4 order-note-card">
-                        <p class="section-kicker mb-1">Customer note</p>
+                        <p class="section-kicker mb-1">{{ __('Customer note') }}</p>
                         <p class="text-sm text-gray-700 dark:text-slate-300 mb-0">{{ $order->customer_note }}</p>
                     </section>
                 @endif
@@ -170,9 +170,9 @@
 
                 {{-- Activity timeline --}}
                 <section class="premium-card p-4 order-activity-card">
-                    <p class="section-kicker mb-3">Activity</p>
+                    <p class="section-kicker mb-3">{{ __('Activity') }}</p>
                     @if ($order->events->isEmpty())
-                        <p class="text-sm text-gray-400 mb-0">No activity recorded yet.</p>
+                        <p class="text-sm text-gray-400 mb-0">{{ __('No activity recorded yet.') }}</p>
                     @else
                         <ul class="order-timeline">
                             @foreach ($order->events as $event)
@@ -198,13 +198,13 @@
                 <section class="premium-card form-panel order-fulfilment-card">
                     <div class="form-panel-header">
                         <div class="form-panel-icon"><i class="fa-solid fa-truck-fast"></i></div>
-                        <div><h3>Fulfillment</h3><p>Update shipping state, carrier, tracking and notes.</p></div>
+                        <div><h3>{{ __('Fulfillment') }}</h3><p>{{ __('Update shipping state, carrier, tracking and notes.') }}</p></div>
                     </div>
                     <form action="{{ route('admin.orders.update', $order->id) }}" method="POST" class="form-panel-body d-flex flex-column gap-3">
                         @csrf
                         @method('PATCH')
                         <div class="form-field">
-                            <label for="status">Order status</label>
+                            <label for="status">{{ __('Order status') }}</label>
                             <select name="status" id="status" class="form-input">
                                 @foreach (\App\Enums\OrderStatus::options() as $val => $label)
                                     <option value="{{ $val }}" @selected(old('status', $order->status->value) === $val)>{{ $label }}</option>
@@ -213,7 +213,7 @@
                             @error('status')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-field">
-                            <label for="payment_status">Payment status</label>
+                            <label for="payment_status">{{ __('Payment status') }}</label>
                             <select name="payment_status" id="payment_status" class="form-input">
                                 @foreach (\App\Enums\PaymentStatus::options() as $val => $label)
                                     <option value="{{ $val }}" @selected(old('payment_status', $order->payment_status->value) === $val)>{{ $label }}</option>
@@ -222,7 +222,7 @@
                             @error('payment_status')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-field">
-                            <label for="fulfillment_status">Fulfillment status</label>
+                            <label for="fulfillment_status">{{ __('Fulfillment status') }}</label>
                             <select name="fulfillment_status" id="fulfillment_status" class="form-input">
                                 @foreach (\App\Enums\FulfillmentStatus::options() as $val => $label)
                                     <option value="{{ $val }}" @selected(old('fulfillment_status', $order->fulfillment_status->value) === $val)>{{ $label }}</option>
@@ -231,34 +231,34 @@
                             @error('fulfillment_status')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-field">
-                            <label for="carrier">Carrier</label>
+                            <label for="carrier">{{ __('Carrier') }}</label>
                             <input type="text" name="carrier" id="carrier" class="form-input"
-                                value="{{ old('carrier', $order->carrier) }}" placeholder="e.g. DHL, FedEx, local courier">
+                                value="{{ old('carrier', $order->carrier) }}" placeholder="{{ __('e.g. DHL, FedEx, local courier') }}">
                             @error('carrier')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-field">
-                            <label for="tracking_number">Tracking number</label>
+                            <label for="tracking_number">{{ __('Tracking number') }}</label>
                             <input type="text" name="tracking_number" id="tracking_number" class="form-input"
-                                value="{{ old('tracking_number', $order->tracking_number) }}" placeholder="e.g. 1Z999AA10123456784">
+                                value="{{ old('tracking_number', $order->tracking_number) }}" placeholder="{{ __('e.g. 1Z999AA10123456784') }}">
                             @error('tracking_number')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-field">
-                            <label for="shipped_at">Shipped date</label>
+                            <label for="shipped_at">{{ __('Shipped date') }}</label>
                             <input type="date" name="shipped_at" id="shipped_at" class="form-input"
                                 value="{{ old('shipped_at', $order->shipped_at?->format('Y-m-d')) }}">
                             @error('shipped_at')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-field">
-                            <label for="admin_note">Internal note</label>
-                            <textarea name="admin_note" id="admin_note" class="form-input" rows="3" placeholder="Not shown to the customer">{{ old('admin_note', $order->admin_note) }}</textarea>
+                            <label for="admin_note">{{ __('Internal note') }}</label>
+                            <textarea name="admin_note" id="admin_note" class="form-input" rows="3" placeholder="{{ __('Not shown to the customer') }}">{{ old('admin_note', $order->admin_note) }}</textarea>
                             @error('admin_note')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
-                        <button type="submit" class="form-submit-button"><i class="fa-solid fa-check"></i> Save changes</button>
+                        <button type="submit" class="form-submit-button"><i class="fa-solid fa-check"></i> {{ __('Save changes') }}</button>
                     </form>
                 </section>
 
                 <section class="premium-card p-4 order-side-card">
-                    <p class="section-kicker mb-3">Customer</p>
+                    <p class="section-kicker mb-3">{{ __('Customer') }}</p>
                     <div class="d-flex align-items-center gap-3">
                         <span class="order-avatar">{{ strtoupper(mb_substr($order->customer_name ?: '?', 0, 1)) }}</span>
                         <div class="text-sm">
@@ -275,21 +275,21 @@
                         <div class="order-ltv">
                             <div class="order-ltv__cell">
                                 <b>{{ (int) $customerStats->orders }}</b>
-                                <span>Total orders</span>
+                                <span>{{ __('Total orders') }}</span>
                             </div>
                             <div class="order-ltv__cell">
                                 <b>${{ number_format((float) $customerStats->spent, 2) }}</b>
-                                <span>Lifetime value</span>
+                                <span>{{ __('Lifetime value') }}</span>
                             </div>
                         </div>
                     @endif
                 </section>
 
                 <section class="premium-card p-4 order-side-card">
-                    <p class="section-kicker mb-2">Shipping</p>
+                    <p class="section-kicker mb-2">{{ __('Shipping') }}</p>
                     <dl class="mb-0">
                         <div class="order-info-row">
-                            <dt>Address</dt>
+                            <dt>{{ __('Address') }}</dt>
                             <dd>
                                 {{ $order->shipping_address }}<br>
                                 {{ collect([$order->shipping_city, $order->shipping_zip])->filter()->join(', ') }}<br>
@@ -297,34 +297,34 @@
                             </dd>
                         </div>
                         <div class="order-info-row">
-                            <dt>Method</dt>
+                            <dt>{{ __('Method') }}</dt>
                             <dd>{{ $order->shipping_method ? ucfirst($order->shipping_method) : '—' }}</dd>
                         </div>
                         <div class="order-info-row">
-                            <dt>Fulfillment</dt>
+                            <dt>{{ __('Fulfillment') }}</dt>
                             <dd><span class="status-chip {{ $order->fulfillment_status->badge() }}">{{ $order->fulfillment_status->label() }}</span></dd>
                         </div>
                         @if ($order->carrier)
                             <div class="order-info-row">
-                                <dt>Carrier</dt>
+                                <dt>{{ __('Carrier') }}</dt>
                                 <dd>{{ $order->carrier }}</dd>
                             </div>
                         @endif
                         @if ($order->tracking_number)
                             <div class="order-info-row">
-                                <dt>Tracking</dt>
+                                <dt>{{ __('Tracking') }}</dt>
                                 <dd class="font-mono">{{ $order->tracking_number }}</dd>
                             </div>
                         @endif
                         @if ($order->shipped_at)
                             <div class="order-info-row">
-                                <dt>Shipped on</dt>
+                                <dt>{{ __('Shipped on') }}</dt>
                                 <dd>{{ $order->shipped_at->format('M d, Y') }}</dd>
                             </div>
                         @endif
                         @if ($order->fulfilled_at)
                             <div class="order-info-row">
-                                <dt>Fulfilled on</dt>
+                                <dt>{{ __('Fulfilled on') }}</dt>
                                 <dd>{{ $order->fulfilled_at->format('M d, Y') }}</dd>
                             </div>
                         @endif
@@ -332,19 +332,19 @@
                 </section>
 
                 <section class="premium-card p-4 order-side-card">
-                    <p class="section-kicker mb-2">Payment</p>
+                    <p class="section-kicker mb-2">{{ __('Payment') }}</p>
                     <dl class="mb-0">
                         <div class="order-info-row">
-                            <dt>Method</dt>
+                            <dt>{{ __('Method') }}</dt>
                             <dd>{{ $order->payment_method ? strtoupper($order->payment_method) : '—' }}</dd>
                         </div>
                         <div class="order-info-row">
-                            <dt>Status</dt>
+                            <dt>{{ __('Status') }}</dt>
                             <dd><span class="status-chip {{ $order->payment_status->badge() }}">{{ $order->payment_status->label() }}</span></dd>
                         </div>
                         @if ($order->paid_at)
                             <div class="order-info-row">
-                                <dt>Paid on</dt>
+                                <dt>{{ __('Paid on') }}</dt>
                                 <dd>{{ $order->paid_at->format('M d, Y') }}</dd>
                             </div>
                         @endif

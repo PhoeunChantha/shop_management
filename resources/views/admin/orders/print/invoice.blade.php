@@ -8,8 +8,8 @@
 </head>
 <body>
     <div class="toolbar no-print">
-        <a href="{{ route('admin.orders.show', $order->id) }}"><span>&larr;</span> Back to order</a>
-        <button type="button" class="btn-print" onclick="window.print()">🖨 Print / Save PDF</button>
+        <a href="{{ route('admin.orders.show', $order->id) }}"><span>{{ __('&larr;') }}</span> {{ __('Back to order') }}</a>
+        <button type="button" class="btn-print" onclick="window.print()">{{ __('🖨 Print / Save PDF') }}</button>
     </div>
 
     <div class="sheet">
@@ -31,7 +31,7 @@
                 </div>
             </div>
             <div class="doc-title">
-                <h1>INVOICE</h1>
+                <h1>{{ __('INVOICE') }}</h1>
                 <div class="num">{{ $order->order_number }}</div>
                 <div class="date">Issued {{ ($order->placed_at ?? $order->created_at)?->format('F j, Y') }}</div>
                 @php($pc = $order->payment_status->value === 'paid' ? '#047857' : ($order->payment_status->value === 'unpaid' ? '#b45309' : '#be123c'))
@@ -42,7 +42,7 @@
         {{-- Parties --}}
         <div class="parties">
             <div class="party">
-                <h3>Billed to</h3>
+                <h3>{{ __('Billed to') }}</h3>
                 <p class="name">{{ $order->customer_name }}</p>
                 <p>
                     {{ $order->customer_email }}<br>
@@ -50,7 +50,7 @@
                 </p>
             </div>
             <div class="party">
-                <h3>Ship to</h3>
+                <h3>{{ __('Ship to') }}</h3>
                 <p>
                     {{ $order->shipping_address }}<br>
                     {{ collect([$order->shipping_city, $order->shipping_zip])->filter()->join(', ') }}<br>
@@ -58,11 +58,11 @@
                 </p>
             </div>
             <div class="party">
-                <h3>Details</h3>
+                <h3>{{ __('Details') }}</h3>
                 <p>
-                    <strong>Status:</strong> {{ $order->status->label() }}<br>
-                    <strong>Payment:</strong> {{ $order->payment_method ? strtoupper($order->payment_method) : '—' }}<br>
-                    @if ($order->shipping_method)<strong>Shipping:</strong> {{ ucfirst($order->shipping_method) }}@endif
+                    <strong>{{ __('Status:') }}</strong> {{ $order->status->label() }}<br>
+                    <strong>{{ __('Payment:') }}</strong> {{ $order->payment_method ? strtoupper($order->payment_method) : '—' }}<br>
+                    @if ($order->shipping_method)<strong>{{ __('Shipping:') }}</strong> {{ ucfirst($order->shipping_method) }}@endif
                 </p>
             </div>
         </div>
@@ -72,10 +72,10 @@
             <thead>
                 <tr>
                     <th style="width:34px;" class="c">#</th>
-                    <th>Description</th>
-                    <th class="c" style="width:60px;">Qty</th>
-                    <th class="r" style="width:110px;">Unit price</th>
-                    <th class="r" style="width:120px;">Amount</th>
+                    <th>{{ __('Description') }}</th>
+                    <th class="c" style="width:60px;">{{ __('Qty') }}</th>
+                    <th class="r" style="width:110px;">{{ __('Unit price') }}</th>
+                    <th class="r" style="width:120px;">{{ __('Amount') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -98,20 +98,20 @@
         {{-- Totals --}}
         <div class="totals">
             <table>
-                <tr><td class="lbl">Subtotal</td><td class="val mono">${{ number_format($order->subtotal, 2) }}</td></tr>
+                <tr><td class="lbl">{{ __('Subtotal') }}</td><td class="val mono">${{ number_format($order->subtotal, 2) }}</td></tr>
                 @if ($order->discount_total > 0)
                     <tr><td class="lbl">Discount{{ $order->coupon_code ? ' (' . $order->coupon_code . ')' : '' }}</td>
                         <td class="val mono">−${{ number_format($order->discount_total, 2) }}</td></tr>
                 @endif
-                <tr><td class="lbl">Shipping</td><td class="val mono">{{ $order->shipping_total > 0 ? '$' . number_format($order->shipping_total, 2) : 'Free' }}</td></tr>
-                <tr><td class="lbl">Tax</td><td class="val mono">${{ number_format($order->tax_total, 2) }}</td></tr>
-                <tr class="grand"><td class="lbl" style="color:#111827;">Total</td><td class="val mono">${{ number_format($order->grand_total, 2) }}</td></tr>
+                <tr><td class="lbl">{{ __('Shipping') }}</td><td class="val mono">{{ $order->shipping_total > 0 ? '$' . number_format($order->shipping_total, 2) : 'Free' }}</td></tr>
+                <tr><td class="lbl">{{ __('Tax') }}</td><td class="val mono">${{ number_format($order->tax_total, 2) }}</td></tr>
+                <tr class="grand"><td class="lbl" style="color:#111827;">{{ __('Total') }}</td><td class="val mono">${{ number_format($order->grand_total, 2) }}</td></tr>
             </table>
         </div>
 
         @if ($order->customer_note)
             <div class="note-box">
-                <strong>Customer note</strong>
+                <strong>{{ __('Customer note') }}</strong>
                 {{ $order->customer_note }}
             </div>
         @endif

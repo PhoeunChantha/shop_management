@@ -1,5 +1,5 @@
 @extends('frontend.layouts.frontend')
-@section('title', 'Shop All Products — T-Shirt Shop')
+@section('title', __('Shop All Products').' — T-Shirt Shop')
 
 @push('head')
 <style>
@@ -13,12 +13,12 @@
     {{-- page head --}}
     <div style="background:#fff;border-bottom:1px solid var(--border)">
         <div class="ut-wrap" style="padding:30px 24px 24px">
-            <x-frontend.breadcrumb :items="[['Home', route('frontend.home')], ['Shop all products', null]]" />
+            <x-frontend.breadcrumb :items="[[__('Home'), route('frontend.home')], [__('Shop all products'), null]]" />
             <div class="ut-row" style="justify-content:space-between;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-top:8px">
-                <div><h1 style="font-size:clamp(30px,4vw,46px)">All Products</h1><p class="muted" style="margin-top:6px">{{ count($products) }} products · curated shop catalog</p></div>
+                <div><h1 style="font-size:clamp(30px,4vw,46px)">{{ __('All Products') }}</h1><p class="muted" style="margin-top:6px">{{ count($products) }} {{ __('products · curated shop catalog') }}</p></div>
                 <div style="position:relative;min-width:280px">
                     <span style="position:absolute;left:14px;top:13px;color:var(--text-2)"><x-frontend.icon n="search" :size="18" /></span>
-                    <input class="ut-input" id="shopSearch" placeholder="Search products…" style="padding-left:42px;border-radius:var(--r-pill)" oninput="filterProducts()">
+                    <input class="ut-input" id="shopSearch" placeholder="{{ __('Search products…') }}" style="padding-left:42px;border-radius:var(--r-pill)" oninput="filterProducts()">
                 </div>
             </div>
         </div>
@@ -30,9 +30,9 @@
             <aside class="ut-filters-side" style="position:sticky;top:160px">
                 <div class="ut-col" style="gap:26px">
                     <div>
-                        <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Category</div>
+                        <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">{{ __('Category') }}</div>
                         <div class="ut-col" style="gap:4px" id="catFilter">
-                            <button type="button" class="cat-btn is-active" data-cat="All" onclick="setCat(this)" style="border:0;text-align:left;padding:8px 12px;border-radius:10px;font-family:var(--font-head);font-weight:600;font-size:14px;display:flex;justify-content:space-between">All <span class="muted" style="font-weight:500">{{ count($products) }}</span></button>
+                            <button type="button" class="cat-btn is-active" data-cat="All" onclick="setCat(this)" style="border:0;text-align:left;padding:8px 12px;border-radius:10px;font-family:var(--font-head);font-weight:600;font-size:14px;display:flex;justify-content:space-between">{{ __('All') }} <span class="muted" style="font-weight:500">{{ count($products) }}</span></button>
                             @foreach($categories as $category => $details)
                                 <div class="ut-filter-group">
                                     <button type="button" class="cat-btn ut-parent-cat" data-cat="{{ $category }}" onclick="toggleCategory(this)" aria-expanded="true"><span>{{ $category }}</span><span class="muted">{{ $details['count'] }} <x-frontend.icon n="chevD" :size="14" /></span></button>
@@ -47,16 +47,16 @@
                     </div>
                     <hr class="divider">
                     <div>
-                        <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Availability</div>
-                        <label class="ut-filter-toggle"><span>Sale only</span><input id="saleOnly" type="checkbox" onchange="window.UT_SALE=this.checked; filterProducts()"><i></i></label>
-                        <label class="ut-filter-toggle"><span>New arrivals</span><input id="newOnly" type="checkbox" onchange="window.UT_NEW=this.checked; filterProducts()"><i></i></label>
-                        <label class="ut-filter-toggle"><span>Best sellers</span><input id="bestOnly" type="checkbox" onchange="window.UT_BEST=this.checked; filterProducts()"><i></i></label>
+                        <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">{{ __('Availability') }}</div>
+                        <label class="ut-filter-toggle"><span>{{ __('Sale only') }}</span><input id="saleOnly" type="checkbox" onchange="window.UT_SALE=this.checked; filterProducts()"><i></i></label>
+                        <label class="ut-filter-toggle"><span>{{ __('New arrivals') }}</span><input id="newOnly" type="checkbox" onchange="window.UT_NEW=this.checked; filterProducts()"><i></i></label>
+                        <label class="ut-filter-toggle"><span>{{ __('Best sellers') }}</span><input id="bestOnly" type="checkbox" onchange="window.UT_BEST=this.checked; filterProducts()"><i></i></label>
                     </div>
                     <hr class="divider">
                     <div>
-                        <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Brand</div>
+                        <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">{{ __('Brand') }}</div>
                         <div class="ut-col" style="gap:4px" id="brandFilter">
-                            <button type="button" class="brand-btn is-active" data-brand="All" onclick="setBrand(this)"><span>All brands</span><span>{{ count($products) }}</span></button>
+                            <button type="button" class="brand-btn is-active" data-brand="All" onclick="setBrand(this)"><span>{{ __('All brands') }}</span><span>{{ count($products) }}</span></button>
                             @foreach($brands as $brand => $count)
                                 <button type="button" class="brand-btn" data-brand="{{ $brand }}" onclick="setBrand(this)"><span>{{ $brand }}</span><span>{{ $count }}</span></button>
                             @endforeach
@@ -64,7 +64,7 @@
                     </div>
                     <hr class="divider">
                     <div>
-                        <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Size</div>
+                        <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">{{ __('Size') }}</div>
                         <div style="display:flex;flex-wrap:wrap;gap:8px">
                             @foreach($sizes as $s)
                                 <button type="button" class="ut-chip size-btn" data-size="{{ $s }}" style="width:50px;justify-content:center;padding:9px 0" onclick="setSize(this)">{{ $s }}</button>
@@ -73,7 +73,7 @@
                     </div>
                     <hr class="divider">
                     <div>
-                        <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Color</div>
+                        <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">{{ __('Color') }}</div>
                         <div style="display:flex;flex-wrap:wrap;gap:12px">
                             @foreach($colors as $k => $c)
                                 <button type="button" class="color-btn" data-color="{{ $k }}" style="border:0;background:none;padding:0" title="{{ $c['name'] }}" onclick="setColor(this)">
@@ -84,7 +84,7 @@
                     </div>
                     <hr class="divider">
                     <div>
-                        <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Max price — <span id="priceVal" style="color:var(--blue)">${{ $maxPrice }}</span></div>
+                        <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">{{ __('Max price') }} — <span id="priceVal" style="color:var(--blue)">${{ $maxPrice }}</span></div>
                         <input type="range" min="{{ $minPrice }}" max="{{ $maxPrice }}" value="{{ $maxPrice }}" style="width:100%;accent-color:var(--blue)" oninput="document.getElementById('priceVal').textContent='$'+this.value; window.UT_MAXPRICE=+this.value; filterProducts()">
                         <div class="ut-row muted" style="justify-content:space-between;font-size:12px;margin-top:4px"><span>${{ $minPrice }}</span><span>${{ $maxPrice }}</span></div>
                     </div>
@@ -95,15 +95,15 @@
             <div>
                 <div id="activeFilters" class="ut-active-filters" aria-live="polite"></div>
                 <div class="ut-row" style="justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap">
-                    <span class="muted" style="font-size:14px">Showing <b id="shownCount" style="color:var(--ink)">{{ count($products) }}</b> of {{ count($products) }}</span>
+                    <span class="muted" style="font-size:14px">{{ __('Showing') }} <b id="shownCount" style="color:var(--ink)">{{ count($products) }}</b> {{ __('of') }} {{ count($products) }}</span>
                     <div class="ut-row" style="gap:8px">
-                        <span class="muted" style="font-size:13px">Sort</span>
+                        <span class="muted" style="font-size:13px">{{ __('Sort') }}</span>
                         <select id="sortSelect" class="ut-input" style="padding:9px 36px 9px 14px;border-radius:var(--r-pill);font-family:var(--font-head);font-weight:500;font-size:13px;width:auto" onchange="sortProducts(this.value)">
-                            <option value="featured">Featured</option>
-                            <option value="newest">Newest</option>
-                            <option value="low">Price: Low to High</option>
-                            <option value="high">Price: High to Low</option>
-                            <option value="rated">Top rated</option>
+                            <option value="featured">{{ __('Featured') }}</option>
+                            <option value="newest">{{ __('Newest') }}</option>
+                            <option value="low">{{ __('Price: Low to High') }}</option>
+                            <option value="high">{{ __('Price: High to Low') }}</option>
+                            <option value="rated">{{ __('Top rated') }}</option>
                         </select>
                     </div>
                 </div>
@@ -119,7 +119,7 @@
 
                 <div id="noResults" class="ut-card" style="display:none;text-align:center;padding:80px 20px">
                     <div style="width:60px;height:60px;border-radius:18px;background:var(--bg);display:grid;place-items:center;margin:0 auto 16px;color:var(--text-2)"><x-frontend.icon n="search" :size="26" /></div>
-                    <h3>No products match</h3><p class="muted" style="margin-top:6px">Try clearing a filter or two.</p>
+                    <h3>{{ __('No products match') }}</h3><p class="muted" style="margin-top:6px">{{ __('Try clearing a filter or two.') }}</p>
                 </div>
             </div>
         </div>
@@ -188,14 +188,14 @@
         if(window.UT_BRAND !== 'All') filters.push(window.UT_BRAND);
         window.UT_SIZES.forEach(function(size){ filters.push(size); });
         window.UT_COLORS.forEach(function(color){ filters.push(color); });
-        if(window.UT_SALE) filters.push('Sale only');
-        if(window.UT_NEW) filters.push('New arrivals');
-        if(window.UT_BEST) filters.push('Best sellers');
-        if(window.UT_MAXPRICE < window.UT_PRICE_CEILING) filters.push('Under $' + window.UT_MAXPRICE);
+        if(window.UT_SALE) filters.push('{{ __('Sale only') }}');
+        if(window.UT_NEW) filters.push('{{ __('New arrivals') }}');
+        if(window.UT_BEST) filters.push('{{ __('Best sellers') }}');
+        if(window.UT_MAXPRICE < window.UT_PRICE_CEILING) filters.push('{{ __('Under') }} $' + window.UT_MAXPRICE);
         container.innerHTML = '';
         if(!filters.length) return;
         filters.forEach(function(label){ var chip=document.createElement('span'); chip.className='ut-active-filter'; chip.textContent=label; container.appendChild(chip); });
-        var clear=document.createElement('button'); clear.type='button'; clear.textContent='Clear all'; clear.onclick=clearFilters; container.appendChild(clear);
+        var clear=document.createElement('button'); clear.type='button'; clear.textContent='{{ __('Clear all') }}'; clear.onclick=clearFilters; container.appendChild(clear);
     }
     function syncFilterUrl(){
         var params = new URLSearchParams();

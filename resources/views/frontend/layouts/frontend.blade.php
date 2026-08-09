@@ -5,7 +5,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'T-Shirt Shop — Premium Streetwear')</title>
+
+    {{-- SEO / social meta. Pages may pass a $seo array (title/description/image/type/canonical);
+         otherwise fall back to @section('title') and the store's default settings. --}}
+    @php
+        $__settings = app(\App\Services\Admin\SettingService::class);
+        $__def = $__settings->seoDefaults();
+        $__pageSeo = $seo ?? [];
+        $__yTitle = trim($__env->yieldContent('title'));
+        $__seoTitle = ($__pageSeo['title'] ?? null) ?: ($__yTitle ?: $__def['title']);
+        $__seoDesc = \Illuminate\Support\Str::limit(strip_tags((string) (($__pageSeo['description'] ?? null) ?: $__def['description'])), 160);
+        $__seoImage = ($__pageSeo['image'] ?? null) ?: $__def['image'];
+        $__seoUrl = ($__pageSeo['canonical'] ?? null) ?: url()->current();
+        $__seoType = $__pageSeo['type'] ?? 'website';
+    @endphp
+    <title>{{ $__seoTitle }}</title>
+    <meta name="description" content="{{ $__seoDesc }}">
+    <link rel="canonical" href="{{ $__seoUrl }}">
+    <meta property="og:site_name" content="{{ $__settings->siteName() }}">
+    <meta property="og:type" content="{{ $__seoType }}">
+    <meta property="og:title" content="{{ $__seoTitle }}">
+    <meta property="og:description" content="{{ $__seoDesc }}">
+    <meta property="og:url" content="{{ $__seoUrl }}">
+    @if ($__seoImage)<meta property="og:image" content="{{ $__seoImage }}">@endif
+    <meta name="twitter:card" content="{{ $__seoImage ? 'summary_large_image' : 'summary' }}">
+    <meta name="twitter:title" content="{{ $__seoTitle }}">
+    <meta name="twitter:description" content="{{ $__seoDesc }}">
+    @if ($__seoImage)<meta name="twitter:image" content="{{ $__seoImage }}">@endif
 
     {{-- Motion gate: hide reveal targets before paint ONLY when motion is allowed.
          A failsafe reveals everything if main.js never clears it (e.g. CDN/JS failure). --}}
@@ -67,6 +93,7 @@
     {{-- Expose data + named routes to plain JS --}}
     <script>
         window.UT_COLORS = @json(app(\App\Services\Frontend\ProductService::class)->colors());
+        window.UT_CURRENCY = @json(app(\App\Services\Admin\SettingService::class)->currency());
         window.UT_URLS = {
             shop: "{{ route('frontend.shop.index') }}",
             cart: "{{ route('frontend.cart.index') }}",
@@ -74,7 +101,8 @@
             confirm: "{{ route('frontend.checkout.confirmation') }}",
             wishToggle: "{{ route('frontend.account.wishlist.toggle') }}",
             wishSync: "{{ route('frontend.account.wishlist.sync') }}",
-            cartSync: "{{ route('frontend.cart.sync') }}"
+            cartSync: "{{ route('frontend.cart.sync') }}",
+            coupon: "{{ route('frontend.checkout.coupon') }}"
         };
         @auth
         window.UT_AUTH = {

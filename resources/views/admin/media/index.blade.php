@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Marketing</p>
+            <p class="header-kicker mb-1">{{ __('Marketing') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('Media Library') }}</h2>
         </div>
     </x-slot>
@@ -50,29 +50,29 @@
     }">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Asset manager</p>
-                <h3>Media Library</h3>
+                <p class="section-kicker">{{ __('Asset manager') }}</p>
+                <h3>{{ __('Media Library') }}</h3>
             </div>
             <div class="media-page-actions">
                 <form method="POST" action="{{ route('admin.media.optimize-pending') }}" class="mb-0">
                     @csrf
                     <button type="submit" class="ghost-button media-optimize-action">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i><span>Optimize pending</span>
+                        <i class="fa-solid fa-wand-magic-sparkles"></i><span>{{ __('Optimize pending') }}</span>
                     </button>
                 </form>
                 <button type="button" class="premium-button premium-button--dark" @click="uploadOpen = true">
-                    <i class="fa-solid fa-cloud-arrow-up"></i><span>Upload Media</span>
+                    <i class="fa-solid fa-cloud-arrow-up"></i><span>{{ __('Upload Media') }}</span>
                 </button>
             </div>
         </div>
 
         <div class="media-stat-strip">
             <div class="media-stat">
-                <span>Total assets</span>
+                <span>{{ __('Total assets') }}</span>
                 <strong>{{ number_format($totalAssets) }}</strong>
             </div>
             <div class="media-stat">
-                <span>Storage used</span>
+                <span>{{ __('Storage used') }}</span>
                 <strong>
                     @if ($totalSize >= 1048576)
                         {{ number_format($totalSize / 1048576, 1) }} MB
@@ -82,11 +82,11 @@
                 </strong>
             </div>
             <div class="media-stat media-stat--muted">
-                <span>Current view</span>
+                <span>{{ __('Current view') }}</span>
                 <strong>{{ number_format($assets->count()) }}</strong>
             </div>
             <div class="media-stat media-stat--success">
-                <span>Optimized</span>
+                <span>{{ __('Optimized') }}</span>
                 <strong>{{ number_format($optimizedAssets) }}</strong>
             </div>
         </div>
@@ -99,12 +99,12 @@
                 <input type="hidden" name="per_page" value="{{ $perPage }}">
             </x-slot:hidden>
 
-            <x-select name="folder" size="sm" :options="$folders" :value="request('folder')" placeholder="All folders" />
+            <x-select name="folder" size="sm" :options="$folders" :value="request('folder')" placeholder="{{ __('All folders') }}" />
 
             <div class="form-field md:col-span-2">
-                <label for="media_search">Search media</label>
+                <label for="media_search">{{ __('Search media') }}</label>
                 <input id="media_search" type="search" name="search" value="{{ request('search') }}"
-                    class="form-input" placeholder="Search filename, original name or alt text">
+                    class="form-input" placeholder="{{ __('Search filename, original name or alt text') }}">
             </div>
         </x-filter-card>
 
@@ -181,15 +181,15 @@
                                 <div class="media-card__path" title="{{ $asset->path }}">{{ $asset->path }}</div>
                                 <div class="media-card__actions">
                                     <button type="button" class="ghost-button media-copy-btn" @click="copyText(@js($asset->url), 'URL copied')">
-                                        <i class="fa-regular fa-copy"></i><span>Copy URL</span>
+                                        <i class="fa-regular fa-copy"></i><span>{{ __('Copy URL') }}</span>
                                     </button>
                                     <button type="button" class="ghost-button media-copy-btn" @click="copyText(@js($asset->path), 'Path copied')">
-                                        <i class="fa-solid fa-link"></i><span>Path</span>
+                                        <i class="fa-solid fa-link"></i><span>{{ __('Path') }}</span>
                                     </button>
                                     @if ($usage['count'] > 0)
                                         <button type="button" class="ghost-button media-delete-btn is-disabled"
-                                            title="This media is still used and cannot be deleted">
-                                            <i class="fa-solid fa-lock"></i><span>Used</span>
+                                            title="{{ __('This media is still used and cannot be deleted') }}">
+                                            <i class="fa-solid fa-lock"></i><span>{{ __('Used') }}</span>
                                         </button>
                                     @else
                                         <button type="button" class="ghost-button media-delete-btn"
@@ -201,7 +201,7 @@
                                                 dimensions: @js($asset->width && $asset->height ? $asset->width.'x'.$asset->height : 'Unknown'),
                                                 action: @js(route('admin.media.destroy', $asset)),
                                             })">
-                                            <i class="fa-solid fa-trash"></i><span>Delete</span>
+                                            <i class="fa-solid fa-trash"></i><span>{{ __('Delete') }}</span>
                                         </button>
                                     @endif
                                 </div>
@@ -210,11 +210,11 @@
                     @endforeach
                 </div>
             @else
-                <x-admin.empty-state class="my-4" icon="fa-solid fa-photo-film" title="No media files found"
-                    message="Upload reusable product, banner, brand, collection, or content images." />
+                <x-admin.empty-state class="my-4" icon="fa-solid fa-photo-film" title="{{ __('No media files found') }}"
+                    message="{{ __('Upload reusable product, banner, brand, collection, or content images.') }}" />
             @endif
 
-            <x-table-footer :paginator="$assets" label="media files" />
+            <x-table-footer :paginator="$assets" label="{{ __('media files') }}" />
         </section>
 
         <div class="modal-backdrop-premium media-delete-backdrop" x-show="deleteConfirmOpen" x-cloak style="display:none;"
@@ -244,10 +244,10 @@
                     <div class="form-modal__head">
                         <div class="form-modal__icon media-delete-modal__icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
                         <div class="flex-grow-1 min-w-0">
-                            <h3>Delete media file?</h3>
-                            <p>This unused image will be permanently removed from the media library.</p>
+                            <h3>{{ __('Delete media file?') }}</h3>
+                            <p>{{ __('This unused image will be permanently removed from the media library.') }}</p>
                         </div>
-                        <button type="button" class="form-modal__close" @click="closeDelete()" aria-label="Close">
+                        <button type="button" class="form-modal__close" @click="closeDelete()" aria-label="{{ __('Close') }}">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
@@ -262,9 +262,9 @@
                     <form method="POST" :action="deleteAsset?.action || '#'" class="media-delete-modal__actions">
                         @csrf
                         @method('DELETE')
-                        <button type="button" class="modal-cancel" @click="closeDelete()">Cancel</button>
+                        <button type="button" class="modal-cancel" @click="closeDelete()">{{ __('Cancel') }}</button>
                         <button type="submit" class="form-submit-button media-delete-confirm">
-                            <i class="fa-solid fa-trash-can"></i><span>Delete image</span>
+                            <i class="fa-solid fa-trash-can"></i><span>{{ __('Delete image') }}</span>
                         </button>
                     </form>
                 </div>
@@ -277,21 +277,21 @@
                 <div class="form-modal__head">
                     <div class="form-modal__icon"><i class="fa-solid fa-cloud-arrow-up"></i></div>
                     <div class="flex-grow-1">
-                        <h3>Upload Media</h3>
-                        <p>Add reusable images to a named library folder.</p>
+                        <h3>{{ __('Upload Media') }}</h3>
+                        <p>{{ __('Add reusable images to a named library folder.') }}</p>
                     </div>
-                    <button type="button" class="form-modal__close" @click="uploadOpen = false" aria-label="Close">
+                    <button type="button" class="form-modal__close" @click="uploadOpen = false" aria-label="{{ __('Close') }}">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
                 <form method="POST" action="{{ route('admin.media.store') }}" enctype="multipart/form-data" class="form-modal__body">
                     @csrf
                     <div class="form-grid">
-                        <x-select name="folder" label="Folder" :options="$folders" :value="old('folder', 'media')" required />
+                        <x-select name="folder" label="{{ __('Folder') }}" :options="$folders" :value="old('folder', 'media')" required />
                         <div class="form-field">
-                            <label for="alt_text">Alt text</label>
+                            <label for="alt_text">{{ __('Alt text') }}</label>
                             <input id="alt_text" name="alt_text" value="{{ old('alt_text') }}" class="form-input"
-                                placeholder="Short image description">
+                                placeholder="{{ __('Short image description') }}">
                             @error('alt_text')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-field sm:col-span-2">
@@ -311,9 +311,9 @@
                         </div>
                     </div>
                     <div class="form-modal__foot">
-                        <button type="button" class="modal-cancel" @click="uploadOpen = false">Cancel</button>
+                        <button type="button" class="modal-cancel" @click="uploadOpen = false">{{ __('Cancel') }}</button>
                         <button type="submit" class="form-submit-button">
-                            <i class="fa-solid fa-upload"></i><span>Upload files</span>
+                            <i class="fa-solid fa-upload"></i><span>{{ __('Upload files') }}</span>
                         </button>
                     </div>
                 </form>
@@ -347,7 +347,7 @@
                             <h3 x-text="previewAsset?.name || 'Media preview'"></h3>
                             <p x-text="previewAsset?.path || ''"></p>
                         </div>
-                        <button type="button" class="form-modal__close" @click="previewOpen = false" aria-label="Close">
+                        <button type="button" class="form-modal__close" @click="previewOpen = false" aria-label="{{ __('Close') }}">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
@@ -376,10 +376,10 @@
                     </div>
                     <div class="media-detail-actions">
                         <button type="button" class="form-submit-button" @click="copyText(previewAsset?.url, 'URL copied')">
-                            <i class="fa-regular fa-copy"></i><span>Copy URL</span>
+                            <i class="fa-regular fa-copy"></i><span>{{ __('Copy URL') }}</span>
                         </button>
                         <button type="button" class="modal-cancel" @click="copyText(previewAsset?.path, 'Path copied')">
-                            <i class="fa-solid fa-link"></i><span>Copy Path</span>
+                            <i class="fa-solid fa-link"></i><span>{{ __('Copy Path') }}</span>
                         </button>
                     </div>
                 </div>

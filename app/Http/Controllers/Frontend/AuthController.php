@@ -68,7 +68,7 @@ class AuthController extends Controller
 
         return redirect()
             ->intended(route('frontend.account.dashboard'))
-            ->with('success', 'Welcome back!');
+            ->with('success', __('Welcome back!'));
     }
 
     /**
@@ -98,7 +98,7 @@ class AuthController extends Controller
 
         return redirect()
             ->route('frontend.account.dashboard')
-            ->with('success', 'Your account is ready.');
+            ->with('success', __('Your account is ready.'));
     }
 
     /**
@@ -113,7 +113,7 @@ class AuthController extends Controller
 
         return redirect()
             ->route('frontend.home')
-            ->with('success', 'You have been signed out.');
+            ->with('success', __('You have been signed out.'));
     }
 
     /**

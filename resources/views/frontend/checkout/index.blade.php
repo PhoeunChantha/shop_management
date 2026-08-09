@@ -1,5 +1,5 @@
 @extends('frontend.layouts.frontend')
-@section('title', 'Checkout — T-Shirt Shop')
+@section('title', __('Checkout').' — T-Shirt Shop')
 
 @push('head')
 <style>
@@ -14,17 +14,18 @@
 
 @section('content')
 <div class="ut-wrap anim-up" style="padding-top:28px">
-    <a href="{{ route('frontend.cart.index') }}" class="ut-link" style="margin-bottom:18px;display:inline-flex"><x-frontend.icon n="arrowL" :size="16" /> Back to bag</a>
+    <a href="{{ route('frontend.cart.index') }}" class="ut-link" style="margin-bottom:18px;display:inline-flex"><x-frontend.icon n="arrowL" :size="16" /> {{ __('Back to bag') }}</a>
     <form class="ut-checkout-grid" id="checkoutForm" method="POST" action="{{ route('frontend.checkout.store') }}">
         @csrf
         <input type="hidden" name="items" id="coItems">
         <input type="hidden" name="payment" id="coPayment" value="{{ $paymentMethods[0]['code'] ?? 'card' }}">
+        <input type="hidden" name="coupon" id="coCoupon">
         <div>
-            <h1 style="font-size:clamp(28px,3.4vw,40px);margin-bottom:22px">Checkout</h1>
+            <h1 style="font-size:clamp(28px,3.4vw,40px);margin-bottom:22px">{{ __('Checkout') }}</h1>
 
             {{-- step indicator --}}
             <div class="ut-row" style="gap:6px;margin-bottom:28px">
-                @foreach(['Contact & Shipping', 'Delivery', 'Payment', 'Review'] as $i => $label)
+                @foreach([__('Contact & Shipping'), __('Delivery'), __('Payment'), __('Review')] as $i => $label)
                     <div class="ut-row" style="gap:8px">
                         <span data-step-dot style="width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-head);font-weight:700;font-size:13px;background:{{ $i === 0 ? 'var(--ink)' : 'var(--bg)' }};color:{{ $i === 0 ? '#fff' : 'var(--text-2)' }};border:{{ $i === 0 ? 'none' : '1px solid var(--border)' }}">{{ $i + 1 }}</span>
                         <span class="ut-step-label" style="font-family:var(--font-head);font-weight:600;font-size:13.5px;color:{{ $i === 0 ? 'var(--ink)' : 'var(--text-2)' }};white-space:nowrap">{{ $label }}</span>
@@ -36,27 +37,30 @@
             <div class="ut-card" style="padding:28px" id="checkoutSteps">
                 {{-- STEP 1 — contact & shipping --}}
                 <div data-step>
-                    <h3 style="font-size:20px;margin-bottom:20px">Contact & Shipping</h3>
+                    <h3 style="font-size:20px;margin-bottom:20px">{{ __('Contact & Shipping') }}</h3>
                     <div class="ut-col" style="gap:16px">
-                        <div class="field"><label>Email address</label><input class="ut-input @error('email') is-invalid @enderror" type="email" name="email" value="{{ old('email', $prefill['email'] ?? '') }}" placeholder="you@email.com" required>
+                        <div class="field"><label>{{ __('Email address') }}</label><input class="ut-input @error('email') is-invalid @enderror" type="email" name="email" value="{{ old('email', $prefill['email'] ?? '') }}" placeholder="you@email.com" required>
                             @error('email')<span class="ut-field-error">{{ $message }}</span>@enderror
                         </div>
+                        <div class="field"><label>{{ __('Phone') }}</label><input class="ut-input @error('phone') is-invalid @enderror" name="phone" value="{{ old('phone', $prefill['phone'] ?? '') }}" placeholder="+855 12 345 678">
+                            @error('phone')<span class="ut-field-error">{{ $message }}</span>@enderror
+                        </div>
                         <div class="ut-form-2">
-                            <div class="field"><label>First name</label><input class="ut-input @error('first_name') is-invalid @enderror" name="first_name" value="{{ old('first_name', $prefill['first_name'] ?? '') }}" placeholder="Alex" required>
+                            <div class="field"><label>{{ __('First name') }}</label><input class="ut-input @error('first_name') is-invalid @enderror" name="first_name" value="{{ old('first_name', $prefill['first_name'] ?? '') }}" placeholder="Alex" required>
                                 @error('first_name')<span class="ut-field-error">{{ $message }}</span>@enderror
                             </div>
-                            <div class="field"><label>Last name</label><input class="ut-input @error('last_name') is-invalid @enderror" name="last_name" value="{{ old('last_name', $prefill['last_name'] ?? '') }}" placeholder="Rivera" required>
+                            <div class="field"><label>{{ __('Last name') }}</label><input class="ut-input @error('last_name') is-invalid @enderror" name="last_name" value="{{ old('last_name', $prefill['last_name'] ?? '') }}" placeholder="Rivera" required>
                                 @error('last_name')<span class="ut-field-error">{{ $message }}</span>@enderror
                             </div>
                         </div>
-                        <div class="field"><label>Street address</label><input class="ut-input @error('address') is-invalid @enderror" name="address" value="{{ old('address', $prefill['address'] ?? '') }}" placeholder="123 Market St, Apt 4B" required>
+                        <div class="field"><label>{{ __('Street address') }}</label><input class="ut-input @error('address') is-invalid @enderror" name="address" value="{{ old('address', $prefill['address'] ?? '') }}" placeholder="123 Market St, Apt 4B" required>
                             @error('address')<span class="ut-field-error">{{ $message }}</span>@enderror
                         </div>
                         <div class="ut-form-2" style="grid-template-columns:1.6fr 1fr">
-                            <div class="field"><label>City</label><input class="ut-input @error('city') is-invalid @enderror" name="city" value="{{ old('city', $prefill['city'] ?? '') }}" placeholder="San Francisco" required>
+                            <div class="field"><label>{{ __('City') }}</label><input class="ut-input @error('city') is-invalid @enderror" name="city" value="{{ old('city', $prefill['city'] ?? '') }}" placeholder="San Francisco" required>
                                 @error('city')<span class="ut-field-error">{{ $message }}</span>@enderror
                             </div>
-                            <div class="field"><label>ZIP code</label><input class="ut-input @error('zip') is-invalid @enderror" name="zip" value="{{ old('zip', $prefill['zip'] ?? '') }}" placeholder="94103">
+                            <div class="field"><label>{{ __('ZIP code') }}</label><input class="ut-input @error('zip') is-invalid @enderror" name="zip" value="{{ old('zip', $prefill['zip'] ?? '') }}" placeholder="94103">
                                 @error('zip')<span class="ut-field-error">{{ $message }}</span>@enderror
                             </div>
                         </div>
@@ -65,23 +69,23 @@
 
                 {{-- STEP 2 — delivery --}}
                 <div data-step style="display:none">
-                    <h3 style="font-size:20px;margin-bottom:20px">Delivery</h3>
+                    <h3 style="font-size:20px;margin-bottom:20px">{{ __('Delivery') }}</h3>
                     <div class="ut-col" style="gap:12px">
                         @php($shippingMethods = $shippingMethods ?? [])
                         @forelse($shippingMethods as $i => $m)
-                            @php($label = $m['type'] === 'free' ? 'Free' : '$'.number_format($m['rate'], 2))
+                            @php($label = $m['type'] === 'free' ? __('Free') : money($m['rate']))
                             <label class="ut-radio-card {{ $i === 0 ? 'sel' : '' }}" onclick="document.querySelectorAll('.ut-radio-card').forEach(c=>c.classList.remove('sel')); this.classList.add('sel');">
                                 <input type="radio" name="del" value="{{ $m['id'] }}" {{ $i === 0 ? 'checked' : '' }}
                                     data-label="{{ $m['name'] }} · {{ $label }}"
                                     onchange="window.__coRecalc && window.__coRecalc()" style="accent-color:var(--blue);width:18px;height:18px">
-                                <div style="flex:1"><div style="font-family:var(--font-head);font-weight:600">{{ $m['name'] }}</div><div class="muted" style="font-size:13px">{{ $m['description'] ?: 'Standard delivery' }}@if($m['type'] === 'free_over') · free over ${{ number_format($m['free_over'], 0) }}@endif</div></div>
+                                <div style="flex:1"><div style="font-family:var(--font-head);font-weight:600">{{ $m['name'] }}</div><div class="muted" style="font-size:13px">{{ $m['description'] ?: __('Standard delivery') }}@if($m['type'] === 'free_over') · {{ __('free over') }} {{ money($m['free_over'], 0) }}@endif</div></div>
                                 <span style="font-family:var(--font-head);font-weight:700;color:{{ $m['type'] === 'free' ? '#15803d' : 'var(--ink)' }}">{{ $label }}</span>
                             </label>
                         @empty
                             <label class="ut-radio-card sel">
-                                <input type="radio" name="del" value="0" checked data-label="Standard · Free" onchange="window.__coRecalc && window.__coRecalc()" style="accent-color:var(--blue);width:18px;height:18px">
-                                <div style="flex:1"><div style="font-family:var(--font-head);font-weight:600">Standard</div><div class="muted" style="font-size:13px">2–4 business days</div></div>
-                                <span style="font-family:var(--font-head);font-weight:700;color:#15803d">Free</span>
+                                <input type="radio" name="del" value="0" checked data-label="{{ __('Standard · Free') }}" onchange="window.__coRecalc && window.__coRecalc()" style="accent-color:var(--blue);width:18px;height:18px">
+                                <div style="flex:1"><div style="font-family:var(--font-head);font-weight:600">{{ __('Standard') }}</div><div class="muted" style="font-size:13px">{{ __('2–4 business days') }}</div></div>
+                                <span style="font-family:var(--font-head);font-weight:700;color:#15803d">{{ __('Free') }}</span>
                             </label>
                         @endforelse
                     </div>
@@ -89,7 +93,7 @@
 
                 {{-- STEP 3 — payment --}}
                 <div data-step style="display:none">
-                    <h3 style="font-size:20px;margin-bottom:20px">Payment</h3>
+                    <h3 style="font-size:20px;margin-bottom:20px">{{ __('Payment') }}</h3>
                     <div class="ut-col" style="gap:16px">
                         <div class="ut-row" style="gap:10px;flex-wrap:wrap">
                             @php($paymentMethods = $paymentMethods ?? [])
@@ -106,7 +110,7 @@
                                 </button>
                             @empty
                                 <button type="button" class="pay-tab" style="flex:1;padding:14px;border-radius:var(--r-md);border:1.5px solid var(--ink);background:#fff;display:flex;flex-direction:column;align-items:center;gap:7px;font-family:var(--font-head);font-weight:600;font-size:13px">
-                                    <x-frontend.icon n="card" :size="22" />Card
+                                    <x-frontend.icon n="card" :size="22" />{{ __('Card') }}
                                 </button>
                             @endforelse
                         </div>
@@ -115,8 +119,8 @@
                         <div data-pay-online style="{{ ($firstPay['type'] ?? 'online') === 'manual' ? 'display:none' : '' }}">
                             <div style="background:var(--bg);border-radius:var(--r-md);padding:20px;text-align:center">
                                 <div style="width:48px;height:48px;border-radius:14px;background:#dcfce7;color:#15803d;display:grid;place-items:center;margin:0 auto 12px"><x-frontend.icon n="lock" :size="22" /></div>
-                                <p style="font-family:var(--font-head);font-weight:700;margin:0 0 4px">You'll be redirected to ABA PayWay</p>
-                                <p class="muted" style="font-size:13.5px;margin:0;line-height:1.6">Complete your payment securely by card or the ABA Mobile app. Your card details are handled by ABA — we never see or store them.</p>
+                                <p style="font-family:var(--font-head);font-weight:700;margin:0 0 4px">{{ __("You'll be redirected to ABA PayWay") }}</p>
+                                <p class="muted" style="font-size:13.5px;margin:0;line-height:1.6">{{ __('Complete your payment securely by card or the ABA Mobile app. Your card details are handled by ABA — we never see or store them.') }}</p>
                             </div>
                         </div>
 
@@ -125,8 +129,8 @@
                             @if(collect($paymentMethods)->firstWhere('type', 'wallet'))
                                 <div data-pay-wallet style="display:none">
                                     <div style="background:var(--bg);border-radius:var(--r-md);padding:18px 20px">
-                                        <div class="ut-row" style="justify-content:space-between;margin-bottom:6px"><span class="muted" style="font-size:14px">Wallet balance</span><b style="font-family:var(--font-head)">${{ number_format($walletBalance, 2) }}</b></div>
-                                        <p class="muted" style="font-size:13px;margin:0;line-height:1.6">Your order total is deducted from your wallet balance. If your balance is too low, top up in <a href="{{ route('frontend.account.wallet') }}" style="color:var(--blue);font-weight:600">your wallet</a> or choose another method.</p>
+                                        <div class="ut-row" style="justify-content:space-between;margin-bottom:6px"><span class="muted" style="font-size:14px">{{ __('Wallet balance') }}</span><b style="font-family:var(--font-head)">{{ money($walletBalance) }}</b></div>
+                                        <p class="muted" style="font-size:13px;margin:0;line-height:1.6">{{ __('Your order total is deducted from your wallet balance. If your balance is too low, top up in') }} <a href="{{ route('frontend.account.wallet') }}" style="color:var(--blue);font-weight:600">{{ __('your wallet') }}</a> {{ __('or choose another method.') }}</p>
                                     </div>
                                 </div>
                             @endif
@@ -138,13 +142,13 @@
                                 <div data-pay-panel="{{ $p['code'] }}" style="display:{{ ($firstPay['code'] ?? '') === $p['code'] ? 'block' : 'none' }}">
                                     @if($p['description'])<p class="muted" style="font-size:13.5px;margin:0 0 12px">{{ $p['description'] }}</p>@endif
                                     @if($p['qr_image'])
-                                        <div style="text-align:center;margin-bottom:14px"><img src="{{ $p['qr_image'] }}" alt="Payment QR" style="width:180px;height:180px;object-fit:contain;border:1px solid var(--border);border-radius:12px;padding:8px;background:#fff"></div>
+                                        <div style="text-align:center;margin-bottom:14px"><img src="{{ $p['qr_image'] }}" alt="{{ __('Payment QR') }}" style="width:180px;height:180px;object-fit:contain;border:1px solid var(--border);border-radius:12px;padding:8px;background:#fff"></div>
                                     @endif
                                     @if($p['bank_name'] || $p['account_name'] || $p['account_number'])
                                         <div style="background:var(--bg);border-radius:var(--r-md);padding:14px 16px">
-                                            @if($p['bank_name'])<div class="ut-row" style="justify-content:space-between;font-size:13.5px;padding:4px 0"><span class="muted">Bank</span><b>{{ $p['bank_name'] }}</b></div>@endif
-                                            @if($p['account_name'])<div class="ut-row" style="justify-content:space-between;font-size:13.5px;padding:4px 0"><span class="muted">Account name</span><b>{{ $p['account_name'] }}</b></div>@endif
-                                            @if($p['account_number'])<div class="ut-row" style="justify-content:space-between;font-size:13.5px;padding:4px 0"><span class="muted">Account no.</span><b class="mono">{{ $p['account_number'] }}</b></div>@endif
+                                            @if($p['bank_name'])<div class="ut-row" style="justify-content:space-between;font-size:13.5px;padding:4px 0"><span class="muted">{{ __('Bank') }}</span><b>{{ $p['bank_name'] }}</b></div>@endif
+                                            @if($p['account_name'])<div class="ut-row" style="justify-content:space-between;font-size:13.5px;padding:4px 0"><span class="muted">{{ __('Account name') }}</span><b>{{ $p['account_name'] }}</b></div>@endif
+                                            @if($p['account_number'])<div class="ut-row" style="justify-content:space-between;font-size:13.5px;padding:4px 0"><span class="muted">{{ __('Account no.') }}</span><b class="mono">{{ $p['account_number'] }}</b></div>@endif
                                         </div>
                                     @endif
                                     @if($p['instructions'])<p class="muted" style="font-size:13px;line-height:1.65;margin:12px 0 0">{{ $p['instructions'] }}</p>@endif
@@ -156,34 +160,42 @@
 
                 {{-- STEP 4 — review (populated from the form by main.js) --}}
                 <div data-step data-review-step style="display:none">
-                    <h3 style="font-size:20px;margin-bottom:20px">Review your order</h3>
+                    <h3 style="font-size:20px;margin-bottom:20px">{{ __('Review your order') }}</h3>
                     <div class="ut-col" style="gap:0">
-                        @foreach([['Contact', 'contact'], ['Ship to', 'ship'], ['Delivery', 'delivery'], ['Payment', 'payment']] as [$k, $key])
+                        @foreach([[__('Contact'), 'contact'], [__('Ship to'), 'ship'], [__('Delivery'), 'delivery'], [__('Payment'), 'payment']] as [$k, $key])
                             <div class="ut-row" style="justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-2);gap:16px"><span class="muted" style="font-size:14px">{{ $k }}</span><span data-review="{{ $key }}" style="font-family:var(--font-head);font-weight:600;font-size:14px;text-align:right">—</span></div>
                         @endforeach
-                        <label class="ut-row" style="gap:10px;font-size:14px;margin-top:16px"><input type="checkbox" checked style="accent-color:var(--blue);width:17px;height:17px"> Email me order updates & early drop access</label>
+                        <label class="ut-row" style="gap:10px;font-size:14px;margin-top:16px"><input type="checkbox" checked style="accent-color:var(--blue);width:17px;height:17px"> {{ __('Email me order updates & early drop access') }}</label>
                     </div>
                 </div>
 
                 {{-- nav buttons --}}
                 <div class="ut-row" style="justify-content:space-between;margin-top:26px;gap:12px">
-                    <button type="button" class="ut-btn ut-btn-ghost" id="coBack" style="visibility:hidden"><x-frontend.icon n="arrowL" :size="16" /> Back</button>
-                    <button type="button" class="ut-btn ut-btn-ink ut-btn-lg" id="coNext">Continue <x-frontend.icon n="arrowR" :size="16" /></button>
+                    <button type="button" class="ut-btn ut-btn-ghost" id="coBack" style="visibility:hidden"><x-frontend.icon n="arrowL" :size="16" /> {{ __('Back') }}</button>
+                    <button type="button" class="ut-btn ut-btn-ink ut-btn-lg" id="coNext">{{ __('Continue') }} <x-frontend.icon n="arrowR" :size="16" /></button>
                 </div>
             </div>
         </div>
 
         {{-- summary --}}
         <div class="ut-card summary" style="padding:24px;position:sticky;top:96px">
-            <h3 style="font-size:18px;margin-bottom:16px">Order summary</h3>
+            <h3 style="font-size:18px;margin-bottom:16px">{{ __('Order summary') }}</h3>
             <div id="checkoutLines" style="max-height:230px;overflow:auto;margin-bottom:14px"></div>
+
+            {{-- discount code --}}
+            <div class="ut-row" style="gap:8px;margin-bottom:12px">
+                <input id="couponCode" class="ut-input" placeholder="{{ __('Discount code') }}" style="flex:1;padding:11px 13px" autocomplete="off">
+                <button type="button" class="ut-btn ut-btn-ink" onclick="applyCoupon()" style="padding:11px 18px">{{ __('Apply') }}</button>
+            </div>
+
             <hr class="divider" style="margin:6px 0 14px">
             <div class="ut-col" style="gap:11px">
-                <div class="ut-row" style="justify-content:space-between;font-size:14.5px"><span class="muted">Subtotal</span><span id="sumSubtotal" style="font-weight:600">$0</span></div>
-                <div class="ut-row" style="justify-content:space-between;font-size:14.5px"><span class="muted">Shipping</span><span id="sumShipping" style="font-weight:600">Free</span></div>
-                <div class="ut-row" style="justify-content:space-between;font-size:14.5px"><span class="muted">Estimated tax</span><span id="sumTax" style="font-weight:600">$0</span></div>
+                <div class="ut-row" style="justify-content:space-between;font-size:14.5px"><span class="muted">{{ __('Subtotal') }}</span><span id="sumSubtotal" style="font-weight:600">$0</span></div>
+                <div class="ut-row" id="sumDiscountRow" style="justify-content:space-between;font-size:14.5px;display:none"><span class="muted">{{ __('Discount') }} (<span id="sumCouponCode"></span>) <button type="button" onclick="removeCoupon()" style="border:0;background:none;color:var(--text-3);font-size:12px;cursor:pointer;text-decoration:underline">{{ __('remove') }}</button></span><span id="sumDiscount" style="font-weight:600;color:#15803d">−$0</span></div>
+                <div class="ut-row" style="justify-content:space-between;font-size:14.5px"><span class="muted">{{ __('Shipping') }}</span><span id="sumShipping" style="font-weight:600">{{ __('Free') }}</span></div>
+                <div class="ut-row" style="justify-content:space-between;font-size:14.5px"><span class="muted">{{ __('Estimated tax') }}</span><span id="sumTax" style="font-weight:600">$0</span></div>
                 <hr class="divider" style="margin:6px 0">
-                <div class="ut-row" style="justify-content:space-between"><span style="font-family:var(--font-head);font-weight:700;font-size:17px">Total</span><span id="sumTotal" style="font-family:var(--font-head);font-weight:700;font-size:24px">$0</span></div>
+                <div class="ut-row" style="justify-content:space-between"><span style="font-family:var(--font-head);font-weight:700;font-size:17px">{{ __('Total') }}</span><span id="sumTotal" style="font-family:var(--font-head);font-weight:700;font-size:24px">$0</span></div>
             </div>
         </div>
     </form>
@@ -225,11 +237,12 @@
             var wrap = document.getElementById('checkoutLines');
             var colors = window.UT_COLORS || {};
             function cart(){ try { return JSON.parse(localStorage.getItem('ut_cart')||'[]'); } catch(e){ return []; } }
-            function money(n){ return '$'+(Math.round(n*100)/100).toFixed(2); }
+            var CUR = window.UT_CURRENCY || { symbol: '$', position: 'before' };
+            function money(n){ var a=(Math.round(n*100)/100).toFixed(2); return CUR.position==='after' ? a+CUR.symbol : CUR.symbol+a; }
 
             function renderLines(items){
                 if(!wrap) return;
-                if(!items.length){ wrap.innerHTML='<p class="muted" style="font-size:14px;text-align:center;padding:20px 0">Your bag is empty. <a href="{{ route('frontend.shop.index') }}" style="color:var(--blue);font-weight:600">Shop tees</a></p>'; return; }
+                if(!items.length){ wrap.innerHTML='<p class="muted" style="font-size:14px;text-align:center;padding:20px 0">{{ __('Your bag is empty.') }} <a href="{{ route('frontend.shop.index') }}" style="color:var(--blue);font-weight:600">{{ __('Shop tees') }}</a></p>'; return; }
                 wrap.innerHTML = items.map(function(it){
                     var cn = (colors[it.color]||{}).name || it.color;
                     var img = it.image ? '<img src="'+it.image+'" alt="" style="width:54px;height:66px;border-radius:10px;object-fit:cover">'
@@ -241,6 +254,10 @@
                         '<span style="font-family:var(--font-head);font-weight:600;font-size:13.5px">'+money(it.price*it.qty)+'</span></div>';
                 }).join('');
             }
+
+            window.UT_DISCOUNT = window.UT_DISCOUNT || { code: '', amount: 0 };
+            var COUPON_URL = "{{ route('frontend.checkout.coupon') }}";
+            var CSRF = (document.querySelector('meta[name=csrf-token]') || {}).content || '';
 
             window.__coRecalc = function(){
                 var items = cart();
@@ -257,14 +274,64 @@
                     else if(method.type==='free_over') shipping = (method.free_over!=null && sub>=method.free_over) ? 0 : method.rate;
                     else shipping = method.rate;
                 }
-                var tax = Math.round(sub*(cfg.taxRate||0)*100)/100;
-                var total = sub + shipping + tax;
+                var discount = Math.min(window.UT_DISCOUNT.amount || 0, sub);
+                var taxable = Math.max(0, sub - discount);
+                var tax = Math.round(taxable*(cfg.taxRate||0)*100)/100;
+                var total = taxable + shipping + tax;
                 var g = function(id){ return document.getElementById(id); };
                 if(g('sumSubtotal')) g('sumSubtotal').textContent = money(sub);
-                if(g('sumShipping')) g('sumShipping').textContent = shipping===0 ? 'Free' : money(shipping);
+                var dRow = g('sumDiscountRow');
+                if(dRow){
+                    if(discount > 0){ dRow.style.display='flex'; if(g('sumDiscount')) g('sumDiscount').textContent='−'+money(discount); if(g('sumCouponCode')) g('sumCouponCode').textContent=window.UT_DISCOUNT.code; }
+                    else dRow.style.display='none';
+                }
+                if(g('sumShipping')) g('sumShipping').textContent = shipping===0 ? '{{ __('Free') }}' : money(shipping);
                 if(g('sumTax')) g('sumTax').textContent = money(tax);
                 if(g('sumTotal')) g('sumTotal').textContent = money(total);
             };
+
+            window.applyCoupon = function(silent){
+                var input = document.getElementById('couponCode');
+                var code = (input ? input.value : '').trim();
+                if(!code){ if(silent !== true && window.utToast) utToast('{{ __('Enter a discount code') }}'); return; }
+                var sub = cart().reduce(function(s,i){ return s + i.price*i.qty; }, 0);
+                fetch(COUPON_URL, {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':CSRF,'X-Requested-With':'XMLHttpRequest'},
+                    body: JSON.stringify({ code: code, subtotal: sub })
+                }).then(function(r){ return r.json(); }).then(function(res){
+                    if(res && res.valid){
+                        window.UT_DISCOUNT = { code: res.code, amount: res.discount };
+                        var h = document.getElementById('coCoupon'); if(h) h.value = res.code;
+                        try { localStorage.setItem('ut_coupon', JSON.stringify({ code: res.code, amount: res.discount })); } catch(e){}
+                        window.__coRecalc();
+                        if(silent !== true && window.utToast) utToast(res.message || '{{ __('Coupon applied') }}');
+                    } else {
+                        try { localStorage.removeItem('ut_coupon'); } catch(e){}
+                        if(silent !== true && window.utToast) utToast((res && res.message) || '{{ __('Invalid code') }}');
+                    }
+                }).catch(function(){ if(silent !== true && window.utToast) utToast('{{ __('Could not apply the code') }}'); });
+            };
+
+            window.removeCoupon = function(){
+                window.UT_DISCOUNT = { code: '', amount: 0 };
+                var h = document.getElementById('coCoupon'); if(h) h.value='';
+                var input = document.getElementById('couponCode'); if(input) input.value='';
+                try { localStorage.removeItem('ut_coupon'); } catch(e){}
+                window.__coRecalc();
+            };
+
+            // Pre-apply a coupon carried over from the cart page (re-validated here).
+            (function(){
+                try {
+                    var saved = JSON.parse(localStorage.getItem('ut_coupon') || 'null');
+                    if(saved && saved.code){
+                        var input = document.getElementById('couponCode');
+                        if(input) input.value = saved.code;
+                        window.applyCoupon(true);
+                    }
+                } catch(e){}
+            })();
 
             window.__coRecalc();
         })();

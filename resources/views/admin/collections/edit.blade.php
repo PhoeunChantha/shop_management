@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Content</p>
+            <p class="header-kicker mb-1">{{ __('Content') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('Edit Collection') }}</h2>
         </div>
     </x-slot>
@@ -9,11 +9,11 @@
     <div class="admin-page admin-form-page">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Collection setup</p>
-                <h3>Edit Collection</h3>
+                <p class="section-kicker">{{ __('Collection setup') }}</p>
+                <h3>{{ __('Edit Collection') }}</h3>
             </div>
             <a href="{{ route('admin.collections.index') }}" class="ghost-button ghost-button--panel">
-                <i class="fa-solid fa-arrow-left"></i><span>Back</span>
+                <i class="fa-solid fa-arrow-left"></i><span>{{ __('Back') }}</span>
             </a>
         </div>
 
@@ -23,9 +23,9 @@
             <div class="form-panel-header">
                 <div class="form-panel-icon"><i class="fa-solid fa-layer-group"></i></div>
                 <div>
-                    <p class="section-kicker">Curated group</p>
-                    <h3>Collection details</h3>
-                    <p>Update this collection. Leave the image empty to keep the current one.</p>
+                    <p class="section-kicker">{{ __('Curated group') }}</p>
+                    <h3>{{ __('Collection details') }}</h3>
+                    <p>{{ __('Update this collection. Leave the image empty to keep the current one.') }}</p>
                 </div>
             </div>
 

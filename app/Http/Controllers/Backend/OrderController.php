@@ -107,7 +107,7 @@ class OrderController extends Controller
             $this->orders->updateFulfilment($order, $request->validated());
 
             return to_route('admin.orders.show', $order->id)
-                ->with('success', 'Order updated successfully!');
+                ->with('success', __('Order updated successfully!'));
         } catch (\Exception $e) {
             Log::error('Error updating order: '.$e->getMessage(), [
                 'exception' => $e,

@@ -62,7 +62,7 @@ class UserController extends Controller
         $this->users->create($data, $request->file('avatar'));
 
         return redirect()->route('admin.users.index')
-            ->with('success', 'User created successfully!');
+            ->with('success', __('User created successfully!'));
     }
 
     public function edit(string $id): View
@@ -95,7 +95,7 @@ class UserController extends Controller
         $this->users->update($user, $data, $request->file('avatar'));
 
         return redirect()->route('admin.users.index')
-            ->with('success', 'User update success!!');
+            ->with('success', __('User update success!!'));
     }
 
     public function destroy(string $id): RedirectResponse
@@ -106,12 +106,12 @@ class UserController extends Controller
 
         if (Auth::id() === $user->id) {
             return redirect()->route('admin.users.index')
-                ->with('error', 'You cannot delete your own account!');
+                ->with('error', __('You cannot delete your own account!'));
         }
 
         $this->users->delete($user);
 
         return redirect()->route('admin.users.index')
-            ->with('success', 'User deleted successfully!');
+            ->with('success', __('User deleted successfully!'));
     }
 }

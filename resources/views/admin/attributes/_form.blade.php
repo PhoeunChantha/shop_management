@@ -47,7 +47,7 @@
         <div class="form-field">
             <label for="name">Attribute Name <span class="text-red-500">*</span></label>
             <input value="{{ old('name', $attribute->name ?? '') }}" type="text" name="name" id="name"
-                class="form-input" placeholder="e.g. Size, Color, Material" required>
+                class="form-input" placeholder="{{ __('e.g. Size, Color, Material') }}" required>
             @error('name')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
         </div>
 
@@ -62,10 +62,10 @@
         </div>
 
         <div class="form-field">
-            <label for="status">Status</label>
+            <label for="status">{{ __('Status') }}</label>
             <select name="status" id="status" class="form-input">
-                <option value="1" {{ old('status', $attribute->status ?? 1) == 1 ? 'selected' : '' }}>Enable</option>
-                <option value="0" {{ old('status', $attribute->status ?? 1) == 0 ? 'selected' : '' }}>Disable</option>
+                <option value="1" {{ old('status', $attribute->status ?? 1) == 1 ? 'selected' : '' }}>{{ __('Enable') }}</option>
+                <option value="0" {{ old('status', $attribute->status ?? 1) == 0 ? 'selected' : '' }}>{{ __('Disable') }}</option>
             </select>
         </div>
     </div>
@@ -74,9 +74,9 @@
     <div class="form-panel-body pt-0" x-show="type === 'custom'" x-cloak>
         <div class="attr-values-head">
             <label>Values <span class="text-red-500">*</span></label>
-            <button type="button" class="dynamic-add-button" @click="add()"><i class="fa-solid fa-plus"></i> Add value</button>
+            <button type="button" class="dynamic-add-button" @click="add()"><i class="fa-solid fa-plus"></i> {{ __('Add value') }}</button>
         </div>
-        <p class="form-help mb-2">Add each option — e.g. Cotton, Denim, Leather. Add a color for swatch attributes.</p>
+        <p class="form-help mb-2">{{ __('Add each option — e.g. Cotton, Denim, Leather. Add a color for swatch attributes.') }}</p>
 
         <div class="attr-values-list">
             <template x-for="(row, i) in values" :key="i">
@@ -87,16 +87,16 @@
                     <span class="attr-value-swatch" :style="row.color_hex ? `background:${row.color_hex}` : ''" :class="{ 'is-empty': !row.color_hex }"></span>
 
                     <input type="text" class="form-input" :name="`values[${i}][value]`" x-model="row.value"
-                        placeholder="Value (e.g. Medium)" :disabled="type !== 'custom'">
+                        placeholder="{{ __('Value (e.g. Medium)') }}" :disabled="type !== 'custom'">
 
-                    <label class="attr-value-color" title="Optional color swatch">
+                    <label class="attr-value-color" title="{{ __('Optional color swatch') }}">
                         <i class="fa-solid fa-eye-dropper"></i>
                         <input type="color" :value="row.color_hex || '#000000'" @input="row.color_hex = $event.target.value" :disabled="type !== 'custom'">
                     </label>
                     <input type="text" class="form-input attr-hex" :name="`values[${i}][color_hex]`" x-model="row.color_hex"
-                        placeholder="#hex (optional)" :disabled="type !== 'custom'">
+                        placeholder="{{ __('#hex (optional)') }}" :disabled="type !== 'custom'">
 
-                    <button type="button" class="dynamic-remove-button" @click="remove(i)" aria-label="Remove value">
+                    <button type="button" class="dynamic-remove-button" @click="remove(i)" aria-label="{{ __('Remove value') }}">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
@@ -109,9 +109,9 @@
     <div class="form-panel-body pt-0" x-show="type === 'size'" x-cloak>
         <div class="attr-values-head">
             <label>Sizes <span class="text-red-500">*</span></label>
-            <a href="{{ route('admin.sizes.index') }}" class="attr-mini-btn"><i class="fa-solid fa-arrow-up-right-from-square"></i> Manage Sizes</a>
+            <a href="{{ route('admin.sizes.index') }}" class="attr-mini-btn"><i class="fa-solid fa-arrow-up-right-from-square"></i> {{ __('Manage Sizes') }}</a>
         </div>
-        <p class="form-help mb-2">Select which sizes this attribute offers. Edit their names/codes on the Sizes page.</p>
+        <p class="form-help mb-2">{{ __('Select which sizes this attribute offers. Edit their names/codes on the Sizes page.') }}</p>
         <div class="attr-source-grid">
             @forelse ($sizes as $size)
                 <label class="attr-check" :class="{ 'is-on': sizeIds.includes('{{ $size->id }}') }">
@@ -121,7 +121,7 @@
                     <span>{{ $size->name }}@if ($size->code)<span class="attr-code-tag">{{ $size->code }}</span>@endif</span>
                 </label>
             @empty
-                <span class="text-sm text-gray-400">No sizes yet — <a href="{{ route('admin.sizes.index') }}" class="text-blue-500 underline">create some</a>.</span>
+                <span class="text-sm text-gray-400">No sizes yet — <a href="{{ route('admin.sizes.index') }}" class="text-blue-500 underline">{{ __('create some') }}</a>.</span>
             @endforelse
         </div>
         @error('size_ids')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
@@ -131,9 +131,9 @@
     <div class="form-panel-body pt-0" x-show="type === 'color'" x-cloak>
         <div class="attr-values-head">
             <label>Colors <span class="text-red-500">*</span></label>
-            <a href="{{ route('admin.colors.index') }}" class="attr-mini-btn"><i class="fa-solid fa-arrow-up-right-from-square"></i> Manage Colors</a>
+            <a href="{{ route('admin.colors.index') }}" class="attr-mini-btn"><i class="fa-solid fa-arrow-up-right-from-square"></i> {{ __('Manage Colors') }}</a>
         </div>
-        <p class="form-help mb-2">Select which colors this attribute offers. Edit their swatches on the Colors page.</p>
+        <p class="form-help mb-2">{{ __('Select which colors this attribute offers. Edit their swatches on the Colors page.') }}</p>
         <div class="attr-source-grid">
             @forelse ($colors as $color)
                 <label class="attr-check" :class="{ 'is-on': colorIds.includes('{{ $color->id }}') }">
@@ -144,14 +144,14 @@
                     <span>{{ $color->name }}</span>
                 </label>
             @empty
-                <span class="text-sm text-gray-400">No colors yet — <a href="{{ route('admin.colors.index') }}" class="text-blue-500 underline">create some</a>.</span>
+                <span class="text-sm text-gray-400">No colors yet — <a href="{{ route('admin.colors.index') }}" class="text-blue-500 underline">{{ __('create some') }}</a>.</span>
             @endforelse
         </div>
         @error('color_ids')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
     </div>
 
     <div class="form-panel-footer mt-4">
-        <a href="{{ route('admin.attributes.index') }}" class="form-cancel-button">Cancel</a>
+        <a href="{{ route('admin.attributes.index') }}" class="form-cancel-button">{{ __('Cancel') }}</a>
         <button type="submit" class="form-submit-button">
             <i class="fa-solid fa-check"></i>
             {{ $submitText }}

@@ -49,7 +49,7 @@
                         @else
                             <x-frontend.ph id="pdpMain" :tint="$product['tint']" :dark="$product['dark']" label="product Â· view 1" style="aspect-ratio:4/5" />
                         @endif
-                        @if($product['was'])<span class="ut-tag ut-tag-sale" style="position:absolute;top:16px;left:16px">Save {{ $off }}%</span>@endif
+                        @if($product['was'])<span class="ut-tag ut-tag-sale" style="position:absolute;top:16px;left:16px">{{ __('Save') }} {{ $off }}%</span>@endif
                         <span class="icon-btn" style="position:absolute;bottom:16px;right:16px"><x-frontend.icon n="zoom" :size="18" /></span>
                     </div>
                     <div class="ut-pdp-thumbs">
@@ -72,26 +72,26 @@
 
             {{-- INFO --}}
             <div class="ut-pdp-info">
-                <x-frontend.breadcrumb :items="[['Shop', route('frontend.shop.index')], [$product['cat'], route('frontend.shop.index')], [$product['name'], null]]" />
+                <x-frontend.breadcrumb :items="[[__('Shop'), route('frontend.shop.index')], [$product['cat'], route('frontend.shop.index')], [$product['name'], null]]" />
                 <div class="ut-row" style="justify-content:space-between;align-items:flex-start;gap:12px;margin-top:10px">
                     <h1 style="font-size:clamp(28px,3.4vw,40px);line-height:1.05">{{ $product['name'] }}</h1>
                     <div class="ut-row" style="gap:8px">
                         <button type="button" class="icon-btn" data-wish="{{ $product['id'] }}" aria-label="Wishlist"><x-frontend.icon n="heart" :size="18" /></button>
-                        <button type="button" class="icon-btn" style="box-shadow:none;background:var(--bg)" onclick="utToast('Share link copied')"><x-frontend.icon n="share" :size="18" /></button>
+                        <button type="button" class="icon-btn" style="box-shadow:none;background:var(--bg)" onclick="utToast('{{ __('Share link copied') }}')"><x-frontend.icon n="share" :size="18" /></button>
                     </div>
                 </div>
                 <div class="ut-row" style="gap:10px;margin:12px 0 16px">
-                    <x-frontend.stars :value="$product['rating']" /><span class="muted" style="font-size:14px">{{ $product['rating'] }} · {{ $product['reviews'] }} reviews</span>
-                    <span class="ut-tag ut-tag-success"><span style="width:6px;height:6px;border-radius:6px;background:var(--success);display:inline-block"></span> In stock</span>
+                    <x-frontend.stars :value="$product['rating']" /><span class="muted" style="font-size:14px">{{ $product['rating'] }} · {{ $product['reviews'] }} {{ __('reviews') }}</span>
+                    <span class="ut-tag ut-tag-success"><span style="width:6px;height:6px;border-radius:6px;background:var(--success);display:inline-block"></span> {{ __('In stock') }}</span>
                 </div>
                 <div class="ut-row" style="gap:12px;margin-bottom:24px">
-                    <span style="font-family:var(--font-head);font-weight:700;font-size:32px">${{ $product['price'] }}</span>
-                    @if($product['was'])<span class="strike" style="font-size:20px">${{ $product['was'] }}</span><span class="ut-tag ut-tag-sale">-{{ $off }}%</span>@endif
+                    <span style="font-family:var(--font-head);font-weight:700;font-size:32px">{{ money($product['price']) }}</span>
+                    @if($product['was'])<span class="strike" style="font-size:20px">{{ money($product['was']) }}</span><span class="ut-tag ut-tag-sale">-{{ $off }}%</span>@endif
                 </div>
 
                 {{-- color --}}
                 <div style="margin-bottom:22px" data-color-group>
-                    <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Color — <span data-color-label>{{ $firstColorMeta['name'] }}</span></div>
+                    <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">{{ __('Color') }} — <span data-color-label>{{ $firstColorMeta['name'] }}</span></div>
                     <div class="ut-row" style="gap:10px">
                         @foreach($product['colors'] as $i => $c)
                             @php($color = $colors[$c] ?? ['name' => ucfirst($c), 'hex' => '#1a1a1d'])
@@ -103,8 +103,8 @@
                 {{-- size --}}
                 <div style="margin-bottom:24px" data-size-group>
                     <div class="ut-row" style="justify-content:space-between;margin-bottom:12px">
-                        <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em">Select size</div>
-                        <button class="ut-link" style="font-size:13px"><x-frontend.icon n="ruler" :size="15" /> Size guide</button>
+                        <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em">{{ __('Select size') }}</div>
+                        <button class="ut-link" style="font-size:13px"><x-frontend.icon n="ruler" :size="15" /> {{ __('Size guide') }}</button>
                     </div>
                     <div style="display:flex;gap:9px;flex-wrap:wrap">
                         @foreach($product['sizes'] as $i => $s)
@@ -122,17 +122,17 @@
                     </div>
                     <button type="button" class="ut-btn ut-btn-accent ut-purchase-add"
                             data-add-to-cart data-require-size data-id="{{ $product['id'] }}" data-name="{{ $product['name'] }}" data-price="{{ $product['price'] }}" data-tint="{{ $product['tint'] }}" data-image="{{ $product['image_url'] ?? '' }}">
-                        <x-frontend.icon n="bag" :size="18" /> Add to bag
+                        <x-frontend.icon n="bag" :size="18" /> {{ __('Add to bag') }}
                     </button>
                 </div>
                 <div class="ut-purchase-total">
-                    <span>Total for <span data-pdp-qty-label>1</span> <span data-pdp-item-label>item</span></span>
-                    <strong data-pdp-total data-unit-price="{{ (float) $product['price'] }}">${{ number_format((float) $product['price'], 2) }}</strong>
+                    <span>{{ __('Total for') }} <span data-pdp-qty-label>1</span> <span data-pdp-item-label>{{ __('item') }}</span></span>
+                    <strong data-pdp-total data-unit-price="{{ (float) $product['price'] }}">{{ money((float) $product['price']) }}</strong>
                 </div>
-                <a href="{{ route('frontend.checkout.index') }}" class="ut-btn ut-btn-ink ut-btn-block ut-purchase-buy">Buy it now</a>
+                <a href="{{ route('frontend.checkout.index') }}" class="ut-btn ut-btn-ink ut-btn-block ut-purchase-buy">{{ __('Buy it now') }}</a>
 
                 <div class="ut-row" style="gap:18px;margin-top:22px;flex-wrap:wrap">
-                    @foreach([['truck', 'Free shipping over $75'], ['refresh', '30-day returns'], ['shield', 'Secure checkout']] as [$ic, $t])
+                    @foreach([['truck', __('Free shipping over $75')], ['refresh', __('30-day returns')], ['shield', __('Secure checkout')]] as [$ic, $t])
                         <div class="ut-row muted" style="gap:8px;font-size:13px"><span style="color:var(--blue)"><x-frontend.icon :n="$ic" :size="17" /></span>{{ $t }}</div>
                     @endforeach
                 </div>
@@ -140,9 +140,9 @@
                 {{-- tabs --}}
                 <div style="margin-top:30px;border-top:1px solid var(--border);padding-top:18px">
                     <div class="ut-row" style="gap:24px;margin-bottom:16px">
-                        <button type="button" class="ut-tab-btn active" onclick="setTab(this,'details')">Details</button>
-                        <button type="button" class="ut-tab-btn" onclick="setTab(this,'fabric')">Fabric &amp; care</button>
-                        <button type="button" class="ut-tab-btn" onclick="setTab(this,'shipping')">Shipping</button>
+                        <button type="button" class="ut-tab-btn active" onclick="setTab(this,'details')">{{ __('Details') }}</button>
+                        <button type="button" class="ut-tab-btn" onclick="setTab(this,'fabric')">{{ __('Fabric & care') }}</button>
+                        <button type="button" class="ut-tab-btn" onclick="setTab(this,'shipping')">{{ __('Shipping') }}</button>
                     </div>
                     <p class="muted" id="tab-details" style="font-size:14.5px;line-height:1.7">{{ $product['desc'] }}</p>
                     <div id="tab-fabric" style="display:none">
@@ -154,7 +154,7 @@
                                 @endforeach
                             </dl>
                         @else
-                            <p class="muted" style="font-size:14.5px;line-height:1.7">100% organic combed cotton, 240gsm. Machine wash cold, tumble dry low. Garment-dyed — minor variation in tone is part of the character.</p>
+                            <p class="muted" style="font-size:14.5px;line-height:1.7">{{ __('100% organic combed cotton, 240gsm. Machine wash cold, tumble dry low. Garment-dyed — minor variation in tone is part of the character.') }}</p>
                         @endif
                     </div>
                     <p class="muted" id="tab-shipping" style="display:none;font-size:14.5px;line-height:1.7">{!! nl2br(e($shippingInfo)) !!}</p>
@@ -165,7 +165,7 @@
 
     {{-- reviews --}}
     <section class="ut-wrap" style="margin-top:72px">
-        <div class="ut-sec-head"><div><span class="ut-eyebrow">Verified reviews</span><h2 style="margin-top:8px">{{ $product['rating'] }} · {{ $product['reviews'] }} reviews</h2></div></div>
+        <div class="ut-sec-head"><div><span class="ut-eyebrow">{{ __('Verified reviews') }}</span><h2 style="margin-top:8px">{{ $product['rating'] }} · {{ $product['reviews'] }} {{ __('reviews') }}</h2></div></div>
         <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:18px" class="ut-rev-grid">
             @forelse(array_slice($reviews, 0, 2) as $r)
                 <div class="ut-card" style="padding:24px">
@@ -180,7 +180,7 @@
                 </div>
             @empty
                 <div class="ut-card" style="padding:24px;grid-column:1/-1;text-align:center">
-                    <p class="muted" style="margin:0;font-size:14.5px">No reviews yet — be the first to share your thoughts.</p>
+                    <p class="muted" style="margin:0;font-size:14.5px">{{ __('No reviews yet — be the first to share your thoughts.') }}</p>
                 </div>
             @endforelse
         </div>
@@ -188,7 +188,7 @@
 
     {{-- related --}}
     <section class="ut-wrap" style="margin-top:72px">
-        <div class="ut-sec-head"><div><span class="ut-eyebrow">Complete the look</span><h2 style="margin-top:8px">You may also like</h2></div></div>
+        <div class="ut-sec-head"><div><span class="ut-eyebrow">{{ __('Complete the look') }}</span><h2 style="margin-top:8px">{{ __('You may also like') }}</h2></div></div>
         <div class="ut-rail">
             @foreach($related as $p)<x-frontend.product-card :product="$p" />@endforeach
         </div>
@@ -197,7 +197,7 @@
     {{-- recently viewed --}}
     @if(count($recentlyViewed))
         <section class="ut-wrap" style="margin-top:56px">
-            <div class="ut-sec-head"><div><span class="ut-eyebrow">Pick up where you left off</span><h2 style="margin-top:8px">Recently viewed</h2></div></div>
+            <div class="ut-sec-head"><div><span class="ut-eyebrow">{{ __('Pick up where you left off') }}</span><h2 style="margin-top:8px">{{ __('Recently viewed') }}</h2></div></div>
             <div class="ut-rail">
                 @foreach($recentlyViewed as $p)<x-frontend.product-card :product="$p" />@endforeach
             </div>
@@ -219,10 +219,10 @@
                 </div>
             </div>
             <div class="ut-row" style="gap:14px">
-                <span class="ut-hide-mobile" style="font-family:var(--font-head);font-weight:700;font-size:20px">${{ $product['price'] }}</span>
+                <span class="ut-hide-mobile" style="font-family:var(--font-head);font-weight:700;font-size:20px">{{ money($product['price']) }}</span>
                 <button type="button" class="ut-btn ut-btn-accent ut-btn-lg" data-add-to-cart data-require-size
                         data-id="{{ $product['id'] }}" data-name="{{ $product['name'] }}" data-price="{{ $product['price'] }}" data-tint="{{ $product['tint'] }}" data-image="{{ $product['image_url'] ?? '' }}">
-                    <x-frontend.icon n="bag" :size="17" /> Add to bag
+                    <x-frontend.icon n="bag" :size="17" /> {{ __('Add to bag') }}
                 </button>
             </div>
         </div>
@@ -251,10 +251,12 @@
         var label = scope.querySelector('[data-pdp-qty-label]');
         var itemLabel = scope.querySelector('[data-pdp-item-label]');
         if(label) label.textContent = qty;
-        if(itemLabel) itemLabel.textContent = qty === 1 ? 'item' : 'items';
+        if(itemLabel) itemLabel.textContent = qty === 1 ? '{{ __('item') }}' : '{{ __('items') }}';
         if(total){
             var unit = Number(total.getAttribute('data-unit-price') || 0);
-            total.textContent = '$' + (unit * qty).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            var cur = window.UT_CURRENCY || { symbol: '$', position: 'before' };
+            var amt = (unit * qty).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            total.textContent = cur.position === 'after' ? amt + cur.symbol : cur.symbol + amt;
         }
     }
     document.addEventListener('click', function(e){

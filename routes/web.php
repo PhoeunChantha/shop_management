@@ -1,9 +1,6 @@
 <?php
 
 use App\Http\Controllers\Backend\AbandonedCartController;
-use App\Http\Controllers\Backend\NewsletterSubscriberController;
-use App\Http\Controllers\Backend\PaymentController as AdminPaymentController;
-use App\Http\Controllers\Backend\WalletController;
 use App\Http\Controllers\Backend\ActivityLogController;
 use App\Http\Controllers\Backend\AdminNotificationController;
 use App\Http\Controllers\Backend\AdminSavedViewController;
@@ -23,8 +20,10 @@ use App\Http\Controllers\Backend\FaqController;
 use App\Http\Controllers\Backend\FinanceReportController;
 use App\Http\Controllers\Backend\InventoryController;
 use App\Http\Controllers\Backend\MediaAssetController;
+use App\Http\Controllers\Backend\NewsletterSubscriberController;
 use App\Http\Controllers\Backend\OrderController;
 use App\Http\Controllers\Backend\PageController as AdminPageController;
+use App\Http\Controllers\Backend\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Backend\PermissionAuditController;
 use App\Http\Controllers\Backend\PermissionController;
 use App\Http\Controllers\Backend\ProductController;
@@ -41,6 +40,7 @@ use App\Http\Controllers\Backend\SizeController;
 use App\Http\Controllers\Backend\SupplierController;
 use App\Http\Controllers\Backend\TaxRuleController;
 use App\Http\Controllers\Backend\UserController;
+use App\Http\Controllers\Backend\WalletController;
 use App\Http\Controllers\Frontend\AccountController;
 use App\Http\Controllers\Frontend\AddressController;
 use App\Http\Controllers\Frontend\AuthController;
@@ -51,6 +51,7 @@ use App\Http\Controllers\Frontend\NewsletterController;
 use App\Http\Controllers\Frontend\PageController;
 use App\Http\Controllers\Frontend\PaymentController;
 use App\Http\Controllers\Frontend\ShopController;
+use App\Http\Controllers\Frontend\SitemapController;
 use App\Http\Controllers\Frontend\SocialAuthController;
 use App\Http\Controllers\Frontend\WishlistController;
 use App\Http\Middleware\SetLocale;
@@ -58,7 +59,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::name('frontend.')->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
-    Route::post('/newsletter', [NewsletterController::class, 'store'])->name('newsletter.subscribe');
+    Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
+    Route::post('/newsletter', [NewsletterController::class, 'store'])->middleware('throttle:5,1')->name('newsletter.subscribe');
 
     // ---- Shop ----
     Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
@@ -67,14 +69,19 @@ Route::name('frontend.')->group(function () {
     // ---- Cart & Checkout ----
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::post('/cart/sync', [CartController::class, 'sync'])->middleware('auth')->name('cart.sync');
-    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-    Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
-    Route::get('/checkout/confirmation', [CheckoutController::class, 'confirmation'])->name('checkout.confirmation');
+    // Coupon validation stays public so guests can preview a code in the cart.
+    Route::post('/checkout/coupon', [CheckoutController::class, 'coupon'])->middleware('throttle:20,1')->name('checkout.coupon');
+    // Checkout requires an account — every order is tied to a customer.
+    Route::middleware('auth')->group(function () {
+        Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+        Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:12,1')->name('checkout.store');
+        Route::get('/checkout/confirmation', [CheckoutController::class, 'confirmation'])->name('checkout.confirmation');
 
-    // ---- Payment (ABA PayWay) ----
-    Route::get('/payment/{order}/pay', [PaymentController::class, 'pay'])->name('payment.pay');
-    Route::get('/payment/{order}/success', [PaymentController::class, 'success'])->name('payment.success');
-    Route::get('/payment/{order}/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
+        // ---- Payment (ABA PayWay) ----
+        Route::get('/payment/{order}/pay', [PaymentController::class, 'pay'])->name('payment.pay');
+        Route::get('/payment/{order}/success', [PaymentController::class, 'success'])->name('payment.success');
+        Route::get('/payment/{order}/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
+    });
     Route::post('/payment/callback', [PaymentController::class, 'callback'])->name('payment.callback');
     Route::get('/wallet/topup/{topup}/pay', [PaymentController::class, 'topupPay'])->middleware('auth')->name('payment.topup.pay');
     Route::get('/wallet/topup/{topup}/success', [PaymentController::class, 'topupSuccess'])->middleware('auth')->name('payment.topup.success');
@@ -85,13 +92,13 @@ Route::name('frontend.')->group(function () {
     // (POST /login, /register, … registered later via routes/auth.php).
     Route::middleware('guest')->group(function () {
         Route::get('/login', [AuthController::class, 'login'])->name('login');
-        Route::post('/auth/login', [AuthController::class, 'authenticate'])->name('login.store');
+        Route::post('/auth/login', [AuthController::class, 'authenticate'])->middleware('throttle:6,1')->name('login.store');
         Route::get('/register', [AuthController::class, 'register'])->name('register');
-        Route::post('/auth/register', [AuthController::class, 'store'])->name('register.store');
+        Route::post('/auth/register', [AuthController::class, 'store'])->middleware('throttle:6,1')->name('register.store');
         Route::get('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.request');
-        Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
+        Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLink'])->middleware('throttle:6,1')->name('password.email');
         Route::get('/reset-password', [AuthController::class, 'resetPassword'])->name('password.reset');
-        Route::post('/auth/reset-password', [AuthController::class, 'updatePassword'])->name('password.update');
+        Route::post('/auth/reset-password', [AuthController::class, 'updatePassword'])->middleware('throttle:6,1')->name('password.update');
         Route::get('/verify-otp', [AuthController::class, 'otp'])->name('otp.verify');
     });
     Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
@@ -125,6 +132,7 @@ Route::name('frontend.')->group(function () {
         Route::get('/orders', [AccountController::class, 'orders'])->name('orders');
         Route::get('/orders/{id}', [AccountController::class, 'orderDetail'])->name('orders.show');
         Route::get('/orders/{id}/tracking', [AccountController::class, 'orderTracking'])->name('orders.tracking');
+        Route::get('/orders/{id}/invoice', [AccountController::class, 'invoice'])->name('orders.invoice');
         Route::get('/orders/{id}/review/{pid}', [AccountController::class, 'review'])->name('orders.review');
         Route::post('/orders/{id}/review/{pid}', [AccountController::class, 'storeReview'])->name('orders.review.store');
     });

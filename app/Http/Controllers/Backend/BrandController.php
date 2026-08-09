@@ -74,7 +74,7 @@ class BrandController extends Controller
             }
 
             return to_route('admin.brands.index')
-                ->with('success', 'Brand created successfully!');
+                ->with('success', __('Brand created successfully!'));
         } catch (\Exception $e) {
             Log::error('Error creating brand: '.$e->getMessage(), [
                 'exception' => $e,
@@ -117,7 +117,7 @@ class BrandController extends Controller
             }
 
             return to_route('admin.brands.index')
-                ->with('success', 'Brand updated successfully!');
+                ->with('success', __('Brand updated successfully!'));
         } catch (\Exception $e) {
             Log::error('Error updating brand: '.$e->getMessage(), [
                 'exception' => $e,
@@ -156,7 +156,7 @@ class BrandController extends Controller
         }
 
         return to_route('admin.brands.index')
-            ->with('success', 'Brand deleted successfully!');
+            ->with('success', __('Brand deleted successfully!'));
     }
 
     public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse

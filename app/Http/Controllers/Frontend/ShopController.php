@@ -46,6 +46,11 @@ class ShopController extends Controller
             'colors' => $this->products->colors(),
             'minPrice' => $minPrice,
             'maxPrice' => $maxPrice,
+            'seo' => [
+                'title' => 'Shop all — '.$this->settings->siteName(),
+                'description' => 'Browse the full collection — premium heavyweight tees, hoodies and streetwear essentials.',
+                'canonical' => route('frontend.shop.index'),
+            ],
         ]);
     }
 
@@ -129,6 +134,13 @@ class ShopController extends Controller
                 ->all(),
             'shippingInfo' => $this->settings->shippingInfo(),
             'recentlyViewed' => $recentlyViewed,
+            'seo' => [
+                'title' => (($dynamicProduct->seo_title ?: $product['name'])).' — '.$this->settings->siteName(),
+                'description' => $dynamicProduct->seo_description ?: strip_tags((string) ($product['desc'] ?? '')),
+                'image' => $product['image_url'] ?? null,
+                'type' => 'product',
+                'canonical' => route('frontend.shop.show', $product['slug']),
+            ],
         ]);
     }
 }

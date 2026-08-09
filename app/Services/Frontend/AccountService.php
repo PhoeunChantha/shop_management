@@ -84,6 +84,18 @@ class AccountService
     }
 
     /**
+     * The raw Order model (scoped to the signed-in customer) for the invoice PDF.
+     */
+    public function findOrderModel(string $id): ?Order
+    {
+        return $this->orderQuery()
+            ->where(function ($query) use ($id): void {
+                $query->where('id', $id)->orWhere('order_number', $id);
+            })
+            ->first();
+    }
+
+    /**
      * @return Collection<int, array<string, mixed>>
      */
     public function productsById(): Collection

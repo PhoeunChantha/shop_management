@@ -13,7 +13,7 @@
                     <span class="ut-logo-mark" style="background:#fff;color:var(--ink)">T</span>
                     <span class="ut-logo-text" style="color:#fff">T-SHIRT SHOP</span>
                 </div>
-                <p style="max-width:300px;color:#94a3b8;font-size:14px;line-height:1.6">Premium heavyweight tees, built to outlast trends. Designed in studio, made with organic cotton.</p>
+                <p style="max-width:300px;color:#94a3b8;font-size:14px;line-height:1.6">{{ __('Premium heavyweight tees, built to outlast trends. Designed in studio, made with organic cotton.') }}</p>
                 <div class="ut-row" style="gap:10px;margin-top:18px">
                     @foreach(['ig', 'share', 'mail'] as $ic)
                         <span style="width:38px;height:38px;border-radius:10px;background:rgba(255,255,255,.08);display:grid;place-items:center;color:#fff"><x-frontend.icon :n="$ic" :size="18" /></span>
@@ -22,20 +22,20 @@
             </div>
             @foreach($cols as $title => $links)
                 <div>
-                    <h5>{{ $title }}</h5>
+                    <h5>{{ __($title) }}</h5>
                     @foreach($links as [$label, $href])
-                        <a href="{{ $href }}">{{ $label }}</a>
+                        <a href="{{ $href }}">{{ __($label) }}</a>
                     @endforeach
                 </div>
             @endforeach
         </div>
         <hr style="border:0;border-top:1px solid rgba(255,255,255,.1);margin:36px 0 20px">
         <div class="ut-row" style="justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:13px;color:#64748b">
-            <span>© {{ date('Y') }} T-Shirt Shop. All rights reserved.</span>
+            <span>© {{ date('Y') }} T-Shirt Shop. {{ __('All rights reserved.') }}</span>
             <div class="ut-row" style="gap:20px">
-                <a href="{{ route('frontend.pages.privacy') }}" style="color:inherit">Privacy</a>
-                <a href="{{ route('frontend.pages.terms') }}" style="color:inherit">Terms</a>
-                <a href="{{ route('frontend.pages.privacy') }}" style="color:inherit">Cookies</a>
+                <a href="{{ route('frontend.pages.privacy') }}" style="color:inherit">{{ __('Privacy') }}</a>
+                <a href="{{ route('frontend.pages.terms') }}" style="color:inherit">{{ __('Terms') }}</a>
+                <a href="{{ route('frontend.pages.privacy') }}" style="color:inherit">{{ __('Cookies') }}</a>
             </div>
         </div>
     </div>

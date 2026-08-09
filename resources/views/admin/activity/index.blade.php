@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">System</p>
+            <p class="header-kicker mb-1">{{ __('System') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">
                 {{ __('Activity Log') }}
             </h2>
@@ -11,28 +11,28 @@
     <div class="admin-page activity-log-page">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Audit trail</p>
-                <h3>Activity Log</h3>
-                <p class="activity-log-lede">Review order activity, admin actions, and system events from one searchable timeline.</p>
+                <p class="section-kicker">{{ __('Audit trail') }}</p>
+                <h3>{{ __('Activity Log') }}</h3>
+                <p class="activity-log-lede">{{ __('Review order activity, admin actions, and system events from one searchable timeline.') }}</p>
             </div>
 
             <a href="{{ route('admin.activity.export', request()->query()) }}" class="premium-button premium-button--dark">
                 <i class="fa-solid fa-file-export"></i>
-                <span>Export CSV</span>
+                <span>{{ __('Export CSV') }}</span>
             </a>
         </div>
 
         <div class="activity-stat-strip">
             <div class="activity-stat">
-                <span>Total events</span>
+                <span>{{ __('Total events') }}</span>
                 <strong>{{ number_format($stats['total']) }}</strong>
             </div>
             <div class="activity-stat">
-                <span>Today</span>
+                <span>{{ __('Today') }}</span>
                 <strong>{{ number_format($stats['today']) }}</strong>
             </div>
             <div class="activity-stat">
-                <span>Admin actions</span>
+                <span>{{ __('Admin actions') }}</span>
                 <strong>{{ number_format($stats['manual']) }}</strong>
             </div>
         </div>
@@ -42,34 +42,34 @@
                 <input type="hidden" name="per_page" value="{{ $perPage }}">
             </x-slot:hidden>
 
-            <x-select name="type" size="sm" label="Type" :value="request('type')" placeholder="All event types"
+            <x-select name="type" size="sm" label="{{ __('Type') }}" :value="request('type')" placeholder="{{ __('All event types') }}"
                 :options="$types" />
 
-            <x-select name="user_id" size="sm" label="Actor" :value="request('user_id')" placeholder="All actors"
+            <x-select name="user_id" size="sm" label="{{ __('Actor') }}" :value="request('user_id')" placeholder="{{ __('All actors') }}"
                 :options="$actors->mapWithKeys(fn ($actor) => [$actor->id => trim($actor->name.' - '.$actor->email)])->all()" searchable />
 
             <div class="form-field">
-                <label for="activity_order_id">Order ID</label>
+                <label for="activity_order_id">{{ __('Order ID') }}</label>
                 <input id="activity_order_id" type="number" name="order_id" value="{{ request('order_id') }}"
-                    class="form-input" placeholder="Any order">
+                    class="form-input" placeholder="{{ __('Any order') }}">
             </div>
 
             <div class="form-field">
-                <label for="activity_date_from">From date</label>
+                <label for="activity_date_from">{{ __('From date') }}</label>
                 <input id="activity_date_from" type="date" name="date_from" value="{{ request('date_from') }}"
                     class="form-input">
             </div>
 
             <div class="form-field">
-                <label for="activity_date_to">To date</label>
+                <label for="activity_date_to">{{ __('To date') }}</label>
                 <input id="activity_date_to" type="date" name="date_to" value="{{ request('date_to') }}"
                     class="form-input">
             </div>
 
             <div class="form-field lg:col-span-3">
-                <label for="activity_search">Search</label>
+                <label for="activity_search">{{ __('Search') }}</label>
                 <input id="activity_search" type="search" name="search" value="{{ request('search') }}"
-                    class="form-input" placeholder="Search title, note, order number, actor name or email">
+                    class="form-input" placeholder="{{ __('Search title, note, order number, actor name or email') }}">
             </div>
         </x-filter-card>
 
@@ -82,7 +82,7 @@
                     <x-slot:right>
                         <span class="activity-export-note">
                             <i class="fa-solid fa-shield-halved"></i>
-                            Export uses current filters
+                            {{ __('Export uses current filters') }}
                         </span>
                     </x-slot:right>
                 </x-table-toolbar>
@@ -141,13 +141,13 @@
             @else
                 <x-admin.empty-state
                     icon="fa-solid fa-clock-rotate-left"
-                    title="No activity found"
-                    message="Try changing the filters, or check again after orders are updated."
+                    title="{{ __('No activity found') }}"
+                    message="{{ __('Try changing the filters, or check again after orders are updated.') }}"
                 />
             @endif
 
             <x-slot:footer>
-                <x-table-footer :paginator="$events" label="activity events" />
+                <x-table-footer :paginator="$events" label="{{ __('activity events') }}" />
             </x-slot:footer>
         </x-admin.table-card>
     </div>

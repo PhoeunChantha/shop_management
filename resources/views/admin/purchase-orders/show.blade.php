@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Restock</p>
+            <p class="header-kicker mb-1">{{ __('Restock') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ $purchaseOrder->po_number }}</h2>
         </div>
     </x-slot>
@@ -9,22 +9,22 @@
     <div class="admin-page">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Purchase order</p>
+                <p class="section-kicker">{{ __('Purchase order') }}</p>
                 <h3>{{ $purchaseOrder->supplier?->name }} <span class="status-chip {{ $purchaseOrder->statusBadge() }}">{{ $purchaseOrder->statusLabel() }}</span></h3>
             </div>
             <div class="d-flex gap-2 flex-wrap">
-                <a href="{{ route('admin.purchase-orders.index') }}" class="ghost-button ghost-button--panel"><i class="fa-solid fa-arrow-left"></i><span>Back</span></a>
+                <a href="{{ route('admin.purchase-orders.index') }}" class="ghost-button ghost-button--panel"><i class="fa-solid fa-arrow-left"></i><span>{{ __('Back') }}</span></a>
                 @if($purchaseOrder->status === 'draft')
                     <form method="POST" action="{{ route('admin.purchase-orders.ordered', $purchaseOrder) }}">@csrf @method('PATCH')
-                        <button class="premium-button premium-button--dark"><i class="fa-solid fa-paper-plane"></i><span>Mark ordered</span></button>
+                        <button class="premium-button premium-button--dark"><i class="fa-solid fa-paper-plane"></i><span>{{ __('Mark ordered') }}</span></button>
                     </form>
                 @endif
                 @if(in_array($purchaseOrder->status, ['ordered', 'partial'], true))
                     <form method="POST" action="{{ route('admin.purchase-orders.receive', $purchaseOrder) }}">@csrf @method('PATCH')
-                        <button class="premium-button premium-button--dark"><i class="fa-solid fa-truck-ramp-box"></i><span>Receive stock</span></button>
+                        <button class="premium-button premium-button--dark"><i class="fa-solid fa-truck-ramp-box"></i><span>{{ __('Receive stock') }}</span></button>
                     </form>
                     <form method="POST" action="{{ route('admin.purchase-orders.cancel', $purchaseOrder) }}">@csrf @method('PATCH')
-                        <button class="ghost-button ghost-button--danger"><i class="fa-solid fa-ban"></i><span>Cancel</span></button>
+                        <button class="ghost-button ghost-button--danger"><i class="fa-solid fa-ban"></i><span>{{ __('Cancel') }}</span></button>
                     </form>
                 @endif
             </div>
@@ -34,21 +34,21 @@
             <section class="premium-card restock-summary-card">
                 <span><i class="fa-solid fa-file-invoice-dollar"></i></span>
                 <div>
-                    <p>Order value</p>
+                    <p>{{ __('Order value') }}</p>
                     <strong>${{ number_format((float) $purchaseOrder->subtotal, 2) }}</strong>
                 </div>
             </section>
             <section class="premium-card restock-summary-card">
                 <span><i class="fa-solid fa-calendar-day"></i></span>
                 <div>
-                    <p>Expected</p>
+                    <p>{{ __('Expected') }}</p>
                     <strong>{{ $purchaseOrder->expected_at?->format('M d, Y') ?: 'Not set' }}</strong>
                 </div>
             </section>
             <section class="premium-card restock-summary-card">
                 <span><i class="fa-solid fa-user"></i></span>
                 <div>
-                    <p>Created by</p>
+                    <p>{{ __('Created by') }}</p>
                     <strong>{{ $purchaseOrder->creator?->name ?? 'System' }}</strong>
                 </div>
             </section>
@@ -56,17 +56,17 @@
 
         <x-admin.table-card class="restock-table-card mt-3">
             <x-slot:toolbar>
-                <div class="table-titlebar"><div><h3>Incoming items</h3><p>{{ $purchaseOrder->items->count() }} line item(s)</p></div></div>
+                <div class="table-titlebar"><div><h3>{{ __('Incoming items') }}</h3><p>{{ $purchaseOrder->items->count() }} line item(s)</p></div></div>
             </x-slot:toolbar>
             <table class="premium-table">
                 <thead>
                     <tr>
-                        <th>Item</th>
-                        <th>SKU</th>
-                        <th>Ordered</th>
-                        <th>Received</th>
-                        <th>Unit cost</th>
-                        <th class="text-end">Line total</th>
+                        <th>{{ __('Item') }}</th>
+                        <th>{{ __('SKU') }}</th>
+                        <th>{{ __('Ordered') }}</th>
+                        <th>{{ __('Received') }}</th>
+                        <th>{{ __('Unit cost') }}</th>
+                        <th class="text-end">{{ __('Line total') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -86,7 +86,7 @@
 
         @if($purchaseOrder->notes)
             <section class="premium-card restock-note-card mt-3">
-                <p class="section-kicker">Internal notes</p>
+                <p class="section-kicker">{{ __('Internal notes') }}</p>
                 <p>{{ $purchaseOrder->notes }}</p>
             </section>
         @endif

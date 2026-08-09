@@ -7,7 +7,9 @@ namespace App\Services\Frontend;
 use App\Enums\StockMovementType;
 use App\Exceptions\CheckoutException;
 use App\Helpers\ImageManager;
+use App\Mail\OrderConfirmationMail;
 use App\Models\Cart;
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -18,6 +20,7 @@ use App\Services\Admin\StockService;
 use App\Services\Admin\WalletService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * Supplies the storefront checkout with admin-managed shipping methods, payment
@@ -106,6 +109,33 @@ final class CheckoutService
     }
 
     /**
+     * Validate a coupon code against a subtotal (for the checkout AJAX check).
+     *
+     * @return array{valid: bool, code: string, discount: float, message: string}
+     */
+    public function validateCoupon(string $code, float $subtotal): array
+    {
+        $coupon = Coupon::active()->code($code)->first();
+        $label = $coupon?->code ?? mb_strtoupper(trim($code));
+
+        if (! $coupon) {
+            return ['valid' => false, 'code' => $label, 'discount' => 0, 'message' => 'That code is invalid or expired.'];
+        }
+
+        if ($coupon->min_spend !== null && $subtotal < (float) $coupon->min_spend) {
+            return ['valid' => false, 'code' => $label, 'discount' => 0, 'message' => 'Spend at least $'.number_format((float) $coupon->min_spend, 2).' to use this code.'];
+        }
+
+        $discount = $coupon->discountFor($subtotal);
+
+        if ($discount <= 0) {
+            return ['valid' => false, 'code' => $label, 'discount' => 0, 'message' => 'This code does not apply to your bag.'];
+        }
+
+        return ['valid' => true, 'code' => $label, 'discount' => $discount, 'message' => 'Coupon applied — you saved $'.number_format($discount, 2).'.'];
+    }
+
+    /**
      * Effective tax rate (fraction, e.g. 0.085) from the applicable active,
      * exclusive tax rule (lowest sort order). Inclusive rules are already in
      * the price, so they are not added at checkout.
@@ -146,7 +176,7 @@ final class CheckoutService
             ->get()
             ->keyBy('id');
 
-        return DB::transaction(function () use ($items, $products, $data) {
+        $order = DB::transaction(function () use ($items, $products, $data) {
             $lines = [];
             $subtotal = 0.0;
 
@@ -159,8 +189,12 @@ final class CheckoutService
                 $qty = max(1, (int) $item['qty']);
                 $variant = $this->matchVariant($product, $item['size'] ?? null, $item['color'] ?? null);
 
-                // Guard against overselling on the stockable being sold.
+                // Row-lock the stockable being sold so two concurrent checkouts
+                // can't both pass the check and oversell the same stock.
                 $stockable = $variant ?: ($product->product_type->value === 'single' ? $product : null);
+                if ($stockable) {
+                    $stockable = $stockable->newQuery()->lockForUpdate()->find($stockable->getKey());
+                }
                 if ($stockable && (int) $stockable->stock < $qty) {
                     throw new CheckoutException(sprintf(
                         '"%s" only has %d left in stock. Please adjust the quantity.',
@@ -176,6 +210,7 @@ final class CheckoutService
                 $lines[] = [
                     'product' => $product,
                     'variant' => $variant,
+                    'stockable' => $stockable,
                     'qty' => $qty,
                     'price' => $price,
                     'line_total' => $lineTotal,
@@ -187,10 +222,16 @@ final class CheckoutService
                 throw new CheckoutException('None of the cart items are available.');
             }
 
+            // Coupon (re-validated server-side — client discount is never trusted).
+            $coupon = filled($data['coupon'] ?? null)
+                ? Coupon::active()->code((string) $data['coupon'])->first()
+                : null;
+            $discount = $coupon ? $coupon->discountFor($subtotal) : 0.0;
+
             $method = ShippingMethod::query()->where('status', true)->find($data['shipping_id'] ?? null);
             $shipping = $method ? $method->costFor($subtotal) : 0.0;
-            $tax = round($subtotal * $this->taxRate(), 2);
-            $grand = round($subtotal + $shipping + $tax, 2);
+            $tax = round(max(0, $subtotal - $discount) * $this->taxRate(), 2);
+            $grand = round(max(0, $subtotal - $discount) + $shipping + $tax, 2);
 
             $customer = $data['customer'] ?? [];
 
@@ -205,7 +246,9 @@ final class CheckoutService
                 'shipping_zip' => $customer['zip'] ?? null,
                 'shipping_country' => $customer['country'] ?? null,
                 'subtotal' => $subtotal,
-                'discount_total' => 0,
+                'discount_total' => $discount,
+                'coupon_id' => $coupon?->id,
+                'coupon_code' => $coupon?->code,
                 'shipping_total' => $shipping,
                 'tax_total' => $tax,
                 'grand_total' => $grand,
@@ -214,6 +257,9 @@ final class CheckoutService
                 'payment_status' => 'unpaid',
                 'placed_at' => now(),
             ]);
+
+            // Count the redemption once the order exists.
+            $coupon?->increment('used_count');
 
             foreach ($lines as $line) {
                 /** @var Product $product */
@@ -233,9 +279,8 @@ final class CheckoutService
                     'line_total' => $line['line_total'],
                 ]);
 
-                // Decrement stock on the matched stockable (variant, or single product).
-                $stockable = $variant ?: ($product->product_type->value === 'single' ? $product : null);
-                if ($stockable) {
+                // Decrement the row-locked stockable captured during the check.
+                if ($stockable = $line['stockable']) {
                     $this->stock->adjust($stockable, -$line['qty'], StockMovementType::Sale, 'Order '.$order->order_number);
                 }
             }
@@ -264,6 +309,20 @@ final class CheckoutService
 
             return $order;
         });
+
+        // Send the confirmation + invoice once the order is safely committed.
+        // Queued (ShouldQueue), so a mail failure never blocks the checkout.
+        // Honours the admin "order confirmation email" toggle in Settings.
+        if (filled($order->customer_email) && $this->settings->orderEmailEnabled()) {
+            Mail::to($order->customer_email)->send(new OrderConfirmationMail($order));
+        }
+
+        // Optional: copy the order (with invoice) to the admin alert address.
+        if ($adminEmail = $this->settings->adminOrderAlertEmail()) {
+            Mail::to($adminEmail)->send(new OrderConfirmationMail($order));
+        }
+
+        return $order;
     }
 
     /**

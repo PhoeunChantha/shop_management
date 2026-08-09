@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use App\Models\WalletTopup;
 use App\Services\Frontend\AccountService;
+use App\Services\Frontend\InvoiceService;
 use App\Services\Frontend\PaywayService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
@@ -47,7 +49,7 @@ class AccountController extends Controller
 
         $this->account->updateProfile($request->user(), $data);
 
-        return back()->with('success', 'Profile updated.');
+        return back()->with('success', __('Profile updated.'));
     }
 
     public function password(): View
@@ -64,7 +66,7 @@ class AccountController extends Controller
 
         $request->user()->update(['password' => $request->input('password')]);
 
-        return back()->with('success', 'Password updated.');
+        return back()->with('success', __('Password updated.'));
     }
 
     public function addresses(): View
@@ -94,7 +96,7 @@ class AccountController extends Controller
     {
         $request->user()->unreadNotifications->markAsRead();
 
-        return back()->with('success', 'All notifications marked as read.');
+        return back()->with('success', __('All notifications marked as read.'));
     }
 
     public function wallet(Request $request): View
@@ -115,7 +117,7 @@ class AccountController extends Controller
         ]);
 
         if (! app(PaywayService::class)->configured()) {
-            return back()->with('error', 'Online top-up is not available right now.');
+            return back()->with('error', __('Online top-up is not available right now.'));
         }
 
         $topup = WalletTopup::create([
@@ -158,6 +160,13 @@ class AccountController extends Controller
         ]);
     }
 
+    public function invoice(string $id, InvoiceService $invoices): Response
+    {
+        $order = $this->account->findOrderModel($id) ?? abort(404);
+
+        return $invoices->pdf($order)->download($invoices->filename($order));
+    }
+
     public function orderTracking(string $id): View
     {
         $order = $this->account->findOrder($id) ?? abort(404);
@@ -188,7 +197,7 @@ class AccountController extends Controller
         if ($this->account->hasReviewed($request->user(), $pid)) {
             return redirect()
                 ->route('frontend.account.orders')
-                ->with('error', 'You have already reviewed this product.');
+                ->with('error', __('You have already reviewed this product.'));
         }
 
         $data = $request->validate([
@@ -201,6 +210,6 @@ class AccountController extends Controller
 
         return redirect()
             ->route('frontend.account.orders')
-            ->with('success', 'Thanks! Your review was submitted and is pending approval.');
+            ->with('success', __('Thanks! Your review was submitted and is pending approval.'));
     }
 }

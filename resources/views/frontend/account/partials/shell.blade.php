@@ -18,12 +18,12 @@
     <div class="ut-card" style="padding:24px;margin-bottom:26px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">
         <span style="width:64px;height:64px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-family:var(--font-head);font-weight:700;font-size:24px;flex-shrink:0">{{ $u['first'][0] }}</span>
         <div style="flex:1;min-width:160px">
-            <h1 style="font-size:26px">Hi, {{ $u['first'] }}</h1>
+            <h1 style="font-size:26px">{{ __('Hi') }}, {{ $u['first'] }}</h1>
             <p class="muted" style="font-size:14px">{{ $u['email'] }}</p>
         </div>
         <div class="ut-row" style="gap:10px">
-            <span class="ut-tag" style="background:#fde9d9;color:var(--orange-hover)"><x-frontend.icon n="spark" :size="13" style="vertical-align:-2px" /> {{ $u['tier'] }} member</span>
-            <span class="ut-tag ut-tag-soft">{{ number_format($u['points']) }} points</span>
+            <span class="ut-tag" style="background:#fde9d9;color:var(--orange-hover)"><x-frontend.icon n="spark" :size="13" style="vertical-align:-2px" /> {{ $u['tier'] }} {{ __('member') }}</span>
+            <span class="ut-tag ut-tag-soft">{{ number_format($u['points']) }} {{ __('points') }}</span>
         </div>
     </div>
 

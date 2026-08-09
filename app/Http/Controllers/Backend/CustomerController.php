@@ -68,7 +68,7 @@ class CustomerController extends Controller
 
         $this->customers->updateCrm(mb_strtolower(rawurldecode($email)), $data);
 
-        return back()->with('success', 'Customer CRM details updated.');
+        return back()->with('success', __('Customer CRM details updated.'));
     }
 
     public function bulkExport(Request $request): StreamedResponse

@@ -54,7 +54,7 @@ class AttributeController extends Controller
             $this->attributes->create($request->validated());
 
             return to_route('admin.attributes.index')
-                ->with('success', 'Attribute created successfully!');
+                ->with('success', __('Attribute created successfully!'));
         } catch (\Exception $e) {
             Log::error('Error creating attribute: '.$e->getMessage(), [
                 'exception' => $e,
@@ -87,7 +87,7 @@ class AttributeController extends Controller
             $this->attributes->update($attribute, $request->validated());
 
             return to_route('admin.attributes.index')
-                ->with('success', 'Attribute updated successfully!');
+                ->with('success', __('Attribute updated successfully!'));
         } catch (\Exception $e) {
             Log::error('Error updating attribute: '.$e->getMessage(), [
                 'exception' => $e,
@@ -116,7 +116,7 @@ class AttributeController extends Controller
         }
 
         return to_route('admin.attributes.index')
-            ->with('success', 'Attribute deleted successfully!');
+            ->with('success', __('Attribute deleted successfully!'));
     }
 
     public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse

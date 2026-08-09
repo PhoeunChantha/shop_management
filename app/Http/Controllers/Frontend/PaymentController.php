@@ -31,7 +31,7 @@ class PaymentController extends Controller
 
         if (! $this->payway->configured()) {
             return redirect()->route('frontend.checkout.index')
-                ->with('error', 'Online payment is not available right now.');
+                ->with('error', __('Online payment is not available right now.'));
         }
 
         $order->loadMissing('details');
@@ -79,7 +79,7 @@ class PaymentController extends Controller
         abort_unless($topup->user_id === $request->user()->id, 403);
 
         if (! $this->payway->configured()) {
-            return redirect()->route('frontend.account.wallet')->with('error', 'Online top-up is not available right now.');
+            return redirect()->route('frontend.account.wallet')->with('error', __('Online top-up is not available right now.'));
         }
 
         $checkout = $this->payway->purchaseTopup(
@@ -157,7 +157,7 @@ class PaymentController extends Controller
         $this->authorizeOrder($request, $order);
 
         return redirect()->route('frontend.checkout.index')
-            ->with('error', 'Payment was cancelled. Your order is saved as unpaid.');
+            ->with('error', __('Payment was cancelled. Your order is saved as unpaid.'));
     }
 
     /**

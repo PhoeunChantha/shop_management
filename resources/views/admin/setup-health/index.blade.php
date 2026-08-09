@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Operations</p>
+            <p class="header-kicker mb-1">{{ __('Operations') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('Setup Health') }}</h2>
         </div>
     </x-slot>
@@ -9,11 +9,11 @@
     <div class="admin-page setup-health-page">
         <div class="page-section-header setup-health-heading">
             <div>
-                <p class="section-kicker">Launch Control</p>
-                <h3>Admin Setup Health</h3>
+                <p class="section-kicker">{{ __('Launch Control') }}</p>
+                <h3>{{ __('Admin Setup Health') }}</h3>
             </div>
             <a href="{{ route('admin.settings.index') }}" class="premium-button premium-button--dark">
-                <i class="fa-solid fa-gear"></i><span>Store Settings</span>
+                <i class="fa-solid fa-gear"></i><span>{{ __('Store Settings') }}</span>
             </a>
         </div>
 
@@ -21,10 +21,10 @@
             <div class="setup-health-score" style="--score: {{ $score }};">
                 <div class="setup-health-score__ring">
                     <strong>{{ $score }}%</strong>
-                    <span>Ready</span>
+                    <span>{{ __('Ready') }}</span>
                 </div>
                 <div>
-                    <p class="section-kicker">System Readiness</p>
+                    <p class="section-kicker">{{ __('System Readiness') }}</p>
                     <h4>{{ $critical > 0 ? 'Critical work remains' : ($attention > 0 ? 'Almost ready' : 'Ready to operate') }}</h4>
                     <p>{{ $ready }} of {{ $total }} checks are clean. Use the priority list to finish the highest-impact admin setup tasks first.</p>
                 </div>
@@ -32,15 +32,15 @@
 
             <div class="setup-health-kpis">
                 <div>
-                    <span>Ready</span>
+                    <span>{{ __('Ready') }}</span>
                     <strong>{{ $ready }}</strong>
                 </div>
                 <div>
-                    <span>Attention</span>
+                    <span>{{ __('Attention') }}</span>
                     <strong>{{ $attention }}</strong>
                 </div>
                 <div>
-                    <span>Critical</span>
+                    <span>{{ __('Critical') }}</span>
                     <strong>{{ $critical }}</strong>
                 </div>
             </div>
@@ -50,8 +50,8 @@
             <section class="setup-health-panel setup-health-panel--priority">
                 <div class="setup-health-panel__head">
                     <div>
-                        <p class="section-kicker">Priority Queue</p>
-                        <h4>Next actions</h4>
+                        <p class="section-kicker">{{ __('Priority Queue') }}</p>
+                        <h4>{{ __('Next actions') }}</h4>
                     </div>
                     <i class="fa-solid fa-bolt"></i>
                 </div>
@@ -67,7 +67,7 @@
                             <i class="fa-solid fa-arrow-right"></i>
                         </a>
                     @empty
-                        <x-admin.empty-state icon="fa-solid fa-circle-check" title="No priority actions" message="All setup health checks are currently clean." />
+                        <x-admin.empty-state icon="fa-solid fa-circle-check" title="{{ __('No priority actions') }}" message="{{ __('All setup health checks are currently clean.') }}" />
                     @endforelse
                 </div>
             </section>
@@ -75,19 +75,19 @@
             <section class="setup-health-panel">
                 <div class="setup-health-panel__head">
                     <div>
-                        <p class="section-kicker">Operating Rhythm</p>
-                        <h4>Quick links</h4>
+                        <p class="section-kicker">{{ __('Operating Rhythm') }}</p>
+                        <h4>{{ __('Quick links') }}</h4>
                     </div>
                     <i class="fa-solid fa-compass"></i>
                 </div>
 
                 <div class="setup-health-quick-links">
-                    <a href="{{ route('admin.orders.index') }}"><i class="fa-solid fa-receipt"></i><span>Orders</span></a>
-                    <a href="{{ route('admin.inventory.index') }}"><i class="fa-solid fa-warehouse"></i><span>Inventory</span></a>
-                    <a href="{{ route('admin.deals.index') }}"><i class="fa-solid fa-tags"></i><span>Deals</span></a>
-                    <a href="{{ route('admin.media.index') }}"><i class="fa-solid fa-photo-film"></i><span>Media</span></a>
-                    <a href="{{ route('admin.seo.index') }}"><i class="fa-solid fa-magnifying-glass-chart"></i><span>SEO</span></a>
-                    <a href="{{ route('admin.notifications.index') }}"><i class="fa-solid fa-bell"></i><span>Alerts</span></a>
+                    <a href="{{ route('admin.orders.index') }}"><i class="fa-solid fa-receipt"></i><span>{{ __('Orders') }}</span></a>
+                    <a href="{{ route('admin.inventory.index') }}"><i class="fa-solid fa-warehouse"></i><span>{{ __('Inventory') }}</span></a>
+                    <a href="{{ route('admin.deals.index') }}"><i class="fa-solid fa-tags"></i><span>{{ __('Deals') }}</span></a>
+                    <a href="{{ route('admin.media.index') }}"><i class="fa-solid fa-photo-film"></i><span>{{ __('Media') }}</span></a>
+                    <a href="{{ route('admin.seo.index') }}"><i class="fa-solid fa-magnifying-glass-chart"></i><span>{{ __('SEO') }}</span></a>
+                    <a href="{{ route('admin.notifications.index') }}"><i class="fa-solid fa-bell"></i><span>{{ __('Alerts') }}</span></a>
                 </div>
             </section>
         </div>

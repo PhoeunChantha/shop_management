@@ -45,7 +45,7 @@ class PermissionController extends Controller
 
         $this->permissions->createMany($data['names']);
 
-        return redirect()->route('admin.permissions.index')->with('success', 'Permission created successfully!');
+        return redirect()->route('admin.permissions.index')->with('success', __('Permission created successfully!'));
     }
 
     public function edit($id): View
@@ -67,7 +67,7 @@ class PermissionController extends Controller
 
         $permission->update(['name' => $data['name']]);
 
-        return redirect()->route('admin.permissions.index')->with('success', 'Permission updated successfully!');
+        return redirect()->route('admin.permissions.index')->with('success', __('Permission updated successfully!'));
     }
 
     public function destroy($id): RedirectResponse
@@ -75,6 +75,6 @@ class PermissionController extends Controller
         $permission = Permission::findOrFail($id);
         $permission->delete();
 
-        return redirect()->route('admin.permissions.index')->with('success', 'Permission deleted successfully!');
+        return redirect()->route('admin.permissions.index')->with('success', __('Permission deleted successfully!'));
     }
 }

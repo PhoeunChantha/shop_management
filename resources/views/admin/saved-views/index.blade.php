@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Operations</p>
+            <p class="header-kicker mb-1">{{ __('Operations') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('Saved Views') }}</h2>
         </div>
     </x-slot>
@@ -9,9 +9,9 @@
     <div class="admin-page saved-views-page">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Table Presets</p>
-                <h3>Saved Views</h3>
-                <p class="text-secondary mb-0">Reusable filters for repeated admin workflows.</p>
+                <p class="section-kicker">{{ __('Table Presets') }}</p>
+                <h3>{{ __('Saved Views') }}</h3>
+                <p class="text-secondary mb-0">{{ __('Reusable filters for repeated admin workflows.') }}</p>
             </div>
         </div>
 
@@ -35,7 +35,7 @@
                                     <small>{{ $view->is_global ? 'Global preset' : 'Personal preset' }} {{ $view->user ? '- '.$view->user->name : '' }}</small>
                                 </div>
                                 <a href="{{ route($view->route_name, $view->query ?? []) }}" class="ghost-button ghost-button--panel">
-                                    <i class="fa-solid fa-arrow-up-right-from-square"></i><span>Open</span>
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i><span>{{ __('Open') }}</span>
                                 </a>
                                 @if (! $view->is_global || auth()->user()?->can('delete saved views'))
                                     <form method="POST" action="{{ route('admin.saved-views.destroy', $view) }}" class="mb-0">
@@ -51,7 +51,7 @@
                     </div>
                 </section>
             @empty
-                <x-admin.empty-state icon="fa-solid fa-bookmark" title="No saved views yet" message="Save a filtered table view from products, orders, customers, returns, or media." />
+                <x-admin.empty-state icon="fa-solid fa-bookmark" title="{{ __('No saved views yet') }}" message="{{ __('Save a filtered table view from products, orders, customers, returns, or media.') }}" />
             @endforelse
         </div>
     </div>

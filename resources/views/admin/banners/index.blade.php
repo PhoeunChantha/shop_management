@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Content</p>
+            <p class="header-kicker mb-1">{{ __('Content') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('Banners') }}</h2>
         </div>
     </x-slot>
@@ -9,11 +9,11 @@
     <div class="admin-page">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Homepage hero</p>
-                <h3>Banners</h3>
+                <p class="section-kicker">{{ __('Homepage hero') }}</p>
+                <h3>{{ __('Banners') }}</h3>
             </div>
             <a href="{{ route('admin.banners.create') }}" class="premium-button premium-button--dark">
-                <i class="fa-solid fa-plus"></i><span>New Banner</span>
+                <i class="fa-solid fa-plus"></i><span>{{ __('New Banner') }}</span>
             </a>
         </div>
 
@@ -28,7 +28,7 @@
                         <x-per-page-selector :current="$perPage" />
                     </x-slot:left>
                     <x-slot:right>
-                        <x-search-input name="search" placeholder="Search banners..." />
+                        <x-search-input name="search" placeholder="{{ __('Search banners...') }}" />
                     </x-slot:right>
                 </x-table-toolbar>
             </x-slot:toolbar>
@@ -38,14 +38,14 @@
                         <tr>
                             <th class="bulk-check-col">
                                 <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
-                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="{{ __('Select all') }}">
                             </th>
-                            <th style="width:90px;">Preview</th>
-                            <th>Banner</th>
-                            <th>Call to action</th>
-                            <th style="width:80px;">Order</th>
-                            <th style="width:120px;">Status</th>
-                            <th class="text-end" style="width:96px;">Actions</th>
+                            <th style="width:90px;">{{ __('Preview') }}</th>
+                            <th>{{ __('Banner') }}</th>
+                            <th>{{ __('Call to action') }}</th>
+                            <th style="width:80px;">{{ __('Order') }}</th>
+                            <th style="width:120px;">{{ __('Status') }}</th>
+                            <th class="text-end" style="width:96px;">{{ __('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -53,7 +53,7 @@
                             <tr>
                                 <td class="bulk-check-col">
                                     <input type="checkbox" class="bulk-check" data-row-check value="{{ $banner->id }}"
-                                        x-model="selected" aria-label="Select row">
+                                        x-model="selected" aria-label="{{ __('Select row') }}">
                                 </td>
                                 <td>
                                     @if ($banner->image)
@@ -73,7 +73,7 @@
                                         <span class="status-chip st-draft">{{ $banner->cta_text }}</span>
                                         <div class="orders-pay__method" style="text-transform:none;letter-spacing:0;">{{ $banner->cta_link ?: '—' }}</div>
                                     @else
-                                        <span class="text-gray-400 dark:text-slate-500 text-xs italic">No button</span>
+                                        <span class="text-gray-400 dark:text-slate-500 text-xs italic">{{ __('No button') }}</span>
                                     @endif
                                 </td>
                                 <td style="font-variant-numeric:tabular-nums;">{{ $banner->sort_order }}</td>
@@ -87,13 +87,13 @@
                                         <x-table-actions>
                                             <a href="{{ route('admin.banners.edit', $banner->id) }}"
                                                 class="table-actions__item table-actions__item--edit" role="menuitem">
-                                                <i class="fa-solid fa-pen"></i><span>Edit</span>
+                                                <i class="fa-solid fa-pen"></i><span>{{ __('Edit') }}</span>
                                             </a>
                                             <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
                                                 data-delete-modal-target="deleteBannerModal"
                                                 data-delete-action="{{ route('admin.banners.destroy', $banner->id) }}"
                                                 data-delete-name="{{ $banner->title }}">
-                                                <i class="fa-solid fa-trash"></i><span>Delete</span>
+                                                <i class="fa-solid fa-trash"></i><span>{{ __('Delete') }}</span>
                                             </button>
                                         </x-table-actions>
                                     </div>
@@ -102,8 +102,8 @@
                         @empty
                             <tr>
                                 <td colspan="7">
-                                    <x-admin.empty-state icon="fa-solid fa-images" title="No banners yet"
-                                        message="Create your first hero slide for the storefront home page." />
+                                    <x-admin.empty-state icon="fa-solid fa-images" title="{{ __('No banners yet') }}"
+                                        message="{{ __('Create your first hero slide for the storefront home page.') }}" />
                                 </td>
                             </tr>
                         @endforelse
@@ -111,11 +111,11 @@
                 </table>
 
             <x-slot:footer>
-                <x-table-footer :paginator="$banners" label="banners" />
+                <x-table-footer :paginator="$banners" label="{{ __('banners') }}" />
             </x-slot:footer>
         </x-admin.table-card>
 
-        <x-delete-confirm-modal id="deleteBannerModal" title="Delete this banner?"
-            message-after="from the storefront. This cannot be undone." />
+        <x-delete-confirm-modal id="deleteBannerModal" title="{{ __('Delete this banner?') }}"
+            message-after="{{ __('from the storefront. This cannot be undone.') }}" />
     </div>
 </x-app-layout>

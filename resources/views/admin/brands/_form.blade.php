@@ -13,19 +13,19 @@
         <div class="form-field col-span-2 md:col-span-1">
             <label for="name">Brand Name <span class="text-red-500">*</span></label>
             <input value="{{ old('name', $brand->name ?? '') }}" type="text" name="name" id="name"
-                class="form-input" placeholder="e.g. Nike, Adidas, Atelier" required>
-            <small class="text-gray-400 dark:text-slate-500 d-block mt-1">The URL slug is generated automatically from
-                the name.</small>
+                class="form-input" placeholder="{{ __('e.g. Nike, Adidas, Atelier') }}" required>
+            <small class="text-gray-400 dark:text-slate-500 d-block mt-1">{{ __('The URL slug is generated automatically from
+                the name.') }}</small>
             @error('name')
                 <p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>
             @enderror
         </div>
 
         <div class="form-field col-span-2 md:col-span-1">
-            <label for="status">Status</label>
+            <label for="status">{{ __('Status') }}</label>
             <select name="status" id="status" class="form-input">
-                <option value="1" {{ old('status', $brand->status ?? 1) == 1 ? 'selected' : '' }}>Enable</option>
-                <option value="0" {{ old('status', $brand->status ?? 1) == 0 ? 'selected' : '' }}>Disable</option>
+                <option value="1" {{ old('status', $brand->status ?? 1) == 1 ? 'selected' : '' }}>{{ __('Enable') }}</option>
+                <option value="0" {{ old('status', $brand->status ?? 1) == 0 ? 'selected' : '' }}>{{ __('Disable') }}</option>
             </select>
             @error('status')
                 <p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>
@@ -33,13 +33,13 @@
         </div>
 
         <div class="col-span-2 md:col-span-2">
-            <x-image-upload name="image" label="Brand Logo" folder="brands" :value="$brand->image ?? null"
+            <x-image-upload name="image" label="{{ __('Brand Logo') }}" folder="brands" :value="$brand->image ?? null"
                 help="PNG, JPG, GIF, SVG or WEBP — up to 2MB" />
         </div>
     </div>
 
     <div class="form-panel-footer mt-6">
-        <a href="{{ route('admin.brands.index') }}" class="form-cancel-button">Cancel</a>
+        <a href="{{ route('admin.brands.index') }}" class="form-cancel-button">{{ __('Cancel') }}</a>
         <button type="submit" class="form-submit-button">
             <i class="fa-solid fa-check"></i>
             {{ $submitText }}

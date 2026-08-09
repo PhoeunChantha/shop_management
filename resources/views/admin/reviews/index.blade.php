@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Catalog</p>
+            <p class="header-kicker mb-1">{{ __('Catalog') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('Reviews') }}</h2>
         </div>
     </x-slot>
@@ -9,8 +9,8 @@
     <div class="admin-page" x-data="{ viewOpen: false, vr: {} }">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Moderation</p>
-                <h3>Product reviews</h3>
+                <p class="section-kicker">{{ __('Moderation') }}</p>
+                <h3>{{ __('Product reviews') }}</h3>
             </div>
         </div>
 
@@ -33,26 +33,26 @@
             <x-slot:bulkBar>
                 {{-- Bulk moderation bar --}}
                 <div class="bulk-bar" x-show="count > 0" x-cloak>
-                <span class="bulk-bar__count"><i class="fa-solid fa-check-double"></i> <span x-text="count"></span> selected</span>
+                <span class="bulk-bar__count"><i class="fa-solid fa-check-double"></i> <span x-text="count"></span> {{ __('selected') }}</span>
                 <form method="POST" action="{{ route('admin.reviews.bulk-moderate') }}" class="bulk-bar__form">
                     @csrf @method('PATCH')
                     <template x-for="id in selected" :key="'ap-' + id"><input type="hidden" name="ids[]" :value="id"></template>
                     <input type="hidden" name="status" value="approved">
-                    <button type="submit" class="bulk-btn"><i class="fa-solid fa-circle-check"></i> Approve</button>
+                    <button type="submit" class="bulk-btn"><i class="fa-solid fa-circle-check"></i> {{ __('Approve') }}</button>
                 </form>
                 <form method="POST" action="{{ route('admin.reviews.bulk-moderate') }}" class="bulk-bar__form">
                     @csrf @method('PATCH')
                     <template x-for="id in selected" :key="'rj-' + id"><input type="hidden" name="ids[]" :value="id"></template>
                     <input type="hidden" name="status" value="rejected">
-                    <button type="submit" class="bulk-btn"><i class="fa-solid fa-circle-xmark"></i> Reject</button>
+                    <button type="submit" class="bulk-btn"><i class="fa-solid fa-circle-xmark"></i> {{ __('Reject') }}</button>
                 </form>
                 <form method="POST" action="{{ route('admin.reviews.bulk-destroy') }}" class="bulk-bar__form"
                     onsubmit="return confirm('Delete the selected reviews? This cannot be undone.')">
                     @csrf @method('DELETE')
                     <template x-for="id in selected" :key="'dl-' + id"><input type="hidden" name="ids[]" :value="id"></template>
-                    <button type="submit" class="bulk-btn bulk-btn--danger"><i class="fa-solid fa-trash"></i> Delete</button>
+                    <button type="submit" class="bulk-btn bulk-btn--danger"><i class="fa-solid fa-trash"></i> {{ __('Delete') }}</button>
                 </form>
-                <button type="button" class="bulk-bar__clear" @click="clear()"><i class="fa-solid fa-xmark"></i> Clear</button>
+                <button type="button" class="bulk-bar__clear" @click="clear()"><i class="fa-solid fa-xmark"></i> {{ __('Clear') }}</button>
                 </div>
             </x-slot:bulkBar>
 
@@ -62,7 +62,7 @@
                         <x-per-page-selector :current="$perPage" />
                     </x-slot:left>
                     <x-slot:right>
-                        <x-search-input name="search" placeholder="Search reviews..." />
+                        <x-search-input name="search" placeholder="{{ __('Search reviews...') }}" />
                     </x-slot:right>
                 </x-table-toolbar>
             </x-slot:toolbar>
@@ -72,14 +72,14 @@
                         <tr>
                             <th class="bulk-check-col">
                                 <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
-                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="{{ __('Select all') }}">
                             </th>
-                            <th>Product</th>
-                            <th>Review</th>
-                            <th style="width:120px;">Rating</th>
-                            <th style="width:120px;">Status</th>
-                            <th style="width:110px;">Date</th>
-                            <th class="text-end" style="width:96px;">Actions</th>
+                            <th>{{ __('Product') }}</th>
+                            <th>{{ __('Review') }}</th>
+                            <th style="width:120px;">{{ __('Rating') }}</th>
+                            <th style="width:120px;">{{ __('Status') }}</th>
+                            <th style="width:110px;">{{ __('Date') }}</th>
+                            <th class="text-end" style="width:96px;">{{ __('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -87,7 +87,7 @@
                             <tr>
                                 <td class="bulk-check-col">
                                     <input type="checkbox" class="bulk-check" data-row-check value="{{ $review->id }}"
-                                        x-model="selected" aria-label="Select row">
+                                        x-model="selected" aria-label="{{ __('Select row') }}">
                                 </td>
                                 <td>
                                     <div class="orders-cust">
@@ -101,7 +101,7 @@
                                             <div class="orders-cust__name">{{ $review->product?->name ?? '—' }}</div>
                                             <div class="orders-cust__email">
                                                 {{ $review->author_name }}
-                                                @if ($review->is_verified)<i class="fa-solid fa-circle-check text-emerald-500" title="Verified purchase"></i>@endif
+                                                @if ($review->is_verified)<i class="fa-solid fa-circle-check text-emerald-500" title="{{ __('Verified purchase') }}"></i>@endif
                                             </div>
                                         </div>
                                     </div>
@@ -133,25 +133,25 @@
                                                     'status' => $review->status->label(),
                                                     'date' => $review->created_at?->format('M d, Y g:i A'),
                                                 ]) }}; viewOpen = true">
-                                                <i class="fa-solid fa-eye"></i><span>View</span>
+                                                <i class="fa-solid fa-eye"></i><span>{{ __('View') }}</span>
                                             </button>
                                             @if ($review->status->value !== 'approved')
                                                 <form method="POST" action="{{ route('admin.reviews.moderate', $review->id) }}" class="mb-0">
                                                     @csrf @method('PATCH')<input type="hidden" name="status" value="approved">
-                                                    <button type="submit" class="table-actions__item" role="menuitem"><i class="fa-solid fa-circle-check text-emerald-500"></i><span>Approve</span></button>
+                                                    <button type="submit" class="table-actions__item" role="menuitem"><i class="fa-solid fa-circle-check text-emerald-500"></i><span>{{ __('Approve') }}</span></button>
                                                 </form>
                                             @endif
                                             @if ($review->status->value !== 'rejected')
                                                 <form method="POST" action="{{ route('admin.reviews.moderate', $review->id) }}" class="mb-0">
                                                     @csrf @method('PATCH')<input type="hidden" name="status" value="rejected">
-                                                    <button type="submit" class="table-actions__item" role="menuitem"><i class="fa-solid fa-circle-xmark text-amber-500"></i><span>Reject</span></button>
+                                                    <button type="submit" class="table-actions__item" role="menuitem"><i class="fa-solid fa-circle-xmark text-amber-500"></i><span>{{ __('Reject') }}</span></button>
                                                 </form>
                                             @endif
                                             <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
                                                 data-delete-modal-target="deleteReviewModal"
                                                 data-delete-action="{{ route('admin.reviews.destroy', $review->id) }}"
                                                 data-delete-name="{{ $review->author_name }}'s review">
-                                                <i class="fa-solid fa-trash"></i><span>Delete</span>
+                                                <i class="fa-solid fa-trash"></i><span>{{ __('Delete') }}</span>
                                             </button>
                                         </x-table-actions>
                                     </div>
@@ -160,8 +160,8 @@
                         @empty
                             <tr>
                                 <td colspan="7">
-                                    <x-admin.empty-state icon="fa-solid fa-star" title="No reviews found"
-                                        message="Customer reviews will appear here for moderation." />
+                                    <x-admin.empty-state icon="fa-solid fa-star" title="{{ __('No reviews found') }}"
+                                        message="{{ __('Customer reviews will appear here for moderation.') }}" />
                                 </td>
                             </tr>
                         @endforelse
@@ -169,7 +169,7 @@
                 </table>
 
             <x-slot:footer>
-                <x-table-footer :paginator="$reviews" label="reviews" />
+                <x-table-footer :paginator="$reviews" label="{{ __('reviews') }}" />
             </x-slot:footer>
         </x-admin.table-card>
 
@@ -201,7 +201,7 @@
             </div>
         </div>
 
-        <x-delete-confirm-modal id="deleteReviewModal" title="Delete this review?"
-            message-after="permanently. The product rating will be recalculated." />
+        <x-delete-confirm-modal id="deleteReviewModal" title="{{ __('Delete this review?') }}"
+            message-after="{{ __('permanently. The product rating will be recalculated.') }}" />
     </div>
 </x-app-layout>

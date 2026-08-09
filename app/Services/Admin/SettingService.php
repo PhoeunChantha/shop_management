@@ -146,6 +146,13 @@ final class SettingService
                 'shipping_returns_info' => ['label' => 'Shipping & returns info', 'type' => 'textarea', 'placeholder' => 'Free standard shipping on orders over $75 (2–4 business days)…', 'help' => 'Shown on the product page “Shipping” tab.', 'rules' => 'nullable|string|max:1000'],
             ],
             SettingGroup::Home->value => [
+                'home_best_enabled' => ['label' => 'Show “Best sellers” rail', 'type' => 'select', 'options' => ['1' => 'Shown', '0' => 'Hidden'], 'default' => '1', 'rules' => 'nullable|in:0,1'],
+                'home_best_title' => ['label' => 'Best sellers heading', 'type' => 'text', 'placeholder' => 'Best sellers', 'rules' => 'nullable|string|max:120'],
+                'home_flash_enabled' => ['label' => 'Show “Flash sale” rail', 'type' => 'select', 'options' => ['1' => 'Shown', '0' => 'Hidden'], 'default' => '1', 'rules' => 'nullable|in:0,1'],
+                'home_new_enabled' => ['label' => 'Show “New arrivals” rail', 'type' => 'select', 'options' => ['1' => 'Shown', '0' => 'Hidden'], 'default' => '1', 'rules' => 'nullable|in:0,1'],
+                'home_new_title' => ['label' => 'New arrivals heading', 'type' => 'text', 'placeholder' => 'New arrivals', 'rules' => 'nullable|string|max:120'],
+                'home_trending_enabled' => ['label' => 'Show “Trending” rail', 'type' => 'select', 'options' => ['1' => 'Shown', '0' => 'Hidden'], 'default' => '1', 'rules' => 'nullable|in:0,1'],
+                'home_trending_title' => ['label' => 'Trending heading', 'type' => 'text', 'placeholder' => 'Trending now', 'rules' => 'nullable|string|max:120'],
                 'newsletter_eyebrow' => ['label' => 'Newsletter kicker', 'type' => 'text', 'placeholder' => 'Members get more', 'help' => 'Small label above the homepage newsletter block.', 'rules' => 'nullable|string|max:120'],
                 'newsletter_title' => ['label' => 'Newsletter title', 'type' => 'text', 'placeholder' => 'Get 10% off your first order', 'rules' => 'nullable|string|max:255'],
                 'newsletter_copy' => ['label' => 'Newsletter text', 'type' => 'textarea', 'placeholder' => 'Early access to drops, members-only pricing, and free shipping.', 'rules' => 'nullable|string|max:500'],
@@ -177,7 +184,16 @@ final class SettingService
                 'facebook_login' => ['label' => 'Facebook login', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '0', 'help' => 'Show the “Continue with Facebook” button.', 'rules' => 'nullable|in:0,1'],
                 'facebook_client_id' => ['label' => 'Facebook app ID', 'type' => 'text', 'rules' => 'nullable|string|max:255'],
             ],
+            SettingGroup::Notifications->value => [
+                'order_email_enabled' => ['label' => 'Order confirmation email', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '1', 'help' => 'Email the customer a receipt + PDF invoice when they place an order.', 'rules' => 'nullable|in:0,1'],
+                'mail_from_name' => ['label' => 'Sender name', 'type' => 'text', 'placeholder' => 'T-Shirt Shop', 'help' => 'The “from” name shown on outgoing store emails. Falls back to the site name.', 'rules' => 'nullable|string|max:255'],
+                'mail_from_address' => ['label' => 'Sender email', 'type' => 'email', 'placeholder' => 'orders@tshirtshop.com', 'help' => 'The “from” address for outgoing store emails. Falls back to the app default.', 'rules' => 'nullable|email|max:255'],
+                'admin_order_alert_email' => ['label' => 'Admin order alert email', 'type' => 'email', 'placeholder' => 'admin@tshirtshop.com', 'help' => 'When set, a copy of every new order (with invoice) is also emailed here.', 'rules' => 'nullable|email|max:255'],
+            ],
             SettingGroup::Localization->value => [
+                'currency_code' => ['label' => 'Currency code', 'type' => 'text', 'placeholder' => 'USD', 'help' => 'ISO code shown on invoices/emails — e.g. USD, KHR, EUR.', 'rules' => 'nullable|string|max:8'],
+                'currency_symbol' => ['label' => 'Currency symbol', 'type' => 'text', 'placeholder' => '$', 'rules' => 'nullable|string|max:8'],
+                'currency_position' => ['label' => 'Symbol position', 'type' => 'select', 'options' => ['before' => 'Before amount ($10)', 'after' => 'After amount (10$)'], 'default' => 'before', 'rules' => 'nullable|in:before,after'],
                 'languages' => [
                     'label' => 'Store languages',
                     'hint' => 'Pick the languages your store supports. Product content can then be entered per selected language.',
@@ -463,6 +479,52 @@ final class SettingService
     }
 
     /**
+     * Whether the customer order-confirmation email is turned on (default: on).
+     */
+    public function orderEmailEnabled(): bool
+    {
+        return (string) Setting::get('order_email_enabled', '1') !== '0';
+    }
+
+    /**
+     * Configured "from" identity for outgoing store emails (null = app default).
+     *
+     * @return array{name: ?string, address: ?string}
+     */
+    public function mailFrom(): array
+    {
+        return [
+            'name' => Setting::get('mail_from_name') ?: null,
+            'address' => Setting::get('mail_from_address') ?: null,
+        ];
+    }
+
+    /**
+     * Optional admin address that also receives a copy of each new order.
+     */
+    public function adminOrderAlertEmail(): ?string
+    {
+        return Setting::get('admin_order_alert_email') ?: null;
+    }
+
+    /**
+     * Default SEO/meta values (used as fallbacks when a page has no override).
+     *
+     * @return array{title: string, description: string, image: ?string}
+     */
+    public function seoDefaults(): array
+    {
+        $name = $this->siteName();
+        $tagline = Setting::get('site_tagline');
+
+        return [
+            'title' => filled($tagline) ? $name.' — '.trim($tagline) : $name,
+            'description' => Setting::get('site_description') ?: 'Premium heavyweight t-shirts and streetwear essentials.',
+            'image' => $this->logoUrl(),
+        ];
+    }
+
+    /**
      * Configured order-number prefix (Settings → Prefix), defaulting to 'UT-'.
      */
     public function orderPrefix(): string
@@ -503,6 +565,52 @@ final class SettingService
             'eyebrow' => Setting::get('newsletter_eyebrow') ?: 'Members get more',
             'title' => Setting::get('newsletter_title') ?: 'Get 10% off your first order',
             'copy' => Setting::get('newsletter_copy') ?: 'Early access to drops, members-only pricing, and free shipping. No spam — just good tees.',
+        ];
+    }
+
+    /**
+     * Store currency configuration (symbol, ISO code, symbol position).
+     *
+     * @return array{code: string, symbol: string, position: string}
+     */
+    public function currency(): array
+    {
+        return [
+            'code' => Setting::get('currency_code') ?: 'USD',
+            'symbol' => Setting::get('currency_symbol') ?: '$',
+            'position' => Setting::get('currency_position') === 'after' ? 'after' : 'before',
+        ];
+    }
+
+    /**
+     * Format an amount with the configured currency symbol + position.
+     */
+    public function formatMoney(float $amount, int $decimals = 2): string
+    {
+        $currency = $this->currency();
+        $number = number_format($amount, $decimals);
+
+        return $currency['position'] === 'after'
+            ? $number.$currency['symbol']
+            : $currency['symbol'].$number;
+    }
+
+    /**
+     * Homepage product-rail configuration (which rails show + their headings).
+     * Managed in Settings → Home. Each rail defaults to shown.
+     *
+     * @return array<string, array{enabled: bool, title: string}>
+     */
+    public function homeSections(): array
+    {
+        $enabled = fn (string $key): bool => (string) Setting::get($key, '1') !== '0';
+        $title = fn (string $key, string $default): string => Setting::get($key) ?: $default;
+
+        return [
+            'best' => ['enabled' => $enabled('home_best_enabled'), 'title' => $title('home_best_title', 'Best sellers')],
+            'flash' => ['enabled' => $enabled('home_flash_enabled'), 'title' => ''],
+            'new' => ['enabled' => $enabled('home_new_enabled'), 'title' => $title('home_new_title', 'New arrivals')],
+            'trending' => ['enabled' => $enabled('home_trending_enabled'), 'title' => $title('home_trending_title', 'Trending now')],
         ];
     }
 

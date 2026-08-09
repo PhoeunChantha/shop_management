@@ -51,7 +51,7 @@ class NewsletterSubscriberController extends Controller
 
         $subscriber->delete();
 
-        return back()->with('success', 'Subscriber removed.');
+        return back()->with('success', __('Subscriber removed.'));
     }
 
     /**

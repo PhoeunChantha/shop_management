@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Content</p>
+            <p class="header-kicker mb-1">{{ __('Content') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('Collections') }}</h2>
         </div>
     </x-slot>
@@ -9,11 +9,11 @@
     <div class="admin-page">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Curated groups</p>
-                <h3>Collections</h3>
+                <p class="section-kicker">{{ __('Curated groups') }}</p>
+                <h3>{{ __('Collections') }}</h3>
             </div>
             <a href="{{ route('admin.collections.create') }}" class="premium-button premium-button--dark">
-                <i class="fa-solid fa-plus"></i><span>New Collection</span>
+                <i class="fa-solid fa-plus"></i><span>{{ __('New Collection') }}</span>
             </a>
         </div>
 
@@ -28,7 +28,7 @@
                         <x-per-page-selector :current="$perPage" />
                     </x-slot:left>
                     <x-slot:right>
-                        <x-search-input name="search" placeholder="Search collections..." />
+                        <x-search-input name="search" placeholder="{{ __('Search collections...') }}" />
                     </x-slot:right>
                 </x-table-toolbar>
             </x-slot:toolbar>
@@ -38,14 +38,14 @@
                         <tr>
                             <th class="bulk-check-col">
                                 <input type="checkbox" class="bulk-check" @change="toggleAll($event)"
-                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="Select all">
+                                    :checked="allChecked" x-effect="$el.indeterminate = someChecked" aria-label="{{ __('Select all') }}">
                             </th>
-                            <th style="width:80px;">Cover</th>
-                            <th>Collection</th>
-                            <th style="width:110px;">Products</th>
-                            <th style="width:80px;">Order</th>
-                            <th style="width:120px;">Status</th>
-                            <th class="text-end" style="width:96px;">Actions</th>
+                            <th style="width:80px;">{{ __('Cover') }}</th>
+                            <th>{{ __('Collection') }}</th>
+                            <th style="width:110px;">{{ __('Products') }}</th>
+                            <th style="width:80px;">{{ __('Order') }}</th>
+                            <th style="width:120px;">{{ __('Status') }}</th>
+                            <th class="text-end" style="width:96px;">{{ __('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -53,7 +53,7 @@
                             <tr>
                                 <td class="bulk-check-col">
                                     <input type="checkbox" class="bulk-check" data-row-check value="{{ $collection->id }}"
-                                        x-model="selected" aria-label="Select row">
+                                        x-model="selected" aria-label="{{ __('Select row') }}">
                                 </td>
                                 <td>
                                     @if ($collection->image)
@@ -81,13 +81,13 @@
                                         <x-table-actions>
                                             <a href="{{ route('admin.collections.edit', $collection->id) }}"
                                                 class="table-actions__item table-actions__item--edit" role="menuitem">
-                                                <i class="fa-solid fa-pen"></i><span>Edit</span>
+                                                <i class="fa-solid fa-pen"></i><span>{{ __('Edit') }}</span>
                                             </a>
                                             <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
                                                 data-delete-modal-target="deleteCollectionModal"
                                                 data-delete-action="{{ route('admin.collections.destroy', $collection->id) }}"
                                                 data-delete-name="{{ $collection->name }}">
-                                                <i class="fa-solid fa-trash"></i><span>Delete</span>
+                                                <i class="fa-solid fa-trash"></i><span>{{ __('Delete') }}</span>
                                             </button>
                                         </x-table-actions>
                                     </div>
@@ -96,8 +96,8 @@
                         @empty
                             <tr>
                                 <td colspan="7">
-                                    <x-admin.empty-state icon="fa-solid fa-layer-group" title="No collections yet"
-                                        message="Group products into a curated collection for the storefront." />
+                                    <x-admin.empty-state icon="fa-solid fa-layer-group" title="{{ __('No collections yet') }}"
+                                        message="{{ __('Group products into a curated collection for the storefront.') }}" />
                                 </td>
                             </tr>
                         @endforelse
@@ -105,11 +105,11 @@
                 </table>
 
             <x-slot:footer>
-                <x-table-footer :paginator="$collections" label="collections" />
+                <x-table-footer :paginator="$collections" label="{{ __('collections') }}" />
             </x-slot:footer>
         </x-admin.table-card>
 
-        <x-delete-confirm-modal id="deleteCollectionModal" title="Delete this collection?"
-            message-after="from the storefront. Products are not deleted. This cannot be undone." />
+        <x-delete-confirm-modal id="deleteCollectionModal" title="{{ __('Delete this collection?') }}"
+            message-after="{{ __('from the storefront. Products are not deleted. This cannot be undone.') }}" />
     </div>
 </x-app-layout>

@@ -47,6 +47,7 @@ class HomeController extends Controller
             'instagramHandle' => $this->instagramHandle(),
             'trustItems' => $this->trustItems(),
             'newsletter' => $this->settings->newsletter(),
+            'sections' => $this->settings->homeSections(),
         ]);
     }
 

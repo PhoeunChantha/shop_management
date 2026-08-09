@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -25,6 +26,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Apply the locale stored in the session on every web request.
         $middleware->appendToGroup('web', SetLocale::class);
+
+        // Baseline security response headers on every web response.
+        $middleware->appendToGroup('web', SecurityHeaders::class);
 
         // PayWay posts its result server-to-server (no session/CSRF token).
         $middleware->validateCsrfTokens(except: ['payment/callback']);

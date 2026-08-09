@@ -17,7 +17,7 @@
                 <x-frontend.ph :tint="$p['tint']" :dark="$p['dark']" :label="'product · '.strtolower($p['cat'])" style="aspect-ratio:3/4" />
             @endif
             <div style="position:absolute;top:14px;left:14px;display:flex;gap:8px">
-                @if($p['tag'] === 'sale')<span class="ut-tag ut-tag-sale">Sale</span>@elseif($p['tag'] === 'new')<span class="ut-tag ut-tag-new">New</span>@endif
+                @if($p['tag'] === 'sale')<span class="ut-tag ut-tag-sale">{{ __('Sale') }}</span>@elseif($p['tag'] === 'new')<span class="ut-tag ut-tag-new">{{ __('New') }}</span>@endif
                 @if($p['was'])<span class="ut-tag ut-tag-hot">-{{ $off }}%</span>@endif
             </div>
             {{-- quick add (reveals on hover) --}}
@@ -25,7 +25,7 @@
                 <button type="button" class="ut-btn ut-btn-ink ut-btn-block ut-btn-sm"
                         data-add-to-cart data-no-open data-id="{{ $p['id'] }}" data-name="{{ $p['name'] }}"
                         data-price="{{ $p['price'] }}" data-tint="{{ $p['tint'] }}" data-image="{{ $p['image_url'] ?? '' }}" data-color="{{ $p['colors'][0] }}" data-size="M">
-                    <x-frontend.icon n="bag" :size="16" /> Quick add
+                    <x-frontend.icon n="bag" :size="16" /> {{ __('Quick add') }}
                 </button>
             </div>
         </div>
@@ -47,8 +47,8 @@
         </div>
         <div class="ut-row" style="justify-content:space-between">
             <div class="ut-row" style="gap:8px">
-                <span style="font-family:var(--font-head);font-weight:700;font-size:17px;color:var(--text)">${{ number_format((float) $p['price'], 2) }}</span>
-                @if($p['was'])<span class="strike" style="font-size:13.5px;color:var(--text-2)">${{ number_format((float) $p['was'], 2) }}</span>@endif
+                <span style="font-family:var(--font-head);font-weight:700;font-size:17px;color:var(--text)">{{ money((float) $p['price']) }}</span>
+                @if($p['was'])<span class="strike" style="font-size:13.5px;color:var(--text-2)">{{ money((float) $p['was']) }}</span>@endif
             </div>
             <div class="ut-row" style="gap:6px">
                 @foreach(array_slice($p['colors'], 0, 3) as $c)

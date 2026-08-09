@@ -30,7 +30,7 @@ class SocialAuthController extends Controller
         if (! $this->enabled($provider)) {
             return redirect()
                 ->route('frontend.login')
-                ->with('error', 'Google sign-in is not available right now.');
+                ->with('error', __('Google sign-in is not available right now.'));
         }
 
         return Socialite::driver($provider)->redirect();
@@ -44,7 +44,7 @@ class SocialAuthController extends Controller
         if (! $this->enabled($provider)) {
             return redirect()
                 ->route('frontend.login')
-                ->with('error', 'Google sign-in is not available right now.');
+                ->with('error', __('Google sign-in is not available right now.'));
         }
 
         try {
@@ -52,7 +52,7 @@ class SocialAuthController extends Controller
         } catch (\Throwable) {
             return redirect()
                 ->route('frontend.login')
-                ->with('error', 'Google sign-in was cancelled or failed. Please try again.');
+                ->with('error', __('Google sign-in was cancelled or failed. Please try again.'));
         }
 
         $email = $oauthUser->getEmail();
@@ -60,7 +60,7 @@ class SocialAuthController extends Controller
         if (! $email) {
             return redirect()
                 ->route('frontend.login')
-                ->with('error', 'Your Google account did not share an email address.');
+                ->with('error', __('Your Google account did not share an email address.'));
         }
 
         $user = User::firstWhere('email', $email);

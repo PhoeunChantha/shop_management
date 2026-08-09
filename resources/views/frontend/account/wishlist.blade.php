@@ -1,17 +1,17 @@
 @extends('frontend.account.partials.shell', ['active' => 'wishlist'])
-@section('title', 'Wishlist — T-Shirt Shop')
+@section('title', __('Wishlist').' — T-Shirt Shop')
 
 @section('account')
 <div class="ut-row" style="justify-content:space-between;align-items:flex-end;margin-bottom:18px;gap:12px;flex-wrap:wrap">
-    <div><h2 style="font-size:24px">Your wishlist</h2><p class="muted" style="font-size:14px;margin-top:4px"><span data-wish-count>0</span> saved items</p></div>
-    <a href="{{ route('frontend.shop.index') }}" class="ut-btn ut-btn-ghost ut-btn-sm">Add more</a>
+    <div><h2 style="font-size:24px">{{ __('Your wishlist') }}</h2><p class="muted" style="font-size:14px;margin-top:4px"><span data-wish-count>0</span> {{ __('saved items') }}</p></div>
+    <a href="{{ route('frontend.shop.index') }}" class="ut-btn ut-btn-ghost ut-btn-sm">{{ __('Add more') }}</a>
 </div>
 
 {{-- empty state --}}
 <div id="wishEmpty" class="ut-card" style="padding:56px;text-align:center;{{ count($products) ? 'display:none' : '' }}">
     <div style="width:64px;height:64px;border-radius:20px;background:var(--bg);display:grid;place-items:center;margin:0 auto 16px;color:var(--text-3)"><x-frontend.icon n="heart" :size="28" /></div>
-    <h3>No saved items yet</h3><p class="muted" style="margin-top:6px">Tap the heart on any product to save it here for later.</p>
-    <a href="{{ route('frontend.shop.index') }}" class="ut-btn ut-btn-ink" style="margin-top:18px">Browse the collection</a>
+    <h3>{{ __('No saved items yet') }}</h3><p class="muted" style="margin-top:6px">{{ __('Tap the heart on any product to save it here for later.') }}</p>
+    <a href="{{ route('frontend.shop.index') }}" class="ut-btn ut-btn-ink" style="margin-top:18px">{{ __('Browse the collection') }}</a>
 </div>
 
 {{-- saved products (server-rendered); a cell is hidden when its heart is toggled off --}}

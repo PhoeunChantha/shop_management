@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Access Management</p>
+            <p class="header-kicker mb-1">{{ __('Access Management') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">
                 {{ __('Roles') }}
             </h2>
@@ -11,12 +11,12 @@
     <div class="admin-page">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Role table</p>
-                <h3>All Roles</h3>
+                <p class="section-kicker">{{ __('Role table') }}</p>
+                <h3>{{ __('All Roles') }}</h3>
             </div>
             <a href="{{ route('admin.roles.create') }}" class="premium-button premium-button--dark">
                 <i class="fa-solid fa-plus"></i>
-                <span>New Role</span>
+                <span>{{ __('New Role') }}</span>
             </a>
         </div>
 
@@ -27,7 +27,7 @@
                         <x-per-page-selector :current="$perPage" />
                     </x-slot:left>
                     <x-slot:right>
-                        <x-search-input name="search" placeholder="Search roles..." />
+                        <x-search-input name="search" placeholder="{{ __('Search roles...') }}" />
                     </x-slot:right>
                 </x-table-toolbar>
             </x-slot:toolbar>
@@ -35,11 +35,11 @@
             <table class="premium-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Permissions</th>
-                        <th>Created At</th>
-                        <th class="text-end">Actions</th>
+                        <th>{{ __('ID') }}</th>
+                        <th>{{ __('Name') }}</th>
+                        <th>{{ __('Permissions') }}</th>
+                        <th>{{ __('Created At') }}</th>
+                        <th class="text-end">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -59,7 +59,7 @@
                                     @forelse ($role->permissions as $permission)
                                         <span class="status-pill status-pill--neutral">{{ $permission->name }}</span>
                                     @empty
-                                        <span class="empty-pill">No permissions</span>
+                                        <span class="empty-pill">{{ __('No permissions') }}</span>
                                     @endforelse
                                 </div>
                             </td>
@@ -71,7 +71,7 @@
                                     <x-table-actions>
                                         <a href="{{ route('admin.roles.edit', $role->id) }}" class="table-actions__item table-actions__item--edit" role="menuitem">
                                             <i class="fa-solid fa-pen"></i>
-                                            <span>Edit</span>
+                                            <span>{{ __('Edit') }}</span>
                                         </a>
 
                                         <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
@@ -79,7 +79,7 @@
                                             data-delete-action="{{ route('admin.roles.destroy', $role->id) }}"
                                             data-delete-name="{{ $role->name }}">
                                             <i class="fa-solid fa-trash"></i>
-                                            <span>Delete</span>
+                                            <span>{{ __('Delete') }}</span>
                                         </button>
                                     </x-table-actions>
                                 </div>
@@ -90,8 +90,8 @@
                             <td colspan="5">
                                 <x-admin.empty-state
                                     icon="fa-solid fa-shield-halved"
-                                    title="No roles found"
-                                    message="Try a different search term or clear the current filters."
+                                    title="{{ __('No roles found') }}"
+                                    message="{{ __('Try a different search term or clear the current filters.') }}"
                                 />
                             </td>
                         </tr>
@@ -100,14 +100,14 @@
             </table>
 
             <x-slot:footer>
-                <x-table-footer :paginator="$roles" label="roles" />
+                <x-table-footer :paginator="$roles" label="{{ __('roles') }}" />
             </x-slot:footer>
         </x-admin.table-card>
 
         <x-delete-confirm-modal
             id="deleteRoleModal"
-            title="Delete this role?"
-            message-after="and its permission assignments. This cannot be undone."
+            title="{{ __('Delete this role?') }}"
+            message-after="{{ __('and its permission assignments. This cannot be undone.') }}"
         />
     </div>
 </x-app-layout>

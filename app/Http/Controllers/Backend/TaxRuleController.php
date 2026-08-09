@@ -53,7 +53,7 @@ class TaxRuleController extends Controller
         try {
             TaxRule::create($request->validated());
 
-            return to_route('admin.taxes.index')->with('success', 'Tax rule created successfully!');
+            return to_route('admin.taxes.index')->with('success', __('Tax rule created successfully!'));
         } catch (\Exception $e) {
             Log::error('Error creating tax rule: '.$e->getMessage(), ['exception' => $e, 'request_data' => $request->all()]);
 
@@ -75,7 +75,7 @@ class TaxRuleController extends Controller
         try {
             TaxRule::findOrFail($id)->update($request->validated());
 
-            return to_route('admin.taxes.index')->with('success', 'Tax rule updated successfully!');
+            return to_route('admin.taxes.index')->with('success', __('Tax rule updated successfully!'));
         } catch (\Exception $e) {
             Log::error('Error updating tax rule: '.$e->getMessage(), ['exception' => $e, 'request_data' => $request->all(), 'id' => $id]);
 
@@ -95,7 +95,7 @@ class TaxRuleController extends Controller
             return back()->withErrors(['error' => 'An error occurred while deleting the tax rule.']);
         }
 
-        return to_route('admin.taxes.index')->with('success', 'Tax rule deleted successfully!');
+        return to_route('admin.taxes.index')->with('success', __('Tax rule deleted successfully!'));
     }
 
     public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse

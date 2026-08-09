@@ -60,7 +60,7 @@ class DealCampaignController extends Controller
 
         $deal = $this->deals->create($request->validated(), $request);
 
-        return to_route('admin.deals.show', $deal)->with('success', 'Deal campaign created successfully.');
+        return to_route('admin.deals.show', $deal)->with('success', __('Deal campaign created successfully.'));
     }
 
     public function show(DealCampaign $deal): View
@@ -93,7 +93,7 @@ class DealCampaignController extends Controller
 
         $this->deals->update($deal, $request->validated(), $request);
 
-        return to_route('admin.deals.show', $deal)->with('success', 'Deal campaign updated successfully.');
+        return to_route('admin.deals.show', $deal)->with('success', __('Deal campaign updated successfully.'));
     }
 
     public function destroy(DealCampaign $deal): RedirectResponse
@@ -102,7 +102,7 @@ class DealCampaignController extends Controller
 
         $this->deals->delete($deal);
 
-        return to_route('admin.deals.index')->with('success', 'Deal campaign deleted successfully.');
+        return to_route('admin.deals.index')->with('success', __('Deal campaign deleted successfully.'));
     }
 
     public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse

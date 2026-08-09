@@ -70,7 +70,7 @@ class BannerController extends Controller
                 $this->images->attachSelected($banner, $selected);
             }
 
-            return to_route('admin.banners.index')->with('success', 'Banner created successfully!');
+            return to_route('admin.banners.index')->with('success', __('Banner created successfully!'));
         } catch (\Exception $e) {
             Log::error('Error creating banner: '.$e->getMessage(), ['exception' => $e, 'request_data' => $request->except('image')]);
 
@@ -99,7 +99,7 @@ class BannerController extends Controller
                 $this->images->attachSelected($banner, $selected);
             }
 
-            return to_route('admin.banners.index')->with('success', 'Banner updated successfully!');
+            return to_route('admin.banners.index')->with('success', __('Banner updated successfully!'));
         } catch (\Exception $e) {
             Log::error('Error updating banner: '.$e->getMessage(), ['exception' => $e, 'request_data' => $request->except('image'), 'banner_id' => $id]);
 
@@ -121,7 +121,7 @@ class BannerController extends Controller
             return back()->withErrors(['error' => 'An error occurred while deleting the banner.']);
         }
 
-        return to_route('admin.banners.index')->with('success', 'Banner deleted successfully!');
+        return to_route('admin.banners.index')->with('success', __('Banner deleted successfully!'));
     }
 
     public function bulkDestroy(Request $request, BulkActionService $bulk): RedirectResponse

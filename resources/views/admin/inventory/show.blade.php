@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div>
-            <p class="header-kicker mb-1">Catalog</p>
+            <p class="header-kicker mb-1">{{ __('Catalog') }}</p>
             <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">
                 {{ __('Inventory') }} · {{ $product->name }}
             </h2>
@@ -18,13 +18,13 @@
     <div class="admin-page" x-data="{ open: false, vid: '', label: '', current: 0 }">
         <div class="page-section-header">
             <div>
-                <p class="section-kicker">Stock control</p>
+                <p class="section-kicker">{{ __('Stock control') }}</p>
                 <h3 class="d-flex align-items-center gap-2">{{ $product->name }}
                     <span class="status-chip {{ $isSingle ? 'st-draft' : 'st-active' }}">{{ $isSingle ? 'Single' : 'Variable' }}</span>
                 </h3>
             </div>
             <a href="{{ route('admin.inventory.index') }}" class="ghost-button ghost-button--panel">
-                <i class="fa-solid fa-arrow-left"></i><span>Back to inventory</span>
+                <i class="fa-solid fa-arrow-left"></i><span>{{ __('Back to inventory') }}</span>
             </a>
         </div>
 
@@ -34,19 +34,19 @@
         <x-admin.table-card :loader="false" class="mt-3 orders-panel">
             <x-slot:toolbar>
                 <div class="table-titlebar">
-                    <div><h3>Stock levels</h3><p>{{ $rows->count() }} stock {{ Str::plural('item', $rows->count()) }}</p></div>
+                    <div><h3>{{ __('Stock levels') }}</h3><p>{{ $rows->count() }} stock {{ Str::plural('item', $rows->count()) }}</p></div>
                 </div>
             </x-slot:toolbar>
 
             <table class="dash-table">
                     <thead>
                         <tr>
-                            <th>Item</th>
-                            <th>SKU</th>
-                            <th style="width:110px;">On hand</th>
-                            <th style="width:110px;">Low alert</th>
-                            <th style="width:140px;">Status</th>
-                            <th class="text-end" style="width:120px;">Actions</th>
+                            <th>{{ __('Item') }}</th>
+                            <th>{{ __('SKU') }}</th>
+                            <th style="width:110px;">{{ __('On hand') }}</th>
+                            <th style="width:110px;">{{ __('Low alert') }}</th>
+                            <th style="width:140px;">{{ __('Status') }}</th>
+                            <th class="text-end" style="width:120px;">{{ __('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -65,7 +65,7 @@
                                 <td class="text-end">
                                     <button type="button" class="orders-view"
                                         @click="open = true; vid = @js((string) $row->id); label = @js($row->label); current = {{ $row->stock }}">
-                                        <i class="fa-solid fa-plus-minus"></i><span>Adjust</span>
+                                        <i class="fa-solid fa-plus-minus"></i><span>{{ __('Adjust') }}</span>
                                     </button>
                                 </td>
                             </tr>
@@ -78,20 +78,20 @@
         <x-admin.table-card :loader="false" class="mt-3 orders-panel">
             <x-slot:toolbar>
                 <div class="table-titlebar">
-                    <div><h3>Movement history</h3><p>Every stock change, most recent first</p></div>
+                    <div><h3>{{ __('Movement history') }}</h3><p>{{ __('Every stock change, most recent first') }}</p></div>
                 </div>
             </x-slot:toolbar>
 
             <table class="dash-table">
                     <thead>
                         <tr>
-                            <th>When</th>
-                            <th>Item</th>
-                            <th>Reason</th>
-                            <th style="width:90px;">Change</th>
-                            <th style="width:100px;">On hand</th>
-                            <th>Note</th>
-                            <th>By</th>
+                            <th>{{ __('When') }}</th>
+                            <th>{{ __('Item') }}</th>
+                            <th>{{ __('Reason') }}</th>
+                            <th style="width:90px;">{{ __('Change') }}</th>
+                            <th style="width:100px;">{{ __('On hand') }}</th>
+                            <th>{{ __('Note') }}</th>
+                            <th>{{ __('By') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -118,8 +118,8 @@
                                 <td colspan="7">
                                     <x-admin.empty-state
                                         icon="fa-solid fa-clock-rotate-left"
-                                        title="No movements yet"
-                                        message="Adjust a stock item to start the history."
+                                        title="{{ __('No movements yet') }}"
+                                        message="{{ __('Adjust a stock item to start the history.') }}"
                                     />
                                 </td>
                             </tr>
@@ -135,10 +135,10 @@
                 <div class="form-modal__head">
                     <div class="form-modal__icon"><i class="fa-solid fa-plus-minus"></i></div>
                     <div class="flex-grow-1">
-                        <h3>Adjust stock</h3>
+                        <h3>{{ __('Adjust stock') }}</h3>
                         <p><span x-text="label"></span> · on hand <span x-text="current" class="fw-bold"></span></p>
                     </div>
-                    <button type="button" class="form-modal__close" @click="open = false" aria-label="Close">
+                    <button type="button" class="form-modal__close" @click="open = false" aria-label="{{ __('Close') }}">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
@@ -149,8 +149,8 @@
                     <div class="form-field">
                         <label for="adj_qty">Quantity change <span class="text-red-500">*</span></label>
                         <input type="number" name="quantity" id="adj_qty" class="form-input" required
-                            placeholder="e.g. 25 to add, -3 to remove">
-                        <small class="text-gray-400 dark:text-slate-500 d-block mt-1">Positive adds stock, negative removes it.</small>
+                            placeholder="{{ __('e.g. 25 to add, -3 to remove') }}">
+                        <small class="text-gray-400 dark:text-slate-500 d-block mt-1">{{ __('Positive adds stock, negative removes it.') }}</small>
                         @error('quantity')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                     </div>
 
@@ -165,15 +165,15 @@
                     </div>
 
                     <div class="form-field">
-                        <label for="adj_note">Note</label>
+                        <label for="adj_note">{{ __('Note') }}</label>
                         <input type="text" name="note" id="adj_note" class="form-input" maxlength="255"
-                            placeholder="Optional — e.g. supplier delivery #123">
+                            placeholder="{{ __('Optional — e.g. supplier delivery #123') }}">
                         @error('note')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                     </div>
 
                     <div class="form-modal__foot">
-                        <button type="button" class="modal-cancel" @click="open = false">Cancel</button>
-                        <button type="submit" class="form-submit-button"><i class="fa-solid fa-check"></i> Apply adjustment</button>
+                        <button type="button" class="modal-cancel" @click="open = false">{{ __('Cancel') }}</button>
+                        <button type="submit" class="form-submit-button"><i class="fa-solid fa-check"></i> {{ __('Apply adjustment') }}</button>
                     </div>
                 </form>
             </div>
