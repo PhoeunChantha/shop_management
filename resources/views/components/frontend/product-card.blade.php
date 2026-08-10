@@ -11,7 +11,7 @@
         <div class="ut-pcard-media" style="position:relative">
             @if (!empty($p['image_url']))
                 <img src="{{ $p['image_url'] }}" alt="{{ $p['name'] }}"
-                    class="ut-pcard-image"
+                    class="ut-pcard-image" loading="lazy" decoding="async"
                     style="width:100%;aspect-ratio:3/4;object-fit:cover;display:block">
             @else
                 <x-frontend.ph :tint="$p['tint']" :dark="$p['dark']" :label="'product · '.strtolower($p['cat'])" style="aspect-ratio:3/4" />

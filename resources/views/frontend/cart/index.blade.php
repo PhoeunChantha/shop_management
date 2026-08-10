@@ -37,7 +37,7 @@
                             <div class="ut-card" style="width:200px;padding:12px">
                                 <a href="{{ $productUrl }}">
                                     @if (!empty($p['image_url']))
-                                        <img src="{{ $p['image_url'] }}" alt="{{ $p['name'] }}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;margin-bottom:10px;display:block">
+                                        <img src="{{ $p['image_url'] }}" alt="{{ $p['name'] }}" loading="lazy" decoding="async" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;margin-bottom:10px;display:block">
                                     @else
                                         <x-frontend.ph :tint="$p['tint']" :dark="$p['dark']" style="aspect-ratio:1;border-radius:12px;margin-bottom:10px" />
                                     @endif

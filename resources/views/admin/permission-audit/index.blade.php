@@ -163,8 +163,8 @@
                                 <tr>
                                     <td><strong>{{ $row['name'] }}</strong></td>
                                     <td>{{ $row['subject'] }}</td>
-                                    <td>{!! $row['roles'][$comparison['left']->id] ? '<span class="audit-check">{{ __('Yes') }}</span>' : '<span class="audit-miss">{{ __('No') }}</span>' !!}</td>
-                                    <td>{!! $row['roles'][$comparison['right']->id] ? '<span class="audit-check">{{ __('Yes') }}</span>' : '<span class="audit-miss">{{ __('No') }}</span>' !!}</td>
+                                    <td>{!! $row['roles'][$comparison['left']->id] ? '<span class="audit-check">'.__('Yes').'</span>' : '<span class="audit-miss">'.__('No').'</span>' !!}</td>
+                                    <td>{!! $row['roles'][$comparison['right']->id] ? '<span class="audit-check">'.__('Yes').'</span>' : '<span class="audit-miss">'.__('No').'</span>' !!}</td>
                                 </tr>
                             @empty
                                 <tr>

@@ -22,13 +22,14 @@
 
         {{-- Language switcher --}}
         <div class="language-switch d-none d-sm-inline-flex align-items-center p-1 rounded-pill">
+            @php($flagStyle = 'width:18px;height:13px;border-radius:2px;object-fit:cover;margin-right:5px;vertical-align:-1px;box-shadow:0 0 0 1px rgba(0,0,0,.08);')
             <a href="{{ route('lang.switch', 'km') }}"
-                class="btn btn-sm border-0 px-2.5 py-0.5 rounded-pill fs-7 text-decoration-none {{ $locale === 'km' ? 'fw-bold bg-white shadow-sm text-dark' : 'fw-medium bg-transparent text-secondary' }}">
-                ខ្មែរ
+                class="btn btn-sm border-0 px-2.5 py-0.5 rounded-pill fs-7 text-decoration-none d-inline-flex align-items-center {{ $locale === 'km' ? 'fw-bold bg-white shadow-sm text-dark' : 'fw-medium bg-transparent text-secondary' }}">
+                <img src="{{ asset('assets/frontend/img/flags/kh.svg') }}" alt="" style="{{ $flagStyle }}">ខ្មែរ
             </a>
             <a href="{{ route('lang.switch', 'en') }}"
-                class="btn btn-sm border-0 px-2.5 py-0.5 rounded-pill fs-7 text-decoration-none {{ $locale === 'en' ? 'fw-bold bg-white shadow-sm text-dark' : 'fw-medium bg-transparent text-secondary' }}">
-                {{ __('EN') }}
+                class="btn btn-sm border-0 px-2.5 py-0.5 rounded-pill fs-7 text-decoration-none d-inline-flex align-items-center {{ $locale === 'en' ? 'fw-bold bg-white shadow-sm text-dark' : 'fw-medium bg-transparent text-secondary' }}">
+                <img src="{{ asset('assets/frontend/img/flags/gb.svg') }}" alt="" style="{{ $flagStyle }}">EN
             </a>
         </div>
 

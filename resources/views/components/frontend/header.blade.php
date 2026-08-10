@@ -40,12 +40,25 @@
             <button type="button" class="ut-header-search" data-bs-toggle="modal" data-bs-target="#utSearchOverlay" aria-label="Search the shop">
                 <x-frontend.icon n="search" :size="18" /><span>{{ __('Search the collection') }}</span><kbd>⌘ K</kbd>
             </button>
-            @php($locales = ['en' => 'EN', 'km' => 'ខ្មែរ'])
+            @php
+                $locales = [
+                    'en' => ['label' => 'EN', 'name' => 'English', 'flag' => 'gb'],
+                    'km' => ['label' => 'ខ្មែរ', 'name' => 'ភាសាខ្មែរ', 'flag' => 'kh'],
+                ];
+                $curLocale = $locales[app()->getLocale()] ?? $locales['en'];
+            @endphp
             <div class="dropdown ut-lang-dropdown">
-                <button class="icon-btn ut-header-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ __('Language') }}" style="width:auto;padding:0 10px;gap:5px;font-size:13px;font-weight:600">{{ $locales[app()->getLocale()] ?? 'EN' }} <x-frontend.icon n="chevD" :size="12" /></button>
-                <div class="dropdown-menu dropdown-menu-end ut-account-menu">
-                    @foreach($locales as $code => $label)
-                        <a href="{{ route('lang.switch', $code) }}" @class(['active' => app()->getLocale() === $code])>{{ $label }}</a>
+                <button class="ut-lang-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ __('Language') }}">
+                    <img class="ut-lang-flag" src="{{ asset('assets/frontend/img/flags/'.$curLocale['flag'].'.svg') }}" alt="" width="20" height="15" loading="lazy">
+                    <span class="ut-lang-btn__code">{{ $curLocale['label'] }}</span>
+                    <span class="ut-lang-btn__caret"><x-frontend.icon n="chevD" :size="11" /></span>
+                </button>
+                <div class="dropdown-menu dropdown-menu-end ut-account-menu ut-lang-menu">
+                    @foreach($locales as $code => $loc)
+                        <a href="{{ route('lang.switch', $code) }}" @class(['is-active' => app()->getLocale() === $code])>
+                            <span class="ut-lang-opt"><img class="ut-lang-flag" src="{{ asset('assets/frontend/img/flags/'.$loc['flag'].'.svg') }}" alt="" width="20" height="15" loading="lazy"> {{ $loc['name'] }}</span>
+                            @if(app()->getLocale() === $code)<x-frontend.icon n="check" :size="15" />@endif
+                        </a>
                     @endforeach
                 </div>
             </div>

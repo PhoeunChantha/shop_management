@@ -56,7 +56,7 @@
                         @forelse($productImages as $i => $image)
                             <button type="button" class="ut-pdp-thumb" onclick="setThumb(this,{{ $i }}, @js($image))"
                                 style="outline:{{ $i === 0 ? '2.5px solid var(--ink)' : '1px solid var(--border)' }}">
-                                <img src="{{ $image }}" alt="{{ $product['name'] }} view {{ $i + 1 }}">
+                                <img src="{{ $image }}" alt="{{ $product['name'] }} view {{ $i + 1 }}" loading="lazy" decoding="async">
                             </button>
                         @empty
                             @for($i = 0; $i < $product['gallery']; $i++)
