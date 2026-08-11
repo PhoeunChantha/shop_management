@@ -1784,5 +1784,8 @@
     "Back to order": "Back to order",
     "Published": "Published",
     "Exclusive (added at checkout)": "Exclusive (added at checkout)",
-    "Inclusive (price already includes tax)": "Inclusive (price already includes tax)"
+    "Inclusive (price already includes tax)": "Inclusive (price already includes tax)",
+    "Currency": "Currency",
+    "Prices shown in": "Prices shown in",
+    "are approximate. Your order is charged in": "are approximate. Your order is charged in"
 }

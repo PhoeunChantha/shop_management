@@ -47,8 +47,8 @@
         </div>
         <div class="ut-row" style="justify-content:space-between">
             <div class="ut-row" style="gap:8px">
-                <span style="font-family:var(--font-head);font-weight:700;font-size:17px;color:var(--text)">{{ money((float) $p['price']) }}</span>
-                @if($p['was'])<span class="strike" style="font-size:13.5px;color:var(--text-2)">{{ money((float) $p['was']) }}</span>@endif
+                <span style="font-family:var(--font-head);font-weight:700;font-size:17px;color:var(--text)">{{ dprice((float) $p['price']) }}</span>
+                @if($p['was'])<span class="strike" style="font-size:13.5px;color:var(--text-2)">{{ dprice((float) $p['was']) }}</span>@endif
             </div>
             <div class="ut-row" style="gap:6px">
                 @foreach(array_slice($p['colors'], 0, 3) as $c)

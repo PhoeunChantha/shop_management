@@ -85,8 +85,8 @@
                     <span class="ut-tag ut-tag-success"><span style="width:6px;height:6px;border-radius:6px;background:var(--success);display:inline-block"></span> {{ __('In stock') }}</span>
                 </div>
                 <div class="ut-row" style="gap:12px;margin-bottom:24px">
-                    <span style="font-family:var(--font-head);font-weight:700;font-size:32px">{{ money($product['price']) }}</span>
-                    @if($product['was'])<span class="strike" style="font-size:20px">{{ money($product['was']) }}</span><span class="ut-tag ut-tag-sale">-{{ $off }}%</span>@endif
+                    <span style="font-family:var(--font-head);font-weight:700;font-size:32px">{{ dprice($product['price']) }}</span>
+                    @if($product['was'])<span class="strike" style="font-size:20px">{{ dprice($product['was']) }}</span><span class="ut-tag ut-tag-sale">-{{ $off }}%</span>@endif
                 </div>
 
                 {{-- color --}}
@@ -219,7 +219,7 @@
                 </div>
             </div>
             <div class="ut-row" style="gap:14px">
-                <span class="ut-hide-mobile" style="font-family:var(--font-head);font-weight:700;font-size:20px">{{ money($product['price']) }}</span>
+                <span class="ut-hide-mobile" style="font-family:var(--font-head);font-weight:700;font-size:20px">{{ dprice($product['price']) }}</span>
                 <button type="button" class="ut-btn ut-btn-accent ut-btn-lg" data-add-to-cart data-require-size
                         data-id="{{ $product['id'] }}" data-name="{{ $product['name'] }}" data-price="{{ $product['price'] }}" data-tint="{{ $product['tint'] }}" data-image="{{ $product['image_url'] ?? '' }}">
                     <x-frontend.icon n="bag" :size="17" /> {{ __('Add to bag') }}
@@ -254,8 +254,9 @@
         if(itemLabel) itemLabel.textContent = qty === 1 ? '{{ __('item') }}' : '{{ __('items') }}';
         if(total){
             var unit = Number(total.getAttribute('data-unit-price') || 0);
-            var cur = window.UT_CURRENCY || { symbol: '$', position: 'before' };
-            var amt = (unit * qty).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            var cur = window.UT_CURRENCY || { symbol: '$', position: 'before', rate: 1, decimals: 2 };
+            var dec = cur.decimals != null ? cur.decimals : 2;
+            var amt = (unit * qty * (cur.rate || 1)).toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec });
             total.textContent = cur.position === 'after' ? amt + cur.symbol : cur.symbol + amt;
         }
     }

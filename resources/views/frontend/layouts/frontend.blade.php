@@ -93,7 +93,7 @@
     {{-- Expose data + named routes to plain JS --}}
     <script>
         window.UT_COLORS = @json(app(\App\Services\Frontend\ProductService::class)->colors());
-        window.UT_CURRENCY = @json(app(\App\Services\Admin\SettingService::class)->currency());
+        window.UT_CURRENCY = @json(app(\App\Services\Admin\SettingService::class)->displayCurrency());
         window.UT_URLS = {
             shop: "{{ route('frontend.shop.index') }}",
             cart: "{{ route('frontend.cart.index') }}",

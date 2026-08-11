@@ -6,9 +6,11 @@
 (function () {
   'use strict';
 
-  const CURRENCY = window.UT_CURRENCY || { symbol: '$', position: 'before' };
+  const CURRENCY = window.UT_CURRENCY || { symbol: '$', position: 'before', rate: 1, decimals: 2 };
   const money = (n) => {
-    const amount = Number.isInteger(n) ? n : Number(n).toFixed(2);
+    const rate = CURRENCY.rate || 1;
+    const dec = CURRENCY.decimals != null ? CURRENCY.decimals : 2;
+    const amount = (Number(n) * rate).toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec });
     return CURRENCY.position === 'after' ? amount + CURRENCY.symbol : CURRENCY.symbol + amount;
   };
   const SHIP_FREE = 75;

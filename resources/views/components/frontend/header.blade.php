@@ -42,8 +42,8 @@
             </button>
             @php
                 $locales = [
-                    'en' => ['label' => 'EN', 'name' => 'English', 'flag' => 'gb'],
-                    'km' => ['label' => 'ខ្មែរ', 'name' => 'ភាសាខ្មែរ', 'flag' => 'kh'],
+                    'en' => ['label' => 'EN', 'name' => 'EN', 'flag' => 'gb'],
+                    'km' => ['label' => 'KH', 'name' => 'KH', 'flag' => 'kh'],
                 ];
                 $curLocale = $locales[app()->getLocale()] ?? $locales['en'];
             @endphp
@@ -62,6 +62,24 @@
                     @endforeach
                 </div>
             </div>
+            @php($displayCurrencies = app(\App\Services\Admin\SettingService::class)->displayCurrencies())
+            @if(count($displayCurrencies) > 1)
+                @php($curDc = app(\App\Services\Admin\SettingService::class)->displayCurrency())
+                <div class="dropdown ut-lang-dropdown ut-hide-mobile">
+                    <button class="ut-lang-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ __('Currency') }}">
+                        <span class="ut-lang-btn__code">{{ $curDc['code'] }}</span>
+                        <span class="ut-lang-btn__caret"><x-frontend.icon n="chevD" :size="11" /></span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end ut-account-menu ut-lang-menu">
+                        @foreach($displayCurrencies as $code => $dc)
+                            <a href="{{ route('currency.switch', $code) }}" @class(['is-active' => $curDc['code'] === $code])>
+                                <span class="ut-lang-opt">{{ $dc['symbol'] }} {{ $code }}</span>
+                                @if($curDc['code'] === $code)<x-frontend.icon n="check" :size="15" />@endif
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
             <div class="dropdown ut-account-dropdown">
                 <button class="icon-btn ut-header-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ __('Account') }}"><x-frontend.icon n="user" :size="19" /></button>
                 <div class="dropdown-menu dropdown-menu-end ut-account-menu">

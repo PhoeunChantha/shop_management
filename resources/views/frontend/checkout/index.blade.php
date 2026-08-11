@@ -197,6 +197,11 @@
                 <hr class="divider" style="margin:6px 0">
                 <div class="ut-row" style="justify-content:space-between"><span style="font-family:var(--font-head);font-weight:700;font-size:17px">{{ __('Total') }}</span><span id="sumTotal" style="font-family:var(--font-head);font-weight:700;font-size:24px">$0</span></div>
             </div>
+            @php($dcBase = app(\App\Services\Admin\SettingService::class)->currency())
+            @php($dcSel = app(\App\Services\Admin\SettingService::class)->displayCurrency())
+            @if($dcSel['code'] !== $dcBase['code'])
+                <p class="muted" style="font-size:12px;margin-top:12px;line-height:1.5">{{ __('Prices shown in') }} {{ $dcSel['code'] }} {{ __('are approximate. Your order is charged in') }} {{ $dcBase['code'] }}.</p>
+            @endif
         </div>
     </form>
 </div>
@@ -237,8 +242,8 @@
             var wrap = document.getElementById('checkoutLines');
             var colors = window.UT_COLORS || {};
             function cart(){ try { return JSON.parse(localStorage.getItem('ut_cart')||'[]'); } catch(e){ return []; } }
-            var CUR = window.UT_CURRENCY || { symbol: '$', position: 'before' };
-            function money(n){ var a=(Math.round(n*100)/100).toFixed(2); return CUR.position==='after' ? a+CUR.symbol : CUR.symbol+a; }
+            var CUR = window.UT_CURRENCY || { symbol: '$', position: 'before', rate: 1, decimals: 2 };
+            function money(n){ var d = CUR.decimals != null ? CUR.decimals : 2; var a=(Number(n)*(CUR.rate||1)).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d}); return CUR.position==='after' ? a+CUR.symbol : CUR.symbol+a; }
 
             function renderLines(items){
                 if(!wrap) return;

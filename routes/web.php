@@ -55,6 +55,7 @@ use App\Http\Controllers\Frontend\SitemapController;
 use App\Http\Controllers\Frontend\SocialAuthController;
 use App\Http\Controllers\Frontend\WishlistController;
 use App\Http\Middleware\SetLocale;
+use App\Services\Admin\SettingService;
 use Illuminate\Support\Facades\Route;
 
 Route::name('frontend.')->group(function () {
@@ -521,5 +522,15 @@ Route::get('/lang/{locale}', function (string $locale) {
 
     return redirect()->back();
 })->name('lang.switch');
+
+// ---- Display-currency switch (storefront browsing only) ----
+Route::get('/currency/{code}', function (string $code) {
+    $allowed = array_keys(app(SettingService::class)->displayCurrencies());
+    if (in_array($code, $allowed, true)) {
+        session(['display_currency' => $code]);
+    }
+
+    return redirect()->back();
+})->name('currency.switch');
 
 require __DIR__.'/auth.php';
