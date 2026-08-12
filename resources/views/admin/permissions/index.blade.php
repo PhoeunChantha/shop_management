@@ -14,6 +14,7 @@
                 <p class="section-kicker">{{ __('Permission table') }}</p>
                 <h3>{{ __('All Permissions') }}</h3>
             </div>
+            
             <a href="{{ route('admin.permissions.create') }}" class="premium-button premium-button--dark">
                 <i class="fa-solid fa-plus"></i>
                 <span>{{ __('New Permission') }}</span>

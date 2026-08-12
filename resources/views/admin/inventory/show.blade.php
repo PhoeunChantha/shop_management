@@ -23,6 +23,7 @@
                     <span class="status-chip {{ $isSingle ? 'st-draft' : 'st-active' }}">{{ $isSingle ? 'Single' : 'Variable' }}</span>
                 </h3>
             </div>
+            
             <a href="{{ route('admin.inventory.index') }}" class="ghost-button ghost-button--panel">
                 <i class="fa-solid fa-arrow-left"></i><span>{{ __('Back to inventory') }}</span>
             </a>

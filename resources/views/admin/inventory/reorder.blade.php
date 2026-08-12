@@ -29,6 +29,7 @@
         </div>
 
         <div class="reorder-layout">
+            
             <x-admin.table-card class="reorder-alert-card">
                 <x-slot:toolbar>
                     <x-table-toolbar>
