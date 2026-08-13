@@ -7,6 +7,7 @@ namespace App\Services\Frontend;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -48,6 +49,7 @@ final class CartService
         $normalized = collect($clientLines)
             ->map(fn (array $line): array => [
                 'product_id' => (int) ($line['id'] ?? 0),
+                'variant_id' => (int) ($line['variant_id'] ?? 0),
                 'size' => trim((string) ($line['size'] ?? '')),
                 'color' => trim((string) ($line['color'] ?? '')),
                 'quantity' => max(1, (int) ($line['qty'] ?? 1)),
@@ -60,16 +62,25 @@ final class CartService
             ->pluck('id')
             ->all();
 
-        DB::transaction(function () use ($cart, $normalized, $activeIds): void {
+        // Only persist variant ids that actually belong to one of these products
+        // (guards against stale/forged ids so the FK insert never fails).
+        $validVariantIds = ProductVariant::query()
+            ->whereIn('id', $normalized->pluck('variant_id')->filter()->unique()->all())
+            ->whereIn('product_id', $activeIds)
+            ->pluck('id')
+            ->all();
+
+        DB::transaction(function () use ($cart, $normalized, $activeIds, $validVariantIds): void {
             $cart->items()->delete();
 
             $normalized
                 ->filter(fn (array $line): bool => in_array($line['product_id'], $activeIds, true))
-                ->groupBy(fn (array $line): string => $line['product_id'].'|'.$line['size'].'|'.$line['color'])
-                ->each(function (Collection $group) use ($cart): void {
+                ->groupBy(fn (array $line): string => $line['product_id'].'|'.$line['variant_id'].'|'.$line['size'].'|'.$line['color'])
+                ->each(function (Collection $group) use ($cart, $validVariantIds): void {
                     $first = $group->first();
                     $cart->items()->create([
                         'product_id' => $first['product_id'],
+                        'product_variant_id' => in_array($first['variant_id'], $validVariantIds, true) ? $first['variant_id'] : null,
                         'size' => $first['size'] ?: null,
                         'color' => $first['color'] ?: null,
                         'quantity' => (int) $group->sum('quantity'),
@@ -117,6 +128,7 @@ final class CartService
 
                 return [
                     'id' => $product->id,
+                    'variant_id' => $item->product_variant_id,
                     'name' => $mapped['name'],
                     'price' => (float) $mapped['price'],
                     'tint' => $mapped['tint'],

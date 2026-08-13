@@ -94,6 +94,7 @@
     <script>
         window.UT_COLORS = @json(app(\App\Services\Frontend\ProductService::class)->colors());
         window.UT_CURRENCY = @json(app(\App\Services\Admin\SettingService::class)->displayCurrency());
+        window.UT_SHIP_FREE = @json(app(\App\Services\Frontend\CheckoutService::class)->freeShippingThreshold());
         window.UT_URLS = {
             shop: "{{ route('frontend.shop.index') }}",
             cart: "{{ route('frontend.cart.index') }}",

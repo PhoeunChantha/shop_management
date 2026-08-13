@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Admin;
 
+use App\Mail\AbandonedCartReminderMail;
 use App\Models\AbandonedCart;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Mail;
 
 final class AbandonedCartService
 {
@@ -21,6 +23,39 @@ final class AbandonedCartService
         '100' => '$100+',
         '250' => '$250+',
     ];
+
+    /**
+     * Send a one-time recovery email to carts that have been idle long enough
+     * (but not too long) and haven't been reminded yet. Marks each as contacted.
+     * Idempotent via `reminder_sent_at`. Returns the number of emails sent.
+     */
+    public function sendReminders(int $minMinutes = 60, int $maxDays = 7, int $limit = 200): int
+    {
+        $carts = AbandonedCart::query()
+            ->where('status', 'new')
+            ->whereNull('reminder_sent_at')
+            ->whereNotNull('customer_email')
+            ->where('last_activity_at', '<=', now()->subMinutes($minMinutes))
+            ->where('last_activity_at', '>=', now()->subDays($maxDays))
+            ->limit($limit)
+            ->get();
+
+        $sent = 0;
+
+        foreach ($carts as $cart) {
+            Mail::to($cart->customer_email)->send(new AbandonedCartReminderMail($cart));
+
+            $cart->forceFill([
+                'reminder_sent_at' => now(),
+                'status' => 'contacted',
+                'contacted_at' => $cart->contacted_at ?? now(),
+            ])->save();
+
+            $sent++;
+        }
+
+        return $sent;
+    }
 
     public function paginate(array $filters, int $perPage): LengthAwarePaginator
     {

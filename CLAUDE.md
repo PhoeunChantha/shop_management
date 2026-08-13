@@ -4,10 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-A Laravel 13 / PHP 8.3 e-commerce ("shop_management") app. The **admin panel is
-the built-out part**; the storefront (frontend) is currently view-only stubs. The
-full build plan and sequencing live in `docs/ROADMAP.md` — admin/backend work is
-being finished before storefront work begins.
+A Laravel 13 / PHP 8.3 e-commerce ("shop_management") app. **Both surfaces are
+built out**: a deep admin panel *and* a full storefront — product listing
+(server-side paginated search/filter), product detail, cart (guest localStorage +
+signed-in server cart), a re-priced checkout, ABA PayWay online payments, an
+in-house wallet, wishlist, verified-buyer reviews, addresses, order tracking, and
+PDF invoices. The full build plan lives in `docs/ROADMAP.md`; the prioritized
+audit + improvement backlog lives in `docs/ECOMMERCE_IMPROVEMENT_PROPOSALS.md`.
 
 Stack: Laravel 13, SQLite (default `DB_CONNECTION=sqlite`), Vite + Tailwind 3 +
 Bootstrap 5 + Alpine 3 + jQuery + FontAwesome + toastr, Pest for tests, Laravel
@@ -42,7 +45,10 @@ need no build.
   prefix with `admin.` names and `auth` middleware (`routes/web.php`). This is the
   developed surface.
 - **Frontend / storefront** — `App\Http\Controllers\Frontend\*`, `frontend.` names.
-  Currently renders static Blade only (no cart/checkout/order logic yet).
+  Fully functional: cart, re-priced checkout (`CheckoutService` re-prices every line
+  server-side and row-locks stock), ABA PayWay payments, wallet, wishlist, reviews,
+  account/orders. Listing/search/filtering are server-side + paginated
+  (`ShopController@index` + `ProductService::filteredProducts`).
 - Auth scaffolding is Breeze (`routes/auth.php`). `bootstrap/app.php` routes
   unauthenticated visitors to `admin.login` vs `frontend.login` based on the URL,
   and sends logged-in users to `admin.dashboard`.

@@ -110,4 +110,56 @@
 </div>
 
 <div class="modal fade ut-search-modal" id="utSearchOverlay" tabindex="-1" aria-labelledby="utSearchOverlayLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content"><div class="modal-body"><div class="ut-search-top"><label id="utSearchOverlayLabel" class="visually-hidden" for="utSearchInput">{{ __('Search products') }}</label><x-frontend.icon n="search" :size="23" /><input id="utSearchInput" type="search" placeholder="{{ __('What are you looking for?') }}" autofocus><button type="button" data-bs-dismiss="modal">{{ __('Esc') }}</button></div><div class="ut-search-content"><div><span>{{ __('Recent searches') }}</span><div class="ut-search-chips">@foreach($search['recent'] ?? [] as $item)<a href="{{ $item['url'] }}">{{ $item['label'] }}</a>@endforeach</div></div><div><span>{{ __('Trending now') }}</span><div class="ut-search-chips">@foreach($search['trending'] ?? [] as $item)<a href="{{ $item['url'] }}">{{ $item['label'] }}</a>@endforeach</div></div><div class="ut-search-suggestions"><span>{{ __('Suggested categories') }}</span>@foreach($search['categories'] ?? [] as $item)<a href="{{ $item['url'] }}">{{ $item['label'] }} <x-frontend.icon n="arrowR" :size="15" /></a>@endforeach</div><div class="ut-search-products"><span>{{ __('Popular products') }}</span>@foreach($search['products'] ?? [] as $index => $item)<a href="{{ $item['url'] }}"><i class="ut-search-product-image {{ $index === 1 ? 'second' : '' }}"></i><b>{{ $item['label'] }}</b><small>{{ $item['price'] ?? '' }}</small></a>@endforeach</div></div></div></div></div></div>
+    <div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content"><div class="modal-body"><div class="ut-search-top"><label id="utSearchOverlayLabel" class="visually-hidden" for="utSearchInput">{{ __('Search products') }}</label><x-frontend.icon n="search" :size="23" /><input id="utSearchInput" type="search" placeholder="{{ __('What are you looking for?') }}" autofocus><button type="button" data-bs-dismiss="modal">{{ __('Esc') }}</button></div><div class="ut-search-results" id="utSearchResults" hidden></div><div class="ut-search-content" id="utSearchDefault"><div><span>{{ __('Recent searches') }}</span><div class="ut-search-chips">@foreach($search['recent'] ?? [] as $item)<a href="{{ $item['url'] }}">{{ $item['label'] }}</a>@endforeach</div></div><div><span>{{ __('Trending now') }}</span><div class="ut-search-chips">@foreach($search['trending'] ?? [] as $item)<a href="{{ $item['url'] }}">{{ $item['label'] }}</a>@endforeach</div></div><div class="ut-search-suggestions"><span>{{ __('Suggested categories') }}</span>@foreach($search['categories'] ?? [] as $item)<a href="{{ $item['url'] }}">{{ $item['label'] }} <x-frontend.icon n="arrowR" :size="15" /></a>@endforeach</div><div class="ut-search-products"><span>{{ __('Popular products') }}</span>@foreach($search['products'] ?? [] as $index => $item)<a href="{{ $item['url'] }}"><i class="ut-search-product-image {{ $index === 1 ? 'second' : '' }}"></i><b>{{ $item['label'] }}</b><small>{{ $item['price'] ?? '' }}</small></a>@endforeach</div></div></div></div></div></div>
+
+@once
+@push('scripts')
+<script>
+(function () {
+    var input = document.getElementById('utSearchInput');
+    var results = document.getElementById('utSearchResults');
+    var def = document.getElementById('utSearchDefault');
+    if (!input || !results || !def) return;
+
+    var url = @json(route('frontend.shop.search'));
+    var noMatch = @json(__('No products match'));
+    var label = @json(__('Products'));
+    var timer, controller;
+
+    function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+
+    function reset() { results.hidden = true; results.innerHTML = ''; def.hidden = false; }
+
+    function render(items, q) {
+        if (!items.length) {
+            results.innerHTML = '<div style="padding:18px 4px;color:var(--text-2)">' + noMatch + ' “' + esc(q) + '”</div>';
+        } else {
+            var rows = items.map(function (it) {
+                var media = it.image
+                    ? '<img src="' + esc(it.image) + '" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:10px">'
+                    : '<i class="ut-search-product-image"></i>';
+                return '<a href="' + esc(it.url) + '">' + media + '<b>' + esc(it.name) + '</b><small>' + esc(it.price) + '</small></a>';
+            }).join('');
+            results.innerHTML = '<div class="ut-search-products"><span>' + label + '</span>' + rows + '</div>';
+        }
+        results.hidden = false;
+        def.hidden = true;
+    }
+
+    input.addEventListener('input', function () {
+        var q = input.value.trim();
+        clearTimeout(timer);
+        if (q === '') { reset(); return; }
+        timer = setTimeout(function () {
+            if (controller) controller.abort();
+            controller = new AbortController();
+            fetch(url + '?q=' + encodeURIComponent(q), { signal: controller.signal, headers: { 'Accept': 'application/json' } })
+                .then(function (r) { return r.json(); })
+                .then(function (data) { render(data.results || [], q); })
+                .catch(function () {});
+        }, 300);
+    });
+})();
+</script>
+@endpush
+@endonce

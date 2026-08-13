@@ -13,7 +13,8 @@
     const amount = (Number(n) * rate).toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec });
     return CURRENCY.position === 'after' ? amount + CURRENCY.symbol : CURRENCY.symbol + amount;
   };
-  const SHIP_FREE = 75;
+  // Driven by the configured shipping "free over" threshold (falls back to 75).
+  const SHIP_FREE = (window.UT_SHIP_FREE != null && Number(window.UT_SHIP_FREE) > 0) ? Number(window.UT_SHIP_FREE) : 75;
   const COLORS = window.UT_COLORS || {};
   const colorName = (k) => (COLORS[k] && COLORS[k].name) || k;
   const colorHex  = (k) => (COLORS[k] && COLORS[k].hex) || '#ccc';
@@ -302,11 +303,23 @@
       const colorEl = scope.querySelector('[data-color].is-active');
       const qtyEl = scope.querySelector('[data-qty-value]');
       if (add.hasAttribute('data-require-size') && !sizeEl && !ds.size) { toast('Please select a size'); return; }
+      var size = sizeEl ? sizeEl.getAttribute('data-size') : (ds.size || 'M');
+      var color = colorEl ? colorEl.getAttribute('data-color') : (ds.color || 'black');
+      // Resolve the exact variant id (chosen size + colour) so checkout prices and
+      // decrements the precise variant instead of fuzzy-matching labels.
+      var variantId = ds.variantId ? Number(ds.variantId) : null;
+      if (!variantId && scope && scope.dataset && scope.dataset.variantIndex) {
+        try {
+          var vmap = JSON.parse(scope.dataset.variantIndex);
+          var vk = String(size).toLowerCase() + '|' + String(color).toLowerCase();
+          if (vmap && vmap[vk]) variantId = Number(vmap[vk]);
+        } catch (err) {}
+      }
       addToCart({
-        id: Number(ds.id), name: ds.name, price: Number(ds.price), tint: ds.tint || 'linear-gradient(150deg,#eef2f7,#e2e8f0)',
+        id: Number(ds.id), variant_id: variantId, name: ds.name, price: Number(ds.price), tint: ds.tint || 'linear-gradient(150deg,#eef2f7,#e2e8f0)',
         image: ds.image || '',
-        size: sizeEl ? sizeEl.getAttribute('data-size') : (ds.size || 'M'),
-        color: colorEl ? colorEl.getAttribute('data-color') : (ds.color || 'black'),
+        size: size,
+        color: color,
         qty: qtyEl ? Number(qtyEl.textContent) : 1,
       });
       toast(ds.name + ' added to bag');

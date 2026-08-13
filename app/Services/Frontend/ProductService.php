@@ -5,6 +5,8 @@ namespace App\Services\Frontend;
 use App\Models\Color;
 use App\Models\Product;
 use App\Models\Size;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -70,6 +72,238 @@ class ProductService
     }
 
     /**
+     * Server-side, paginated storefront listing. Applies search + facet filters
+     * in the database (so the full catalog is never loaded into memory) and maps
+     * only the current page to the client shape.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    public function filteredProducts(array $filters, int $perPage = 24): LengthAwarePaginator
+    {
+        return $this->filteredQuery($filters)
+            ->paginate($perPage)
+            ->withQueryString()
+            ->through(fn (Product $product): array => $this->map($product));
+    }
+
+    /**
+     * Total number of active products (catalog size, ignoring filters).
+     */
+    public function activeCount(): int
+    {
+        return Product::query()->where('status', 'active')->count();
+    }
+
+    /**
+     * Category facet tree with per-category and per-subcategory counts across
+     * the whole active catalog (stable totals, independent of the active filter).
+     *
+     * @return array<string, array{count: int, subcategories: array<string, int>}>
+     */
+    public function categoryFacets(): array
+    {
+        return Product::query()
+            ->where('products.status', 'active')
+            ->join('categories as c', 'c.id', '=', 'products.category_id')
+            ->leftJoin('categories as sc', 'sc.id', '=', 'products.sub_category_id')
+            ->selectRaw('c.name as category, sc.name as subcategory, COUNT(*) as total')
+            ->groupBy('c.name', 'sc.name')
+            ->get()
+            ->groupBy('category')
+            ->map(fn (Collection $rows): array => [
+                'count' => (int) $rows->sum('total'),
+                'subcategories' => $rows
+                    ->filter(fn ($row): bool => filled($row->subcategory))
+                    ->mapWithKeys(fn ($row): array => [$row->subcategory => (int) $row->total])
+                    ->all(),
+            ])
+            ->all();
+    }
+
+    /**
+     * Brand facet counts across the whole active catalog.
+     *
+     * @return array<string, int>
+     */
+    public function brandFacets(): array
+    {
+        return Product::query()
+            ->where('products.status', 'active')
+            ->join('brands as b', 'b.id', '=', 'products.brand_id')
+            ->selectRaw('b.name as brand, COUNT(*) as total')
+            ->groupBy('b.name')
+            ->orderBy('b.name')
+            ->pluck('total', 'brand')
+            ->map(fn ($total): int => (int) $total)
+            ->all();
+    }
+
+    /**
+     * Min/max list price across the active catalog, as whole dollars.
+     *
+     * @return array{0: int, 1: int}
+     */
+    public function priceRange(): array
+    {
+        $row = Product::query()
+            ->where('status', 'active')
+            ->selectRaw('MIN(price) as mn, MAX(price) as mx')
+            ->first();
+
+        $min = max(0, (int) floor((float) ($row->mn ?? 0)));
+        $max = max($min, (int) ceil((float) ($row->mx ?? 120)));
+
+        return [$min, $max];
+    }
+
+    /**
+     * Build the filtered listing query from validated storefront filters.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    /**
+     * A fresh listing-shaped query (relations + variant-stock sum) scoped to
+     * active products. Shared by the listing, home pool and search so the eager
+     * loads stay consistent in one place.
+     */
+    private function activeQuery(): Builder
+    {
+        return Product::query()
+            ->with($this->relations())
+            ->withSum('variants', 'stock')
+            ->where('status', 'active');
+    }
+
+    /**
+     * A bounded, deduplicated pool of active products for the homepage rails —
+     * best sellers, new, featured, on-sale and newest — so the home page never
+     * loads the whole catalog into memory. The PHP sectioning in HomeController
+     * curates the individual rails from this pool.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function homePool(int $perBucket = 12): Collection
+    {
+        return collect([
+            $this->activeQuery()->where('is_best_seller', true)->orderBy('sort_order')->latest()->limit($perBucket)->get(),
+            $this->activeQuery()->where('is_new', true)->latest()->limit($perBucket)->get(),
+            $this->activeQuery()->where('is_featured', true)->orderBy('sort_order')->latest()->limit($perBucket)->get(),
+            $this->activeQuery()->where('is_on_sale', true)->latest()->limit($perBucket)->get(),
+            $this->activeQuery()->orderBy('sort_order')->latest()->limit($perBucket)->get(),
+        ])
+            ->flatten(1)
+            ->unique('id')
+            ->map(fn (Product $product): array => $this->map($product))
+            ->values();
+    }
+
+    /**
+     * Lightweight live-search results for the header search dropdown (AJAX).
+     *
+     * @return array<int, array{name: string, url: string, price: string, image: ?string}>
+     */
+    public function searchSuggestions(string $term, int $limit = 6): array
+    {
+        $term = trim($term);
+
+        if ($term === '') {
+            return [];
+        }
+
+        return $this->activeQuery()
+            ->where(function (Builder $q) use ($term): void {
+                $q->where('name', 'like', "%{$term}%")
+                    ->orWhere('sku', 'like', "%{$term}%")
+                    ->orWhereHas('brand', fn (Builder $b) => $b->where('name', 'like', "%{$term}%"))
+                    ->orWhereHas('category', fn (Builder $c) => $c->where('name', 'like', "%{$term}%"));
+            })
+            ->orderByDesc('is_best_seller')
+            ->orderByDesc('is_featured')
+            ->latest()
+            ->limit($limit)
+            ->get()
+            ->map(fn (Product $product): array => [
+                'name' => $product->name,
+                'url' => route('frontend.shop.show', $this->slug($product)),
+                'price' => dprice((float) $product->final_price),
+                'image' => $product->thumbnail_url,
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function filteredQuery(array $filters): Builder
+    {
+        $query = $this->activeQuery();
+
+        if (filled($filters['q'] ?? null)) {
+            $term = trim((string) $filters['q']);
+            $query->where(function (Builder $q) use ($term): void {
+                $q->where('name', 'like', "%{$term}%")
+                    ->orWhere('sku', 'like', "%{$term}%")
+                    ->orWhereHas('brand', fn (Builder $b) => $b->where('name', 'like', "%{$term}%"))
+                    ->orWhereHas('category', fn (Builder $c) => $c->where('name', 'like', "%{$term}%"));
+            });
+        }
+
+        if (filled($filters['category'] ?? null) && $filters['category'] !== 'All') {
+            $query->whereHas('category', fn (Builder $c) => $c->where('name', $filters['category']));
+        }
+
+        if (filled($filters['subcategory'] ?? null) && $filters['subcategory'] !== 'All') {
+            $query->whereHas('subCategory', fn (Builder $c) => $c->where('name', $filters['subcategory']));
+        }
+
+        if (filled($filters['brand'] ?? null) && $filters['brand'] !== 'All') {
+            $query->whereHas('brand', fn (Builder $b) => $b->where('name', $filters['brand']));
+        }
+
+        if (! empty($filters['sale'])) {
+            $query->where(fn (Builder $q) => $q
+                ->where('is_on_sale', true)
+                ->orWhere(fn (Builder $q2) => $q2
+                    ->whereIn('discount_type', ['fixed', 'percentage'])
+                    ->where('discount_amount', '>', 0)));
+        }
+
+        if (! empty($filters['new'])) {
+            $query->where('is_new', true);
+        }
+
+        if (! empty($filters['best'])) {
+            $query->where('is_best_seller', true);
+        }
+
+        if (filled($filters['max_price'] ?? null)) {
+            $query->where('price', '<=', (float) $filters['max_price']);
+        }
+
+        if ($sizes = array_filter((array) ($filters['sizes'] ?? []))) {
+            $query->whereHas('variants.size', fn (Builder $s) => $s->whereIn('code', $sizes));
+        }
+
+        if ($colors = array_filter((array) ($filters['colors'] ?? []))) {
+            $keys = array_map(fn ($c): string => mb_strtolower((string) $c), $colors);
+            $query->whereHas('variants.color', function (Builder $c) use ($keys): void {
+                $c->where(function (Builder $q) use ($keys): void {
+                    foreach ($keys as $key) {
+                        $q->orWhereRaw('LOWER(code) = ?', [$key])
+                            ->orWhereRaw('LOWER(name) = ?', [$key]);
+                    }
+                });
+            });
+        }
+
+        return match ($filters['sort'] ?? 'featured') {
+            'newest' => $query->latest(),
+            'low' => $query->orderBy('price'),
+            'high' => $query->orderByDesc('price'),
+            'rated' => $query->orderByDesc('rating_avg'),
+            default => $query->orderBy('sort_order')->latest(),
+        };
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function map(Product $product): array
@@ -106,6 +340,15 @@ class ProductService
         $images = $this->images($product);
         $slug = $this->slug($product);
 
+        // Lookup so the client can resolve the exact variant id from the chosen
+        // size code + colour key (keys match the `sizes`/`colors` used in the UI).
+        $variantIndex = $product->variants
+            ->filter(fn ($variant) => $variant->size && $variant->color)
+            ->mapWithKeys(fn ($variant): array => [
+                mb_strtolower((string) $variant->size->code).'|'.$this->colorKey($variant->color) => $variant->id,
+            ])
+            ->all();
+
         return [
             'id' => $product->id,
             'slug' => $slug,
@@ -130,6 +373,7 @@ class ProductService
             'gallery' => max(1, count($images)),
             'images' => $images,
             'image_url' => $product->thumbnail_url,
+            'variant_index' => $variantIndex,
         ];
     }
 

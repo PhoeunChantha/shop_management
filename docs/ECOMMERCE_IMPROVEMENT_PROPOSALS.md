@@ -112,6 +112,36 @@ High — directly verified.
 **Implement Soon.** This is the one change that protects the whole storefront's
 scalability.
 
+### Status — ✅ Implemented (shop listing) · 2026-08-13
+The **shop page** (`ShopController@index`) is now fully server-driven:
+- `ProductService::filteredProducts()` builds the query in the database
+  (search on name/sku/brand/category, category/subcategory/brand facets,
+  sale/new/best toggles, max-price, size/color variant filters, sort) and
+  returns a `paginate(24)->withQueryString()->through(map)` paginator.
+- Facet counts come from `GROUP BY` aggregate queries
+  (`categoryFacets()`, `brandFacets()`, `priceRange()`), not PHP over the full set.
+- The Blade is now a single GET form; controls set hidden inputs and submit
+  (house pattern), active states render from `$filters`, and a custom
+  design-system pager replaces client-side "show all".
+- New composite indexes `(status, sort_order)` and `(status, price)`
+  (migration `2026_08_13_000001`).
+- Covered by `tests/Feature/ShopListingTest.php` (5 tests; full suite green, 126/126).
+
+**Follow-ups — ✅ done 2026-08-13:**
+- `HomeController@index` now uses `ProductService::homePool()` — a bounded,
+  deduplicated pool (best sellers + new + featured + on-sale + newest, ~≤60
+  products) instead of the whole catalog. The PHP sectioning is unchanged.
+- **Header search is now a real live search.** New JSON endpoint
+  `GET /shop-search` (`frontend.shop.search`, `ShopController@search` →
+  `ProductService::searchSuggestions`, throttled 60/min) + the header search
+  modal fetches it (debounced, `AbortController`) and renders results. Previously
+  the modal only showed static suggestion chips. Covered by
+  `tests/Feature/StorefrontEnhancementsTest.php`.
+- **Correction to the earlier note:** `NavigationService` is *not* a load-all
+  problem — it is cached (10 min) and `popularProducts()` is capped at 2. The
+  earlier concern was overstated; the only real gap was that the modal had no
+  functional search, which is now added.
+
 ---
 
 ## 1.2 Match checkout variants by explicit variant ID, not fuzzy strings
@@ -169,6 +199,21 @@ High — directly verified.
 ### Recommendation
 **Implement Soon.**
 
+### Status — ✅ Implemented (server + client) · 2026-08-13
+- **Server:** `CheckoutService::matchVariant()` prefers an explicit `variant_id`
+  (exact, authoritative), fuzzy label matching only as fallback.
+- **Client plumbing (now done):** `cart_items.product_variant_id` column
+  (migration `2026_08_13_000005`); `ProductService::map()` exposes a
+  `variant_index` (size-code|colour-key → variant id); the PDP scope carries
+  `data-variant-index`; `main.js` resolves the id from the chosen size+colour and
+  stores it on the cart line; `CartService::sync()` persists it (validating it
+  belongs to the product, so forged ids are dropped) and `mapItems()` returns it;
+  the checkout posts the raw cart lines, so `variant_id` reaches `placeOrder()`.
+- **Tests:** sells the exact variant (price+stock) with wrong labels; cart round-trips
+  the id; forged ids are ignored. **Browser QA note:** the end-to-end click path
+  (PDP → add → checkout) should still be smoke-tested in a browser once, since the
+  cart JS can't be exercised headlessly here.
+
 ---
 
 ## 1.3 Product structured data (JSON-LD)
@@ -223,6 +268,13 @@ High.
 ### Recommendation
 **Implement Soon.**
 
+### Status — ✅ Implemented · 2026-08-13
+Product detail pages now emit `Product` + `Offer` (base-currency price, availability)
++ `AggregateRating` (from `rating_avg`/`rating_count`, only when reviews exist) and a
+`BreadcrumbList`, via `@push('head')` JSON-LD. The homepage emits `Organization` and
+`WebSite` with a `SearchAction` pointing at the new search. Covered by
+`StorefrontEnhancementsTest`.
+
 ---
 
 ## 1.4 Guest checkout
@@ -274,6 +326,18 @@ on the market).
 ### Recommendation
 **Consider.** Validate against the actual abandonment data before building.
 
+### Status — ✅ Implemented · 2026-08-13
+Enabled. The checkout controller was already guest-aware (`index()` hides wallet
+for guests, `prefill()` returns `[]`, `store()` uses the form email + session
+`pending_order_id`, `confirmation()` reads the session); only the route `auth`
+middleware gated it. Checkout + PayWay pay/success/cancel routes are now public,
+guarded per-order by session/account ownership (`PaymentController::authorizeOrder`)
+and the gateway result is still re-verified server-side before an order is marked
+paid. Guest orders are created with `user_id = null`. Covered by tests (guest
+reaches checkout; guest order placed with null user). **Follow-up (nice-to-have):**
+a guest order-lookup page (order number + email), since guests can't use
+`/account/orders`.
+
 ---
 
 ## 1.5 Per-customer coupon usage limit
@@ -324,29 +388,45 @@ High.
 ### Recommendation
 **Consider.**
 
+### Status — ✅ Implemented · 2026-08-13
+Added `coupons.per_user_limit` (migration `2026_08_13_000003`) + admin form field +
+request validation. `Coupon::reachedPerUserLimit($userId)` counts the customer's
+prior orders on the coupon; `CheckoutService::validateCoupon()` reflects it in the
+preview and `placeOrder()` rejects an over-limit redemption inside the transaction.
+Guests (null user) and coupons without a per-user cap are unaffected. Covered by
+tests. (A dedicated `coupon_redemptions` table with row-level reservation remains a
+possible future hardening for high-concurrency abuse, but the order-count check
+covers the normal case.)
+
 ---
 
 # 2. UX/UI Improvements
 
 | # | Current UI | Problem | Recommended | User benefit | Complexity | Priority |
 |---|---|---|---|---|---|---|
-| 2.1 | Storefront pages use large **inline `style="…"` blocks** and inline `<style>` in Blade (shop/index, shop/show) | Design tokens are declared in `resources/css/app.css`, but storefront pages bypass them — inconsistent spacing/colors, hard to theme, no reuse | Move recurring storefront styles into component classes / the design system; keep tokens as the single source | Consistent premium feel, easier maintenance | Medium | 🟡 P2 |
+| 2.1 | Storefront pages use large **inline `style="…"` blocks** in Blade | Inconsistent spacing/colors, hard to theme, no reuse | Move recurring storefront styles into reusable classes | Consistent premium feel, easier maintenance | Medium | 🟡 **Started 2026-08-13** — extracted the repeated filter-section heading into `.ut-filter-heading` (shop page) as a safe, visually-identical slice. **Full migration deferred by design:** a blind mass find-replace across dozens of files risks the polished UI and needs an asset build + visual QA — do it incrementally per page with a browser check. |
 | 2.2 | PDP gallery has a **zoom icon** button but zoom behavior not confirmed | ⚠️ Unable to verify the icon actually triggers image zoom | Ensure click-to-zoom / lightbox works on desktop + touch | Trust, closer inspection of product | Low | 🟡 P2 |
 | 2.3 | Search is a client-side DOM filter | No "no results" recovery, no suggestions | Server search + empty-state with suggestions (ties to §1.1) | Product discovery | Medium | 🟠 P1 |
-| 2.4 | Reviews rely on app-level `hasReviewed` dedupe only | No DB unique constraint on `(user_id, product_id)` (reviews migration only indexes `status` and `(product_id,status)`) | Add a unique index to harden against double-submit races | Data integrity | Low | 🟡 P2 |
+| 2.4 | Reviews rely on app-level `hasReviewed` dedupe only | No DB unique constraint on `(user_id, product_id)` | Add a unique index to harden against double-submit races | Data integrity | Low | ✅ **Done 2026-08-13** (migration `2026_08_13_000002`, dedupes then adds `reviews_user_product_unique`; guests/null user_id unconstrained) |
 
 ---
 
 # 3. Conversion Optimization
 
-- **Free-shipping progress hint** — shipping methods already support
-  `free_over_amount` (`CheckoutService::shippingMethods`). Surface a "Add $X for
-  free shipping" nudge in cart/drawer. 🟠 P1, Low.
+- **Free-shipping progress hint** — ✅ **Done 2026-08-13.** The cart drawer already
+  had a nudge but on a hardcoded `$75`; it is now driven by the real configured
+  threshold — `CheckoutService::freeShippingThreshold()` (lowest active
+  `free_over_amount`) → `window.UT_SHIP_FREE` → `main.js` (falls back to 75 when
+  nothing is configured).
 - **Cross-sell is already built** (`ProductService::crossSell`) — verify it is
   surfaced in the cart drawer and PDP; if not wired to the UI, wire it. 🟡 P2.
-- **Abandoned-cart recovery** — the data + admin screen exist
-  (`AbandonedCartController`, `AbandonedCartService`). ⚠️ Verify whether a
-  recovery **email job** actually sends; if only captured, add the send. 🟠 P1.
+- **Abandoned-cart recovery** — ✅ **Done 2026-08-13.** Added
+  `AbandonedCartReminderMail` (queued) + `emails/abandoned/reminder` markdown view +
+  `AbandonedCartService::sendReminders()` (idempotent via a new `reminder_sent_at`
+  column, migration `2026_08_13_000004`; emails carts idle 1h–7d, marks them
+  contacted) + `shop:send-abandoned-cart-reminders` command scheduled hourly in
+  `routes/console.php`. Covered by tests (sends once, idempotent, skips fresh carts).
+  Requires the OS cron to run `php artisan schedule:run`.
 - **Back-in-stock notifications** — not found. Good fit given stock is tracked.
   🔵 P3.
 
@@ -356,10 +436,11 @@ High.
 
 - **Order tracking, PDF invoice, notifications, wishlist, wallet, addresses,
   verified reviews** — already implemented and solid. *Keep.*
-- **Guest → account cart merge** — ⚠️ `CartService::sync` **replaces** the server
-  cart with the client lines (`CartService.php:44`). Confirm that on login the
-  guest localStorage cart is *merged* (not lost/overwritten). If it overwrites,
-  add a union merge. 🟠 P1, Low.
+- **Guest → account cart merge** — ✅ **Verified correct 2026-08-13. Keep.** Although
+  `CartService::sync` replaces the server cart, the client (`public/assets/frontend/js/main.js`,
+  `mergeCartLines` + `initCart`) performs a **union merge** of the localStorage cart
+  and the account's saved cart (max qty per line key) *before* syncing, then adopts
+  the server's re-priced result. Guest carts are not lost. No change needed.
 - **Recently viewed** — implemented (`RecentlyViewedService`). *Keep.*
 
 ---
@@ -389,10 +470,17 @@ The admin surface is already deep. Incremental ideas only:
   are guaranteed. 🟡 P2, Low.
 - **Coupon redemption atomicity** — reserve within the transaction (ties to §1.5).
   🟡 P2.
-- **Sitemap URL in robots.txt is relative** (`Sitemap: /sitemap.xml`) — search
-  engines expect an absolute URL. 🟡 P2, trivial.
+- **Sitemap URL in robots.txt** — ✅ **Done 2026-08-13** (see the dynamic-route note
+  above; `Sitemap:` is now absolute).
 - **Queued mail** — order confirmation is queued (`ShouldQueue`) — good. Ensure
   the queue worker is supervised in production (`docs/supervisor/` exists). Keep.
+- **Header search → AJAX live search** — ✅ **done 2026-08-13.** (Note: the earlier
+  claim that the header "loads all products" was wrong — `NavigationService` is
+  cached + capped. The real gap was that the search modal had no functional
+  search; it now fetches `GET /shop-search` and renders live results.)
+- **`robots.txt` sitemap URL** — ✅ **done 2026-08-13.** `robots.txt` is now a
+  dynamic route emitting an absolute `Sitemap:` URL via `url('/sitemap.xml')`
+  (static `public/robots.txt` removed so the route serves).
 
 ---
 
@@ -476,17 +564,34 @@ The admin surface is already deep. Incremental ideas only:
 
 # 12. Implementation Status
 
-- [ ] §1.1 Server-side product listing, search & pagination — **Proposed**
-- [ ] §1.2 Variant match by ID — **Proposed**
-- [ ] §1.3 Product JSON-LD structured data — **Proposed**
-- [ ] §1.4 Guest checkout — **Proposed**
-- [ ] §1.5 Per-customer coupon usage limit — **Proposed**
-- [ ] §2.1 Inline styles → design system — **Proposed**
-- [ ] §2.4 Unique index on reviews (user_id, product_id) — **Proposed**
-- [ ] §3 Free-shipping nudge — **Proposed**
-- [ ] §3 Verify abandoned-cart recovery email — **Proposed**
-- [ ] §4 Verify guest→login cart merge — **Proposed**
-- [ ] §5 Update stale `CLAUDE.md` storefront description — **Proposed**
-- [ ] §6 Relative sitemap URL in robots.txt — **Proposed**
+- [x] §1.1 Server-side product listing, search & pagination — **Completed** 2026-08-13 (shop page + homepage bounded pool + header live-search)
+- [x] Header global-search → AJAX live search endpoint — **Completed** 2026-08-13
+- [x] §1.2 Variant match by ID — **Completed** 2026-08-13 (server + client plumbing; browser smoke-test recommended)
+- [x] §1.3 Product/Breadcrumb/Organization JSON-LD — **Completed** 2026-08-13
+- [x] §1.4 Guest checkout — **Completed** 2026-08-13 (guest order-lookup page is a nice-to-have follow-up)
+- [x] §1.5 Per-customer coupon usage limit — **Completed** 2026-08-13
+- [~] §2.1 Inline styles → design system — **Started** 2026-08-13 (representative slice done; full migration deferred — needs build + visual QA)
+- [x] §2.4 Unique index on reviews (user_id, product_id) — **Completed** 2026-08-13
+- [x] §3 Free-shipping nudge (data-driven threshold) — **Completed** 2026-08-13
+- [x] §3 Abandoned-cart recovery email — **Completed** 2026-08-13
+- [x] §4 Guest→login cart merge — **Verified correct** 2026-08-13 (already a union merge; no change)
+- [x] §5 Update stale `CLAUDE.md` storefront description — **Completed** 2026-08-13
+- [x] §6 Absolute sitemap URL in robots.txt — **Completed** 2026-08-13
 
-_No feature is marked completed; nothing was implemented during this audit._
+### Test coverage
+`tests/Feature/ShopListingTest.php`, `tests/Feature/StorefrontEnhancementsTest.php`,
+and `tests/Feature/StorefrontBatch2Test.php` cover server-side listing/search/
+pagination, AJAX search, JSON-LD, dynamic robots.txt, the home bounded pool,
+variant-by-id checkout + cart round-trip (incl. forged-id rejection), per-user
+coupon limit, abandoned-cart reminders (send-once/idempotent/skip-fresh), and guest
+checkout. **Full suite: 140 passing.**
+
+### Remaining (intentionally not auto-done)
+- **§2.1 full design-system migration** — a page-by-page cosmetic refactor that
+  needs an asset build + visual QA; doing it blind risks the polished UI. Started
+  with a safe representative slice.
+- **Nice-to-have follow-ups noted inline:** guest order-lookup page (§1.4), a
+  `coupon_redemptions` table for high-concurrency coupon abuse (§1.5), and a
+  browser smoke-test of the PDP→cart→checkout variant path (§1.2).
+- **Still genuinely proposed (not requested to build):** §1.5-style advanced items,
+  personalization/loyalty (§7), etc.
