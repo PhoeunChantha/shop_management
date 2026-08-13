@@ -27,6 +27,7 @@
                     <x-slot:left>
                         <x-per-page-selector :current="$perPage" />
                     </x-slot:left>
+
                     <x-slot:right>
                         <x-search-input name="search" placeholder="{{ __('Search permissions...') }}" />
                     </x-slot:right>
@@ -42,6 +43,7 @@
                         <th class="text-end">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
+                
                 <tbody>
                     @forelse ($permissions as $permission)
                         <tr>
