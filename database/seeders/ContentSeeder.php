@@ -10,14 +10,13 @@ class ContentSeeder extends Seeder
 {
     public function run(): void
     {
-        $pages = [
-            ['title' => 'About Us', 'slug' => 'about', 'content' => '<p>Welcome to our store. Tell your brand story here.</p>'],
-            ['title' => 'Privacy Policy', 'slug' => 'privacy', 'content' => '<p>Describe how customer data is collected and used.</p>'],
-            ['title' => 'Terms & Conditions', 'slug' => 'terms', 'content' => '<p>Outline the terms of using your store and buying products.</p>'],
-        ];
+        // Built-in system pages (About/Privacy/Terms). Keyed by their stable
+        // `page_key` so the storefront resolves them regardless of slug/title
+        // edits. firstOrCreate preserves any content edited in admin.
+        $pages = require database_path('data/system-pages.php');
 
-        foreach ($pages as $page) {
-            Page::firstOrCreate(['slug' => $page['slug']], $page + ['status' => true]);
+        foreach ($pages as $key => $attributes) {
+            Page::firstOrCreate(['page_key' => $key], $attributes + ['page_key' => $key, 'status' => true]);
         }
 
         $faqs = [

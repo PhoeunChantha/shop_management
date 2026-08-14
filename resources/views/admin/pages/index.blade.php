@@ -54,7 +54,14 @@
                                     <input type="checkbox" class="bulk-check" data-row-check value="{{ $page->id }}"
                                         x-model="selected" aria-label="{{ __('Select row') }}">
                                 </td>
-                                <td><div class="orders-cust__name">{{ $page->title }}</div></td>
+                                <td>
+                                    <div class="orders-cust__name">
+                                        {{ $page->title }}
+                                        @if ($page->isSystem())
+                                            <span class="status-chip st-new" style="margin-left:6px" title="{{ __('Built-in page — editable but cannot be deleted') }}">{{ __('System') }}</span>
+                                        @endif
+                                    </div>
+                                </td>
                                 <td><span class="dash-table__id">/{{ $page->slug }}</span></td>
                                 <td class="dash-table__date">{{ $page->updated_at?->format('M d, Y') }}</td>
                                 <td>
@@ -69,12 +76,14 @@
                                                 class="table-actions__item table-actions__item--edit" role="menuitem">
                                                 <i class="fa-solid fa-pen"></i><span>{{ __('Edit') }}</span>
                                             </a>
-                                            <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
-                                                data-delete-modal-target="deletePageModal"
-                                                data-delete-action="{{ route('admin.pages.destroy', $page->id) }}"
-                                                data-delete-name="{{ $page->title }}">
-                                                <i class="fa-solid fa-trash"></i><span>{{ __('Delete') }}</span>
-                                            </button>
+                                            @unless ($page->isSystem())
+                                                <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
+                                                    data-delete-modal-target="deletePageModal"
+                                                    data-delete-action="{{ route('admin.pages.destroy', $page->id) }}"
+                                                    data-delete-name="{{ $page->title }}">
+                                                    <i class="fa-solid fa-trash"></i><span>{{ __('Delete') }}</span>
+                                                </button>
+                                            @endunless
                                         </x-table-actions>
                                     </div>
                                 </td>

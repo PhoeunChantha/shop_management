@@ -13,6 +13,7 @@ use App\Models\MediaAsset;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductTag;
+use App\Models\ProductVariant;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -352,14 +353,23 @@ class ProductService
 
     private function syncVariants(Product $product, BaseProductRequest $request, array &$uploaded = []): void
     {
-        $product->variants()->delete();
+        // Reconcile in place — never blindly delete-and-recreate. Wiping variants
+        // would break rows that reference them (purchase order items, order
+        // details, stock movements) and, for restricted foreign keys, throw.
+        $existing = $product->variants()->with('values:id')->get();
+        $existingBySignature = $existing->keyBy(
+            fn (ProductVariant $variant): string => $this->variantSignature($variant->values->pluck('id')->all())
+        );
 
-        // Single products have no variant rows.
+        // Single products keep no variant rows.
         if ($request->input('product_type') === 'single') {
+            $this->removeOrDeactivateVariants($product, $existing->pluck('id')->all());
+
             return;
         }
 
         $usedSkus = [];
+        $keptIds = [];
 
         foreach ((array) $request->input('variants', []) as $index => $variant) {
             $valueIds = array_values(array_filter(array_map('intval', (array) ($variant['value_ids'] ?? []))));
@@ -367,14 +377,20 @@ class ProductService
                 continue;
             }
 
-            // Auto-generate a unique SKU when the admin leaves it blank.
+            $match = $existingBySignature->get($this->variantSignature($valueIds));
+
+            // Auto-generate a unique SKU when blank; keep the existing one if any.
             $sku = trim($variant['sku'] ?? '');
+            if ($sku === '' && $match) {
+                $sku = (string) $match->sku;
+            }
             if ($sku === '') {
                 $sku = $this->generateSku($product, $valueIds, $usedSkus);
             }
             $usedSkus[] = $sku;
 
-            // Per-variant image: a freshly uploaded file wins, else keep the existing one.
+            // Per-variant image: a freshly uploaded file wins, then a media pick,
+            // then the value posted back, then the variant's current image.
             $imageFile = $request->file("variants.{$index}.image");
             if ($imageFile) {
                 $image = ImageManager::upload($imageFile, self::VARIANT_FOLDER);
@@ -382,10 +398,10 @@ class ProductService
             } elseif ($selected = $this->selectedMediaFilename($variant['image_media'] ?? null, self::VARIANT_FOLDER)) {
                 $image = $selected;
             } else {
-                $image = ($variant['image_existing'] ?? '') ?: null;
+                $image = (($variant['image_existing'] ?? '') ?: null) ?? $match?->image;
             }
 
-            $created = $product->variants()->create([
+            $attributes = [
                 'sku' => $sku,
                 'barcode' => $variant['barcode'] ?? null,
                 'image' => $image,
@@ -395,10 +411,71 @@ class ProductService
                 'cost_price' => $this->nullableNumber($variant['cost_price'] ?? null),
                 'weight' => $this->nullableNumber($variant['weight'] ?? null),
                 'status' => (bool) ($variant['status'] ?? true),
-            ]);
+            ];
 
-            $created->values()->sync($valueIds);
+            if ($match) {
+                $match->update($attributes);
+                $saved = $match;
+            } else {
+                $saved = $product->variants()->create($attributes);
+            }
+
+            $saved->values()->sync($valueIds);
+            $keptIds[] = $saved->id;
         }
+
+        // Variants no longer submitted: delete when safe, otherwise deactivate so
+        // historical references (orders, purchase orders, stock) stay intact.
+        $this->removeOrDeactivateVariants($product, $existing->pluck('id')->diff($keptIds)->all());
+    }
+
+    /**
+     * Stable signature for a variant's attribute-value set, so a resubmitted
+     * variant is matched to its existing row (and updated in place).
+     *
+     * @param  array<int, int>  $valueIds
+     */
+    private function variantSignature(array $valueIds): string
+    {
+        $ids = array_values(array_unique(array_map('intval', $valueIds)));
+        sort($ids);
+
+        return implode('-', $ids);
+    }
+
+    /**
+     * Remove variants that are no longer needed. A variant that is referenced by
+     * a purchase order, an order line, or a stock movement is deactivated instead
+     * of deleted so referential integrity and history are preserved.
+     *
+     * @param  array<int, int>  $variantIds
+     */
+    private function removeOrDeactivateVariants(Product $product, array $variantIds): void
+    {
+        if (empty($variantIds)) {
+            return;
+        }
+
+        foreach ($product->variants()->whereKey($variantIds)->get() as $variant) {
+            if ($this->variantIsReferenced($variant->id)) {
+                $variant->update(['status' => false]);
+
+                continue;
+            }
+
+            $variant->values()->detach();
+            $variant->delete();
+        }
+    }
+
+    /**
+     * Whether a variant is referenced by history that must not be destroyed.
+     */
+    private function variantIsReferenced(int $variantId): bool
+    {
+        return DB::table('purchase_order_items')->where('variant_id', $variantId)->exists()
+            || DB::table('order_details')->where('product_variant_id', $variantId)->exists()
+            || DB::table('stock_movements')->where('variant_id', $variantId)->exists();
     }
 
     /**

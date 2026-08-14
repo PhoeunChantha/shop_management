@@ -4,6 +4,9 @@
     $categoryMenus = $nav['categoryMenus'] ?? [];
     $search = $nav['search'] ?? [];
     $announcements = $nav['announcements'] ?? ['Free shipping over $75', '30-day returns', 'New collection released', 'First order 10% off'];
+    $settings = app(\App\Services\Admin\SettingService::class);
+    $siteName = $settings->siteName();
+    $logo = $settings->logoUrl();
 @endphp
 <header class="ut-header">
     <div class="ut-announce" aria-label="Store benefits">
@@ -19,9 +22,13 @@
             <x-frontend.icon n="menu" :size="22" />
         </button>
 
-        <a href="{{ route('frontend.home') }}" class="ut-brand" aria-label="T-Shirt Shop home">
-            <span class="ut-logo-mark">T</span>
-            <span class="ut-logo-text">T SHIRT SHOP</span>
+        <a href="{{ route('frontend.home') }}" class="ut-brand" aria-label="{{ $siteName }} home">
+            @if($logo)
+                <img src="{{ $logo }}" alt="{{ $siteName }}" style="height:34px;width:auto;max-width:170px;object-fit:contain">
+            @else
+                <span class="ut-logo-mark">{{ mb_substr($siteName, 0, 1) }}</span>
+                <span class="ut-logo-text">{{ mb_strtoupper($siteName) }}</span>
+            @endif
         </a>
 
         <nav class="ut-nav ut-desktop-nav" aria-label="Primary navigation">
@@ -105,7 +112,7 @@
 </header>
 
 <div class="offcanvas offcanvas-start ut-mobile-menu" tabindex="-1" id="utMobileMenu" aria-labelledby="utMobileMenuLabel">
-    <div class="offcanvas-header"><a href="{{ route('frontend.home') }}" class="ut-brand" id="utMobileMenuLabel"><span class="ut-logo-mark">T</span><span class="ut-logo-text">T SHIRT SHOP</span></a><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button></div>
+    <div class="offcanvas-header"><a href="{{ route('frontend.home') }}" class="ut-brand" id="utMobileMenuLabel">@if($logo)<img src="{{ $logo }}" alt="{{ $siteName }}" style="height:30px;width:auto;max-width:150px;object-fit:contain">@else<span class="ut-logo-mark">{{ mb_substr($siteName, 0, 1) }}</span><span class="ut-logo-text">{{ mb_strtoupper($siteName) }}</span>@endif</a><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button></div>
     <div class="offcanvas-body"><button type="button" class="ut-mobile-search" data-bs-dismiss="offcanvas" data-bs-toggle="modal" data-bs-target="#utSearchOverlay"><x-frontend.icon n="search" :size="18" /> {{ __('Search the collection') }}</button><nav>@foreach($nav['mobile'] ?? [] as $item)<a href="{{ $item['url'] }}">{{ $item['label'] }} <x-frontend.icon n="arrowR" :size="18" /></a>@endforeach</nav><div class="ut-mobile-menu-foot"><span>{{ __('FIRST ORDER') }}</span><strong>{{ __('10% OFF') }}</strong><p>{{ __('Sign up for early drops and exclusive editions.') }}</p></div></div>
 </div>
 

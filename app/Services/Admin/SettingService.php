@@ -485,6 +485,16 @@ final class SettingService
     }
 
     /**
+     * Configured short tagline (used in the footer), or null when unset.
+     */
+    public function siteTagline(): ?string
+    {
+        $tagline = Setting::get('site_tagline');
+
+        return filled($tagline) ? $tagline : null;
+    }
+
+    /**
      * Whether the customer order-confirmation email is turned on (default: on).
      */
     public function orderEmailEnabled(): bool
