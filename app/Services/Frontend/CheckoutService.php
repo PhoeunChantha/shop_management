@@ -58,6 +58,21 @@ final class CheckoutService
     }
 
     /**
+     * The lowest "free over" threshold across active shipping methods, or null
+     * when no method offers free shipping. Drives the cart free-shipping nudge.
+     */
+    public function freeShippingThreshold(): ?float
+    {
+        $min = ShippingMethod::query()
+            ->where('status', true)
+            ->whereNotNull('free_over_amount')
+            ->where('free_over_amount', '>', 0)
+            ->min('free_over_amount');
+
+        return $min !== null ? (float) $min : null;
+    }
+
+    /**
      * Active payment methods from Settings (online + manual), sorted.
      *
      * @return array<int, array<string, mixed>>
@@ -126,6 +141,10 @@ final class CheckoutService
             return ['valid' => false, 'code' => $label, 'discount' => 0, 'message' => 'Spend at least $'.number_format((float) $coupon->min_spend, 2).' to use this code.'];
         }
 
+        if ($coupon->reachedPerUserLimit(Auth::id())) {
+            return ['valid' => false, 'code' => $label, 'discount' => 0, 'message' => 'You have already used this code the maximum number of times.'];
+        }
+
         $discount = $coupon->discountFor($subtotal);
 
         if ($discount <= 0) {
@@ -187,7 +206,12 @@ final class CheckoutService
                 }
 
                 $qty = max(1, (int) $item['qty']);
-                $variant = $this->matchVariant($product, $item['size'] ?? null, $item['color'] ?? null);
+                $variant = $this->matchVariant(
+                    $product,
+                    $item['size'] ?? null,
+                    $item['color'] ?? null,
+                    isset($item['variant_id']) ? (int) $item['variant_id'] : null,
+                );
 
                 // Row-lock the stockable being sold so two concurrent checkouts
                 // can't both pass the check and oversell the same stock.
@@ -226,6 +250,12 @@ final class CheckoutService
             $coupon = filled($data['coupon'] ?? null)
                 ? Coupon::active()->code((string) $data['coupon'])->first()
                 : null;
+
+            // Enforce the per-customer redemption cap (global cap is in the scope).
+            if ($coupon && $coupon->reachedPerUserLimit(Auth::id())) {
+                throw new CheckoutException('You have already used this coupon the maximum number of times.');
+            }
+
             $discount = $coupon ? $coupon->discountFor($subtotal) : 0.0;
 
             $method = ShippingMethod::query()->where('status', true)->find($data['shipping_id'] ?? null);
@@ -326,12 +356,21 @@ final class CheckoutService
     }
 
     /**
-     * Best-effort match of a variant from the cart's size + colour labels.
+     * Resolve the variant being sold. Prefers an explicit variant id from the
+     * cart (exact, authoritative) and only falls back to best-effort matching on
+     * the size + colour labels for legacy/guest carts that don't carry the id.
      */
-    private function matchVariant(Product $product, ?string $size, ?string $color): ?ProductVariant
+    private function matchVariant(Product $product, ?string $size, ?string $color, ?int $variantId = null): ?ProductVariant
     {
         if ($product->variants->isEmpty()) {
             return null;
+        }
+
+        if ($variantId) {
+            $exact = $product->variants->firstWhere('id', $variantId);
+            if ($exact) {
+                return $exact;
+            }
         }
 
         $size = $size ? mb_strtolower(trim($size)) : null;

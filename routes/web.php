@@ -55,15 +55,32 @@ use App\Http\Controllers\Frontend\SitemapController;
 use App\Http\Controllers\Frontend\SocialAuthController;
 use App\Http\Controllers\Frontend\WishlistController;
 use App\Http\Middleware\SetLocale;
+use App\Services\Admin\SettingService;
 use Illuminate\Support\Facades\Route;
 
 Route::name('frontend.')->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
     Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
+    // Dynamic robots.txt so the Sitemap directive is an absolute URL (required by
+    // crawlers). Served by Laravel because the static public/robots.txt was removed.
+    Route::get('/robots.txt', function () {
+        $body = implode("\n", [
+            'User-agent: *',
+            'Disallow: /admin',
+            'Disallow: /account',
+            'Disallow: /checkout',
+            'Disallow: /cart',
+            '',
+            'Sitemap: '.url('/sitemap.xml'),
+        ])."\n";
+
+        return response($body)->header('Content-Type', 'text/plain');
+    })->name('robots');
     Route::post('/newsletter', [NewsletterController::class, 'store'])->middleware('throttle:5,1')->name('newsletter.subscribe');
 
     // ---- Shop ----
     Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
+    Route::get('/shop-search', [ShopController::class, 'search'])->middleware('throttle:60,1')->name('shop.search');
     Route::get('/shop/{product}', [ShopController::class, 'show'])->name('shop.show');
 
     // ---- Cart & Checkout ----
@@ -71,17 +88,18 @@ Route::name('frontend.')->group(function () {
     Route::post('/cart/sync', [CartController::class, 'sync'])->middleware('auth')->name('cart.sync');
     // Coupon validation stays public so guests can preview a code in the cart.
     Route::post('/checkout/coupon', [CheckoutController::class, 'coupon'])->middleware('throttle:20,1')->name('checkout.coupon');
-    // Checkout requires an account — every order is tied to a customer.
-    Route::middleware('auth')->group(function () {
-        Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-        Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:12,1')->name('checkout.store');
-        Route::get('/checkout/confirmation', [CheckoutController::class, 'confirmation'])->name('checkout.confirmation');
+    // Guest checkout is allowed — orders capture the customer's contact details
+    // and (when signed in) link to their account. Ownership of the pending order
+    // is tracked in the session so guests can drive payment/confirmation; the
+    // gateway result is always re-verified server-side before an order is paid.
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:12,1')->name('checkout.store');
+    Route::get('/checkout/confirmation', [CheckoutController::class, 'confirmation'])->name('checkout.confirmation');
 
-        // ---- Payment (ABA PayWay) ----
-        Route::get('/payment/{order}/pay', [PaymentController::class, 'pay'])->name('payment.pay');
-        Route::get('/payment/{order}/success', [PaymentController::class, 'success'])->name('payment.success');
-        Route::get('/payment/{order}/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
-    });
+    // ---- Payment (ABA PayWay) — guarded per-order by session/account ownership ----
+    Route::get('/payment/{order}/pay', [PaymentController::class, 'pay'])->name('payment.pay');
+    Route::get('/payment/{order}/success', [PaymentController::class, 'success'])->name('payment.success');
+    Route::get('/payment/{order}/cancel', [PaymentController::class, 'cancel'])->name('payment.cancel');
     Route::post('/payment/callback', [PaymentController::class, 'callback'])->name('payment.callback');
     Route::get('/wallet/topup/{topup}/pay', [PaymentController::class, 'topupPay'])->middleware('auth')->name('payment.topup.pay');
     Route::get('/wallet/topup/{topup}/success', [PaymentController::class, 'topupSuccess'])->middleware('auth')->name('payment.topup.success');
@@ -521,5 +539,15 @@ Route::get('/lang/{locale}', function (string $locale) {
 
     return redirect()->back();
 })->name('lang.switch');
+
+// ---- Display-currency switch (storefront browsing only) ----
+Route::get('/currency/{code}', function (string $code) {
+    $allowed = array_keys(app(SettingService::class)->displayCurrencies());
+    if (in_array($code, $allowed, true)) {
+        session(['display_currency' => $code]);
+    }
+
+    return redirect()->back();
+})->name('currency.switch');
 
 require __DIR__.'/auth.php';

@@ -16,11 +16,24 @@ if (! function_exists('Imageurl')) {
 
 if (! function_exists('money')) {
     /**
-     * Format an amount with the store's configured currency symbol/position:
-     *   {{ money($order->grand_total) }}  →  "$1,250.00" (or "1 250,00 ₫", etc.)
+     * Format a BASE-currency amount (source of truth). Used by admin, invoices,
+     * emails and order records — never converts.
+     *   {{ money($order->grand_total) }}  →  "$1,250.00"
      */
     function money(float|int|string|null $amount, int $decimals = 2): string
     {
         return app(SettingService::class)->formatMoney((float) $amount, $decimals);
+    }
+}
+
+if (! function_exists('dprice')) {
+    /**
+     * Format a base amount into the shopper's selected DISPLAY currency
+     * (storefront browsing prices; converts by the configured exchange rate).
+     * The checkout still charges the base currency.
+     */
+    function dprice(float|int|string|null $amount): string
+    {
+        return app(SettingService::class)->formatDisplay((float) $amount);
     }
 }

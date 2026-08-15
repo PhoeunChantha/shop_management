@@ -90,6 +90,16 @@
             @enderror
         </div>
 
+        {{-- Per-customer limit --}}
+        <div class="form-field col-span-2 md:col-span-1">
+            <label for="per_user_limit">{{ __('Per-customer Limit') }}</label>
+            <input value="{{ old('per_user_limit', $coupon->per_user_limit ?? '') }}" type="number" min="1" name="per_user_limit" id="per_user_limit"
+                class="form-input" placeholder="{{ __('Optional — max redemptions per customer') }}">
+            @error('per_user_limit')
+                <p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>
+            @enderror
+        </div>
+
         {{-- Dates --}}
         <div class="form-field col-span-2 md:col-span-1">
             <label for="starts_at">{{ __('Starts At') }}</label>

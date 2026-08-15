@@ -26,7 +26,7 @@ class HomeController extends Controller
 
     public function index(): View
     {
-        $mappedProducts = $this->products->mappedActiveProducts();
+        $mappedProducts = $this->products->homePool();
         $hasDynamicProducts = $mappedProducts->isNotEmpty();
         $homeProducts = $mappedProducts;
         $flashDeal = $this->activeFlashDeal();

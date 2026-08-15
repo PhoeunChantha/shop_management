@@ -10,6 +10,7 @@ class CartItem extends Model
     protected $fillable = [
         'cart_id',
         'product_id',
+        'product_variant_id',
         'size',
         'color',
         'quantity',
@@ -19,6 +20,7 @@ class CartItem extends Model
     {
         return [
             'quantity' => 'integer',
+            'product_variant_id' => 'integer',
         ];
     }
 

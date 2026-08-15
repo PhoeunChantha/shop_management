@@ -58,10 +58,12 @@ class PageController extends Controller
     }
 
     /**
-     * Fetch a published admin-managed page by slug (null when none/unpublished).
+     * Fetch a published admin-managed system page by its stable key
+     * (null when none/unpublished). Resolving by key — not slug — means renaming
+     * the page's title in admin never breaks its public URL.
      */
-    private function page(string $slug): ?Page
+    private function page(string $key): ?Page
     {
-        return Page::query()->where('slug', $slug)->where('status', true)->first();
+        return Page::query()->key($key)->where('status', true)->first();
     }
 }

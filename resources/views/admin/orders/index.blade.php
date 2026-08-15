@@ -122,6 +122,7 @@
                                         <i class="fa-regular fa-credit-card"></i>{{ $order->payment_method ? strtoupper($order->payment_method) : '—' }}
                                     </div>
                                 </td>
+                                
                                 <td>
                                     <span class="status-chip {{ $order->fulfillment_status->badge() }}">{{ $order->fulfillment_status->label() }}</span>
                                     <div class="orders-pay__method">

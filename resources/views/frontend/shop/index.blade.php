@@ -5,8 +5,28 @@
 <style>
     .ut-listing-grid { display:grid; grid-template-columns:248px 1fr; gap:36px; align-items:start; }
     @media (max-width:1024px){ .ut-listing-grid{ grid-template-columns:1fr; } .ut-filters-side{ display:none; } .ut-mobile-filter{ display:inline-flex !important; } }
+    .ut-pager { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:36px; flex-wrap:wrap; }
+    .ut-pager a, .ut-pager span { min-width:40px; height:40px; padding:0 12px; display:inline-flex; align-items:center; justify-content:center; border-radius:12px; border:1px solid var(--border); font-family:var(--font-head); font-weight:600; font-size:14px; background:#fff; color:var(--ink); text-decoration:none; }
+    .ut-pager a:hover { border-color:var(--ink); }
+    .ut-pager .is-active { background:var(--ink); color:#fff; border-color:var(--ink); }
+    .ut-pager .is-disabled { opacity:.4; pointer-events:none; }
+    /* Reusable filter-section heading (replaces the repeated inline style). */
+    .ut-filter-heading { font-family:var(--font-head); font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:12px; }
 </style>
 @endpush
+
+@php
+    // Server is the source of truth for filtering. Every control lives inside the
+    // GET form below; changing one submits the form and reloads a filtered,
+    // paginated page. Active states are rendered from $filters (no client filter).
+    $f = $filters;
+    $activeCat = $f['category'] ?: 'All';
+    $activeSub = $f['subcategory'] ?: 'All';
+    $activeBrand = $f['brand'] ?: 'All';
+    $activeSizes = $f['sizes'] ?? [];
+    $activeColors = $f['colors'] ?? [];
+    $priceValue = $f['max_price'] !== null ? (int) $f['max_price'] : $maxPrice;
+@endphp
 
 @section('content')
 <div class="anim-up">
@@ -15,30 +35,39 @@
         <div class="ut-wrap" style="padding:30px 24px 24px">
             <x-frontend.breadcrumb :items="[[__('Home'), route('frontend.home')], [__('Shop all products'), null]]" />
             <div class="ut-row" style="justify-content:space-between;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-top:8px">
-                <div><h1 style="font-size:clamp(30px,4vw,46px)">{{ __('All Products') }}</h1><p class="muted" style="margin-top:6px">{{ count($products) }} {{ __('products · curated shop catalog') }}</p></div>
+                <div><h1 style="font-size:clamp(30px,4vw,46px)">{{ __('All Products') }}</h1><p class="muted" style="margin-top:6px">{{ $catalogTotal }} {{ __('products · curated shop catalog') }}</p></div>
                 <div style="position:relative;min-width:280px">
                     <span style="position:absolute;left:14px;top:13px;color:var(--text-2)"><x-frontend.icon n="search" :size="18" /></span>
-                    <input class="ut-input" id="shopSearch" placeholder="{{ __('Search products…') }}" style="padding-left:42px;border-radius:var(--r-pill)" oninput="filterProducts()">
+                    <input class="ut-input" id="shopSearch" name="q" form="shopFilter" value="{{ $f['q'] }}" placeholder="{{ __('Search products…') }}" autocomplete="off" style="padding-left:42px;border-radius:var(--r-pill)">
                 </div>
             </div>
         </div>
     </div>
 
     <div class="ut-wrap" style="padding-top:28px">
+        {{-- All controls post to this single GET form; JS helpers set hidden values then submit. --}}
+        <form id="shopFilter" method="GET" action="{{ route('frontend.shop.index') }}">
+            <input type="hidden" name="category" id="fCategory" value="{{ $activeCat === 'All' ? '' : $activeCat }}">
+            <input type="hidden" name="subcategory" id="fSubcategory" value="{{ $activeSub === 'All' ? '' : $activeSub }}">
+            <input type="hidden" name="brand" id="fBrand" value="{{ $activeBrand === 'All' ? '' : $activeBrand }}">
+            <input type="hidden" name="sizes" id="fSizes" value="{{ implode(',', $activeSizes) }}">
+            <input type="hidden" name="colors" id="fColors" value="{{ implode(',', $activeColors) }}">
+        </form>
+
         <div class="ut-listing-grid">
             {{-- FILTERS --}}
             <aside class="ut-filters-side" style="position:sticky;top:160px">
                 <div class="ut-col" style="gap:26px">
                     <div>
-                        <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">{{ __('Category') }}</div>
+                        <div class="ut-filter-heading">{{ __('Category') }}</div>
                         <div class="ut-col" style="gap:4px" id="catFilter">
-                            <button type="button" class="cat-btn is-active" data-cat="All" onclick="setCat(this)" style="border:0;text-align:left;padding:8px 12px;border-radius:10px;font-family:var(--font-head);font-weight:600;font-size:14px;display:flex;justify-content:space-between">{{ __('All') }} <span class="muted" style="font-weight:500">{{ count($products) }}</span></button>
+                            <button type="button" class="cat-btn {{ $activeCat === 'All' ? 'is-active' : '' }}" data-cat="All" onclick="setCat('')" style="border:0;text-align:left;padding:8px 12px;border-radius:10px;font-family:var(--font-head);font-weight:600;font-size:14px;display:flex;justify-content:space-between">{{ __('All') }} <span class="muted" style="font-weight:500">{{ $catalogTotal }}</span></button>
                             @foreach($categories as $category => $details)
-                                <div class="ut-filter-group">
-                                    <button type="button" class="cat-btn ut-parent-cat" data-cat="{{ $category }}" onclick="toggleCategory(this)" aria-expanded="true"><span>{{ $category }}</span><span class="muted">{{ $details['count'] }} <x-frontend.icon n="chevD" :size="14" /></span></button>
+                                <div class="ut-filter-group {{ $activeCat === $category ? '' : 'is-collapsed' }}">
+                                    <button type="button" class="cat-btn ut-parent-cat {{ $activeCat === $category && $activeSub === 'All' ? 'is-active' : '' }}" data-cat="{{ $category }}" onclick="setCat(@js($category))" aria-expanded="{{ $activeCat === $category ? 'true' : 'false' }}"><span>{{ $category }}</span><span class="muted">{{ $details['count'] }} <x-frontend.icon n="chevD" :size="14" /></span></button>
                                     <div class="ut-subcategory-list">
                                         @foreach($details['subcategories'] as $subcategory => $count)
-                                            <button type="button" class="subcat-btn" data-cat="{{ $category }}" data-subcat="{{ $subcategory }}" onclick="setSubcat(this)"><span>{{ $subcategory }}</span><span>{{ $count }}</span></button>
+                                            <button type="button" class="subcat-btn {{ $activeCat === $category && $activeSub === $subcategory ? 'is-active' : '' }}" data-cat="{{ $category }}" data-subcat="{{ $subcategory }}" onclick="setSubcat(@js($category), @js($subcategory))"><span>{{ $subcategory }}</span><span>{{ $count }}</span></button>
                                         @endforeach
                                     </div>
                                 </div>
@@ -47,45 +76,45 @@
                     </div>
                     <hr class="divider">
                     <div>
-                        <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">{{ __('Availability') }}</div>
-                        <label class="ut-filter-toggle"><span>{{ __('Sale only') }}</span><input id="saleOnly" type="checkbox" onchange="window.UT_SALE=this.checked; filterProducts()"><i></i></label>
-                        <label class="ut-filter-toggle"><span>{{ __('New arrivals') }}</span><input id="newOnly" type="checkbox" onchange="window.UT_NEW=this.checked; filterProducts()"><i></i></label>
-                        <label class="ut-filter-toggle"><span>{{ __('Best sellers') }}</span><input id="bestOnly" type="checkbox" onchange="window.UT_BEST=this.checked; filterProducts()"><i></i></label>
+                        <div class="ut-filter-heading">{{ __('Availability') }}</div>
+                        <label class="ut-filter-toggle"><span>{{ __('Sale only') }}</span><input type="checkbox" name="sale" value="1" form="shopFilter" @checked($f['sale']) onchange="submitFilter()"><i></i></label>
+                        <label class="ut-filter-toggle"><span>{{ __('New arrivals') }}</span><input type="checkbox" name="new" value="1" form="shopFilter" @checked($f['new']) onchange="submitFilter()"><i></i></label>
+                        <label class="ut-filter-toggle"><span>{{ __('Best sellers') }}</span><input type="checkbox" name="best" value="1" form="shopFilter" @checked($f['best']) onchange="submitFilter()"><i></i></label>
                     </div>
                     <hr class="divider">
                     <div>
-                        <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">{{ __('Brand') }}</div>
+                        <div class="ut-filter-heading">{{ __('Brand') }}</div>
                         <div class="ut-col" style="gap:4px" id="brandFilter">
-                            <button type="button" class="brand-btn is-active" data-brand="All" onclick="setBrand(this)"><span>{{ __('All brands') }}</span><span>{{ count($products) }}</span></button>
+                            <button type="button" class="brand-btn {{ $activeBrand === 'All' ? 'is-active' : '' }}" data-brand="All" onclick="setBrand('')"><span>{{ __('All brands') }}</span><span>{{ $catalogTotal }}</span></button>
                             @foreach($brands as $brand => $count)
-                                <button type="button" class="brand-btn" data-brand="{{ $brand }}" onclick="setBrand(this)"><span>{{ $brand }}</span><span>{{ $count }}</span></button>
+                                <button type="button" class="brand-btn {{ $activeBrand === $brand ? 'is-active' : '' }}" data-brand="{{ $brand }}" onclick="setBrand(@js($brand))"><span>{{ $brand }}</span><span>{{ $count }}</span></button>
                             @endforeach
                         </div>
                     </div>
                     <hr class="divider">
                     <div>
-                        <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">{{ __('Size') }}</div>
+                        <div class="ut-filter-heading">{{ __('Size') }}</div>
                         <div style="display:flex;flex-wrap:wrap;gap:8px">
                             @foreach($sizes as $s)
-                                <button type="button" class="ut-chip size-btn" data-size="{{ $s }}" style="width:50px;justify-content:center;padding:9px 0" onclick="setSize(this)">{{ $s }}</button>
+                                <button type="button" class="ut-chip size-btn {{ in_array($s, $activeSizes, true) ? 'is-active' : '' }}" data-size="{{ $s }}" style="width:50px;justify-content:center;padding:9px 0" onclick="toggleSize(@js($s))">{{ $s }}</button>
                             @endforeach
                         </div>
                     </div>
                     <hr class="divider">
                     <div>
-                        <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">{{ __('Color') }}</div>
+                        <div class="ut-filter-heading">{{ __('Color') }}</div>
                         <div style="display:flex;flex-wrap:wrap;gap:12px">
                             @foreach($colors as $k => $c)
-                                <button type="button" class="color-btn" data-color="{{ $k }}" style="border:0;background:none;padding:0" title="{{ $c['name'] }}" onclick="setColor(this)">
-                                    <span class="swatch" style="background:{{ $c['hex'] }};width:28px;height:28px"></span>
+                                <button type="button" class="color-btn" data-color="{{ $k }}" style="border:0;background:none;padding:0" title="{{ $c['name'] }}" onclick="toggleColor(@js((string) $k))">
+                                    <span class="swatch {{ in_array((string) $k, $activeColors, true) ? 'is-active' : '' }}" style="background:{{ $c['hex'] }};width:28px;height:28px"></span>
                                 </button>
                             @endforeach
                         </div>
                     </div>
                     <hr class="divider">
                     <div>
-                        <div style="font-family:var(--font-head);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">{{ __('Max price') }} — <span id="priceVal" style="color:var(--blue)">${{ $maxPrice }}</span></div>
-                        <input type="range" min="{{ $minPrice }}" max="{{ $maxPrice }}" value="{{ $maxPrice }}" style="width:100%;accent-color:var(--blue)" oninput="document.getElementById('priceVal').textContent='$'+this.value; window.UT_MAXPRICE=+this.value; filterProducts()">
+                        <div class="ut-filter-heading">{{ __('Max price') }} — <span id="priceVal" style="color:var(--blue)">${{ $priceValue }}</span></div>
+                        <input type="range" name="max_price" form="shopFilter" min="{{ $minPrice }}" max="{{ $maxPrice }}" value="{{ $priceValue }}" style="width:100%;accent-color:var(--blue)" oninput="document.getElementById('priceVal').textContent='$'+this.value" onchange="submitFilter()">
                         <div class="ut-row muted" style="justify-content:space-between;font-size:12px;margin-top:4px"><span>${{ $minPrice }}</span><span>${{ $maxPrice }}</span></div>
                     </div>
                 </div>
@@ -93,34 +122,78 @@
 
             {{-- RESULTS --}}
             <div>
-                <div id="activeFilters" class="ut-active-filters" aria-live="polite"></div>
+                @php
+                    $activeChips = [];
+                    if ($activeCat !== 'All') $activeChips[] = $activeCat;
+                    if ($activeSub !== 'All' && $activeSub !== $activeCat) $activeChips[] = $activeSub;
+                    if ($activeBrand !== 'All') $activeChips[] = $activeBrand;
+                    foreach ($activeSizes as $s) $activeChips[] = $s;
+                    foreach ($activeColors as $c) $activeChips[] = ($colors[$c]['name'] ?? $c);
+                    if ($f['sale']) $activeChips[] = __('Sale only');
+                    if ($f['new']) $activeChips[] = __('New arrivals');
+                    if ($f['best']) $activeChips[] = __('Best sellers');
+                    if ($f['max_price'] !== null && (int) $f['max_price'] < $maxPrice) $activeChips[] = __('Under').' $'.(int) $f['max_price'];
+                    if (filled($f['q'])) $activeChips[] = '“'.$f['q'].'”';
+                @endphp
+                @if(count($activeChips))
+                    <div class="ut-active-filters" aria-live="polite">
+                        @foreach($activeChips as $chip)<span class="ut-active-filter">{{ $chip }}</span>@endforeach
+                        <a href="{{ route('frontend.shop.index') }}" style="text-decoration:none"><button type="button">{{ __('Clear all') }}</button></a>
+                    </div>
+                @endif
                 <div class="ut-row" style="justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap">
-                    <span class="muted" style="font-size:14px">{{ __('Showing') }} <b id="shownCount" style="color:var(--ink)">{{ count($products) }}</b> {{ __('of') }} {{ count($products) }}</span>
+                    <span class="muted" style="font-size:14px">{{ __('Showing') }} <b style="color:var(--ink)">{{ $products->count() }}</b> {{ __('of') }} {{ $products->total() }}</span>
                     <div class="ut-row" style="gap:8px">
                         <span class="muted" style="font-size:13px">{{ __('Sort') }}</span>
-                        <select id="sortSelect" class="ut-input" style="padding:9px 36px 9px 14px;border-radius:var(--r-pill);font-family:var(--font-head);font-weight:500;font-size:13px;width:auto" onchange="sortProducts(this.value)">
-                            <option value="featured">{{ __('Featured') }}</option>
-                            <option value="newest">{{ __('Newest') }}</option>
-                            <option value="low">{{ __('Price: Low to High') }}</option>
-                            <option value="high">{{ __('Price: High to Low') }}</option>
-                            <option value="rated">{{ __('Top rated') }}</option>
+                        <select name="sort" form="shopFilter" class="ut-input" style="padding:9px 36px 9px 14px;border-radius:var(--r-pill);font-family:var(--font-head);font-weight:500;font-size:13px;width:auto" onchange="submitFilter()">
+                            <option value="featured" @selected($f['sort'] === 'featured')>{{ __('Featured') }}</option>
+                            <option value="newest" @selected($f['sort'] === 'newest')>{{ __('Newest') }}</option>
+                            <option value="low" @selected($f['sort'] === 'low')>{{ __('Price: Low to High') }}</option>
+                            <option value="high" @selected($f['sort'] === 'high')>{{ __('Price: High to Low') }}</option>
+                            <option value="rated" @selected($f['sort'] === 'rated')>{{ __('Top rated') }}</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="ut-results-grid" id="productGrid">
-                    @foreach($products as $p)
-                        <div class="product-cell" data-cat="{{ $p['cat'] }}" data-subcat="{{ $p['subcat'] }}" data-brand="{{ $p['brand'] }}" data-sale="{{ $p['tag'] === 'sale' ? 1 : 0 }}" data-price="{{ $p['price'] }}" data-name="{{ strtolower($p['name']) }}" data-search="{{ strtolower($p['name'].' '.$p['cat'].' '.$p['subcat'].' '.$p['brand']) }}" data-sizes="{{ implode('|', $p['sizes'] ?? []) }}" data-colors="{{ implode('|', $p['colors'] ?? []) }}"
-                             data-rating="{{ $p['rating'] }}" data-new="{{ $p['tag'] === 'new' ? 1 : 0 }}" data-best="{{ ($p['badge'] ?? '') === 'Best Seller' ? 1 : 0 }}" data-order="{{ $loop->index }}">
-                            <x-frontend.product-card :product="$p" />
-                        </div>
-                    @endforeach
-                </div>
+                @if($products->isEmpty())
+                    <div class="ut-card" style="text-align:center;padding:80px 20px">
+                        <div style="width:60px;height:60px;border-radius:18px;background:var(--bg);display:grid;place-items:center;margin:0 auto 16px;color:var(--text-2)"><x-frontend.icon n="search" :size="26" /></div>
+                        <h3>{{ __('No products match') }}</h3><p class="muted" style="margin-top:6px">{{ __('Try clearing a filter or two.') }}</p>
+                        <a href="{{ route('frontend.shop.index') }}" class="ut-btn ut-btn-ink ut-btn-sm" style="margin-top:16px;text-decoration:none">{{ __('Clear all') }}</a>
+                    </div>
+                @else
+                    <div class="ut-results-grid" id="productGrid">
+                        @foreach($products as $p)
+                            <div class="product-cell">
+                                <x-frontend.product-card :product="$p" />
+                            </div>
+                        @endforeach
+                    </div>
 
-                <div id="noResults" class="ut-card" style="display:none;text-align:center;padding:80px 20px">
-                    <div style="width:60px;height:60px;border-radius:18px;background:var(--bg);display:grid;place-items:center;margin:0 auto 16px;color:var(--text-2)"><x-frontend.icon n="search" :size="26" /></div>
-                    <h3>{{ __('No products match') }}</h3><p class="muted" style="margin-top:6px">{{ __('Try clearing a filter or two.') }}</p>
-                </div>
+                    @if($products->hasPages())
+                        <nav class="ut-pager" aria-label="{{ __('Pagination Navigation') }}">
+                            @if($products->onFirstPage())
+                                <span class="is-disabled" aria-hidden="true"><x-frontend.icon n="arrowL" :size="16" /></span>
+                            @else
+                                <a href="{{ $products->previousPageUrl() }}" rel="prev" aria-label="{{ __('Previous') }}"><x-frontend.icon n="arrowL" :size="16" /></a>
+                            @endif
+
+                            @foreach($products->getUrlRange(max(1, $products->currentPage() - 2), min($products->lastPage(), $products->currentPage() + 2)) as $page => $url)
+                                @if($page === $products->currentPage())
+                                    <span class="is-active" aria-current="page">{{ $page }}</span>
+                                @else
+                                    <a href="{{ $url }}">{{ $page }}</a>
+                                @endif
+                            @endforeach
+
+                            @if($products->hasMorePages())
+                                <a href="{{ $products->nextPageUrl() }}" rel="next" aria-label="{{ __('Next') }}"><x-frontend.icon n="arrowR" :size="16" /></a>
+                            @else
+                                <span class="is-disabled" aria-hidden="true"><x-frontend.icon n="arrowR" :size="16" /></span>
+                            @endif
+                        </nav>
+                    @endif
+                @endif
             </div>
         </div>
     </div>
@@ -129,176 +202,58 @@
 
 @push('scripts')
 <script>
-    window.UT_CAT = 'All'; window.UT_SUBCAT = 'All'; window.UT_BRAND = 'All'; window.UT_SALE = false; window.UT_NEW = false; window.UT_BEST = false; window.UT_MAXPRICE = {{ $maxPrice }}; window.UT_PRICE_CEILING = {{ $maxPrice }}; window.UT_SIZES = []; window.UT_COLORS = []; window.UT_SORT = 'featured';
-    function filterKey(value){
-        return String(value || '').trim().toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    }
-    function filterMatches(actual, expected){
-        return expected === 'All' || actual === expected || filterKey(actual) === filterKey(expected);
-    }
-    function filterOptionMatches(actual, expected){
-        return expected === 'All' ? actual === 'All' : filterMatches(actual, expected);
-    }
-    function setCat(btn){
-        document.querySelectorAll('.cat-btn, .subcat-btn').forEach(b=>b.classList.remove('is-active'));
-        btn.classList.add('is-active'); window.UT_CAT = btn.getAttribute('data-cat'); window.UT_SUBCAT = 'All'; filterProducts();
-    }
-    function toggleCategory(btn){
-        setCat(btn);
-        var group = btn.closest('.ut-filter-group');
-        var isCollapsed = group.classList.toggle('is-collapsed');
-        btn.setAttribute('aria-expanded', String(!isCollapsed));
-    }
-    function setSubcat(btn){
-        document.querySelectorAll('.cat-btn, .subcat-btn').forEach(b=>b.classList.remove('is-active'));
-        btn.classList.add('is-active'); window.UT_CAT = btn.getAttribute('data-cat'); window.UT_SUBCAT = btn.getAttribute('data-subcat'); filterProducts();
-    }
-    function setBrand(btn){
-        document.querySelectorAll('.brand-btn').forEach(b=>b.classList.remove('is-active'));
-        btn.classList.add('is-active'); window.UT_BRAND = btn.getAttribute('data-brand'); filterProducts();
-    }
-    function setSize(btn){
-        btn.classList.toggle('is-active');
-        window.UT_SIZES = [].slice.call(document.querySelectorAll('.size-btn.is-active')).map(function(button){ return button.dataset.size; });
-        filterProducts();
-    }
-    function setColor(btn){
-        btn.firstElementChild.classList.toggle('is-active');
-        window.UT_COLORS = [].slice.call(document.querySelectorAll('.color-btn .swatch.is-active')).map(function(swatch){ return swatch.closest('.color-btn').dataset.color; });
-        filterProducts();
-    }
-    function clearFilters(){
-        window.UT_CAT = 'All'; window.UT_SUBCAT = 'All'; window.UT_BRAND = 'All'; window.UT_SALE = false; window.UT_NEW = false; window.UT_BEST = false; window.UT_MAXPRICE = window.UT_PRICE_CEILING; window.UT_SIZES = []; window.UT_COLORS = [];
-        var newBox = document.getElementById('newOnly'); if(newBox) newBox.checked = false;
-        var bestBox = document.getElementById('bestOnly'); if(bestBox) bestBox.checked = false;
-        document.querySelector('.cat-btn[data-cat="All"]').classList.add('is-active');
-        document.querySelectorAll('.cat-btn:not([data-cat="All"]), .subcat-btn, .brand-btn, .size-btn').forEach(b => b.classList.remove('is-active'));
-        document.querySelectorAll('.color-btn .swatch').forEach(swatch => swatch.classList.remove('is-active'));
-        document.querySelector('.brand-btn[data-brand="All"]').classList.add('is-active');
-        document.getElementById('saleOnly').checked = false;
-        document.querySelector('input[type="range"]').value = window.UT_PRICE_CEILING;
-        document.getElementById('priceVal').textContent = '$' + window.UT_PRICE_CEILING;
-        filterProducts();
-    }
-    function renderActiveFilters(){
-        var container = document.getElementById('activeFilters');
-        var filters = [];
-        if(window.UT_CAT !== 'All') filters.push(window.UT_CAT);
-        if(window.UT_SUBCAT !== 'All' && filterKey(window.UT_SUBCAT) !== filterKey(window.UT_CAT)) filters.push(window.UT_SUBCAT);
-        if(window.UT_BRAND !== 'All') filters.push(window.UT_BRAND);
-        window.UT_SIZES.forEach(function(size){ filters.push(size); });
-        window.UT_COLORS.forEach(function(color){ filters.push(color); });
-        if(window.UT_SALE) filters.push('{{ __('Sale only') }}');
-        if(window.UT_NEW) filters.push('{{ __('New arrivals') }}');
-        if(window.UT_BEST) filters.push('{{ __('Best sellers') }}');
-        if(window.UT_MAXPRICE < window.UT_PRICE_CEILING) filters.push('{{ __('Under') }} $' + window.UT_MAXPRICE);
-        container.innerHTML = '';
-        if(!filters.length) return;
-        filters.forEach(function(label){ var chip=document.createElement('span'); chip.className='ut-active-filter'; chip.textContent=label; container.appendChild(chip); });
-        var clear=document.createElement('button'); clear.type='button'; clear.textContent='{{ __('Clear all') }}'; clear.onclick=clearFilters; container.appendChild(clear);
-    }
-    function syncFilterUrl(){
-        var params = new URLSearchParams();
-        if(window.UT_CAT !== 'All') params.set('category', window.UT_CAT);
-        if(window.UT_SUBCAT !== 'All') params.set('subcategory', window.UT_SUBCAT);
-        if(window.UT_BRAND !== 'All') params.set('brand', window.UT_BRAND);
-        if(window.UT_SIZES.length) params.set('sizes', window.UT_SIZES.join(','));
-        if(window.UT_COLORS.length) params.set('colors', window.UT_COLORS.join(','));
-        if(window.UT_SALE) params.set('sale', '1');
-        if(window.UT_NEW) params.set('new', '1');
-        if(window.UT_BEST) params.set('best', '1');
-        if(window.UT_MAXPRICE < window.UT_PRICE_CEILING) params.set('max_price', window.UT_MAXPRICE);
-        var q = (document.getElementById('shopSearch').value || '').trim();
-        if(q) params.set('q', q);
-        if(window.UT_SORT && window.UT_SORT !== 'featured') params.set('sort', window.UT_SORT);
-        history.replaceState({}, '', window.location.pathname + (params.toString() ? '?' + params.toString() : ''));
-    }
-    function filterProducts(){
-        var q = (document.getElementById('shopSearch').value||'').toLowerCase();
-        var shown = 0;
-        document.querySelectorAll('.product-cell').forEach(function(cell){
-            var ok = filterMatches(cell.dataset.cat, window.UT_CAT)
-                  && filterMatches(cell.dataset.subcat, window.UT_SUBCAT)
-                  && filterMatches(cell.dataset.brand, window.UT_BRAND)
-                  && (!window.UT_SIZES.length || window.UT_SIZES.some(function(size){ return (cell.dataset.sizes || '').split('|').indexOf(size) > -1; }))
-                  && (!window.UT_COLORS.length || window.UT_COLORS.some(function(color){ return (cell.dataset.colors || '').split('|').indexOf(color) > -1; }))
-                  && (!window.UT_SALE || cell.dataset.sale === '1')
-                  && (!window.UT_NEW || cell.dataset.new === '1')
-                  && (!window.UT_BEST || cell.dataset.best === '1')
-                  && (+cell.dataset.price <= window.UT_MAXPRICE)
-                  && (!q || (cell.dataset.search || cell.dataset.name).indexOf(q) > -1);
-            cell.style.display = ok ? '' : 'none';
-            if(ok){
-                cell.classList.remove('ut-product-reveal');
-                if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
-                    void cell.offsetWidth;
-                    cell.style.setProperty('--reveal-delay', Math.min(shown * 45, 240) + 'ms');
-                    cell.classList.add('ut-product-reveal');
-                }
-                shown++;
-            }
-        });
-        document.getElementById('shownCount').textContent = shown;
-        document.getElementById('noResults').style.display = shown===0 ? '' : 'none';
-        document.getElementById('productGrid').style.display = shown===0 ? 'none' : '';
-        renderActiveFilters(); syncFilterUrl();
-    }
-    function sortProducts(mode){
-        window.UT_SORT = mode || 'featured';
-        var grid = document.getElementById('productGrid');
-        var cells = [].slice.call(grid.children);
-        cells.sort(function(a,b){
-            if(mode==='low') return a.dataset.price - b.dataset.price;
-            if(mode==='high') return b.dataset.price - a.dataset.price;
-            if(mode==='rated') return b.dataset.rating - a.dataset.rating;
-            if(mode==='newest') return b.dataset.new - a.dataset.new;
-            return a.dataset.order - b.dataset.order;
-        });
-        cells.forEach(function(c){ grid.appendChild(c); });
-        syncFilterUrl();
-    }
-    (function restoreFilterState(){
-        var params = new URLSearchParams(window.location.search);
-        window.UT_CAT = params.get('category') || 'All';
-        window.UT_SUBCAT = params.get('subcategory') || 'All';
-        window.UT_BRAND = params.get('brand') || 'All';
-        window.UT_SALE = params.get('sale') === '1';
-        window.UT_NEW = params.get('new') === '1';
-        window.UT_BEST = params.get('best') === '1';
-        window.UT_SIZES = (params.get('sizes') || '').split(',').filter(Boolean);
-        window.UT_COLORS = (params.get('colors') || '').split(',').filter(Boolean);
-        window.UT_MAXPRICE = +(params.get('max_price') || window.UT_PRICE_CEILING);
-        window.UT_SORT = params.get('sort') || 'featured';
-        var searchBox = document.getElementById('shopSearch');
-        if(searchBox && params.get('q')) searchBox.value = params.get('q');
-        document.querySelectorAll('.cat-btn, .subcat-btn, .brand-btn').forEach(function(button){
-            var hasCat = Object.prototype.hasOwnProperty.call(button.dataset, 'cat');
-            var hasSubcat = Object.prototype.hasOwnProperty.call(button.dataset, 'subcat');
-            var hasBrand = Object.prototype.hasOwnProperty.call(button.dataset, 'brand');
-            var selected = (hasCat && filterOptionMatches(button.dataset.cat, window.UT_CAT) && !hasSubcat && window.UT_SUBCAT === 'All')
-                || (hasSubcat && window.UT_SUBCAT !== 'All' && filterMatches(button.dataset.subcat, window.UT_SUBCAT) && filterMatches(button.dataset.cat, window.UT_CAT))
-                || (hasBrand && filterOptionMatches(button.dataset.brand, window.UT_BRAND));
-            button.classList.toggle('is-active', selected);
-            if(selected && hasCat && !hasSubcat) window.UT_CAT = button.dataset.cat;
-            if(selected && hasSubcat){ window.UT_CAT = button.dataset.cat; window.UT_SUBCAT = button.dataset.subcat; }
-            if(selected && hasBrand) window.UT_BRAND = button.dataset.brand;
-        });
-        document.querySelectorAll('.size-btn').forEach(function(button){
-            button.classList.toggle('is-active', window.UT_SIZES.indexOf(button.dataset.size) > -1);
-        });
-        document.querySelectorAll('.color-btn').forEach(function(button){
-            button.firstElementChild.classList.toggle('is-active', window.UT_COLORS.indexOf(button.dataset.color) > -1);
-        });
-        document.getElementById('saleOnly').checked = window.UT_SALE;
-        var newBox = document.getElementById('newOnly'); if(newBox) newBox.checked = window.UT_NEW;
-        var bestBox = document.getElementById('bestOnly'); if(bestBox) bestBox.checked = window.UT_BEST;
-        document.querySelector('input[type="range"]').value = window.UT_MAXPRICE;
-        document.getElementById('priceVal').textContent = '$' + window.UT_MAXPRICE;
-        var sortSelect = document.getElementById('sortSelect');
-        if(sortSelect){ sortSelect.value = window.UT_SORT; }
-        filterProducts();
-        if(window.UT_SORT !== 'featured') sortProducts(window.UT_SORT);
+    (function(){
+        var form = document.getElementById('shopFilter');
+        function submitForm(){
+            // Drop empty params so the URL stays clean; unchecked boxes are omitted natively.
+            form.querySelectorAll('input[type=hidden], input[name=q], input[name=max_price]').forEach(function(el){
+                if(!el.value) el.disabled = true;
+            });
+            form.requestSubmit ? form.requestSubmit() : form.submit();
+        }
+        window.submitFilter = submitForm;
+        window.setCat = function(cat){
+            document.getElementById('fCategory').value = cat || '';
+            document.getElementById('fSubcategory').value = '';
+            submitForm();
+        };
+        window.setSubcat = function(cat, sub){
+            document.getElementById('fCategory').value = cat || '';
+            document.getElementById('fSubcategory').value = sub || '';
+            submitForm();
+        };
+        window.setBrand = function(brand){
+            document.getElementById('fBrand').value = brand || '';
+            submitForm();
+        };
+        function currentList(id){
+            var v = document.getElementById(id).value;
+            return v ? v.split(',').filter(Boolean) : [];
+        }
+        window.toggleSize = function(size){
+            var list = currentList('fSizes');
+            var i = list.indexOf(size);
+            if(i > -1) list.splice(i, 1); else list.push(size);
+            document.getElementById('fSizes').value = list.join(',');
+            submitForm();
+        };
+        window.toggleColor = function(color){
+            var list = currentList('fColors');
+            var i = list.indexOf(color);
+            if(i > -1) list.splice(i, 1); else list.push(color);
+            document.getElementById('fColors').value = list.join(',');
+            submitForm();
+        };
+        // Debounced live search — the input lives outside the form (form="shopFilter"),
+        // so submit by id rather than relying on closest('form').
+        var search = document.getElementById('shopSearch');
+        if(search){
+            var timer;
+            search.addEventListener('input', function(){
+                clearTimeout(timer);
+                timer = setTimeout(submitForm, 450);
+            });
+        }
     })();
 </script>
 @endpush
-

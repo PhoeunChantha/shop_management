@@ -21,15 +21,33 @@
         </button>
 
         {{-- Language switcher --}}
-        <div class="language-switch d-none d-sm-inline-flex align-items-center p-1 rounded-pill">
-            <a href="{{ route('lang.switch', 'km') }}"
-                class="btn btn-sm border-0 px-2.5 py-0.5 rounded-pill fs-7 text-decoration-none {{ $locale === 'km' ? 'fw-bold bg-white shadow-sm text-dark' : 'fw-medium bg-transparent text-secondary' }}">
-                ខ្មែរ
-            </a>
-            <a href="{{ route('lang.switch', 'en') }}"
-                class="btn btn-sm border-0 px-2.5 py-0.5 rounded-pill fs-7 text-decoration-none {{ $locale === 'en' ? 'fw-bold bg-white shadow-sm text-dark' : 'fw-medium bg-transparent text-secondary' }}">
-                {{ __('EN') }}
-            </a>
+        @php
+            $adminLocales = [
+                'km' => ['label' => 'KH', 'flag' => 'kh.svg'],
+                'en' => ['label' => 'EN', 'flag' => 'gb.svg'],
+            ];
+            $curLoc = $adminLocales[$locale] ?? $adminLocales['en'];
+            $flagStyle = 'width:18px;height:13px;border-radius:2px;object-fit:cover;vertical-align:-1px;box-shadow:0 0 0 1px rgba(0,0,0,.08);flex-shrink:0;';
+        @endphp
+        <div class="dropdown d-none d-sm-inline-flex">
+            <button type="button"
+                class="btn btn-sm border rounded-pill d-inline-flex align-items-center gap-1 px-2.5 py-1 fw-semibold text-dark"
+                data-bs-toggle="dropdown" aria-expanded="false" aria-label="Language">
+                <img src="{{ asset('assets/frontend/img/flags/'.$curLoc['flag']) }}" alt="" style="{{ $flagStyle }}">
+                <span style="font-size:12px;">{{ $curLoc['label'] }}</span>
+                <i class="fa-solid fa-chevron-down text-secondary" style="font-size:8px;"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width:160px;">
+                @foreach($adminLocales as $code => $loc)
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center gap-2 {{ $locale === $code ? 'active' : '' }}" href="{{ route('lang.switch', $code) }}">
+                            <img src="{{ asset('assets/frontend/img/flags/'.$loc['flag']) }}" alt="" style="{{ $flagStyle }}">
+                            <span class="flex-grow-1" style="font-size:13px;">{{ $loc['label'] }}</span>
+                            @if($locale === $code)<i class="fa-solid fa-check text-primary" style="font-size:11px;"></i>@endif
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
         </div>
 
         {{-- Dark mode toggle --}}

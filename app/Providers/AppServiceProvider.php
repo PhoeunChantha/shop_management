@@ -67,7 +67,7 @@ class AppServiceProvider extends ServiceProvider
             ]);
         });
 
-        View::composer('components.frontend.header', function ($view): void {
+        View::composer(['components.frontend.header', 'components.frontend.footer'], function ($view): void {
             $view->with('frontendNav', app(NavigationService::class)->data());
         });
     }

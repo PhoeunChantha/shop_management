@@ -95,7 +95,13 @@ class PageController extends Controller
         $this->authorize('delete', Page::class);
 
         try {
-            Page::findOrFail($id)->delete();
+            $page = Page::findOrFail($id);
+
+            if ($page->isSystem()) {
+                return back()->withErrors(['error' => __('System pages (About, Privacy, Terms) cannot be deleted — edit or unpublish them instead.')]);
+            }
+
+            $page->delete();
         } catch (\Exception $e) {
             Log::error('Error deleting page: '.$e->getMessage(), ['exception' => $e, 'page_id' => $id]);
 
@@ -109,7 +115,14 @@ class PageController extends Controller
     {
         $this->authorize('delete', Page::class);
 
-        $result = $bulk->destroy(Page::class, $this->validatedIds($request));
+        // Never bulk-delete built-in system pages (about/privacy/terms).
+        $ids = Page::query()
+            ->whereIn('id', $this->validatedIds($request))
+            ->whereNull('page_key')
+            ->pluck('id')
+            ->all();
+
+        $result = $bulk->destroy(Page::class, $ids);
 
         return back()->with($this->bulkFlash($result, 'page', 'in use'));
     }

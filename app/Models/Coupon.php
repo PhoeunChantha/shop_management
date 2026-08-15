@@ -15,6 +15,7 @@ class Coupon extends Model
         'min_spend',
         'max_discount',
         'usage_limit',
+        'per_user_limit',
         'used_count',
         'starts_at',
         'expires_at',
@@ -27,6 +28,7 @@ class Coupon extends Model
         'min_spend' => 'decimal:2',
         'max_discount' => 'decimal:2',
         'usage_limit' => 'integer',
+        'per_user_limit' => 'integer',
         'used_count' => 'integer',
         'starts_at' => 'datetime',
         'expires_at' => 'datetime',
@@ -79,6 +81,23 @@ class Coupon extends Model
     public function reachedLimit(): bool
     {
         return $this->usage_limit !== null && $this->used_count >= $this->usage_limit;
+    }
+
+    /**
+     * Whether the given customer has already used this coupon up to its
+     * per-customer cap. Guests (null) and coupons without a per-user cap are
+     * never limited here.
+     */
+    public function reachedPerUserLimit(?int $userId): bool
+    {
+        if ($this->per_user_limit === null || $userId === null) {
+            return false;
+        }
+
+        return Order::query()
+            ->where('coupon_id', $this->id)
+            ->where('user_id', $userId)
+            ->count() >= $this->per_user_limit;
     }
 
     public function isValid(): bool

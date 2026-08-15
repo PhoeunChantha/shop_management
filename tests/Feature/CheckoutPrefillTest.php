@@ -29,7 +29,8 @@ it('prefills the checkout shipping form from the default address', function () {
         ->assertSee('value="Rivera"', false);
 });
 
-it('requires an account to reach checkout (no guest checkout)', function () {
+it('allows guests to reach checkout (guest checkout enabled)', function () {
     $this->get(route('frontend.checkout.index'))
-        ->assertRedirect(route('frontend.login'));
+        ->assertOk()
+        ->assertSee('Checkout');
 });

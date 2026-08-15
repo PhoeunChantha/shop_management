@@ -20,6 +20,12 @@
         $__seoType = $__pageSeo['type'] ?? 'website';
     @endphp
     <title>{{ $__seoTitle }}</title>
+    {{-- Favicon: admin-uploaded favicon, falling back to the site logo. --}}
+    @php($__favicon = $__settings->faviconUrl() ?: $__settings->logoUrl())
+    @if ($__favicon)
+        <link rel="icon" href="{{ $__favicon }}">
+        <link rel="apple-touch-icon" href="{{ $__favicon }}">
+    @endif
     <meta name="description" content="{{ $__seoDesc }}">
     <link rel="canonical" href="{{ $__seoUrl }}">
     <meta property="og:site_name" content="{{ $__settings->siteName() }}">
@@ -58,6 +64,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 
+    {{-- FontAwesome (CDN) — renders admin-configured social icons in the footer --}}
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.6.0/css/all.min.css" rel="stylesheet">
+
     {{-- T-Shirt Shop design system (loads AFTER bootstrap to win specificity) --}}
     <link rel="stylesheet"
         href="{{ asset('assets/frontend/css/style.css') }}?v={{ filemtime(public_path('assets/frontend/css/style.css')) }}">
@@ -93,7 +102,8 @@
     {{-- Expose data + named routes to plain JS --}}
     <script>
         window.UT_COLORS = @json(app(\App\Services\Frontend\ProductService::class)->colors());
-        window.UT_CURRENCY = @json(app(\App\Services\Admin\SettingService::class)->currency());
+        window.UT_CURRENCY = @json(app(\App\Services\Admin\SettingService::class)->displayCurrency());
+        window.UT_SHIP_FREE = @json(app(\App\Services\Frontend\CheckoutService::class)->freeShippingThreshold());
         window.UT_URLS = {
             shop: "{{ route('frontend.shop.index') }}",
             cart: "{{ route('frontend.cart.index') }}",

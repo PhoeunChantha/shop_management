@@ -10,6 +10,7 @@ use App\Models\Review;
 use App\Services\Admin\SettingService;
 use App\Services\Frontend\ProductService;
 use App\Services\Frontend\RecentlyViewedService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -24,33 +25,60 @@ class ShopController extends Controller
 
     public function index(Request $request): View
     {
-        $products = $this->products->mappedActiveProducts();
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:100'],
+            'category' => ['nullable', 'string', 'max:100'],
+            'subcategory' => ['nullable', 'string', 'max:100'],
+            'brand' => ['nullable', 'string', 'max:100'],
+            'sizes' => ['nullable', 'string', 'max:200'],
+            'colors' => ['nullable', 'string', 'max:200'],
+            'max_price' => ['nullable', 'numeric', 'min:0'],
+            'sort' => ['nullable', 'in:featured,newest,low,high,rated'],
+        ]);
 
-        $categories = collect($products)
-            ->groupBy('cat')
-            ->map(fn ($categoryProducts) => [
-                'count' => $categoryProducts->count(),
-                'subcategories' => $categoryProducts->groupBy('subcat')->map->count()->all(),
-            ])
-            ->all();
-        $brands = collect($products)->groupBy('brand')->map->count()->all();
-        $prices = collect($products)->pluck('price')->filter();
-        $minPrice = max(0, (int) floor((float) ($prices->min() ?: 0)));
-        $maxPrice = max($minPrice, (int) ceil((float) ($prices->max() ?: 120)));
+        [$minPrice, $maxPrice] = $this->products->priceRange();
+
+        $filters = [
+            'q' => $validated['q'] ?? null,
+            'category' => $validated['category'] ?? null,
+            'subcategory' => $validated['subcategory'] ?? null,
+            'brand' => $validated['brand'] ?? null,
+            'sizes' => array_values(array_filter(explode(',', (string) ($validated['sizes'] ?? '')))),
+            'colors' => array_values(array_filter(explode(',', (string) ($validated['colors'] ?? '')))),
+            'sale' => $request->boolean('sale'),
+            'new' => $request->boolean('new'),
+            'best' => $request->boolean('best'),
+            'max_price' => $validated['max_price'] ?? null,
+            'sort' => $validated['sort'] ?? 'featured',
+        ];
 
         return view('frontend.shop.index', [
-            'products' => $products->all(),
-            'categories' => $categories,
-            'brands' => $brands,
-            'sizes' => $this->products->sizes($products),
+            'products' => $this->products->filteredProducts($filters),
+            'catalogTotal' => $this->products->activeCount(),
+            'categories' => $this->products->categoryFacets(),
+            'brands' => $this->products->brandFacets(),
+            'sizes' => $this->products->sizes(),
             'colors' => $this->products->colors(),
             'minPrice' => $minPrice,
             'maxPrice' => $maxPrice,
+            'filters' => $filters,
             'seo' => [
                 'title' => 'Shop all — '.$this->settings->siteName(),
                 'description' => 'Browse the full collection — premium heavyweight tees, hoodies and streetwear essentials.',
                 'canonical' => route('frontend.shop.index'),
             ],
+        ]);
+    }
+
+    /**
+     * Live product search for the header dropdown (JSON). Debounced client-side.
+     */
+    public function search(Request $request): JsonResponse
+    {
+        $validated = $request->validate(['q' => ['nullable', 'string', 'max:100']]);
+
+        return response()->json([
+            'results' => $this->products->searchSuggestions((string) ($validated['q'] ?? '')),
         ]);
     }
 

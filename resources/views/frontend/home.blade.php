@@ -2,6 +2,26 @@
 @section('title', 'T-Shirt Shop — Premium Streetwear Tees')
 
 @push('head')
+    @php
+        $orgName = app(\App\Services\Admin\SettingService::class)->siteName();
+    @endphp
+    <script type="application/ld+json">{!! json_encode([
+        '@context' => 'https://schema.org',
+        '@type' => 'Organization',
+        'name' => $orgName,
+        'url' => route('frontend.home'),
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+    <script type="application/ld+json">{!! json_encode([
+        '@context' => 'https://schema.org',
+        '@type' => 'WebSite',
+        'name' => $orgName,
+        'url' => route('frontend.home'),
+        'potentialAction' => [
+            '@type' => 'SearchAction',
+            'target' => route('frontend.shop.index').'?q={search_term_string}',
+            'query-input' => 'required name=search_term_string',
+        ],
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
     <style>
         .ut-coll-grid {
             display: grid;
@@ -152,7 +172,7 @@
                     <a href="{{ route('frontend.shop.index') }}" class="ut-coll-cell" data-reveal
                         style="position:relative;border-radius:var(--r-lg);overflow:hidden;{{ $i === 0 ? 'grid-row:span 2;' : '' }}">
                         @if (!empty($c['image_url']))
-                            <img src="{{ $c['image_url'] }}" alt="{{ $c['name'] }}"
+                            <img src="{{ $c['image_url'] }}" alt="{{ $c['name'] }}" loading="lazy" decoding="async"
                                 class="ut-coll-image"
                                 style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
                         @else
@@ -312,7 +332,7 @@
                 @foreach ($instagramTiles as $tile)
                     <div class="ut-insta-cell" data-reveal>
                         @if (!empty($tile['image_url']))
-                            <img src="{{ $tile['image_url'] }}" alt=""
+                            <img src="{{ $tile['image_url'] }}" alt="" loading="lazy" decoding="async"
                                 style="width:100%;aspect-ratio:1;object-fit:cover">
                         @else
                             <x-frontend.ph :tint="$tile['tint']" :dark="$tile['dark']" style="aspect-ratio:1" />

@@ -14,6 +14,7 @@
                 <p class="section-kicker">{{ __('Permission table') }}</p>
                 <h3>{{ __('All Permissions') }}</h3>
             </div>
+            
             <a href="{{ route('admin.permissions.create') }}" class="premium-button premium-button--dark">
                 <i class="fa-solid fa-plus"></i>
                 <span>{{ __('New Permission') }}</span>
@@ -26,6 +27,7 @@
                     <x-slot:left>
                         <x-per-page-selector :current="$perPage" />
                     </x-slot:left>
+
                     <x-slot:right>
                         <x-search-input name="search" placeholder="{{ __('Search permissions...') }}" />
                     </x-slot:right>
@@ -41,6 +43,7 @@
                         <th class="text-end">{{ __('Actions') }}</th>
                     </tr>
                 </thead>
+                
                 <tbody>
                     @forelse ($permissions as $permission)
                         <tr>

@@ -29,6 +29,46 @@
 </style>
 @endpush
 
+@push('head')
+@php
+    $ldCurrency = app(\App\Services\Admin\SettingService::class)->currency()['code'] ?? 'USD';
+    $ldUrl = $product['url'] ?? route('frontend.shop.show', $product['slug']);
+    $ldProduct = array_filter([
+        '@context' => 'https://schema.org/',
+        '@type' => 'Product',
+        'name' => $product['name'],
+        'image' => array_values(array_filter([$product['image_url'] ?? null])),
+        'description' => \Illuminate\Support\Str::limit(trim(strip_tags((string) ($product['desc'] ?? ''))), 300),
+        'brand' => ['@type' => 'Brand', 'name' => $product['brand'] ?? config('app.name')],
+        'offers' => [
+            '@type' => 'Offer',
+            'url' => $ldUrl,
+            'priceCurrency' => $ldCurrency,
+            'price' => number_format((float) $product['price'], 2, '.', ''),
+            'availability' => 'https://schema.org/InStock',
+        ],
+    ]);
+    if (($product['reviews'] ?? 0) > 0 && ($product['rating'] ?? 0) > 0) {
+        $ldProduct['aggregateRating'] = [
+            '@type' => 'AggregateRating',
+            'ratingValue' => (string) $product['rating'],
+            'reviewCount' => (int) $product['reviews'],
+        ];
+    }
+    $ldBreadcrumb = [
+        '@context' => 'https://schema.org/',
+        '@type' => 'BreadcrumbList',
+        'itemListElement' => [
+            ['@type' => 'ListItem', 'position' => 1, 'name' => __('Home'), 'item' => route('frontend.home')],
+            ['@type' => 'ListItem', 'position' => 2, 'name' => __('Shop'), 'item' => route('frontend.shop.index')],
+            ['@type' => 'ListItem', 'position' => 3, 'name' => $product['name'], 'item' => $ldUrl],
+        ],
+    ];
+@endphp
+<script type="application/ld+json">{!! json_encode($ldProduct, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+<script type="application/ld+json">{!! json_encode($ldBreadcrumb, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+@endpush
+
 @section('content')
 @php
     $off = $product['was'] ? round((1 - $product['price'] / $product['was']) * 100) : 0;
@@ -37,7 +77,7 @@
     $productImages = $product['images'] ?? [];
     $mainImage = $productImages[0] ?? $product['image_url'] ?? null;
 @endphp
-<div class="anim-up" data-product-scope style="padding-bottom:90px">
+<div class="anim-up" data-product-scope data-variant-index='@json($product['variant_index'] ?? [])' style="padding-bottom:90px">
     <div class="ut-wrap" style="padding-top:28px">
         <div class="ut-pdp">
             {{-- GALLERY --}}
@@ -56,7 +96,7 @@
                         @forelse($productImages as $i => $image)
                             <button type="button" class="ut-pdp-thumb" onclick="setThumb(this,{{ $i }}, @js($image))"
                                 style="outline:{{ $i === 0 ? '2.5px solid var(--ink)' : '1px solid var(--border)' }}">
-                                <img src="{{ $image }}" alt="{{ $product['name'] }} view {{ $i + 1 }}">
+                                <img src="{{ $image }}" alt="{{ $product['name'] }} view {{ $i + 1 }}" loading="lazy" decoding="async">
                             </button>
                         @empty
                             @for($i = 0; $i < $product['gallery']; $i++)
@@ -85,8 +125,8 @@
                     <span class="ut-tag ut-tag-success"><span style="width:6px;height:6px;border-radius:6px;background:var(--success);display:inline-block"></span> {{ __('In stock') }}</span>
                 </div>
                 <div class="ut-row" style="gap:12px;margin-bottom:24px">
-                    <span style="font-family:var(--font-head);font-weight:700;font-size:32px">{{ money($product['price']) }}</span>
-                    @if($product['was'])<span class="strike" style="font-size:20px">{{ money($product['was']) }}</span><span class="ut-tag ut-tag-sale">-{{ $off }}%</span>@endif
+                    <span style="font-family:var(--font-head);font-weight:700;font-size:32px">{{ dprice($product['price']) }}</span>
+                    @if($product['was'])<span class="strike" style="font-size:20px">{{ dprice($product['was']) }}</span><span class="ut-tag ut-tag-sale">-{{ $off }}%</span>@endif
                 </div>
 
                 {{-- color --}}
@@ -219,7 +259,7 @@
                 </div>
             </div>
             <div class="ut-row" style="gap:14px">
-                <span class="ut-hide-mobile" style="font-family:var(--font-head);font-weight:700;font-size:20px">{{ money($product['price']) }}</span>
+                <span class="ut-hide-mobile" style="font-family:var(--font-head);font-weight:700;font-size:20px">{{ dprice($product['price']) }}</span>
                 <button type="button" class="ut-btn ut-btn-accent ut-btn-lg" data-add-to-cart data-require-size
                         data-id="{{ $product['id'] }}" data-name="{{ $product['name'] }}" data-price="{{ $product['price'] }}" data-tint="{{ $product['tint'] }}" data-image="{{ $product['image_url'] ?? '' }}">
                     <x-frontend.icon n="bag" :size="17" /> {{ __('Add to bag') }}
@@ -254,8 +294,9 @@
         if(itemLabel) itemLabel.textContent = qty === 1 ? '{{ __('item') }}' : '{{ __('items') }}';
         if(total){
             var unit = Number(total.getAttribute('data-unit-price') || 0);
-            var cur = window.UT_CURRENCY || { symbol: '$', position: 'before' };
-            var amt = (unit * qty).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            var cur = window.UT_CURRENCY || { symbol: '$', position: 'before', rate: 1, decimals: 2 };
+            var dec = cur.decimals != null ? cur.decimals : 2;
+            var amt = (unit * qty * (cur.rate || 1)).toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec });
             total.textContent = cur.position === 'after' ? amt + cur.symbol : cur.symbol + amt;
         }
     }
