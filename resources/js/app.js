@@ -328,4 +328,120 @@ Alpine.data('commandPalette', (url) => ({
     },
 }));
 
+/**
+ * AJAX form submit for any <form data-ajax-form> (e.g. admin settings tabs).
+ * Keeps the page from reloading, validates [data-required] fields with a toastr
+ * alert, sends multipart FormData (so file uploads + method spoofing survive),
+ * and surfaces server 422 errors inline + on the tab that owns the first error.
+ */
+(function () {
+    // Convert a Laravel error key (payment_methods.0.name) to an input name
+    // (payment_methods[0][name]) so we can locate the field in the DOM.
+    function errorKeyToName(key) {
+        const parts = key.split('.');
+        return parts[0] + parts.slice(1).map((p) => `[${p}]`).join('');
+    }
+
+    // Switch to the settings tab that contains the given element, if any.
+    function activateTabFor(el) {
+        const panel = el.closest('[data-tab-panel]');
+        if (!panel) return;
+        const key = panel.getAttribute('data-tab-panel');
+        const navBtn = document.querySelector(`[data-tab="${key}"]`);
+        if (navBtn) navBtn.click();
+    }
+
+    function clearErrors(form) {
+        form.querySelectorAll('.ajax-error').forEach((el) => el.remove());
+        form.querySelectorAll('.is-invalid').forEach((el) => el.classList.remove('is-invalid'));
+    }
+
+    function markError(input, message) {
+        input.classList.add('is-invalid');
+        if (message) {
+            const p = document.createElement('p');
+            p.className = 'ajax-error text-red-500 text-sm mt-1.5';
+            p.textContent = message;
+            (input.closest('.form-field') || input.parentNode).appendChild(p);
+        }
+    }
+
+    document.addEventListener('submit', async function (e) {
+        const form = e.target;
+        if (!(form instanceof HTMLFormElement) || !form.hasAttribute('data-ajax-form')) return;
+
+        e.preventDefault();
+        clearErrors(form);
+
+        // Client-side required check — data-required avoids native validation
+        // choking on fields inside hidden (display:none) tab panels.
+        const missing = [];
+        form.querySelectorAll('[data-required]').forEach((el) => {
+            if (el.disabled) return;
+            if (!String(el.value ?? '').trim()) missing.push(el);
+        });
+
+        if (missing.length) {
+            missing.forEach((el) => markError(el, ''));
+            const first = missing[0];
+            activateTabFor(first);
+            const label = first.getAttribute('data-required-label');
+            window.toastr?.error(label ? `${label} is required.` : 'Please fill in all required fields.');
+            setTimeout(() => first.focus(), 60);
+            return;
+        }
+
+        const button = form.querySelector('[type="submit"]');
+        const originalHtml = button ? button.innerHTML : '';
+        if (button) {
+            button.disabled = true;
+            button.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ' + (button.dataset.loadingText || 'Saving…');
+        }
+
+        try {
+            const res = await fetch(form.action, {
+                method: 'POST', // real verb comes from the _method field inside FormData
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                },
+                body: new FormData(form),
+            });
+
+            if (res.ok) {
+                const data = await res.json().catch(() => ({}));
+                window.toastr?.success(data.message || 'Saved successfully.');
+            } else if (res.status === 422) {
+                const data = await res.json().catch(() => ({}));
+                const errors = data.errors || {};
+                let firstInput = null;
+                Object.keys(errors).forEach((key) => {
+                    const name = errorKeyToName(key);
+                    const input = form.querySelector(`[name="${name}"]`);
+                    if (input) {
+                        markError(input, errors[key][0]);
+                        if (!firstInput) firstInput = input;
+                    }
+                });
+                if (firstInput) {
+                    activateTabFor(firstInput);
+                    setTimeout(() => firstInput.focus(), 60);
+                }
+                window.toastr?.error(data.message || 'Please fix the highlighted fields.');
+            } else {
+                window.toastr?.error('Something went wrong. Please try again.');
+            }
+        } catch (error) {
+            console.error('Settings save failed.', error);
+            window.toastr?.error('Network error. Please try again.');
+        } finally {
+            if (button) {
+                button.disabled = false;
+                button.innerHTML = originalHtml;
+            }
+        }
+    });
+})();
+
 Alpine.start();

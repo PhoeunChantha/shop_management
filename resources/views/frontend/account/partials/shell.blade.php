@@ -16,7 +16,11 @@
 <div class="ut-wrap anim-up" style="padding-top:30px">
     {{-- profile header --}}
     <div class="ut-card" style="padding:24px;margin-bottom:26px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">
-        <span style="width:64px;height:64px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-family:var(--font-head);font-weight:700;font-size:24px;flex-shrink:0">{{ $u['first'][0] }}</span>
+        @if(!empty($u['avatar']))
+            <img src="{{ $u['avatar'] }}" alt="{{ $u['first'] }}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;flex-shrink:0">
+        @else
+            <span style="width:64px;height:64px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-family:var(--font-head);font-weight:700;font-size:24px;flex-shrink:0">{{ $u['first'][0] }}</span>
+        @endif
         <div style="flex:1;min-width:160px">
             <h1 style="font-size:26px">{{ __('Hi') }}, {{ $u['first'] }}</h1>
             <p class="muted" style="font-size:14px">{{ $u['email'] }}</p>

@@ -2,16 +2,16 @@
 
 ## Project Structure & Module Organization
 
-This is a Laravel 13 / PHP 8.3 e-commerce app. Admin is the active build surface; storefront files are mostly view stubs unless a task explicitly targets frontend work.
+This is a Laravel 13 / PHP 8.3 e-commerce app with **two fully built surfaces**: a deep admin panel and a complete storefront (listing, detail, cart, checkout, ABA PayWay payments, wallet, wishlist, reviews, addresses, orders, invoices). See [CLAUDE.md](CLAUDE.md) for the canonical architecture notes.
 
-- `app/Http/Controllers/Backend`: admin controllers.
-- `app/Services`: business logic, query workflows, exports, bulk actions, and multi-step persistence.
-- `app/Models`, `app/Policies`, `app/Enums`: domain models, authorization, and typed state.
-- `resources/views/admin`: admin Blade screens and partials.
-- `resources/css/app.css`, `resources/js/app.js`: Vite-built admin styling and shared JS.
-- `routes/web.php`: frontend and admin route groups.
+- `app/Http/Controllers/Backend` + `app/Http/Controllers/Frontend`: admin and storefront controllers.
+- `app/Services/Admin` + `app/Services/Frontend`: business logic split by surface. Query composition, exports, bulk mutations, transactions, media workflows, and cross-model logic live here, not in controllers.
+- `app/Models`, `app/Policies`, `app/Enums`: domain models, policy-based authorization, and typed state.
+- `resources/views/admin`, `resources/views/frontend`: Blade screens/partials per surface.
+- `resources/css/app.css`, `resources/js/app.js`: Vite-built styling and shared JS (both surfaces).
+- `routes/web.php`: `frontend.` and `admin.` route groups; auth scaffolding in `routes/auth.php`.
 - `tests/Feature`: Pest feature tests using `RefreshDatabase`.
-- `docs/`: roadmap and admin CRUD guidance.
+- `docs/`: [ROADMAP.md](docs/ROADMAP.md) (build plan), [ADMIN-CRUD-GUIDELINE.md](docs/ADMIN-CRUD-GUIDELINE.md) (the house CRUD pattern), [ECOMMERCE_IMPROVEMENT_PROPOSALS.md](docs/ECOMMERCE_IMPROVEMENT_PROPOSALS.md) (prioritized backlog).
 
 ## Build, Test, and Development Commands
 
@@ -26,9 +26,9 @@ This is a Laravel 13 / PHP 8.3 e-commerce app. Admin is the active build surface
 
 ## Coding Style & Naming Conventions
 
-Use PSR-4 namespaces under `App\`. PHP code should use typed returns, constructor property promotion where useful, and Laravel conventions. Controllers should stay thin: validate, authorize, call a service, and return a response. Put query composition, exports, bulk mutations, transactions, image/media workflows, and cross-model logic in `app/Services`.
+Use PSR-4 namespaces under `App\`. PHP code should use typed returns, constructor property promotion where useful, and Laravel conventions. Controllers should stay thin: validate, authorize, call a service, and return a response. Put query composition, exports, bulk mutations, transactions, image/media workflows, and cross-model logic in `app/Services/Admin` or `app/Services/Frontend`.
 
-Admin resources follow `Backend\FooController`, `StoreFooRequest`, `UpdateFooRequest`, `FooPolicy`, and `resources/views/admin/foos/*`. Reuse shared Blade components instead of hand-rolling table/filter UI.
+Admin resources follow `Backend\FooController`, `BaseFooRequest`/`StoreFooRequest`/`UpdateFooRequest`, `FooPolicy`, and `resources/views/admin/foos/*` — see [docs/ADMIN-CRUD-GUIDELINE.md](docs/ADMIN-CRUD-GUIDELINE.md). Reuse shared Blade components instead of hand-rolling table/filter UI.
 
 ## Testing Guidelines
 
@@ -40,4 +40,4 @@ Recent history uses Conventional Commit style, for example `feat: add activity l
 
 ## Security & Configuration Tips
 
-Do not commit `.env`, generated secrets, or uploaded media. Admin authorization should use policies and seeded spatie permissions; avoid adding new route-level role middleware unless matching existing Roles/Permissions behavior.
+Do not commit `.env`, generated secrets, or uploaded media. Admin authorization uses policies — each `FooPolicy` extends `AdminRolePolicy` with a `protected string $subject` (e.g. `'products'`) and gates `viewAny`/`view`/`create`/`update`/`delete` against `{action} {subject}` permissions seeded in `RolePermissionSeeder`. Add route-level role/permission middleware only where the existing Roles/Permissions routes already do.

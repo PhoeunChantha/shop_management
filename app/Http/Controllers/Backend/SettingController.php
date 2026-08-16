@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateSettingsRequest;
 use App\Models\Setting;
 use App\Services\Admin\SettingService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -47,14 +48,21 @@ final class SettingController extends Controller
         ]);
     }
 
-    public function update(UpdateSettingsRequest $request): RedirectResponse
+    public function update(UpdateSettingsRequest $request): RedirectResponse|JsonResponse
     {
         $this->authorize('update', Setting::class);
 
         $this->settings->save($request->validated());
 
+        $message = __('Settings updated successfully!');
+
+        // AJAX save: no page reload — the form is submitted via fetch.
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => $message]);
+        }
+
         return redirect()
             ->route('admin.settings.index')
-            ->with('success', __('Settings updated successfully!'));
+            ->with('success', $message);
     }
 }

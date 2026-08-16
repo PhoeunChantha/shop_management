@@ -2,66 +2,19 @@
     <x-slot name="header">
         <div>
             <p class="header-kicker mb-1">{{ __('Analytics') }}</p>
-            <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('Finance Reports') }}</h2>
+            <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('Reports Overview') }}</h2>
         </div>
     </x-slot>
 
-    <div class="admin-page finance-report-page">
-        <div class="page-section-header finance-report-heading">
-            <div>
-                <p class="section-kicker">{{ __('Financial Control') }}</p>
-                <h3>Reports & Exports</h3>
-            </div>
-            <div class="finance-report-export-group">
-                <a href="{{ route('admin.reports.export', ['type' => 'sales'] + request()->query()) }}" class="ghost-button ghost-button--panel">
-                    <i class="fa-solid fa-file-csv"></i><span>{{ __('Sales') }}</span>
-                </a>
-                <a href="{{ route('admin.reports.export', ['type' => 'products'] + request()->query()) }}" class="ghost-button ghost-button--panel">
-                    <i class="fa-solid fa-file-csv"></i><span>{{ __('Products') }}</span>
-                </a>
-                <a href="{{ route('admin.reports.export', ['type' => 'customers'] + request()->query()) }}" class="premium-button premium-button--dark">
-                    <i class="fa-solid fa-file-export"></i><span>{{ __('Customer CSV') }}</span>
-                </a>
-            </div>
-        </div>
-
-        <form method="GET" action="{{ route('admin.reports.index') }}" class="finance-report-filter">
-            <label class="finance-report-filter__range">
-                <span>{{ __('Date range') }}</span>
-                <div class="daterange-control finance-daterange-control">
-                    <i class="fa-solid fa-calendar-days"></i>
-                    <input type="text" class="form-input" data-daterange data-daterange-from="start_date" data-daterange-to="end_date" placeholder="{{ __('Select report range') }}" readonly>
-                    <input type="hidden" name="start_date" value="{{ $filters['start_date'] }}">
-                    <input type="hidden" name="end_date" value="{{ $filters['end_date'] }}">
-                </div>
-            </label>
-            <label>
-                <span>{{ __('Order status') }}</span>
-                <select name="status">
-                    <option value="">{{ __('All statuses') }}</option>
-                    @foreach ($orderStatuses as $value => $label)
-                        <option value="{{ $value }}" @selected(($filters['status'] ?? null) === $value)>{{ $label }}</option>
-                    @endforeach
-                </select>
-            </label>
-            <label>
-                <span>{{ __('Payment status') }}</span>
-                <select name="payment_status">
-                    <option value="">{{ __('All payments') }}</option>
-                    @foreach ($paymentStatuses as $value => $label)
-                        <option value="{{ $value }}" @selected(($filters['payment_status'] ?? null) === $value)>{{ $label }}</option>
-                    @endforeach
-                </select>
-            </label>
-            <div class="finance-report-filter__actions">
-                <a href="{{ route('admin.reports.index') }}" class="ghost-button">
-                    <i class="fa-solid fa-rotate-left"></i><span>{{ __('Reset') }}</span>
-                </a>
-                <button type="submit" class="filter-button">
-                    <i class="fa-solid fa-filter"></i><span>{{ __('Apply') }}</span>
-                </button>
-            </div>
-        </form>
+    <x-admin.report-shell
+        active="overview"
+        :title="__('Reports Overview')"
+        :filters="$filters"
+        :action="route('admin.reports.index')"
+        show-status
+        show-payment
+        :order-statuses="$orderStatuses"
+        :payment-statuses="$paymentStatuses">
 
         <div class="finance-report-rail">
             <div>
@@ -230,5 +183,5 @@
                 @endforelse
             </div>
         </section>
-    </div>
+    </x-admin.report-shell>
 </x-app-layout>

@@ -8,38 +8,36 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Backend\Concerns\StreamsReportCsv;
 use App\Http\Controllers\Controller;
-use App\Services\Admin\FinanceReportService;
+use App\Services\Admin\SalesReportService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
-final class FinanceReportController extends Controller
+final class SalesReportController extends Controller
 {
     use StreamsReportCsv;
 
     public function __construct(
-        private readonly FinanceReportService $reports,
+        private readonly SalesReportService $reports,
     ) {}
 
     public function index(Request $request): View
     {
         $filters = $this->validatedFilters($request);
 
-        return view('admin.reports.finance', array_merge($this->reports->overview($filters), [
+        return view('admin.reports.sales', array_merge($this->reports->report($filters), [
             'orderStatuses' => OrderStatus::options(),
             'paymentStatuses' => PaymentStatus::options(),
         ]));
     }
 
-    public function export(string $type, Request $request): Response
+    public function export(Request $request): Response
     {
-        abort_unless(in_array($type, ['sales', 'products', 'customers', 'purchases'], true), 404);
-
         return $this->streamExport(
-            $this->reports->exportRows($type, $this->validatedFilters($request)),
-            'Overview — '.ucfirst($type),
-            'finance-'.$type.'-report',
+            $this->reports->exportRows($this->validatedFilters($request)),
+            'Sales Report',
+            'sales-report',
             (string) $request->query('format', 'csv'),
         );
     }

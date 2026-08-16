@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use App\Models\WalletTopup;
 use App\Services\Frontend\AccountService;
+use App\Services\Frontend\CheckoutService;
 use App\Services\Frontend\InvoiceService;
 use App\Services\Frontend\PaywayService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
@@ -18,6 +20,7 @@ class AccountController extends Controller
 {
     public function __construct(
         private readonly AccountService $account,
+        private readonly CheckoutService $checkout,
     ) {}
 
     public function dashboard(): View
@@ -103,31 +106,57 @@ class AccountController extends Controller
     {
         $user = $request->user();
 
+        // Enabled online + manual methods from Settings (wallet can't top up wallet).
+        $methods = collect($this->checkout->paymentMethods())
+            ->reject(fn (array $m): bool => ($m['type'] ?? '') === 'wallet')
+            ->values()
+            ->all();
+
         return view('frontend.account.wallet', [
             'user' => $this->account->user(),
             'balance' => (float) $user->wallet_balance,
             'transactions' => $user->walletTransactions()->with('order:id,order_number')->limit(40)->get(),
+            'topupMethods' => $methods,
+            'pendingTopups' => WalletTopup::where('user_id', $user->id)
+                ->where('status', 'pending')
+                ->where('method_type', 'manual')
+                ->latest()
+                ->get(),
         ]);
     }
 
     public function walletTopup(Request $request): RedirectResponse
     {
+        $methods = collect($this->checkout->paymentMethods())
+            ->reject(fn (array $m): bool => ($m['type'] ?? '') === 'wallet');
+
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'min:1', 'max:100000'],
+            'payment_method' => ['required', 'string', Rule::in($methods->pluck('code')->all())],
         ]);
 
-        if (! app(PaywayService::class)->configured()) {
+        $method = $methods->firstWhere('code', $data['payment_method']);
+        $isOnline = ($method['type'] ?? 'online') === 'online';
+
+        if ($isOnline && ! app(PaywayService::class)->configured()) {
             return back()->with('error', __('Online top-up is not available right now.'));
         }
 
         $topup = WalletTopup::create([
             'user_id' => $request->user()->id,
             'tran_id' => 'WT'.now()->format('ymdHis').Str::upper(Str::random(4)),
+            'payment_method' => $method['code'],
+            'method_type' => $isOnline ? 'online' : 'manual',
             'amount' => round((float) $data['amount'], 2),
             'status' => 'pending',
         ]);
 
-        return redirect()->route('frontend.payment.topup.pay', $topup);
+        // Online → gateway redirect. Manual → wait for admin approval before crediting.
+        if ($isOnline) {
+            return redirect()->route('frontend.payment.topup.pay', $topup);
+        }
+
+        return redirect()->route('frontend.account.wallet')->with('success', __('Top-up request submitted. Your balance will be credited once we confirm your payment.'));
     }
 
     public function wishlist(): View

@@ -41,7 +41,7 @@
         <section class="premium-card form-panel settings-layout">
             <aside class="settings-tabs">
                 @foreach ($schema as $groupKey => $group)
-                    <button type="button" class="settings-tab" :class="{ 'is-active': tab === '{{ $groupKey }}' }"
+                    <button type="button" class="settings-tab" data-tab="{{ $groupKey }}" :class="{ 'is-active': tab === '{{ $groupKey }}' }"
                         @click="tab = '{{ $groupKey }}'">
                         <i class="fa-solid {{ $group['icon'] }}"></i>
                         <span>{{ $group['label'] }}</span>
@@ -50,7 +50,8 @@
             </aside>
 
             <div class="settings-content">
-                <form method="POST" action="{{ route('admin.settings.update') }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('admin.settings.update') }}" enctype="multipart/form-data"
+                    id="settings-form" data-ajax-form>
                     @csrf
                     @method('PUT')
 
@@ -65,6 +66,7 @@
                                 }
                             @endphp
                             <div class="form-panel-body grid-cols-1 sm:grid-cols-2 gap-x-5"
+                                data-tab-panel="{{ $groupKey }}"
                                 x-show="tab === '{{ $groupKey }}'" x-cloak
                                 x-data="{
                                     colors: @js($colorState),
@@ -100,6 +102,7 @@
                             </div>
                         @else
                         <div class="form-panel-body {{ ($group['type'] ?? 'fields') === 'fields' ? 'grid-cols-1 sm:grid-cols-2 gap-x-5' : '' }}"
+                            data-tab-panel="{{ $groupKey }}"
                             x-show="tab === '{{ $groupKey }}'" x-cloak>
                             @if (($group['type'] ?? 'fields') === 'fields')
                                 @foreach ($group['fields'] as $fieldKey => $field)
@@ -270,9 +273,10 @@
 
                                                     <div class="payment-method-grid">
                                                         <div class="form-field">
-                                                            <label>{{ __('Name') }}</label>
+                                                            <label>{{ __('Name') }} <span class="text-red-500">*</span></label>
                                                             <input type="text" class="form-input" :name="`payment_methods[${i}][name]`"
-                                                                x-model="method.name" placeholder="{{ __('Card') }}">
+                                                                x-model="method.name" placeholder="{{ __('Card') }}"
+                                                                data-required data-required-label="{{ __('Payment method name') }}">
                                                         </div>
                                                         <div class="form-field">
                                                             <label>{{ __('Code') }}</label>

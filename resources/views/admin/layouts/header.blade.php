@@ -37,7 +37,7 @@
                 <span style="font-size:12px;">{{ $curLoc['label'] }}</span>
                 <i class="fa-solid fa-chevron-down text-secondary" style="font-size:8px;"></i>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width:160px;">
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="min-width:97px;">
                 @foreach($adminLocales as $code => $loc)
                     <li>
                         <a class="dropdown-item d-flex align-items-center gap-2 {{ $locale === $code ? 'active' : '' }}" href="{{ route('lang.switch', $code) }}">

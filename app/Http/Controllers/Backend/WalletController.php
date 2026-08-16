@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Backend;
 use App\Exceptions\WalletException;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\WalletTopup;
 use App\Services\Admin\WalletService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class WalletController extends Controller
@@ -43,7 +45,61 @@ class WalletController extends Controller
             'customers' => $customers,
             'totalBalance' => (float) User::role('customer')->sum('wallet_balance'),
             'perPage' => $perPage,
+            'pendingTopups' => WalletTopup::with('user:id,name,email')
+                ->where('status', 'pending')
+                ->where('method_type', 'manual')
+                ->latest()
+                ->get(),
         ]);
+    }
+
+    public function approveTopup(Request $request, WalletTopup $topup): RedirectResponse
+    {
+        abort_unless($request->user()->can('edit wallets'), 403);
+
+        DB::transaction(function () use ($request, $topup): void {
+            $locked = WalletTopup::whereKey($topup->id)->lockForUpdate()->first();
+
+            // Only a still-pending manual request can be approved (idempotent).
+            if (! $locked || $locked->status !== 'pending' || $locked->method_type !== 'manual') {
+                return;
+            }
+
+            $this->wallet->credit(
+                $locked->user,
+                (float) $locked->amount,
+                'topup',
+                'Manual top-up '.$locked->tran_id.' (approved)',
+            );
+
+            $locked->update([
+                'status' => 'completed',
+                'approved_by' => $request->user()->id,
+                'reviewed_at' => now(),
+            ]);
+        });
+
+        return back()->with('success', __('Top-up approved and balance credited.'));
+    }
+
+    public function rejectTopup(Request $request, WalletTopup $topup): RedirectResponse
+    {
+        abort_unless($request->user()->can('edit wallets'), 403);
+
+        $data = $request->validate([
+            'note' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        if ($topup->status === 'pending' && $topup->method_type === 'manual') {
+            $topup->update([
+                'status' => 'failed',
+                'admin_note' => $data['note'] ?? null,
+                'approved_by' => $request->user()->id,
+                'reviewed_at' => now(),
+            ]);
+        }
+
+        return back()->with('success', __('Top-up request rejected.'));
     }
 
     public function adjust(Request $request, User $user): RedirectResponse

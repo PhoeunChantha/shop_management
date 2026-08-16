@@ -78,6 +78,11 @@ class PaymentController extends Controller
     {
         abort_unless($topup->user_id === $request->user()->id, 403);
 
+        // Manual top-ups are settled by admin approval, not the gateway.
+        if ($topup->method_type === 'manual') {
+            return redirect()->route('frontend.account.wallet');
+        }
+
         if (! $this->payway->configured()) {
             return redirect()->route('frontend.account.wallet')->with('error', __('Online top-up is not available right now.'));
         }

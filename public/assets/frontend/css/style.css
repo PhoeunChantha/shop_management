@@ -1262,7 +1262,7 @@ input[type=number]::-webkit-inner-spin-button {
 }
 
 .ut-lang-menu {
-  min-width: 178px;
+  min-width: 107px !important;
 }
 
 .ut-lang-menu a {

@@ -88,10 +88,23 @@
                 </div>
             @endif
             <div class="dropdown ut-account-dropdown">
-                <button class="icon-btn ut-header-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ __('Account') }}"><x-frontend.icon n="user" :size="19" /></button>
+                @auth
+                    @php($avatarUrl = auth()->user()->avatarUrl())
+                @endauth
+                <button class="icon-btn ut-header-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ __('Account') }}">
+                    @auth
+                        @if($avatarUrl)
+                            <img src="{{ $avatarUrl }}" alt="{{ auth()->user()->name }}" class="ut-account-avatar" style="width:24px;height:24px;border-radius:50%;object-fit:cover;display:block">
+                        @else
+                            <x-frontend.icon n="user" :size="19" />
+                        @endif
+                    @else
+                        <x-frontend.icon n="user" :size="19" />
+                    @endauth
+                </button>
                 <div class="dropdown-menu dropdown-menu-end ut-account-menu">
                     @auth
-                        <div class="ut-account-menu-title">{{ __('Your Urban Thread') }}</div>
+                        <div class="ut-account-menu-title" title="{{ auth()->user()->email }}">{{ auth()->user()->name }}</div>
                         <a href="{{ route('frontend.account.dashboard') }}">{{ __('My account') }}</a><a href="{{ route('frontend.account.orders') }}">{{ __('Orders & tracking') }}</a><a href="{{ route('frontend.account.wishlist') }}">{{ __('Saved pieces') }}</a>
                         <form method="POST" action="{{ route('frontend.logout') }}" class="d-none">@csrf</form>
                         <a href="{{ route('frontend.logout') }}" onclick="event.preventDefault(); this.closest('.ut-account-menu').querySelector('form').submit();">{{ __('Sign out') }}</a>

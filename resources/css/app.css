@@ -2603,6 +2603,33 @@ html.dark .bulk-bar {
     border-color: #e4e7ec;
 }
 
+.status-pill--warning {
+    color: #b45309;
+    background: rgba(245, 158, 11, .12);
+    border: 1px solid rgba(245, 158, 11, .24);
+}
+
+.status-pill--danger {
+    color: #b42318;
+    background: rgba(240, 68, 56, .12);
+    border: 1px solid rgba(240, 68, 56, .24);
+}
+
+/* Report sub-navigation — reuses the export-group flex row, adds breathing room. */
+.finance-report-tabs {
+    margin-bottom: 4px;
+}
+
+/* AJAX form validation — highlight fields flagged client-side or by a 422. */
+.form-input.is-invalid,
+.is-invalid .form-input,
+input.is-invalid,
+select.is-invalid,
+textarea.is-invalid {
+    border-color: #f04438 !important;
+    box-shadow: 0 0 0 3px rgba(240, 68, 56, .12);
+}
+
 .empty-pill {
     color: #667085;
     background: #f2f4f7;
@@ -8820,33 +8847,6 @@ html.dark .ms-option:hover {
     gap: 12px;
 }
 
-.dash-segment {
-    display: inline-flex;
-    padding: 4px;
-    gap: 2px;
-    border-radius: 12px;
-    background: color-mix(in srgb, var(--admin-line) 45%, #fff);
-    border: 1px solid var(--admin-line);
-}
-
-.dash-segment__item {
-    padding: 6px 14px;
-    border-radius: 9px;
-    font-size: 12.5px;
-    font-weight: 700;
-    color: var(--admin-muted);
-    text-decoration: none;
-    transition: all .18s ease;
-}
-
-.dash-segment__item:hover { color: var(--admin-ink); }
-
-.dash-segment__item.is-active {
-    background: #fff;
-    color: var(--admin-ink);
-    box-shadow: 0 1px 3px rgba(16, 24, 40, 0.12);
-}
-
 /* ---- Date-range period filter ---- */
 .dash-daterange { display: inline-flex; }
 
@@ -8886,15 +8886,16 @@ html.dark .dash-daterange .form-input {
     padding: 18px 18px 0;
     background: var(--admin-panel);
     border: 1px solid var(--admin-line);
-    border-radius: 18px;
+    border-radius: 16px;
     overflow: hidden;
     box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
-    transition: transform .2s ease, box-shadow .2s ease;
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
 
 .dash-kpi:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 16px 34px -18px rgba(16, 24, 40, 0.3);
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--admin-accent) 34%, var(--admin-line));
+    box-shadow: 0 10px 24px -16px rgba(16, 24, 40, 0.35);
 }
 
 .dash-kpi__top {
@@ -8956,81 +8957,32 @@ html.dark .dash-daterange .form-input {
 }
 
 /* ---- Operations queue ---- */
-.dash-ops-panel {
-    display: grid;
-    grid-template-columns: minmax(220px, .72fr) minmax(0, 1.8fr);
-    gap: 16px;
-    padding: 18px;
-    border: 1px solid rgba(15, 23, 42, .08);
-    border-radius: 22px;
-    background:
-        radial-gradient(circle at 3% 20%, rgba(20, 184, 166, .14), transparent 30%),
-        linear-gradient(135deg, rgba(255, 255, 255, .94), rgba(248, 250, 252, .82));
-    box-shadow: 0 20px 55px rgba(15, 23, 42, .07);
-}
-
-.dash-ops-panel__intro {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    min-width: 0;
-}
-
-.dash-ops-panel__icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
-    border-radius: 15px;
-    color: #0f766e;
-    background: rgba(20, 184, 166, .12);
-    border: 1px solid rgba(20, 184, 166, .22);
-    flex: 0 0 auto;
-}
-
-.dash-ops-panel__intro h3 {
-    margin: 0;
-    color: var(--admin-ink);
-    font-size: 15px;
-    font-weight: 900;
-}
-
-.dash-ops-panel__intro p {
-    margin: 3px 0 0;
-    color: var(--admin-muted);
-    font-size: 12px;
-    font-weight: 600;
-    line-height: 1.45;
-}
-
 .dash-ops-grid {
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 10px;
 }
 
 .dash-op {
-    position: relative;
     display: grid;
-    grid-template-columns: 32px minmax(0, 1fr);
+    grid-template-columns: 34px minmax(0, 1fr);
     align-items: center;
-    gap: 9px;
-    min-height: 78px;
-    padding: 12px;
-    border: 1px solid rgba(15, 23, 42, .08);
-    border-radius: 17px;
+    gap: 10px;
+    min-height: 72px;
+    padding: 12px 14px;
+    border: 1px solid var(--admin-line);
+    border-radius: 12px;
     color: inherit;
     text-decoration: none;
-    background: rgba(255, 255, 255, .74);
+    background: color-mix(in srgb, var(--admin-line) 26%, #fff);
     transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 
 .dash-op:hover {
     color: inherit;
-    transform: translateY(-2px);
-    border-color: rgba(20, 184, 166, .24);
-    box-shadow: 0 14px 32px rgba(15, 23, 42, .09);
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--admin-accent) 34%, var(--admin-line));
+    box-shadow: 0 6px 16px -10px rgba(16, 24, 40, 0.28);
 }
 
 .dash-op__icon {
@@ -9078,15 +9030,6 @@ html.dark .dash-daterange .form-input {
     text-transform: uppercase;
 }
 
-.dash-op__arrow {
-    position: absolute;
-    top: 11px;
-    right: 11px;
-    color: var(--admin-muted);
-    font-size: 10px;
-    opacity: .56;
-}
-
 /* ApexCharts containers */
 .dash-apex {
     min-height: 320px;
@@ -9101,16 +9044,18 @@ html.dark .dash-daterange .form-input {
 .dash-grid {
     display: grid;
     gap: 16px;
-    align-items: start; /* don't stretch cards to equal height */
+    align-items: stretch; /* equal-height cards keep a clean bottom edge */
 }
-.dash-grid--chart { grid-template-columns: minmax(0, 1fr) minmax(340px, 1fr); }
-.dash-grid--feeds { grid-template-columns: minmax(0, 1fr) minmax(320px, .1fr) minmax(300px, .8fr); }
+.dash-grid--chart { grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); }
+.dash-grid--feeds { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
 /* ---- Panels ---- */
 .dash-panel {
+    display: flex;
+    flex-direction: column;
     background: var(--admin-panel);
     border: 1px solid var(--admin-line);
-    border-radius: 18px;
+    border-radius: 16px;
     padding: 20px 22px;
     box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
 }
@@ -9118,6 +9063,8 @@ html.dark .dash-daterange .form-input {
 .dash-panel--compact {
     padding: 18px;
 }
+
+.dash-panel .dash-donut-split { flex: 1; }
 
 .dash-panel__head {
     display: flex;
@@ -9180,86 +9127,6 @@ html.dark .dash-daterange .form-input {
 }
 .dash-link i { font-size: 10px; transition: transform .18s ease; }
 .dash-link:hover i { transform: translateX(3px); }
-
-/* ---- Area chart ---- */
-.dash-chart {
-    position: relative;
-    height: 240px;
-}
-
-.dash-chart__svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-    overflow: visible;
-}
-
-.dash-chart__line {
-    stroke-dasharray: 1;
-    stroke-dashoffset: 1;
-    animation: dash-draw 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes dash-draw { to { stroke-dashoffset: 0; } }
-
-.dash-chart__guide {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background: color-mix(in srgb, var(--admin-ink) 22%, transparent);
-    transform: translateX(-0.5px);
-    pointer-events: none;
-}
-
-.dash-chart__dot {
-    position: absolute;
-    width: 11px;
-    height: 11px;
-    border-radius: 50%;
-    background: var(--primary-color, #4f46e5);
-    border: 2.5px solid #fff;
-    box-shadow: 0 2px 8px rgba(16, 24, 40, 0.35);
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-}
-
-.dash-chart__tip {
-    position: absolute;
-    top: -6px;
-    transform: translate(-50%, -100%);
-    background: var(--admin-ink);
-    color: #fff;
-    padding: 6px 10px;
-    border-radius: 9px;
-    white-space: nowrap;
-    pointer-events: none;
-    box-shadow: 0 8px 20px rgba(16, 24, 40, 0.3);
-    z-index: 2;
-}
-.dash-chart__tip-val { display: block; font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; }
-.dash-chart__tip-lbl { display: block; font-size: 10px; opacity: 0.7; margin-top: 1px; }
-
-.dash-chart__axis {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--admin-muted);
-}
-
-/* ---- Orders by status ---- */
-.dash-stack {
-    display: flex;
-    height: 12px;
-    border-radius: 999px;
-    overflow: hidden;
-    gap: 2px;
-    background: var(--admin-line);
-}
-.dash-stack span { display: block; height: 100%; transition: opacity .15s ease; }
-.dash-stack span:hover { opacity: 0.82; }
 
 /* Donut chart + legend side by side (Order status panel). */
 .dash-donut-split {
@@ -9364,10 +9231,70 @@ html.dark .dash-daterange .form-input {
 .dash-lowstock__qty { flex-shrink: 0; font-size: 15px; font-weight: 800; color: #e11d48; font-variant-numeric: tabular-nums; }
 
 /* ---- Top products ---- */
-.dash-products {
+.dash-top {
+    list-style: none;
+    margin: 0;
+    padding: 0;
     display: flex;
     flex-direction: column;
+}
+.dash-top__item {
+    display: flex;
+    align-items: flex-start;
     gap: 12px;
+    padding: 12px 0;
+    border-top: 1px dashed var(--admin-line);
+}
+.dash-top__item:first-child { border-top: 0; padding-top: 0; }
+.dash-top__rank {
+    font-family: 'DM Mono', ui-monospace, monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--admin-muted);
+    min-width: 20px;
+    padding-top: 2px;
+}
+.dash-top__body { flex: 1; min-width: 0; }
+.dash-top__meta {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+}
+.dash-top__name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--admin-ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dash-top__revenue {
+    flex-shrink: 0;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--admin-ink);
+    font-variant-numeric: tabular-nums;
+}
+.dash-top__track {
+    margin-top: 8px;
+    height: 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--admin-line) 60%, #fff);
+    overflow: hidden;
+}
+.dash-top__track span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--admin-accent), #14b8a6);
+}
+.dash-top__sold {
+    display: block;
+    margin-top: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--admin-muted);
 }
 
 /* ---- Fulfillment pulse ---- */
@@ -9376,12 +9303,11 @@ html.dark .dash-daterange .form-input {
     grid-template-columns: 92px minmax(0, 1fr) auto;
     align-items: center;
     gap: 18px;
-    padding: 18px 20px;
-    border: 1px solid rgba(20, 184, 166, .18);
-    border-radius: 22px;
-    background:
-        linear-gradient(135deg, rgba(20, 184, 166, .1), rgba(14, 165, 233, .07)),
-        rgba(255, 255, 255, .76);
+    padding: 20px 22px;
+    border: 1px solid var(--admin-line);
+    border-radius: 16px;
+    background: var(--admin-panel);
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
 }
 
 .dash-fulfillment__meter {
@@ -9423,10 +9349,10 @@ html.dark .dash-daterange .form-input {
 .dash-fulfillment__stats span {
     min-width: 92px;
     padding: 10px 12px;
-    border: 1px solid rgba(15, 23, 42, .08);
-    border-radius: 15px;
+    border: 1px solid var(--admin-line);
+    border-radius: 12px;
     color: var(--admin-muted);
-    background: rgba(255, 255, 255, .62);
+    background: color-mix(in srgb, var(--admin-line) 30%, #fff);
     font-size: 11px;
     font-weight: 800;
     text-transform: uppercase;
@@ -9458,19 +9384,15 @@ html.dark .dash-daterange .form-input {
 @media (max-width: 1100px) {
     .dash-grid--chart, .dash-grid--feeds { grid-template-columns: 1fr; }
     .dash-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .dash-ops-panel { grid-template-columns: 1fr; }
-    .dash-ops-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .dash-fulfillment { grid-template-columns: 82px minmax(0, 1fr); }
     .dash-fulfillment__stats { grid-column: 1 / -1; }
 }
 @media (max-width: 560px) {
     .dash-kpis { grid-template-columns: 1fr; }
     .dash-bar__actions,
-    .dash-segment,
     .dash-daterange,
     .dash-daterange .daterange-control { width: 100%; }
     .dash-bar__actions { align-items: stretch; flex-direction: column; }
-    .dash-segment__item { flex: 1 1 0; text-align: center; }
     .dash-ops-grid { grid-template-columns: 1fr; }
     .dash-fulfillment { grid-template-columns: 1fr; }
     .dash-fulfillment__stats { flex-direction: column; }
@@ -9481,8 +9403,6 @@ html.dark .dash-greeting { color: #f1f5f9; }
 html.dark .dash-kpi,
 html.dark .dash-panel { background: #121c31; border-color: var(--admin-line); box-shadow: none; }
 html.dark .dash-kpi__icon { background: color-mix(in srgb, var(--acc) 22%, #0b1424); }
-html.dark .dash-segment { background: rgba(255, 255, 255, 0.04); }
-html.dark .dash-segment__item.is-active { background: #1e293b; color: #f1f5f9; box-shadow: none; }
 html.dark .dash-kpi__value,
 html.dark .dash-kpi__label,
 html.dark .dash-panel__head h3,
@@ -9493,23 +9413,14 @@ html.dark .dash-table__amt,
 html.dark .dash-table__id,
 html.dark .dash-lowstock__name,
 html.dark .dash-link { color: #e2e8f0; }
-html.dark .dash-chart__dot { border-color: #121c31; }
-html.dark .dash-chart__tip { background: #0b1424; }
 html.dark .dash-table tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
 html.dark .dash-lowstock__icon { background: rgba(255, 255, 255, 0.04); }
-html.dark .dash-ops-panel,
-html.dark .dash-fulfillment {
-    border-color: rgba(255, 255, 255, .08);
-    background:
-        radial-gradient(circle at 3% 20%, rgba(20, 184, 166, .12), transparent 32%),
-        #121c31;
-}
+html.dark .dash-fulfillment { background: #121c31; border-color: var(--admin-line); }
 html.dark .dash-op,
 html.dark .dash-fulfillment__stats span {
     border-color: rgba(255, 255, 255, .08);
     background: rgba(255, 255, 255, .04);
 }
-html.dark .dash-ops-panel__intro h3,
 html.dark .dash-op__copy strong,
 html.dark .dash-fulfillment__meter span,
 html.dark .dash-fulfillment__copy h3,
@@ -9521,6 +9432,9 @@ html.dark .dash-fulfillment__meter {
         radial-gradient(circle closest-side, #121c31 68%, transparent 70%),
         conic-gradient(#14b8a6 calc(var(--pct) * 1%), rgba(255, 255, 255, .08) 0);
 }
+html.dark .dash-top__name,
+html.dark .dash-top__revenue { color: #e2e8f0; }
+html.dark .dash-top__track { background: rgba(255, 255, 255, 0.06); }
 
 /* Neutral count/number pill for table cells (products count, sort order…) */
 .count-pill {

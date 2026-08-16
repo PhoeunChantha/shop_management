@@ -14,6 +14,7 @@ use App\Http\Controllers\Backend\ColorController;
 use App\Http\Controllers\Backend\CommandPaletteController;
 use App\Http\Controllers\Backend\CouponController;
 use App\Http\Controllers\Backend\CustomerController;
+use App\Http\Controllers\Backend\CustomerReportController;
 use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\DealCampaignController;
 use App\Http\Controllers\Backend\FaqController;
@@ -25,11 +26,17 @@ use App\Http\Controllers\Backend\OrderController;
 use App\Http\Controllers\Backend\PageController as AdminPageController;
 use App\Http\Controllers\Backend\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Backend\PermissionAuditController;
+use App\Http\Controllers\Backend\PaymentReportController;
 use App\Http\Controllers\Backend\PermissionController;
 use App\Http\Controllers\Backend\ProductController;
+use App\Http\Controllers\Backend\ProductReportController;
 use App\Http\Controllers\Backend\ProfileController;
 use App\Http\Controllers\Backend\PurchaseOrderController;
+use App\Http\Controllers\Backend\PurchasingReportController;
+use App\Http\Controllers\Backend\RegisterReportController;
+use App\Http\Controllers\Backend\ReturnReportController;
 use App\Http\Controllers\Backend\ReturnRequestController;
+use App\Http\Controllers\Backend\SalesReportController;
 use App\Http\Controllers\Backend\ReviewController;
 use App\Http\Controllers\Backend\RoleController;
 use App\Http\Controllers\Backend\SeoManagerController;
@@ -37,6 +44,7 @@ use App\Http\Controllers\Backend\SettingController;
 use App\Http\Controllers\Backend\SetupHealthController;
 use App\Http\Controllers\Backend\ShippingMethodController;
 use App\Http\Controllers\Backend\SizeController;
+use App\Http\Controllers\Backend\StockReportController;
 use App\Http\Controllers\Backend\SupplierController;
 use App\Http\Controllers\Backend\TaxRuleController;
 use App\Http\Controllers\Backend\UserController;
@@ -176,9 +184,51 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         ->middleware('permission:view settings')
         ->name('setup-health.index');
 
-    Route::prefix('reports')->name('reports.')->middleware('permission:view reports')->group(function () {
-        Route::get('/', [FinanceReportController::class, 'index'])->name('index');
-        Route::get('/export/{type}', [FinanceReportController::class, 'export'])->name('export');
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::middleware('permission:view reports')->group(function () {
+            Route::get('/', [FinanceReportController::class, 'index'])->name('index');
+            Route::get('/export/{type}', [FinanceReportController::class, 'export'])->name('export');
+        });
+
+        Route::middleware('permission:view sales reports')->group(function () {
+            Route::get('/sales', [SalesReportController::class, 'index'])->name('sales');
+            Route::get('/sales/export', [SalesReportController::class, 'export'])->name('sales.export');
+        });
+
+        Route::middleware('permission:view product reports')->group(function () {
+            Route::get('/products', [ProductReportController::class, 'index'])->name('products');
+            Route::get('/products/export', [ProductReportController::class, 'export'])->name('products.export');
+        });
+
+        Route::middleware('permission:view stock reports')->group(function () {
+            Route::get('/stock', [StockReportController::class, 'index'])->name('stock');
+            Route::get('/stock/export', [StockReportController::class, 'export'])->name('stock.export');
+        });
+
+        Route::middleware('permission:view payment reports')->group(function () {
+            Route::get('/payments', [PaymentReportController::class, 'index'])->name('payments');
+            Route::get('/payments/export', [PaymentReportController::class, 'export'])->name('payments.export');
+        });
+
+        Route::middleware('permission:view customer reports')->group(function () {
+            Route::get('/customers', [CustomerReportController::class, 'index'])->name('customers');
+            Route::get('/customers/export', [CustomerReportController::class, 'export'])->name('customers.export');
+        });
+
+        Route::middleware('permission:view purchasing reports')->group(function () {
+            Route::get('/purchasing', [PurchasingReportController::class, 'index'])->name('purchasing');
+            Route::get('/purchasing/export', [PurchasingReportController::class, 'export'])->name('purchasing.export');
+        });
+
+        Route::middleware('permission:view register reports')->group(function () {
+            Route::get('/register', [RegisterReportController::class, 'index'])->name('register');
+            Route::get('/register/export', [RegisterReportController::class, 'export'])->name('register.export');
+        });
+
+        Route::middleware('permission:view return reports')->group(function () {
+            Route::get('/returns', [ReturnReportController::class, 'index'])->name('returns');
+            Route::get('/returns/export', [ReturnReportController::class, 'export'])->name('returns.export');
+        });
     });
 
     Route::prefix('activity')->name('activity.')->group(function () {
@@ -414,6 +464,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::prefix('wallets')->name('wallets.')->group(function () {
         Route::get('/', [WalletController::class, 'index'])->name('index');
         Route::post('/{user}/adjust', [WalletController::class, 'adjust'])->name('adjust');
+        Route::post('/topups/{topup}/approve', [WalletController::class, 'approveTopup'])->name('topups.approve');
+        Route::post('/topups/{topup}/reject', [WalletController::class, 'rejectTopup'])->name('topups.reject');
     });
 
     Route::prefix('customers')->name('customers.')->group(function () {

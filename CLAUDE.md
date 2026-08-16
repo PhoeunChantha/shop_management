@@ -73,7 +73,8 @@ gate via Policy. Do not add controller-level middleware (`HasMiddleware`).
 **Full house pattern with copy-paste templates: `docs/ADMIN-CRUD-GUIDELINE.md` —
 read it before adding or refactoring any admin resource.** `Brand` is the canonical
 reference implementation. In short, each resource (Product, Brand, Category, Color,
-Size, Coupon, User, Role, Permission) is built the same way:
+Size, Coupon, Deal, Banner, Collection, Announcement, Faq, Page, TaxRule,
+ShippingMethod, Supplier, User, Role, Permission) is built the same way:
 
 1. **Controller** `Backend\{Resource}Controller` — no controller middleware, thin
    actions using `$request->validated()`, typed returns (`View` /
@@ -146,11 +147,17 @@ middleware from `session('locale')` (supported: `en`, `km`), switched via
   `app/Services/Frontend` (`App\Services\Frontend\*`). There is no `App\Services\`
   root namespace anymore. Frontend service class names drop any `Frontend` prefix
   (e.g. `App\Services\Frontend\AccountService`, `ProductService`, `CheckoutService`,
-  `NavigationService`, `AddressService`). Settings/stock/env infrastructure that
+  `CartService`, `NavigationService`, `AddressService`, `InvoiceService`,
+  `PaywayService`, `RecentlyViewedService`). Settings/stock/env infrastructure that
   the storefront also consumes lives under `Admin` (`App\Services\Admin\SettingService`,
   `StockService`, `EnvService`); frontend code imports those from `Admin`.
 - Current admin service examples: `App\Services\Admin\{ProductService, OrderService,
-  CustomerService, DashboardService, StockService, ReviewService, SettingService,
+  CustomerService, DashboardService, StockService, ReviewService, SettingService,,
+  InventoryService, SupplierService, PurchaseOrderService, ReturnRequestService,
+  WalletService, PaymentService, FinanceReportService, SeoManagerService,
+  PermissionService, RoleService, UserService, ActivityLogService,
+  AbandonedCartService, AdminNotificationService, DealCampaignService,
+  MediaAssetService, ProductImportService, SetupHealthService
   MediaOptimizationService, MediaUsageService, AttributeService, BulkActionService}`.
 - `CustomerController` delegates customer list/profile queries, stats, order
   history, top products, selected export, profile sync, bulk enable/disable, and
