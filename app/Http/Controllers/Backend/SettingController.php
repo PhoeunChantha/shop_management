@@ -30,12 +30,20 @@ final class SettingController extends Controller
 
         $paymentRows = old('payment_methods', $this->settings->paymentMethods());
 
+        // Footer menu rows — saved config, or the default columns as a starting point.
+        $footerRows = old('footer_links', $this->settings->footerLinks() ?: $this->settings->defaultFooterLinks());
+
+        if (empty($footerRows)) {
+            $footerRows = [['column' => '', 'label' => '', 'url' => '']];
+        }
+
         return view('admin.settings.index', [
             'schema' => $this->settings->schema(),
             'values' => $this->settings->values(),
             'iconChoices' => $this->settings->iconChoices(),
             'socialRows' => array_values($rows),
             'paymentRows' => array_values($paymentRows),
+            'footerRows' => array_values($footerRows),
         ]);
     }
 

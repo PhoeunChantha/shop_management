@@ -25,6 +25,9 @@
         if ($errors->has('payment_methods') || $errors->has('payment_method_images') || collect($errors->keys())->contains(fn ($k) => str_starts_with($k, 'payment_methods') || str_starts_with($k, 'payment_method_images'))) {
             $activeTab = 'payment';
         }
+        if ($errors->has('footer_links') || collect($errors->keys())->contains(fn ($k) => str_starts_with($k, 'footer_links'))) {
+            $activeTab = 'footer';
+        }
     @endphp
 
     <div class="" x-data="{ tab: '{{ $activeTab }}' }">
@@ -410,6 +413,45 @@
                                     @enderror
                                     @foreach ($errors->keys() as $errorKey)
                                         @if (str_starts_with($errorKey, 'social_links.'))
+                                            <p class="text-red-500 text-sm mt-1.5">{{ $errors->first($errorKey) }}</p>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            @elseif (($group['type'] ?? '') === 'footer_menu')
+                                {{-- Footer menu: group links by a column heading (label + url). --}}
+                                <div class="form-field" x-data="{
+                                    rows: @js($footerRows),
+                                    add() { this.rows.push({ column: '', label: '', url: '' }); },
+                                    remove(i) { this.rows.splice(i, 1); if (this.rows.length === 0) this.add(); }
+                                }">
+                                    <div class="dynamic-field-header">
+                                        <div>
+                                            <label>{{ __('Footer menu links') }}</label>
+                                            <small class="text-gray-400 dark:text-slate-500 d-block mt-1">{{ __('Group links by a column heading (e.g. Help, Brand). The “Shop” column is generated from your categories automatically.') }}</small>
+                                        </div>
+                                        <button type="button" class="dynamic-add-button" @click="add()">
+                                            <i class="fa-solid fa-plus"></i> {{ __('Add link') }}
+                                        </button>
+                                    </div>
+
+                                    <div class="social-rows">
+                                        <template x-for="(row, i) in rows" :key="i">
+                                            <div class="social-row">
+                                                <input type="text" class="form-input" :name="`footer_links[${i}][column]`"
+                                                    x-model="row.column" placeholder="{{ __('Column (e.g. Help)') }}">
+                                                <input type="text" class="form-input" :name="`footer_links[${i}][label]`"
+                                                    x-model="row.label" placeholder="{{ __('Label (e.g. Shipping)') }}">
+                                                <input type="text" class="form-input" :name="`footer_links[${i}][url]`"
+                                                    x-model="row.url" placeholder="{{ __('https://… or /shop') }}">
+                                                <button type="button" class="dynamic-remove-button" @click="remove(i)" title="{{ __('Remove') }}">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    @foreach ($errors->keys() as $errorKey)
+                                        @if (str_starts_with($errorKey, 'footer_links'))
                                             <p class="text-red-500 text-sm mt-1.5">{{ $errors->first($errorKey) }}</p>
                                         @endif
                                     @endforeach

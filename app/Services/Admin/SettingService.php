@@ -343,6 +343,10 @@ final class SettingService
             'social_links.*.icon' => ['nullable', 'string', 'max:60'],
             'social_links.*.title' => ['nullable', 'string', 'max:100'],
             'social_links.*.url' => ['nullable', 'url', 'max:255'],
+            'footer_links' => ['nullable', 'array'],
+            'footer_links.*.column' => ['nullable', 'string', 'max:60'],
+            'footer_links.*.label' => ['nullable', 'string', 'max:100'],
+            'footer_links.*.url' => ['nullable', 'string', 'max:255'],
             'payment_methods' => ['nullable', 'array'],
             'payment_methods.*.id' => ['nullable', 'string', 'max:80'],
             'payment_methods.*.name' => ['nullable', 'string', 'max:100'],
@@ -438,6 +442,66 @@ final class SettingService
     public function socialLinks(): array
     {
         return json_decode(Setting::get('social_links', '[]'), true) ?: [];
+    }
+
+    /**
+     * Admin-managed footer link rows: [{column, label, url}]. Empty when the
+     * admin hasn't customised the footer (the defaults are then used).
+     *
+     * @return array<int, array<string, string>>
+     */
+    public function footerLinks(): array
+    {
+        return json_decode(Setting::get('footer_links', '[]'), true) ?: [];
+    }
+
+    /**
+     * Footer link columns for the storefront, grouped by heading and preserving
+     * order. Falls back to a sensible Help/Brand default when unconfigured.
+     *
+     * @return array<string, array<int, array{label: string, url: string}>>
+     */
+    public function footerColumns(): array
+    {
+        $links = $this->footerLinks() ?: $this->defaultFooterLinks();
+
+        $columns = [];
+
+        foreach ($links as $link) {
+            $column = trim((string) ($link['column'] ?? ''));
+            $label = trim((string) ($link['label'] ?? ''));
+            $url = trim((string) ($link['url'] ?? ''));
+
+            if ($column === '' || $label === '') {
+                continue;
+            }
+
+            $columns[$column][] = ['label' => $label, 'url' => $url ?: '#'];
+        }
+
+        return $columns;
+    }
+
+    /**
+     * Starter footer columns (Help + Brand). The storefront "Shop" column is
+     * generated from live categories, so it is intentionally not listed here.
+     *
+     * @return array<int, array<string, string>>
+     */
+    public function defaultFooterLinks(): array
+    {
+        return [
+            ['column' => 'Help', 'label' => 'Shipping', 'url' => route('frontend.pages.faq')],
+            ['column' => 'Help', 'label' => 'Returns', 'url' => route('frontend.pages.faq')],
+            ['column' => 'Help', 'label' => 'Size Guide', 'url' => route('frontend.pages.faq')],
+            ['column' => 'Help', 'label' => 'Track Order', 'url' => route('frontend.account.orders')],
+            ['column' => 'Help', 'label' => 'Contact', 'url' => route('frontend.pages.contact')],
+            ['column' => 'Brand', 'label' => 'Our Story', 'url' => route('frontend.pages.about')],
+            ['column' => 'Brand', 'label' => 'FAQ', 'url' => route('frontend.pages.faq')],
+            ['column' => 'Brand', 'label' => 'Contact', 'url' => route('frontend.pages.contact')],
+            ['column' => 'Brand', 'label' => 'Privacy', 'url' => route('frontend.pages.privacy')],
+            ['column' => 'Brand', 'label' => 'Terms', 'url' => route('frontend.pages.terms')],
+        ];
     }
 
     /**
@@ -815,6 +879,18 @@ final class SettingService
             ->all();
 
         Setting::set('social_links', json_encode($links), SettingGroup::Social->value);
+
+        $footerLinks = collect($validated['footer_links'] ?? [])
+            ->map(fn (array $row): array => [
+                'column' => trim((string) ($row['column'] ?? '')),
+                'label' => trim((string) ($row['label'] ?? '')),
+                'url' => trim((string) ($row['url'] ?? '')),
+            ])
+            ->filter(fn (array $row): bool => filled($row['column']) && filled($row['label']))
+            ->values()
+            ->all();
+
+        Setting::set('footer_links', json_encode($footerLinks), SettingGroup::Footer->value);
 
         $this->savePaymentMethods(
             (array) ($validated['payment_methods'] ?? []),
