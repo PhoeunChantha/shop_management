@@ -29,6 +29,7 @@ final class ProductReportController extends Controller
         return view('admin.reports.products', array_merge($this->reports->report($filters), [
             'orderStatuses' => OrderStatus::options(),
             'paymentStatuses' => PaymentStatus::options(),
+            'perPage' => (int) ($filters['per_page'] ?? 25),
         ]));
     }
 
@@ -52,6 +53,8 @@ final class ProductReportController extends Controller
             'end_date' => ['nullable', 'date'],
             'status' => ['nullable', Rule::enum(OrderStatus::class)],
             'payment_status' => ['nullable', Rule::enum(PaymentStatus::class)],
+            'search' => ['nullable', 'string', 'max:255'],
+            'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
         ]);
     }
 }

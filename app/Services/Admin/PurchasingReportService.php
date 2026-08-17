@@ -15,8 +15,6 @@ use Illuminate\Support\Facades\DB;
  */
 final class PurchasingReportService extends ReportService
 {
-    private const LIST_LIMIT = 50;
-
     /**
      * @param  array<string, mixed>  $filters
      * @return array<string, mixed>
@@ -35,7 +33,7 @@ final class PurchasingReportService extends ReportService
                 'pending' => (clone $base)->whereIn('status', ['ordered', 'partial'])->count(),
             ],
             'supplierSpend' => $this->supplierSpend($start, $end),
-            'purchaseOrders' => $this->rows($start, $end),
+            'purchaseOrders' => $this->paginateRows($this->rows($start, $end), $filters, ['po_number', 'supplier', 'status']),
         ];
     }
 
@@ -86,7 +84,7 @@ final class PurchasingReportService extends ReportService
         return $this->purchasesBetween($start, $end)
             ->with('supplier:id,name')
             ->latest('created_at')
-            ->limit(self::LIST_LIMIT)
+            ->limit(5000)
             ->get()
             ->map(fn (PurchaseOrder $order): array => [
                 'po_number' => (string) $order->po_number,

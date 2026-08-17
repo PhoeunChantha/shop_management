@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Admin;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -30,7 +31,7 @@ final class RoleService
             ->withQueryString();
     }
 
-    public function permissions(): \Illuminate\Database\Eloquent\Collection
+    public function permissions(): Collection
     {
         return Permission::orderBy('id')->get();
     }

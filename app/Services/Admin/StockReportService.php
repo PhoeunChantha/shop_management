@@ -16,12 +16,11 @@ use Illuminate\Support\Facades\DB;
  */
 final class StockReportService extends ReportService
 {
-    private const LIST_LIMIT = 100;
-
     /**
+     * @param  array<string, mixed>  $filters
      * @return array<string, mixed>
      */
-    public function report(): array
+    public function report(array $filters = []): array
     {
         $single = DB::table('products')
             ->where('product_type', 'single')
@@ -48,7 +47,7 @@ final class StockReportService extends ReportService
                 'low' => (int) $single->low_count + (int) $variant->low_count,
                 'out' => (int) $single->out_count + (int) $variant->out_count,
             ],
-            'lowStock' => $this->lowStockRows(),
+            'lowStock' => $this->paginateRows($this->lowStockRows(), $filters, ['name', 'sku']),
         ];
     }
 
@@ -82,7 +81,7 @@ final class StockReportService extends ReportService
             ->where('product_type', 'single')
             ->whereColumn('stock', '<=', 'low_stock_alert')
             ->orderBy('stock')
-            ->limit(self::LIST_LIMIT)
+            ->limit(5000)
             ->get()
             ->map(fn (Product $product): array => [
                 'name' => (string) $product->name,
@@ -98,7 +97,7 @@ final class StockReportService extends ReportService
             ->with('product:id,name')
             ->whereColumn('stock', '<=', 'low_stock_alert')
             ->orderBy('stock')
-            ->limit(self::LIST_LIMIT)
+            ->limit(5000)
             ->get()
             ->map(fn (ProductVariant $variant): array => [
                 'name' => trim(((string) ($variant->product?->name ?? 'Variant')).' — '.((string) $variant->sku)),
@@ -112,7 +111,6 @@ final class StockReportService extends ReportService
 
         return $products->merge($variants)
             ->sortBy('stock')
-            ->take(self::LIST_LIMIT)
             ->values();
     }
 }

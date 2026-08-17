@@ -26,7 +26,7 @@ final class PaymentReportService extends ReportService
                 'collected' => (float) $mix->where('is_paid', true)->sum('amount'),
                 'outstanding' => (float) $mix->where('is_paid', false)->sum('amount'),
             ],
-            'paymentMix' => $mix,
+            'paymentMix' => $this->paginateRows($mix, $filters, ['label']),
         ];
     }
 

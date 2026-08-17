@@ -34,49 +34,50 @@
             </div>
         @endif
 
-        <section class="finance-report-panel">
-            <div class="finance-report-panel__head">
-                <div>
-                    <p class="section-kicker">{{ __('Returns & Refunds') }}</p>
-                    <h4>{{ __('Return requests') }}</h4>
-                </div>
-            </div>
-            <div class="table-responsive">
-                <table class="premium-table finance-report-table">
-                    <thead>
+        <x-admin.table-card ajax :loader="false">
+            <x-slot:toolbar>
+                <x-table-toolbar>
+                    <x-slot:left><x-per-page-selector :current="$perPage" /></x-slot:left>
+                    <x-slot:right><x-search-input name="search" placeholder="{{ __('Search return #, order, customer...') }}" /></x-slot:right>
+                </x-table-toolbar>
+            </x-slot:toolbar>
+
+            <table class="premium-table finance-report-table">
+                <thead>
+                    <tr>
+                        <th>{{ __('Return #') }}</th>
+                        <th>{{ __('Order') }}</th>
+                        <th>{{ __('Customer') }}</th>
+                        <th>{{ __('Reason') }}</th>
+                        <th>{{ __('Status') }}</th>
+                        <th>{{ __('Refund') }}</th>
+                        <th>{{ __('Refunded') }}</th>
+                        <th>{{ __('Requested') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($returns as $return)
                         <tr>
-                            <th>{{ __('Return #') }}</th>
-                            <th>{{ __('Order') }}</th>
-                            <th>{{ __('Customer') }}</th>
-                            <th>{{ __('Reason') }}</th>
-                            <th>{{ __('Status') }}</th>
-                            <th>{{ __('Refund') }}</th>
-                            <th>{{ __('Refunded') }}</th>
-                            <th>{{ __('Requested') }}</th>
+                            <td><strong>{{ $return['return_number'] }}</strong></td>
+                            <td>{{ $return['order'] }}</td>
+                            <td>{{ $return['customer'] }}</td>
+                            <td>{{ $return['reason'] }}</td>
+                            <td>{{ $return['status'] }}</td>
+                            <td>{{ $return['refund_status'] }}</td>
+                            <td>${{ number_format($return['refund_amount'], 2) }}</td>
+                            <td>{{ $return['requested_at'] }}</td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($returns as $return)
-                            <tr>
-                                <td><strong>{{ $return['return_number'] }}</strong></td>
-                                <td>{{ $return['order'] }}</td>
-                                <td>{{ $return['customer'] }}</td>
-                                <td>{{ $return['reason'] }}</td>
-                                <td>{{ $return['status'] }}</td>
-                                <td>{{ $return['refund_status'] }}</td>
-                                <td>${{ number_format($return['refund_amount'], 2) }}</td>
-                                <td>{{ $return['requested_at'] }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="8">
-                                    <x-admin.empty-state icon="fa-solid fa-rotate-left" title="{{ __('No returns') }}" message="{{ __('Return requests in this range will appear here.') }}" />
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </section>
+                    @empty
+                        <tr>
+                            <td colspan="8">
+                                <x-admin.empty-state icon="fa-solid fa-rotate-left" title="{{ __('No returns') }}" message="{{ __('Return requests in this range will appear here.') }}" />
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+
+            <x-slot:footer><x-table-footer :paginator="$returns" label="{{ __('returns') }}" /></x-slot:footer>
+        </x-admin.table-card>
     </x-admin.report-shell>
 </x-app-layout>

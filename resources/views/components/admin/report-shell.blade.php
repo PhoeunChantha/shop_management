@@ -14,20 +14,6 @@
     'paymentStatuses' => [],
 ])
 
-@php
-    $tabs = [
-        ['key' => 'overview', 'label' => __('Overview'), 'icon' => 'fa-gauge-high', 'route' => 'admin.reports.index', 'permission' => 'view reports'],
-        ['key' => 'sales', 'label' => __('Sales'), 'icon' => 'fa-chart-line', 'route' => 'admin.reports.sales', 'permission' => 'view sales reports'],
-        ['key' => 'products', 'label' => __('Products'), 'icon' => 'fa-box-open', 'route' => 'admin.reports.products', 'permission' => 'view product reports'],
-        ['key' => 'stock', 'label' => __('Stock'), 'icon' => 'fa-warehouse', 'route' => 'admin.reports.stock', 'permission' => 'view stock reports'],
-        ['key' => 'payments', 'label' => __('Payments'), 'icon' => 'fa-credit-card', 'route' => 'admin.reports.payments', 'permission' => 'view payment reports'],
-        ['key' => 'customers', 'label' => __('Customers'), 'icon' => 'fa-user-group', 'route' => 'admin.reports.customers', 'permission' => 'view customer reports'],
-        ['key' => 'purchasing', 'label' => __('Purchasing'), 'icon' => 'fa-clipboard-list', 'route' => 'admin.reports.purchasing', 'permission' => 'view purchasing reports'],
-        ['key' => 'register', 'label' => __('Registrations'), 'icon' => 'fa-user-plus', 'route' => 'admin.reports.register', 'permission' => 'view register reports'],
-        ['key' => 'returns', 'label' => __('Returns'), 'icon' => 'fa-rotate-left', 'route' => 'admin.reports.returns', 'permission' => 'view return reports'],
-    ];
-@endphp
-
 <div class="admin-page finance-report-page">
     <div class="page-section-header finance-report-heading">
         <div>
@@ -49,17 +35,6 @@
             </div>
         @endif
     </div>
-
-    <nav class="finance-report-export-group finance-report-tabs">
-        @foreach ($tabs as $tab)
-            @can($tab['permission'])
-                <a href="{{ route($tab['route']) }}"
-                    class="{{ $active === $tab['key'] ? 'premium-button premium-button--dark' : 'ghost-button ghost-button--panel' }}">
-                    <i class="fa-solid {{ $tab['icon'] }}"></i><span>{{ $tab['label'] }}</span>
-                </a>
-            @endcan
-        @endforeach
-    </nav>
 
     @if ($showRange || $showStatus || $showPayment)
         <form method="GET" action="{{ $action }}" class="finance-report-filter">

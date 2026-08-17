@@ -20,41 +20,42 @@
             <div><span>{{ __('Revenue') }}</span><strong>${{ number_format($summary['revenue'], 2) }}</strong></div>
         </div>
 
-        <section class="finance-report-panel">
-            <div class="finance-report-panel__head">
-                <div>
-                    <p class="section-kicker">{{ __('Customer Value') }}</p>
-                    <h4>{{ __('Top customers by spend') }}</h4>
-                </div>
-            </div>
-            <div class="table-responsive">
-                <table class="premium-table finance-report-table">
-                    <thead>
+        <x-admin.table-card ajax :loader="false">
+            <x-slot:toolbar>
+                <x-table-toolbar>
+                    <x-slot:left><x-per-page-selector :current="$perPage" /></x-slot:left>
+                    <x-slot:right><x-search-input name="search" placeholder="{{ __('Search customer or email...') }}" /></x-slot:right>
+                </x-table-toolbar>
+            </x-slot:toolbar>
+
+            <table class="premium-table finance-report-table">
+                <thead>
+                    <tr>
+                        <th>{{ __('Customer') }}</th>
+                        <th>{{ __('Email') }}</th>
+                        <th>{{ __('Orders') }}</th>
+                        <th>{{ __('Spend') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($customers as $customer)
                         <tr>
-                            <th>{{ __('Customer') }}</th>
-                            <th>{{ __('Email') }}</th>
-                            <th>{{ __('Orders') }}</th>
-                            <th>{{ __('Spend') }}</th>
+                            <td><strong>{{ $customer['customer_name'] ?: '—' }}</strong></td>
+                            <td>{{ $customer['customer_email'] }}</td>
+                            <td>{{ number_format($customer['orders']) }}</td>
+                            <td>${{ number_format($customer['spend'], 2) }}</td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($customers as $customer)
-                            <tr>
-                                <td><strong>{{ $customer['customer_name'] ?: '—' }}</strong></td>
-                                <td>{{ $customer['customer_email'] }}</td>
-                                <td>{{ number_format($customer['orders']) }}</td>
-                                <td>${{ number_format($customer['spend'], 2) }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4">
-                                    <x-admin.empty-state icon="fa-solid fa-users" title="{{ __('No customer spend') }}" message="{{ __('Paid customer orders will appear here.') }}" />
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </section>
+                    @empty
+                        <tr>
+                            <td colspan="4">
+                                <x-admin.empty-state icon="fa-solid fa-users" title="{{ __('No customer spend') }}" message="{{ __('Paid customer orders will appear here.') }}" />
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+
+            <x-slot:footer><x-table-footer :paginator="$customers" label="{{ __('customers') }}" /></x-slot:footer>
+        </x-admin.table-card>
     </x-admin.report-shell>
 </x-app-layout>

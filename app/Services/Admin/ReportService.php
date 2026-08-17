@@ -7,7 +7,11 @@ namespace App\Services\Admin;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator as LengthAwarePaginatorContract;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -79,5 +83,45 @@ abstract class ReportService
             'status' => $filters['status'] ?? null,
             'payment_status' => $filters['payment_status'] ?? null,
         ];
+    }
+
+    protected function perPage(array $filters, int $default = 25): int
+    {
+        return (int) ($filters['per_page'] ?? $default);
+    }
+
+    /**
+     * Turn an in-memory report collection into a searchable, paginated result —
+     * used for the report tables so exports can still return the full dataset.
+     *
+     * @param  Collection<int, array<string, mixed>>  $rows
+     * @param  array<int, string>  $searchKeys
+     * @return LengthAwarePaginatorContract<int, array<string, mixed>>
+     */
+    protected function paginateRows(Collection $rows, array $filters, array $searchKeys, int $default = 25): LengthAwarePaginatorContract
+    {
+        $search = trim((string) ($filters['search'] ?? ''));
+
+        if ($search !== '') {
+            $needle = mb_strtolower($search);
+            $rows = $rows->filter(function (array $row) use ($needle, $searchKeys): bool {
+                foreach ($searchKeys as $key) {
+                    if (str_contains(mb_strtolower((string) ($row[$key] ?? '')), $needle)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            })->values();
+        }
+
+        $perPage = $this->perPage($filters, $default);
+        $page = Paginator::resolveCurrentPage();
+        $items = $rows->slice(($page - 1) * $perPage, $perPage)->values();
+
+        return new LengthAwarePaginator($items, $rows->count(), $perPage, $page, [
+            'path' => Paginator::resolveCurrentPath(),
+            'query' => request()->query(),
+        ]);
     }
 }

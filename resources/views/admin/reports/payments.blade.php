@@ -29,39 +29,40 @@
             </div>
         </div>
 
-        <section class="finance-report-panel">
-            <div class="finance-report-panel__head">
-                <div>
-                    <p class="section-kicker">{{ __('Payment Mix') }}</p>
-                    <h4>{{ __('Orders by payment state') }}</h4>
-                </div>
-            </div>
-            <div class="table-responsive">
-                <table class="premium-table finance-report-table">
-                    <thead>
+        <x-admin.table-card ajax :loader="false">
+            <x-slot:toolbar>
+                <x-table-toolbar>
+                    <x-slot:left><x-per-page-selector :current="$perPage" /></x-slot:left>
+                    <x-slot:right><x-search-input name="search" placeholder="{{ __('Search payment status...') }}" /></x-slot:right>
+                </x-table-toolbar>
+            </x-slot:toolbar>
+
+            <table class="premium-table finance-report-table">
+                <thead>
+                    <tr>
+                        <th>{{ __('Payment status') }}</th>
+                        <th>{{ __('Orders') }}</th>
+                        <th>{{ __('Amount') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($paymentMix as $payment)
                         <tr>
-                            <th>{{ __('Payment status') }}</th>
-                            <th>{{ __('Orders') }}</th>
-                            <th>{{ __('Amount') }}</th>
+                            <td><strong>{{ $payment['label'] }}</strong></td>
+                            <td>{{ number_format($payment['count']) }}</td>
+                            <td>${{ number_format($payment['amount'], 2) }}</td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($paymentMix as $payment)
-                            <tr>
-                                <td><strong>{{ $payment['label'] }}</strong></td>
-                                <td>{{ number_format($payment['count']) }}</td>
-                                <td>${{ number_format($payment['amount'], 2) }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3">
-                                    <x-admin.empty-state icon="fa-solid fa-credit-card" title="{{ __('No payment data') }}" message="{{ __('Orders in this range will appear here.') }}" />
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </section>
+                    @empty
+                        <tr>
+                            <td colspan="3">
+                                <x-admin.empty-state icon="fa-solid fa-credit-card" title="{{ __('No payment data') }}" message="{{ __('Orders in this range will appear here.') }}" />
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+
+            <x-slot:footer><x-table-footer :paginator="$paymentMix" label="{{ __('statuses') }}" /></x-slot:footer>
+        </x-admin.table-card>
     </x-admin.report-shell>
 </x-app-layout>

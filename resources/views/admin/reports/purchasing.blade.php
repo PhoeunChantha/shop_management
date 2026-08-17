@@ -21,67 +21,66 @@
             <div><span>{{ __('Pending') }}</span><strong>{{ number_format($summary['pending']) }}</strong></div>
         </div>
 
-        <div class="finance-report-grid">
-            <section class="finance-report-panel">
-                <div class="finance-report-panel__head">
-                    <div>
-                        <p class="section-kicker">{{ __('Supplier Spend') }}</p>
-                        <h4>{{ __('Cost by supplier') }}</h4>
-                    </div>
+        <section class="finance-report-panel">
+            <div class="finance-report-panel__head">
+                <div>
+                    <p class="section-kicker">{{ __('Supplier Spend') }}</p>
+                    <h4>{{ __('Cost by supplier') }}</h4>
                 </div>
-                <div class="finance-report-list">
-                    @forelse ($supplierSpend as $supplier)
+            </div>
+            <div class="finance-report-list">
+                @forelse ($supplierSpend as $supplier)
+                    <div>
                         <div>
-                            <div>
-                                <strong>{{ $supplier['supplier'] }}</strong>
-                                <span>{{ number_format($supplier['orders']) }} {{ __('orders') }}</span>
-                            </div>
-                            <b>${{ number_format($supplier['spend'], 2) }}</b>
+                            <strong>{{ $supplier['supplier'] }}</strong>
+                            <span>{{ number_format($supplier['orders']) }} {{ __('orders') }}</span>
                         </div>
-                    @empty
-                        <x-admin.empty-state icon="fa-solid fa-truck-field" title="{{ __('No supplier spend') }}" message="{{ __('Purchase orders in this range will appear here.') }}" />
-                    @endforelse
-                </div>
-            </section>
-
-            <section class="finance-report-panel">
-                <div class="finance-report-panel__head">
-                    <div>
-                        <p class="section-kicker">{{ __('Purchasing') }}</p>
-                        <h4>{{ __('Purchase orders') }}</h4>
+                        <b>${{ number_format($supplier['spend'], 2) }}</b>
                     </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="premium-table finance-report-table">
-                        <thead>
-                            <tr>
-                                <th>{{ __('PO Number') }}</th>
-                                <th>{{ __('Supplier') }}</th>
-                                <th>{{ __('Status') }}</th>
-                                <th>{{ __('Ordered') }}</th>
-                                <th>{{ __('Subtotal') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($purchaseOrders as $purchase)
-                                <tr>
-                                    <td><strong>{{ $purchase['po_number'] }}</strong></td>
-                                    <td>{{ $purchase['supplier'] }}</td>
-                                    <td>{{ $purchase['status'] }}</td>
-                                    <td>{{ $purchase['ordered_at'] }}</td>
-                                    <td>${{ number_format($purchase['subtotal'], 2) }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5">
-                                        <x-admin.empty-state icon="fa-solid fa-clipboard-list" title="{{ __('No purchase orders') }}" message="{{ __('Purchase orders in this range will appear here.') }}" />
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-        </div>
+                @empty
+                    <x-admin.empty-state icon="fa-solid fa-truck-field" title="{{ __('No supplier spend') }}" message="{{ __('Purchase orders in this range will appear here.') }}" />
+                @endforelse
+            </div>
+        </section>
+
+        <x-admin.table-card ajax :loader="false">
+            <x-slot:toolbar>
+                <x-table-toolbar>
+                    <x-slot:left><x-per-page-selector :current="$perPage" /></x-slot:left>
+                    <x-slot:right><x-search-input name="search" placeholder="{{ __('Search PO, supplier, status...') }}" /></x-slot:right>
+                </x-table-toolbar>
+            </x-slot:toolbar>
+
+            <table class="premium-table finance-report-table">
+                <thead>
+                    <tr>
+                        <th>{{ __('PO Number') }}</th>
+                        <th>{{ __('Supplier') }}</th>
+                        <th>{{ __('Status') }}</th>
+                        <th>{{ __('Ordered') }}</th>
+                        <th>{{ __('Subtotal') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($purchaseOrders as $purchase)
+                        <tr>
+                            <td><strong>{{ $purchase['po_number'] }}</strong></td>
+                            <td>{{ $purchase['supplier'] }}</td>
+                            <td>{{ $purchase['status'] }}</td>
+                            <td>{{ $purchase['ordered_at'] }}</td>
+                            <td>${{ number_format($purchase['subtotal'], 2) }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5">
+                                <x-admin.empty-state icon="fa-solid fa-clipboard-list" title="{{ __('No purchase orders') }}" message="{{ __('Purchase orders in this range will appear here.') }}" />
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+
+            <x-slot:footer><x-table-footer :paginator="$purchaseOrders" label="{{ __('purchase orders') }}" /></x-slot:footer>
+        </x-admin.table-card>
     </x-admin.report-shell>
 </x-app-layout>

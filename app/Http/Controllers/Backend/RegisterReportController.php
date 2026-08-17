@@ -21,7 +21,11 @@ final class RegisterReportController extends Controller
 
     public function index(Request $request): View
     {
-        return view('admin.reports.register', $this->reports->report($this->validatedFilters($request)));
+        $filters = $this->validatedFilters($request);
+
+        return view('admin.reports.register', array_merge($this->reports->report($filters), [
+            'perPage' => (int) ($filters['per_page'] ?? 25),
+        ]));
     }
 
     public function export(Request $request): Response
@@ -42,6 +46,8 @@ final class RegisterReportController extends Controller
         return $request->validate([
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date'],
+            'search' => ['nullable', 'string', 'max:255'],
+            'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
         ]);
     }
 }

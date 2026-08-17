@@ -27,6 +27,7 @@ final class ReturnReportController extends Controller
 
         return view('admin.reports.returns', array_merge($this->reports->report($filters), [
             'returnStatuses' => ReturnRequest::STATUSES,
+            'perPage' => (int) ($filters['per_page'] ?? 25),
         ]));
     }
 
@@ -49,6 +50,8 @@ final class ReturnReportController extends Controller
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date'],
             'status' => ['nullable', Rule::in(array_keys(ReturnRequest::STATUSES))],
+            'search' => ['nullable', 'string', 'max:255'],
+            'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
         ]);
     }
 }

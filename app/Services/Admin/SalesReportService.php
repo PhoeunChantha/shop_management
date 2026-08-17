@@ -42,7 +42,7 @@ final class SalesReportService extends ReportService
                 'shipping_total' => (float) (clone $paidOrders)->sum('shipping_total'),
                 'discount_total' => (float) (clone $paidOrders)->sum('discount_total'),
             ],
-            'salesByDay' => $this->salesByDay($start, $end, $filters),
+            'salesByDay' => $this->paginateRows($this->salesByDay($start, $end, $filters), $filters, ['date']),
         ];
     }
 

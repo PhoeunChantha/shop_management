@@ -9,8 +9,6 @@ use Illuminate\Support\Collection;
 
 final class CustomerReportService extends ReportService
 {
-    private const LIMIT = 50;
-
     /**
      * @param  array<string, mixed>  $filters
      * @return array<string, mixed>
@@ -27,7 +25,7 @@ final class CustomerReportService extends ReportService
                 'repeat' => $customers->where('orders', '>', 1)->count(),
                 'revenue' => (float) $customers->sum('spend'),
             ],
-            'customers' => $customers,
+            'customers' => $this->paginateRows($customers, $filters, ['customer_name', 'customer_email']),
         ];
     }
 
@@ -58,7 +56,7 @@ final class CustomerReportService extends ReportService
             ->selectRaw('SUM(grand_total) as spend')
             ->groupBy('customer_name', 'customer_email')
             ->orderByDesc('spend')
-            ->limit(self::LIMIT)
+            ->limit(5000)
             ->get()
             ->map(fn (object $row): array => [
                 'customer_name' => (string) $row->customer_name,

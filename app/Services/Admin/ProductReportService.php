@@ -11,8 +11,6 @@ use Illuminate\Support\Facades\DB;
 
 final class ProductReportService extends ReportService
 {
-    private const LIMIT = 50;
-
     /**
      * @param  array<string, mixed>  $filters
      * @return array<string, mixed>
@@ -29,7 +27,7 @@ final class ProductReportService extends ReportService
                 'units' => (int) $products->sum('quantity'),
                 'revenue' => (float) $products->sum('revenue'),
             ],
-            'products' => $products,
+            'products' => $this->paginateRows($products, $filters, ['name', 'sku']),
         ];
     }
 
@@ -64,7 +62,7 @@ final class ProductReportService extends ReportService
             ->selectRaw('SUM(order_details.line_total) as revenue')
             ->groupBy('order_details.name', 'order_details.sku')
             ->orderByDesc('revenue')
-            ->limit(self::LIMIT)
+            ->limit(5000)
             ->get()
             ->map(fn (object $row): array => [
                 'name' => (string) $row->name,

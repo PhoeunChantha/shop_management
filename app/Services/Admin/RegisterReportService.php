@@ -15,8 +15,6 @@ use Illuminate\Support\Collection;
  */
 final class RegisterReportService extends ReportService
 {
-    private const LIST_LIMIT = 50;
-
     /**
      * @param  array<string, mixed>  $filters
      * @return array<string, mixed>
@@ -36,7 +34,7 @@ final class RegisterReportService extends ReportService
                 'verified' => (clone $inRange)->whereNotNull('email_verified_at')->count(),
             ],
             'signupsByDay' => $this->signupsByDay($start, $end),
-            'recent' => $this->recentSignups($start, $end),
+            'recent' => $this->paginateRows($this->recentSignups($start, $end), $filters, ['name', 'email']),
         ];
     }
 
@@ -85,7 +83,7 @@ final class RegisterReportService extends ReportService
         return $this->customers()
             ->whereBetween('created_at', [$start->startOfDay(), $end->endOfDay()])
             ->latest('created_at')
-            ->limit(self::LIST_LIMIT)
+            ->limit(5000)
             ->get(['name', 'email', 'created_at', 'email_verified_at'])
             ->map(fn (User $user): array => [
                 'name' => (string) $user->name,

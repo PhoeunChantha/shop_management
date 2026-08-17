@@ -19,9 +19,16 @@ final class StockReportController extends Controller
         private readonly StockReportService $reports,
     ) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        return view('admin.reports.stock', $this->reports->report());
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
+        ]);
+
+        return view('admin.reports.stock', array_merge($this->reports->report($filters), [
+            'perPage' => (int) ($filters['per_page'] ?? 25),
+        ]));
     }
 
     public function export(Request $request): Response

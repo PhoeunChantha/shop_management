@@ -21,6 +21,14 @@ it('renders every report page for an admin', function (string $page) {
         ->assertOk();
 })->with($pages);
 
+$tablePages = ['sales', 'products', 'stock', 'payments', 'customers', 'purchasing', 'register', 'returns'];
+
+it('renders report tables with search, per-page and pagination params', function (string $page) {
+    $this->actingAs($this->admin)
+        ->get(route("admin.reports.{$page}", ['search' => 'abc', 'per_page' => 5, 'page' => 2]))
+        ->assertOk();
+})->with($tablePages);
+
 $exports = ['sales.export', 'products.export', 'stock.export', 'payments.export', 'customers.export', 'purchasing.export', 'register.export', 'returns.export'];
 
 it('streams every report export as CSV for an admin', function (string $route) {

@@ -2620,6 +2620,30 @@ html.dark .bulk-bar {
     margin-bottom: 4px;
 }
 
+/* AJAX table region — dim + block while a search/per-page/page fetch is in flight. */
+[data-ajax-region] {
+    position: relative;
+    transition: opacity .15s ease;
+}
+[data-ajax-region].is-loading {
+    opacity: .45;
+    pointer-events: none;
+}
+[data-ajax-region].is-loading::after {
+    content: '';
+    position: absolute;
+    top: 46px;
+    left: 50%;
+    width: 26px;
+    height: 26px;
+    margin-left: -13px;
+    border: 3px solid color-mix(in srgb, var(--primary-color, #101928) 22%, transparent);
+    border-top-color: var(--primary-color, #101928);
+    border-radius: 50%;
+    animation: ajax-region-spin .6s linear infinite;
+}
+@keyframes ajax-region-spin { to { transform: rotate(360deg); } }
+
 /* AJAX form validation — highlight fields flagged client-side or by a 422. */
 .form-input.is-invalid,
 .is-invalid .form-input,

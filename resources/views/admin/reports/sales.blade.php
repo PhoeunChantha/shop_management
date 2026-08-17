@@ -45,45 +45,46 @@
             <div><span>{{ __('Discounts') }}</span><strong>${{ number_format($summary['discount_total'], 2) }}</strong></div>
         </div>
 
-        <section class="finance-report-panel">
-            <div class="finance-report-panel__head">
-                <div>
-                    <p class="section-kicker">{{ __('Daily Sales') }}</p>
-                    <h4>{{ __('Revenue by day') }}</h4>
-                </div>
-            </div>
-            <div class="table-responsive">
-                <table class="premium-table finance-report-table">
-                    <thead>
+        <x-admin.table-card ajax :loader="false">
+            <x-slot:toolbar>
+                <x-table-toolbar>
+                    <x-slot:left><x-per-page-selector :current="$perPage" /></x-slot:left>
+                    <x-slot:right><x-search-input name="search" placeholder="{{ __('Search date (YYYY-MM-DD)...') }}" /></x-slot:right>
+                </x-table-toolbar>
+            </x-slot:toolbar>
+
+            <table class="premium-table finance-report-table">
+                <thead>
+                    <tr>
+                        <th>{{ __('Date') }}</th>
+                        <th>{{ __('Orders') }}</th>
+                        <th>{{ __('Gross') }}</th>
+                        <th>{{ __('Tax') }}</th>
+                        <th>{{ __('Shipping') }}</th>
+                        <th>{{ __('Discounts') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($salesByDay as $day)
                         <tr>
-                            <th>{{ __('Date') }}</th>
-                            <th>{{ __('Orders') }}</th>
-                            <th>{{ __('Gross') }}</th>
-                            <th>{{ __('Tax') }}</th>
-                            <th>{{ __('Shipping') }}</th>
-                            <th>{{ __('Discounts') }}</th>
+                            <td><strong>{{ \Carbon\Carbon::parse($day['date'])->format('M d, Y') }}</strong></td>
+                            <td>{{ number_format($day['orders']) }}</td>
+                            <td>${{ number_format($day['gross_sales'], 2) }}</td>
+                            <td>${{ number_format($day['tax'], 2) }}</td>
+                            <td>${{ number_format($day['shipping'], 2) }}</td>
+                            <td>${{ number_format($day['discounts'], 2) }}</td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($salesByDay as $day)
-                            <tr>
-                                <td><strong>{{ \Carbon\Carbon::parse($day['date'])->format('M d, Y') }}</strong></td>
-                                <td>{{ number_format($day['orders']) }}</td>
-                                <td>${{ number_format($day['gross_sales'], 2) }}</td>
-                                <td>${{ number_format($day['tax'], 2) }}</td>
-                                <td>${{ number_format($day['shipping'], 2) }}</td>
-                                <td>${{ number_format($day['discounts'], 2) }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6">
-                                    <x-admin.empty-state icon="fa-solid fa-chart-line" title="{{ __('No sales in range') }}" message="{{ __('Try a different date range or payment filter.') }}" />
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </section>
+                    @empty
+                        <tr>
+                            <td colspan="6">
+                                <x-admin.empty-state icon="fa-solid fa-chart-line" title="{{ __('No sales in range') }}" message="{{ __('Try a different date range or payment filter.') }}" />
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+
+            <x-slot:footer><x-table-footer :paginator="$salesByDay" label="{{ __('days') }}" /></x-slot:footer>
+        </x-admin.table-card>
     </x-admin.report-shell>
 </x-app-layout>

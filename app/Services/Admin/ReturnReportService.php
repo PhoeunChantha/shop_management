@@ -14,8 +14,6 @@ use Illuminate\Support\Collection;
  */
 final class ReturnReportService extends ReportService
 {
-    private const LIST_LIMIT = 100;
-
     /**
      * @param  array<string, mixed>  $filters
      * @return array<string, mixed>
@@ -34,7 +32,7 @@ final class ReturnReportService extends ReportService
                 'pending' => (clone $base)->whereIn('status', ['requested', 'approved', 'received'])->count(),
             ],
             'byStatus' => $this->byStatus($start, $end, $filters),
-            'returns' => $this->rows($start, $end, $filters),
+            'returns' => $this->paginateRows($this->rows($start, $end, $filters), $filters, ['return_number', 'order', 'customer', 'status', 'refund_status']),
         ];
     }
 
@@ -88,7 +86,7 @@ final class ReturnReportService extends ReportService
         return $this->returnsBetween($start, $end, $filters)
             ->with(['order:id,order_number', 'user:id,name,email'])
             ->latest('requested_at')
-            ->limit(self::LIST_LIMIT)
+            ->limit(5000)
             ->get()
             ->map(fn (ReturnRequest $return): array => [
                 'return_number' => (string) $return->return_number,

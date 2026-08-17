@@ -444,4 +444,90 @@ Alpine.data('commandPalette', (url) => ({
     });
 })();
 
+/**
+ * AJAX tables — any <x-admin.table-card ajax>. Search, per-page and pagination
+ * update the table in place (no full page reload). Only the [data-ajax-region]
+ * (table + footer) is swapped, so the toolbar's focused search input survives.
+ */
+(function () {
+    function containers() {
+        return Array.from(document.querySelectorAll('[data-ajax-table]'));
+    }
+
+    async function loadInto(container, url) {
+        const region = container.querySelector('[data-ajax-region]');
+        if (!region) return;
+
+        region.classList.add('is-loading');
+
+        try {
+            const res = await fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'text/html' },
+            });
+            const html = await res.text();
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+
+            // Match the same table by its position among all AJAX tables on the page.
+            const index = containers().indexOf(container);
+            const fresh = doc.querySelectorAll('[data-ajax-table]')[index];
+            const freshRegion = fresh ? fresh.querySelector('[data-ajax-region]') : null;
+
+            if (freshRegion) {
+                region.innerHTML = freshRegion.innerHTML;
+                // Re-hydrate Alpine bindings inside the swapped rows (e.g. bulk-select
+                // checkboxes) so interactive tables keep working after a fetch.
+                if (window.Alpine && typeof window.Alpine.initTree === 'function') {
+                    window.Alpine.initTree(region);
+                }
+                window.history.pushState({ ajaxTable: true }, '', url);
+            } else {
+                window.location.assign(url); // structure changed — fall back to a real load
+            }
+        } catch (error) {
+            console.error('AJAX table load failed.', error);
+            window.toastr?.error('Could not load results. Please try again.');
+        } finally {
+            region.classList.remove('is-loading');
+        }
+    }
+
+    function urlFromForm(form) {
+        const params = new URLSearchParams(new FormData(form));
+        const base = (form.getAttribute('action') || window.location.pathname).split('?')[0];
+        const query = params.toString();
+
+        return query ? `${base}?${query}` : base;
+    }
+
+    // Search + per-page forms only (class 'toolbar-form'). POST action/delete
+    // forms inside a table are left alone so they submit normally.
+    document.addEventListener('submit', function (e) {
+        const form = e.target;
+        if (!(form instanceof HTMLFormElement) || !form.classList.contains('toolbar-form')) return;
+        const container = form.closest('[data-ajax-table]');
+        if (!container) return;
+
+        e.preventDefault();
+        loadInto(container, urlFromForm(form));
+    }, true);
+
+    // Pagination links inside the swapped region.
+    document.addEventListener('click', function (e) {
+        const link = e.target.closest('[data-ajax-table] .table-footer a[href], [data-ajax-table] .pager a[href]');
+        if (!link) return;
+        if (e.metaKey || e.ctrlKey || e.shiftKey || link.target === '_blank') return;
+
+        const container = link.closest('[data-ajax-table]');
+        if (!container) return;
+
+        e.preventDefault();
+        loadInto(container, link.href);
+    });
+
+    // Keep the Back/Forward buttons working by re-syncing each table.
+    window.addEventListener('popstate', function () {
+        containers().forEach((container) => loadInto(container, window.location.href));
+    });
+})();
+
 Alpine.start();

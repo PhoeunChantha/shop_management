@@ -24,41 +24,42 @@
             <div><span>{{ __('Revenue') }}</span><strong>${{ number_format($summary['revenue'], 2) }}</strong></div>
         </div>
 
-        <section class="finance-report-panel">
-            <div class="finance-report-panel__head">
-                <div>
-                    <p class="section-kicker">{{ __('Product Revenue') }}</p>
-                    <h4>{{ __('Top selling products') }}</h4>
-                </div>
-            </div>
-            <div class="table-responsive">
-                <table class="premium-table finance-report-table">
-                    <thead>
+        <x-admin.table-card ajax :loader="false">
+            <x-slot:toolbar>
+                <x-table-toolbar>
+                    <x-slot:left><x-per-page-selector :current="$perPage" /></x-slot:left>
+                    <x-slot:right><x-search-input name="search" placeholder="{{ __('Search product or SKU...') }}" /></x-slot:right>
+                </x-table-toolbar>
+            </x-slot:toolbar>
+
+            <table class="premium-table finance-report-table">
+                <thead>
+                    <tr>
+                        <th>{{ __('Product') }}</th>
+                        <th>{{ __('SKU') }}</th>
+                        <th>{{ __('Units') }}</th>
+                        <th>{{ __('Revenue') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($products as $product)
                         <tr>
-                            <th>{{ __('Product') }}</th>
-                            <th>{{ __('SKU') }}</th>
-                            <th>{{ __('Units') }}</th>
-                            <th>{{ __('Revenue') }}</th>
+                            <td><strong>{{ $product['name'] }}</strong></td>
+                            <td>{{ $product['sku'] ?: '—' }}</td>
+                            <td>{{ number_format($product['quantity']) }}</td>
+                            <td>${{ number_format($product['revenue'], 2) }}</td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($products as $product)
-                            <tr>
-                                <td><strong>{{ $product['name'] }}</strong></td>
-                                <td>{{ $product['sku'] ?: '—' }}</td>
-                                <td>{{ number_format($product['quantity']) }}</td>
-                                <td>${{ number_format($product['revenue'], 2) }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4">
-                                    <x-admin.empty-state icon="fa-solid fa-box-open" title="{{ __('No product sales') }}" message="{{ __('Paid order lines will appear here.') }}" />
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </section>
+                    @empty
+                        <tr>
+                            <td colspan="4">
+                                <x-admin.empty-state icon="fa-solid fa-box-open" title="{{ __('No product sales') }}" message="{{ __('Paid order lines will appear here.') }}" />
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+
+            <x-slot:footer><x-table-footer :paginator="$products" label="{{ __('products') }}" /></x-slot:footer>
+        </x-admin.table-card>
     </x-admin.report-shell>
 </x-app-layout>
