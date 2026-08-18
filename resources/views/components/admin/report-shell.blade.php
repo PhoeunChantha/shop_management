@@ -50,26 +50,16 @@
                 </label>
             @endif
             @if ($showStatus)
-                <label>
+                <div class="finance-report-filter__field">
                     <span>{{ __('Order status') }}</span>
-                    <select name="status">
-                        <option value="">{{ __('All statuses') }}</option>
-                        @foreach ($orderStatuses as $value => $label)
-                            <option value="{{ $value }}" @selected(($filters['status'] ?? null) === $value)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </label>
+                    <x-select name="status" size="sm" :value="$filters['status'] ?? null" placeholder="{{ __('All statuses') }}" :options="$orderStatuses" />
+                </div>
             @endif
             @if ($showPayment)
-                <label>
+                <div class="finance-report-filter__field">
                     <span>{{ __('Payment status') }}</span>
-                    <select name="payment_status">
-                        <option value="">{{ __('All payments') }}</option>
-                        @foreach ($paymentStatuses as $value => $label)
-                            <option value="{{ $value }}" @selected(($filters['payment_status'] ?? null) === $value)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </label>
+                    <x-select name="payment_status" size="sm" :value="$filters['payment_status'] ?? null" placeholder="{{ __('All payments') }}" :options="$paymentStatuses" />
+                </div>
             @endif
             <div class="finance-report-filter__actions">
                 <a href="{{ $action }}" class="ghost-button">

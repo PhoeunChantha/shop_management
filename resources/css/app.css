@@ -13576,13 +13576,15 @@ html.dark .permission-audit-compact-list > div {
     border-radius: 20px;
 }
 
-.finance-report-filter label {
+.finance-report-filter label,
+.finance-report-filter__field {
     display: grid;
     gap: 7px;
     margin: 0;
 }
 
-.finance-report-filter label > span {
+.finance-report-filter label > span,
+.finance-report-filter__field > span {
     color: #64748b;
     font-size: 12px;
     font-weight: 700;
