@@ -199,19 +199,19 @@
                 <input type="hidden" name="per_page" value="{{ $perPage }}">
             </x-slot:hidden>
 
-            <x-select name="category_id" size="sm" :options="$categories" :value="request('category_id')"
+            <x-select name="category_id" size="sm" label="{{ __('Category') }}" :options="$categories" :value="request('category_id')"
                 placeholder="{{ __('All categories') }}" searchable />
 
-            <x-select name="brand_id" size="sm" :options="$brands" :value="request('brand_id')"
+            <x-select name="brand_id" size="sm" label="{{ __('Brand') }}" :options="$brands" :value="request('brand_id')"
                 placeholder="{{ __('All brands') }}" searchable />
 
-            <x-select name="status" size="sm" :value="request('status')" placeholder="{{ __('Any status') }}"
+            <x-select name="status" size="sm" label="{{ __('Status') }}" :value="request('status')" placeholder="{{ __('Any status') }}"
                 :options="['draft' => 'Draft', 'active' => 'Active', 'inactive' => 'Inactive', 'archived' => 'Archived']" />
 
-            <x-select name="stock" size="sm" :value="request('stock')" placeholder="{{ __('Any stock') }}"
+            <x-select name="stock" size="sm" label="{{ __('Stock') }}" :value="request('stock')" placeholder="{{ __('Any stock') }}"
                 :options="['in_stock' => 'In stock', 'low_stock' => 'Low stock', 'out_of_stock' => 'Out of stock']" />
 
-            <x-select name="flag" size="sm" :value="request('flag')" placeholder="{{ __('Any flag') }}"
+            <x-select name="flag" size="sm" label="{{ __('Flag') }}" :value="request('flag')" placeholder="{{ __('Any flag') }}"
                 :options="['featured' => 'Featured', 'new' => 'New Arrival', 'best_seller' => 'Best Seller', 'on_sale' => 'On Sale']" />
         </x-filter-card>
 

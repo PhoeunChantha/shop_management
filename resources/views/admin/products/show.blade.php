@@ -8,23 +8,37 @@
         </div>
     </x-slot>
 
-    <div class="admin-page product-show-page">
-        <div class="page-section-header product-show-hero">
-            <div class="product-show-hero__copy">
-                <p class="section-kicker">{{ __('Product detail') }}</p>
-                <h3>{{ $product->name }}</h3>
-                <div class="product-show-hero__meta">
-                    @php($map = ['active' => 'st-active', 'draft' => 'st-draft', 'inactive' => 'st-inactive', 'archived' => 'st-archived'])
-                    <span class="status-chip {{ $map[$product->status] ?? 'st-draft' }}">{{ ucfirst($product->status) }}</span>
-                    <span><i class="fa-solid fa-layer-group"></i>{{ $product->category->name ?? 'Uncategorized' }}</span>
-                    <span><i class="fa-solid fa-cubes-stacked"></i>{{ $product->isSingle() ? $product->stock : $product->variants->sum('stock') }} in stock</span>
+    @php
+        $statusMap = [
+            'active' => 'st-active',
+            'draft' => 'st-draft',
+            'inactive' => 'st-inactive',
+            'archived' => 'st-archived',
+        ];
+        $stockTotal = $product->isSingle() ? $product->stock : $product->variants->sum('stock');
+        $discountLabel = null;
+        if ($product->has_discount) {
+            $discountLabel = $product->discount_type === 'percentage'
+                ? rtrim(rtrim(number_format($product->discount_amount, 2), '0'), '.') . '%'
+                : '$' . number_format($product->discount_amount, 2);
+        }
+    @endphp
+
+    <div class="admin-page pd-page">
+
+        {{-- Header --}}
+        <div class="pd-header">
+            <div class="pd-header__main">
+                <p class="section-kicker mb-1">{{ __('Product detail') }}</p>
+                <h2 class="pd-title">{{ $product->name }}</h2>
+                <div class="pd-meta">
+                    <span class="status-chip {{ $statusMap[$product->status] ?? 'st-draft' }}">{{ ucfirst($product->status) }}</span>
+                    <span><i class="fa-solid fa-layer-group"></i>{{ $product->category->name ?? __('Uncategorized') }}</span>
+                    <span><i class="fa-solid fa-tag"></i>{{ $product->brand->name ?? __('No brand') }}</span>
+                    <span><i class="fa-solid fa-cubes-stacked"></i>{{ $stockTotal }} {{ __('in stock') }}</span>
                 </div>
             </div>
-            <div class="product-show-hero__price">
-                <span>{{ __('Storefront price') }}</span>
-                <strong>${{ number_format($product->final_price, 2) }}</strong>
-            </div>
-            <div class="product-show-hero__actions">
+            <div class="pd-header__actions">
                 <a href="{{ route('admin.products.edit', $product->id) }}" class="premium-button premium-button--dark">
                     <i class="fa-solid fa-pen"></i><span>{{ __('Edit') }}</span>
                 </a>
@@ -36,112 +50,203 @@
 
         <x-message />
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 product-show-layout">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
 
-            {{-- Gallery --}}
-            <section class="premium-card product-show-gallery lg:col-span-1">
-                <p class="section-kicker mb-2">{{ __('Gallery') }}</p>
-                @php($cover = $product->thumbnail_url)
-                @if ($cover)
-                    <img src="{{ $cover }}" alt="{{ $product->name }}" class="product-show-gallery__cover">
-                @else
-                    <div class="empty-state"><i class="fa-regular fa-image"></i><strong>{{ __('No images') }}</strong></div>
-                @endif
-                @if ($product->images->isNotEmpty())
-                    <div class="product-show-gallery__thumbs">
-                        @foreach ($product->images as $img)
-                            <img src="{{ Imageurl($img->image, 'products') }}" alt="image"
-                                class="{{ $img->is_primary ? 'is-primary' : '' }}">
-                        @endforeach
+            {{-- Left rail --}}
+            <div class="lg:col-span-2 d-flex flex-column gap-4">
+
+                {{-- Gallery --}}
+                <section class="pd-card">
+                    <div class="pd-card__head">
+                        <p class="section-kicker mb-0">{{ __('Gallery') }}</p>
+                        @if ($product->images->isNotEmpty())
+                            <span class="pd-count">{{ $product->images->count() }} {{ __('photos') }}</span>
+                        @endif
                     </div>
-                @endif
-            </section>
-
-            {{-- Info --}}
-            <section class="premium-card product-show-overview lg:col-span-2">
-                <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-                    <p class="section-kicker mb-0">{{ __('Overview') }}</p>
-                    <div class="d-flex flex-wrap gap-1">
-                        @if ($product->is_featured)<span class="pill-badge pill-featured">{{ __('Featured') }}</span>@endif
-                        @if ($product->is_new)<span class="pill-badge pill-new">{{ __('New') }}</span>@endif
-                        @if ($product->is_best_seller)<span class="pill-badge pill-best">{{ __('Best Seller') }}</span>@endif
-                        @if ($product->is_on_sale)<span class="pill-badge pill-sale">{{ __('On Sale') }}</span>@endif
-                        @php($map = ['active' => 'st-active', 'draft' => 'st-draft', 'inactive' => 'st-inactive', 'archived' => 'st-archived'])
-                        <span class="status-chip {{ $map[$product->status] ?? 'st-draft' }}">{{ ucfirst($product->status) }}</span>
-                    </div>
-                </div>
-
-                <div class="product-show-price-row">
-                    <span>${{ number_format($product->final_price, 2) }}</span>
-                    @if ($product->has_discount)
-                        <del>${{ number_format($product->price, 2) }}</del>
-                        <span class="pill-badge pill-sale">
-                            {{ $product->discount_type === 'percentage' ? rtrim(rtrim(number_format($product->discount_amount, 2), '0'), '.') . '% off' : '$' . number_format($product->discount_amount, 2) . ' off' }}
-                        </span>
+                    @if ($product->thumbnail_url)
+                        <img src="{{ $product->thumbnail_url }}" alt="{{ $product->name }}" class="pd-cover">
+                    @else
+                        <div class="empty-state"><i class="fa-regular fa-image"></i><strong>{{ __('No images') }}</strong></div>
                     @endif
-                </div>
+                    @if ($product->images->isNotEmpty())
+                        <div class="pd-thumbs">
+                            @foreach ($product->images as $img)
+                                <img src="{{ Imageurl($img->image, 'products') }}" alt="image"
+                                    class="{{ $img->is_primary ? 'is-primary' : '' }}">
+                            @endforeach
+                        </div>
+                    @endif
+                </section>
 
-                <dl class="product-show-facts">
-                    <dt class="text-gray-500 dark:text-slate-400">{{ __('Slug') }}</dt>
-                    <dd class="font-mono text-gray-800 dark:text-slate-200">{{ $product->slug }}</dd>
-                    <dt class="text-gray-500 dark:text-slate-400">{{ __('Category') }}</dt>
-                    <dd class="text-gray-800 dark:text-slate-200">{{ $product->category->name ?? 'N/A' }}{{ $product->subCategory ? ' / ' . $product->subCategory->name : '' }}</dd>
-                    <dt class="text-gray-500 dark:text-slate-400">{{ __('Brand') }}</dt>
-                    <dd class="text-gray-800 dark:text-slate-200">{{ $product->brand->name ?? 'N/A' }}</dd>
-                    <dt class="text-gray-500 dark:text-slate-400">{{ __('Cost Price') }}</dt>
-                    <dd class="text-gray-800 dark:text-slate-200">{{ $product->cost_price !== null ? '$' . number_format($product->cost_price, 2) : 'N/A' }}</dd>
-                    <dt class="text-gray-500 dark:text-slate-400">{{ __('Weight') }}</dt>
-                    <dd class="text-gray-800 dark:text-slate-200">{{ $product->weight !== null ? $product->weight . ' kg' : 'N/A' }}</dd>
-                    <dt class="text-gray-500 dark:text-slate-400">{{ __('Total Stock') }}</dt>
-                    <dd class="text-gray-800 dark:text-slate-200">{{ $product->isSingle() ? $product->stock : $product->variants->sum('stock') }}</dd>
-                </dl>
-
-                @if ($product->tags->isNotEmpty())
-                    <div class="mt-3 d-flex flex-wrap gap-1">
-                        @foreach ($product->tags as $tag)
-                            <span class="tag-chip is-static">{{ $tag->name }}</span>
-                        @endforeach
+                {{-- Pricing --}}
+                <section class="pd-card">
+                    <div class="pd-card__head">
+                        <p class="section-kicker mb-0">{{ __('Pricing') }}</p>
+                        @if ($product->has_discount)
+                            <span class="pill-badge pill-sale">-{{ $discountLabel }}</span>
+                        @endif
                     </div>
+                    <div class="pd-price__final">${{ number_format($product->final_price, 2) }} <small>{{ __('final') }}</small></div>
+                    @if ($product->has_discount)
+                        <div class="pd-price__sale">
+                            <del>${{ number_format($product->price, 2) }}</del>
+                        </div>
+                    @endif
+                    <dl class="pd-rows">
+                        <div class="pd-row">
+                            <dt>{{ __('Regular price') }}</dt>
+                            <dd>${{ number_format($product->price, 2) }}</dd>
+                        </div>
+                        <div class="pd-row">
+                            <dt>{{ __('Cost price') }}</dt>
+                            <dd>{{ $product->cost_price !== null ? '$' . number_format($product->cost_price, 2) : '—' }}</dd>
+                        </div>
+                        <div class="pd-row">
+                            <dt>{{ __('Margin') }}</dt>
+                            <dd>{{ $product->cost_price !== null ? '$' . number_format(max(0, $product->final_price - $product->cost_price), 2) : '—' }}</dd>
+                        </div>
+                    </dl>
+                </section>
+
+                {{-- Inventory --}}
+                <section class="pd-card">
+                    <div class="pd-card__head">
+                        <p class="section-kicker mb-0">{{ __('Inventory') }}</p>
+                    </div>
+                    <div class="pd-stock__num">{{ $stockTotal }} <small>{{ __('units') }}</small></div>
+                    <dl class="pd-rows">
+                        <div class="pd-row">
+                            <dt>{{ __('SKU') }}</dt>
+                            <dd class="font-mono">{{ $product->sku ?: '—' }}</dd>
+                        </div>
+                        <div class="pd-row">
+                            <dt>{{ __('Low stock alert') }}</dt>
+                            <dd>{{ $product->low_stock_alert }}</dd>
+                        </div>
+                        <div class="pd-row">
+                            <dt>{{ __('Weight') }}</dt>
+                            <dd>{{ $product->weight !== null ? $product->weight . ' kg' : '—' }}</dd>
+                        </div>
+                    </dl>
+                </section>
+            </div>
+
+            {{-- Right rail --}}
+            <div class="lg:col-span-3 d-flex flex-column gap-4">
+
+                {{-- Details --}}
+                <section class="pd-card">
+                    <div class="pd-card__head">
+                        <p class="section-kicker mb-0">{{ __('Details') }}</p>
+                        <div class="d-flex flex-wrap gap-1">
+                            @if ($product->is_featured)<span class="pill-badge pill-featured">{{ __('Featured') }}</span>@endif
+                            @if ($product->is_new)<span class="pill-badge pill-new">{{ __('New') }}</span>@endif
+                            @if ($product->is_best_seller)<span class="pill-badge pill-best">{{ __('Best Seller') }}</span>@endif
+                            @if ($product->is_on_sale)<span class="pill-badge pill-sale">{{ __('On Sale') }}</span>@endif
+                        </div>
+                    </div>
+
+                    <dl class="pd-facts">
+                        <div class="pd-fact">
+                            <dt>{{ __('Slug') }}</dt>
+                            <dd class="font-mono">{{ $product->slug }}</dd>
+                        </div>
+                        <div class="pd-fact">
+                            <dt>{{ __('Category') }}</dt>
+                            <dd>{{ $product->category->name ?? '—' }}{{ $product->subCategory ? ' / ' . $product->subCategory->name : '' }}</dd>
+                        </div>
+                        <div class="pd-fact">
+                            <dt>{{ __('Brand') }}</dt>
+                            <dd>{{ $product->brand->name ?? '—' }}</dd>
+                        </div>
+                        <div class="pd-fact">
+                            <dt>{{ __('SKU') }}</dt>
+                            <dd class="font-mono">{{ $product->sku ?: '—' }}</dd>
+                        </div>
+                    </dl>
+
+                    @if ($product->tags->isNotEmpty())
+                        <div class="pd-tags">
+                            @foreach ($product->tags as $tag)
+                                <span class="tag-chip is-static">{{ $tag->name }}</span>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    @if ($product->short_description || $product->description)
+                        <div class="pd-notes">
+                            @if ($product->short_description)
+                                <p class="section-kicker mb-1">{{ __('Short description') }}</p>
+                                <p class="pd-notes__text">{{ $product->short_description }}</p>
+                            @endif
+                            @if ($product->description)
+                                <p class="section-kicker mt-3 mb-1">{{ __('Description') }}</p>
+                                <p class="pd-notes__text">{{ $product->description }}</p>
+                            @endif
+                        </div>
+                    @endif
+                </section>
+
+                {{-- Specifications --}}
+                @if ($product->specifications->isNotEmpty())
+                    <section class="pd-card">
+                        <div class="pd-card__head">
+                            <p class="section-kicker mb-0">{{ __('Specifications') }}</p>
+                        </div>
+                        <dl class="pd-rows">
+                            @foreach ($product->specifications as $spec)
+                                <div class="pd-row">
+                                    <dt>{{ $spec->name }}</dt>
+                                    <dd>{{ $spec->value }}</dd>
+                                </div>
+                            @endforeach
+                        </dl>
+                    </section>
                 @endif
 
-                @if ($product->short_description)
-                    <p class="section-kicker mt-4 mb-1">{{ __('Short Description') }}</p>
-                    <p class="text-sm text-gray-600 dark:text-slate-300">{{ $product->short_description }}</p>
+                {{-- SEO --}}
+                @if ($product->seo_title || $product->seo_description)
+                    <section class="pd-card">
+                        <div class="pd-card__head">
+                            <p class="section-kicker mb-0">{{ __('SEO') }}</p>
+                        </div>
+                        <div class="pd-seo">
+                            @if ($product->seo_title)
+                                <div>
+                                    <strong>{{ __('Meta title') }}</strong>
+                                    <p>{{ $product->seo_title }}</p>
+                                </div>
+                            @endif
+                            @if ($product->seo_description)
+                                <div>
+                                    <strong>{{ __('Meta description') }}</strong>
+                                    <p>{{ $product->seo_description }}</p>
+                                </div>
+                            @endif
+                        </div>
+                    </section>
                 @endif
-                @if ($product->description)
-                    <p class="section-kicker mt-3 mb-1">{{ __('Description') }}</p>
-                    <p class="text-sm text-gray-600 dark:text-slate-300">{{ $product->description }}</p>
-                @endif
-            </section>
+            </div>
         </div>
 
-        {{-- Variants / stock --}}
-        <section class="premium-card mt-4">
-            @if ($product->isSingle())
-                <div class="table-titlebar">
-                    <div><h3>{{ __('Stock') }}</h3><p>{{ __('Single product - one SKU.') }}</p></div>
-                </div>
-                <div class="premium-table-wrap">
-                    <table class="premium-table">
-                        <thead><tr><th>{{ __('SKU') }}</th><th>{{ __('Stock') }}</th><th>{{ __('Low Stock Alert') }}</th></tr></thead>
-                        <tbody>
-                            <tr>
-                                <td><span class="font-mono text-sm">{{ $product->sku ?: 'N/A' }}</span></td>
-                                <td>{{ $product->stock }}</td>
-                                <td>{{ $product->low_stock_alert }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            @else
-                <div class="table-titlebar">
-                    <div><h3>{{ __('Variants') }}</h3><p>{{ $product->variants->count() }} variant{{ $product->variants->count() === 1 ? '' : 's' }}.</p></div>
+        {{-- Variants --}}
+        @if (! $product->isSingle())
+            <section class="pd-card">
+                <div class="pd-card__head">
+                    <p class="section-kicker mb-0">{{ __('Variants') }}</p>
+                    <span class="pd-count">{{ $product->variants->count() }} {{ __('items') }}</span>
                 </div>
                 <div class="premium-table-wrap">
                     <table class="premium-table">
                         <thead>
                             <tr>
-                                <th>{{ __('Image') }}</th><th>{{ __('Variant') }}</th><th>{{ __('SKU') }}</th><th>{{ __('Barcode') }}</th><th>{{ __('Stock') }}</th><th>{{ __('Price') }}</th><th>{{ __('Status') }}</th>
+                                <th>{{ __('Image') }}</th>
+                                <th>{{ __('Variant') }}</th>
+                                <th>{{ __('SKU') }}</th>
+                                <th>{{ __('Barcode') }}</th>
+                                <th>{{ __('Stock') }}</th>
+                                <th>{{ __('Price') }}</th>
+                                <th>{{ __('Status') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -149,9 +254,9 @@
                                 <tr>
                                     <td>
                                         @if ($variant->image_url)
-                                            <img src="{{ $variant->image_url }}" alt="" class="w-10 h-10 object-cover rounded border dark:border-white/10">
+                                            <img src="{{ $variant->image_url }}" alt="" class="pd-variant-img">
                                         @else
-                                            <span class="d-inline-flex align-items-center justify-content-center rounded bg-gray-100 text-gray-300 dark:bg-white/10" style="width:40px;height:40px;"><i class="fa-regular fa-image"></i></span>
+                                            <span class="pd-variant-ph"><i class="fa-regular fa-image"></i></span>
                                         @endif
                                     </td>
                                     <td>
@@ -164,52 +269,29 @@
                                                     {{ $value->value }}
                                                 </span>
                                             @empty
-                                                <span class="text-gray-400">{{ __('N/A') }}</span>
+                                                <span class="text-gray-400">—</span>
                                             @endforelse
                                         </div>
                                     </td>
                                     <td><span class="font-mono text-sm">{{ $variant->sku }}</span></td>
-                                    <td><span class="font-mono text-sm text-gray-500">{{ $variant->barcode ?: 'N/A' }}</span></td>
+                                    <td><span class="font-mono text-sm text-gray-500">{{ $variant->barcode ?: '—' }}</span></td>
                                     <td>
                                         {{ $variant->stock }}
                                         @if ($variant->is_low_stock)<span class="pill-badge pill-sale ms-1">{{ __('Low') }}</span>@endif
                                     </td>
                                     <td>{{ $variant->price !== null ? '$' . number_format($variant->price, 2) : '$' . number_format($product->price, 2) }}</td>
-                                    <td><span class="status-chip {{ $variant->status ? 'st-active' : 'st-inactive' }}">{{ $variant->status ? 'Active' : 'Inactive' }}</span></td>
+                                    <td><span class="status-chip {{ $variant->status ? 'st-active' : 'st-inactive' }}">{{ $variant->status ? __('Active') : __('Inactive') }}</span></td>
                                 </tr>
                             @empty
-                                <tr><td colspan="7"><div class="empty-state"><i class="fa-solid fa-layer-group"></i><strong>{{ __('No variants') }}</strong></div></td></tr>
+                                <tr>
+                                    <td colspan="7">
+                                        <div class="empty-state"><i class="fa-solid fa-layer-group"></i><strong>{{ __('No variants') }}</strong></div>
+                                    </td>
+                                </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
-            @endif
-        </section>
-
-        {{-- Specifications --}}
-        @if ($product->specifications->isNotEmpty())
-            <section class="premium-card mt-4">
-                <div class="table-titlebar"><div><h3>{{ __('Specifications') }}</h3></div></div>
-                <div class="premium-table-wrap">
-                    <table class="premium-table">
-                        <tbody>
-                            @foreach ($product->specifications as $spec)
-                                <tr>
-                                    <td style="width:240px;"><strong>{{ $spec->name }}</strong></td>
-                                    <td>{{ $spec->value }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-        @endif
-
-        @if ($product->seo_title || $product->seo_description)
-            <section class="premium-card p-4 mt-4">
-                <p class="section-kicker mb-2">{{ __('SEO') }}</p>
-                @if ($product->seo_title)<p class="text-sm"><strong>{{ __('Title:') }}</strong> {{ $product->seo_title }}</p>@endif
-                @if ($product->seo_description)<p class="text-sm text-gray-600 dark:text-slate-300"><strong>{{ __('Description:') }}</strong> {{ $product->seo_description }}</p>@endif
             </section>
         @endif
     </div>
