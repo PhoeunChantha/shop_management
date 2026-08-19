@@ -95,8 +95,7 @@
                                         {{ Str::limit($category->description, 50, '...') }}
                                     </span>
                                 @else
-                                    <span class="text-gray-400 dark:text-slate-500 text-xs italic">{{ __('No
-                                        description') }}</span>
+                                    <span class="text-gray-400 dark:text-slate-500 text-xs italic">{{ __('No description') }}</span>
                                 @endif
                             </td>
 

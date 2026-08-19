@@ -14,8 +14,7 @@
             <label for="name">Category Name <span class="text-red-500">*</span></label>
             <input value="{{ old('name', $category->name ?? '') }}" type="text" name="name" id="name"
                 class="form-input" placeholder="{{ __('e.g. T-Shirt, Shoes, Hats') }}" required>
-            <small class="text-gray-400 dark:text-slate-500 d-block mt-1">{{ __('The URL slug is generated automatically from
-                the name.') }}</small>
+            <small class="text-gray-400 dark:text-slate-500 d-block mt-1">{{ __('The URL slug is generated automatically from the name.') }}</small>
             @error('name')
                 <p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>
             @enderror
@@ -37,13 +36,11 @@
             @enderror
         </div>
         <div class="form-field col-span-2 md:col-span-1">
-            <label for="icon">Category Icon <span class="text-gray-400 font-normal">{{ __('(Font Awesome
-                    class)') }}</span></label>
+            <label for="icon">Category Icon <span class="text-gray-400 font-normal">{{ __('(Font Awesome class)') }}</span></label>
             <input value="{{ old('icon', $category->icon ?? '') }}" type="text" name="icon" id="icon"
                 class="form-input" placeholder="{{ __('e.g. fa-shirt') }}">
             <small class="d-block mt-1">
-                <a href="https://fontawesome.com/icons" target="_blank" class="text-blue-500 underline">{{ __('Browse Font
-                    Awesome') }}</a>
+                <a href="https://fontawesome.com/icons" target="_blank" class="text-blue-500 underline">{{ __('Browse Font Awesome') }}</a>
                 @if ($isEdit && !empty($category->icon))
                     <span class="ms-2 text-gray-500 dark:text-slate-400">Current: <i
                             class="fa-solid {{ $category->icon }} ml-1"></i></span>
