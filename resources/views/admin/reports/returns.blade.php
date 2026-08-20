@@ -18,6 +18,7 @@
 
         <div class="finance-report-metrics">
             <div><span>{{ __('Total returns') }}</span><strong>{{ number_format($summary['total']) }}</strong></div>
+            <div><span>{{ __('Return rate') }}</span><strong>{{ number_format($summary['return_rate'], 1) }}%</strong></div>
             <div><span>{{ __('Refunded') }}</span><strong>{{ number_format($summary['refunded']) }}</strong></div>
             <div><span>{{ __('Refund amount') }}</span><strong>${{ number_format($summary['refund_amount'], 2) }}</strong></div>
             <div><span>{{ __('Pending') }}</span><strong>{{ number_format($summary['pending']) }}</strong></div>

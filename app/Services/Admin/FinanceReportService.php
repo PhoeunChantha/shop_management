@@ -23,23 +23,10 @@ final class FinanceReportService
     public function overview(array $filters): array
     {
         [$start, $end] = $this->dateRange($filters);
-        $orders = $this->ordersBetween($start, $end, $filters);
-        $paidStatuses = [PaymentStatus::Paid->value, PaymentStatus::PartiallyRefunded->value, PaymentStatus::Refunded->value];
-        $paidOrders = (clone $orders)->whereIn('payment_status', $paidStatuses);
+        [$prevStart, $prevEnd] = $this->previousRange($start, $end);
 
-        $refunds = ReturnRequest::query()
-            ->whereIn('refund_status', ['partial', 'refunded'])
-            ->whereBetween(DB::raw('DATE(COALESCE(refunded_at, updated_at))'), [$start->toDateString(), $end->toDateString()])
-            ->sum('refund_amount');
-
-        $grossSales = (float) (clone $paidOrders)->sum('grand_total');
-        $taxTotal = (float) (clone $paidOrders)->sum('tax_total');
-        $shippingTotal = (float) (clone $paidOrders)->sum('shipping_total');
-        $discountTotal = (float) (clone $paidOrders)->sum('discount_total');
-        $purchaseCost = (float) PurchaseOrder::query()
-            ->whereIn('status', ['ordered', 'partial', 'received'])
-            ->whereBetween(DB::raw('DATE(COALESCE(ordered_at, created_at))'), [$start->toDateString(), $end->toDateString()])
-            ->sum('subtotal');
+        $summary = $this->summaryFor($start, $end, $filters);
+        $previous = $this->summaryFor($prevStart, $prevEnd, $filters);
 
         return [
             'filters' => [
@@ -48,17 +35,12 @@ final class FinanceReportService
                 'status' => $filters['status'] ?? null,
                 'payment_status' => $filters['payment_status'] ?? null,
             ],
-            'summary' => [
-                'gross_sales' => $grossSales,
-                'refunds' => (float) $refunds,
-                'net_sales' => $grossSales - (float) $refunds,
-                'orders' => (clone $orders)->count(),
-                'paid_orders' => (clone $paidOrders)->count(),
-                'average_order' => (clone $paidOrders)->count() > 0 ? $grossSales / (clone $paidOrders)->count() : 0,
-                'tax_total' => $taxTotal,
-                'shipping_total' => $shippingTotal,
-                'discount_total' => $discountTotal,
-                'purchase_cost' => $purchaseCost,
+            'summary' => $summary,
+            // Period-over-period change vs the equal-length window before this one.
+            'comparison' => $this->comparison($summary, $previous, ['total_revenue', 'net_revenue', 'orders', 'average_order']),
+            'previousRange' => [
+                'start_date' => $prevStart->toDateString(),
+                'end_date' => $prevEnd->toDateString(),
             ],
             'salesByDay' => $this->salesByDay($start, $end, $filters),
             'topProducts' => $this->topProducts($start, $end, $filters),
@@ -66,6 +48,113 @@ final class FinanceReportService
             'purchaseOrders' => $this->purchaseOrders($start, $end),
             'paymentMix' => $this->paymentMix($start, $end, $filters),
         ];
+    }
+
+    /**
+     * Summary KPIs for an arbitrary window (reused for the current + prior period).
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<string, float|int>
+     */
+    private function summaryFor(CarbonImmutable $start, CarbonImmutable $end, array $filters): array
+    {
+        $orders = $this->ordersBetween($start, $end, $filters);
+        $paidStatuses = [PaymentStatus::Paid->value, PaymentStatus::PartiallyRefunded->value, PaymentStatus::Refunded->value];
+        $paidOrders = (clone $orders)->whereIn('payment_status', $paidStatuses);
+
+        // Real commerce revenue chain: subtotal is merchandise BEFORE discount,
+        // grand_total is what was actually collected (incl. tax + shipping).
+        $merchandise = (float) (clone $paidOrders)->sum('subtotal');
+        $discounts = (float) (clone $paidOrders)->sum('discount_total');
+        $tax = (float) (clone $paidOrders)->sum('tax_total');
+        $shipping = (float) (clone $paidOrders)->sum('shipping_total');
+        $totalRevenue = (float) (clone $paidOrders)->sum('grand_total');
+        $paidCount = (clone $paidOrders)->count();
+        $orderCount = (clone $orders)->count();
+
+        // COGS from the per-line cost snapshot on paid orders in the window.
+        $cogs = (float) OrderDetail::query()
+            ->join('orders', 'orders.id', '=', 'order_details.order_id')
+            ->whereBetween(DB::raw('DATE(COALESCE(orders.placed_at, orders.created_at))'), [$start->toDateString(), $end->toDateString()])
+            ->whereIn('orders.payment_status', $paidStatuses)
+            ->when(filled($filters['status'] ?? null), fn (Builder $q) => $q->where('orders.status', $filters['status']))
+            ->when(filled($filters['payment_status'] ?? null), fn (Builder $q) => $q->where('orders.payment_status', $filters['payment_status']))
+            ->sum(DB::raw('COALESCE(order_details.unit_cost, 0) * order_details.quantity'));
+
+        $refunds = (float) ReturnRequest::query()
+            ->whereIn('refund_status', ['partial', 'refunded'])
+            ->whereBetween(DB::raw('DATE(COALESCE(refunded_at, updated_at))'), [$start->toDateString(), $end->toDateString()])
+            ->sum('refund_amount');
+
+        $returnsCount = (int) ReturnRequest::query()
+            ->whereBetween('requested_at', [$start->startOfDay(), $end->endOfDay()])
+            ->count();
+
+        $purchaseCost = (float) PurchaseOrder::query()
+            ->whereIn('status', ['ordered', 'partial', 'received'])
+            ->whereBetween(DB::raw('DATE(COALESCE(ordered_at, created_at))'), [$start->toDateString(), $end->toDateString()])
+            ->sum('subtotal');
+
+        return [
+            'gross_sales' => $merchandise,          // merchandise before discounts
+            'discount_total' => $discounts,
+            'net_sales' => $merchandise - $discounts, // after discounts, before tax/shipping
+            'tax_total' => $tax,
+            'shipping_total' => $shipping,
+            'total_revenue' => $totalRevenue,        // collected incl. tax + shipping
+            'refunds' => $refunds,
+            'net_revenue' => $totalRevenue - $refunds,
+            'cogs' => $cogs,
+            'gross_profit' => ($merchandise - $discounts) - $cogs, // net sales − COGS
+            'margin' => ($merchandise - $discounts) > 0 ? round(((($merchandise - $discounts) - $cogs) / ($merchandise - $discounts)) * 100, 1) : 0.0,
+            'orders' => $orderCount,
+            'paid_orders' => $paidCount,
+            'average_order' => $paidCount > 0 ? $totalRevenue / $paidCount : 0.0,
+            'return_rate' => $orderCount > 0 ? round(($returnsCount / $orderCount) * 100, 1) : 0.0,
+            'purchase_cost' => $purchaseCost,
+        ];
+    }
+
+    /**
+     * The equal-length window immediately preceding [$start, $end].
+     *
+     * @return array{0: CarbonImmutable, 1: CarbonImmutable}
+     */
+    private function previousRange(CarbonImmutable $start, CarbonImmutable $end): array
+    {
+        $days = $start->startOfDay()->diffInDays($end->startOfDay()) + 1;
+        $prevEnd = $start->subDay()->endOfDay();
+        $prevStart = $prevEnd->subDays($days - 1)->startOfDay();
+
+        return [$prevStart, $prevEnd];
+    }
+
+    /**
+     * Percentage change per metric. Returns change=null when the prior period has
+     * no base value — we never fabricate a percentage against zero.
+     *
+     * @param  array<string, float|int>  $current
+     * @param  array<string, float|int>  $previous
+     * @param  array<int, string>  $keys
+     * @return array<string, array{previous: float, change: float|null, direction: string}>
+     */
+    private function comparison(array $current, array $previous, array $keys): array
+    {
+        $out = [];
+
+        foreach ($keys as $key) {
+            $cur = (float) ($current[$key] ?? 0);
+            $prev = (float) ($previous[$key] ?? 0);
+            $change = $prev > 0 ? round((($cur - $prev) / $prev) * 100, 1) : null;
+
+            $out[$key] = [
+                'previous' => $prev,
+                'change' => $change,
+                'direction' => $change === null ? 'flat' : ($change > 0 ? 'up' : ($change < 0 ? 'down' : 'flat')),
+            ];
+        }
+
+        return $out;
     }
 
     /**

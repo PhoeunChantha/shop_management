@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace App\Services\Admin;
 
-use App\Enums\PaymentStatus;
+use App\Models\Payment;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
+/**
+ * Gateway payment analytics from the `payments` ledger (not order.payment_status):
+ * captured / pending / failed transactions, success rate, and method breakdown.
+ */
 final class PaymentReportService extends ReportService
 {
     /**
@@ -17,16 +22,30 @@ final class PaymentReportService extends ReportService
     public function report(array $filters): array
     {
         [$start, $end] = $this->dateRange($filters);
-        $mix = $this->paymentMix($start, $end, $filters);
+        $base = $this->paymentsBetween($start, $end, $filters);
+
+        $total = (clone $base)->count();
+        $capturedCount = (clone $base)->where('status', 'completed')->count();
 
         return [
-            'filters' => $this->appliedFilters($start, $end, $filters),
-            'summary' => [
-                'orders' => (int) $mix->sum('count'),
-                'collected' => (float) $mix->where('is_paid', true)->sum('amount'),
-                'outstanding' => (float) $mix->where('is_paid', false)->sum('amount'),
+            'filters' => [
+                'start_date' => $start->toDateString(),
+                'end_date' => $end->toDateString(),
+                'status' => $filters['status'] ?? null,
+                'method' => $filters['method'] ?? null,
             ],
-            'paymentMix' => $this->paginateRows($mix, $filters, ['label']),
+            'summary' => [
+                'transactions' => $total,
+                'captured' => $capturedCount,
+                'captured_amount' => (float) (clone $base)->where('status', 'completed')->sum('amount'),
+                'pending' => (clone $base)->where('status', 'pending')->count(),
+                'pending_amount' => (float) (clone $base)->where('status', 'pending')->sum('amount'),
+                'failed' => (clone $base)->where('status', 'failed')->count(),
+                'success_rate' => $total > 0 ? round(($capturedCount / $total) * 100, 1) : 0.0,
+            ],
+            'byMethod' => $this->byMethod($start, $end, $filters),
+            'transactions' => $this->paginateRows($this->rows($start, $end, $filters), $filters, ['tran_id', 'order', 'method', 'status']),
+            'methodOptions' => $this->methodOptions(),
         ];
     }
 
@@ -38,44 +57,79 @@ final class PaymentReportService extends ReportService
     {
         [$start, $end] = $this->dateRange($filters);
 
-        return $this->paymentMix($start, $end, $filters)
-            ->map(fn (array $row): array => [
-                'status' => $row['label'],
-                'orders' => $row['count'],
-                'amount' => $row['amount'],
-            ])
-            ->prepend(['status' => 'Payment Status', 'orders' => 'Orders', 'amount' => 'Amount'])
+        return $this->rows($start, $end, $filters)
+            ->prepend(['Transaction' => 'Transaction', 'Order' => 'Order', 'Method' => 'Method', 'Gateway' => 'Gateway', 'Amount' => 'Amount', 'Status' => 'Status', 'Date' => 'Date'])
             ->map(fn ($row) => array_values($row))
             ->all();
     }
 
     /**
      * @param  array<string, mixed>  $filters
-     * @return Collection<int, array<string, mixed>>
      */
-    private function paymentMix(CarbonImmutable $start, CarbonImmutable $end, array $filters): Collection
+    private function paymentsBetween(CarbonImmutable $start, CarbonImmutable $end, array $filters): Builder
     {
-        $paid = $this->paidStatuses();
+        return Payment::query()
+            ->whereBetween('created_at', [$start->startOfDay(), $end->endOfDay()])
+            ->when(filled($filters['status'] ?? null), fn (Builder $q) => $q->where('status', $filters['status']))
+            ->when(filled($filters['method'] ?? null), fn (Builder $q) => $q->where('payment_option', $filters['method']));
+    }
 
-        return $this->ordersBetween($start, $end, $filters)
-            ->selectRaw('payment_status')
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return Collection<int, array<string, string|int|float>>
+     */
+    private function byMethod(CarbonImmutable $start, CarbonImmutable $end, array $filters): Collection
+    {
+        return $this->paymentsBetween($start, $end, $filters)
+            ->selectRaw("COALESCE(NULLIF(payment_option, ''), 'unknown') as method")
             ->selectRaw('COUNT(*) as count')
-            ->selectRaw('SUM(grand_total) as amount')
-            ->groupBy('payment_status')
-            ->orderByDesc('count')
+            ->selectRaw("SUM(CASE WHEN status = 'completed' THEN amount ELSE 0 END) as captured")
+            ->groupBy('method')
+            ->orderByDesc('captured')
             ->get()
-            ->map(function (object $row) use ($paid): array {
-                $status = $row->payment_status instanceof PaymentStatus
-                    ? $row->payment_status->value
-                    : (string) $row->payment_status;
+            ->map(fn (object $row): array => [
+                'method' => ucfirst((string) $row->method),
+                'count' => (int) $row->count,
+                'captured' => (float) $row->captured,
+            ]);
+    }
 
-                return [
-                    'status' => $status,
-                    'label' => PaymentStatus::tryFrom($status)?->label() ?? ucfirst($status),
-                    'count' => (int) $row->count,
-                    'amount' => (float) $row->amount,
-                    'is_paid' => in_array($status, $paid, true),
-                ];
-            });
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return Collection<int, array<string, string|float>>
+     */
+    private function rows(CarbonImmutable $start, CarbonImmutable $end, array $filters): Collection
+    {
+        return $this->paymentsBetween($start, $end, $filters)
+            ->with('order:id,order_number')
+            ->latest('created_at')
+            ->limit(5000)
+            ->get()
+            ->map(fn (Payment $payment): array => [
+                'tran_id' => (string) $payment->tran_id,
+                'order' => (string) ($payment->order?->order_number ?? '—'),
+                'method' => ucfirst((string) ($payment->payment_option ?: 'unknown')),
+                'gateway' => ucfirst((string) $payment->gateway),
+                'amount' => (float) $payment->amount,
+                'status' => ucfirst((string) $payment->status),
+                'date' => $payment->created_at?->format('Y-m-d H:i') ?? '',
+            ]);
+    }
+
+    /**
+     * Distinct payment methods present in the ledger, for the filter dropdown.
+     *
+     * @return array<string, string>
+     */
+    private function methodOptions(): array
+    {
+        return Payment::query()
+            ->whereNotNull('payment_option')
+            ->where('payment_option', '!=', '')
+            ->distinct()
+            ->orderBy('payment_option')
+            ->pluck('payment_option')
+            ->mapWithKeys(fn (string $method): array => [$method => ucfirst($method)])
+            ->all();
     }
 }

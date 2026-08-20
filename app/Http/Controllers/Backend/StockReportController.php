@@ -35,8 +35,8 @@ final class StockReportController extends Controller
     {
         return $this->streamExport(
             $this->reports->exportRows(),
-            'Stock Report',
-            'stock-report',
+            'Inventory Report',
+            'inventory-report',
             (string) $request->query('format', 'csv'),
         );
     }

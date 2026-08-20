@@ -305,6 +305,8 @@ final class CheckoutService
                     'sku' => $variant?->sku ?: $product->sku,
                     'image' => $product->thumbnail,
                     'price' => $line['price'],
+                    // Snapshot cost at sale time (variant cost falls back to product cost).
+                    'unit_cost' => $variant?->cost_price ?? $product->cost_price,
                     'quantity' => $line['qty'],
                     'line_total' => $line['line_total'],
                 ]);

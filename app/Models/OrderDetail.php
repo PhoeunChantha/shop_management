@@ -22,6 +22,7 @@ final class OrderDetail extends Model
         'sku',
         'image',
         'price',
+        'unit_cost',
         'quantity',
         'line_total',
     ];
@@ -30,6 +31,7 @@ final class OrderDetail extends Model
     {
         return [
             'price' => 'decimal:2',
+            'unit_cost' => 'decimal:2',
             'line_total' => 'decimal:2',
             'quantity' => 'integer',
         ];

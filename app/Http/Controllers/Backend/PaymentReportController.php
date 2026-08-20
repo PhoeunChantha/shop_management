@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Backend;
 
-use App\Enums\OrderStatus;
-use App\Enums\PaymentStatus;
 use App\Http\Controllers\Backend\Concerns\StreamsReportCsv;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\PaymentReportService;
@@ -27,9 +25,12 @@ final class PaymentReportController extends Controller
         $filters = $this->validatedFilters($request);
 
         return view('admin.reports.payments', array_merge($this->reports->report($filters), [
-            'orderStatuses' => OrderStatus::options(),
-            'paymentStatuses' => PaymentStatus::options(),
             'perPage' => (int) ($filters['per_page'] ?? 25),
+            'txStatuses' => [
+                'completed' => __('Captured'),
+                'pending' => __('Pending'),
+                'failed' => __('Failed'),
+            ],
         ]));
     }
 
@@ -51,8 +52,8 @@ final class PaymentReportController extends Controller
         return $request->validate([
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date'],
-            'status' => ['nullable', Rule::enum(OrderStatus::class)],
-            'payment_status' => ['nullable', Rule::enum(PaymentStatus::class)],
+            'status' => ['nullable', Rule::in(['completed', 'pending', 'failed'])],
+            'method' => ['nullable', 'string', 'max:80'],
             'search' => ['nullable', 'string', 'max:255'],
             'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
         ]);

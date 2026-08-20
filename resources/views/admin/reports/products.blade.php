@@ -22,6 +22,9 @@
             <div><span>{{ __('Products sold') }}</span><strong>{{ number_format($summary['products']) }}</strong></div>
             <div><span>{{ __('Units sold') }}</span><strong>{{ number_format($summary['units']) }}</strong></div>
             <div><span>{{ __('Revenue') }}</span><strong>${{ number_format($summary['revenue'], 2) }}</strong></div>
+            <div><span>{{ __('COGS') }}</span><strong>${{ number_format($summary['cogs'], 2) }}</strong></div>
+            <div><span>{{ __('Gross profit') }}</span><strong>${{ number_format($summary['profit'], 2) }}</strong></div>
+            <div><span>{{ __('Margin') }}</span><strong>{{ number_format($summary['margin'], 1) }}%</strong></div>
         </div>
 
         <x-admin.table-card ajax :loader="false">
@@ -39,6 +42,9 @@
                         <th>{{ __('SKU') }}</th>
                         <th>{{ __('Units') }}</th>
                         <th>{{ __('Revenue') }}</th>
+                        <th>{{ __('COGS') }}</th>
+                        <th>{{ __('Profit') }}</th>
+                        <th>{{ __('Margin') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -48,10 +54,13 @@
                             <td>{{ $product['sku'] ?: '—' }}</td>
                             <td>{{ number_format($product['quantity']) }}</td>
                             <td>${{ number_format($product['revenue'], 2) }}</td>
+                            <td>${{ number_format($product['cogs'], 2) }}</td>
+                            <td>${{ number_format($product['profit'], 2) }}</td>
+                            <td>{{ number_format($product['margin'], 1) }}%</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4">
+                            <td colspan="7">
                                 <x-admin.empty-state icon="fa-solid fa-box-open" title="{{ __('No product sales') }}" message="{{ __('Paid order lines will appear here.') }}" />
                             </td>
                         </tr>

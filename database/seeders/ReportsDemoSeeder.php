@@ -8,6 +8,7 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\ReturnRequest;
@@ -15,6 +16,7 @@ use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -78,9 +80,9 @@ class ReportsDemoSeeder extends Seeder
     /**
      * Demo catalog with a deliberate mix of healthy / low / out-of-stock items.
      *
-     * @return \Illuminate\Support\Collection<int, Product>
+     * @return Collection<int, Product>
      */
-    private function seedProducts(): \Illuminate\Support\Collection
+    private function seedProducts(): Collection
     {
         // stock, low_stock_alert pairs → out of stock, low, then healthy.
         $stockPlan = [[0, 5], [0, 5], [2, 5], [3, 5], [4, 5], [40, 5], [60, 5], [80, 5], [120, 5], [150, 5]];
@@ -90,7 +92,7 @@ class ReportsDemoSeeder extends Seeder
 
             return Product::factory()->create([
                 'product_type' => 'single',
-                'sku' => 'DEMO-'.str_pad((string) ($index + 1), 3, '0', STR_PAD_LEFT),
+                'sku' => 'DEMO-'.str_pad((string) ($index + 1), 3, '0', STR_PAD_LEFT).'-'.strtoupper(Str::random(4)),
                 'stock' => $stock,
                 'low_stock_alert' => $alert,
                 'status' => 'active',
@@ -102,10 +104,10 @@ class ReportsDemoSeeder extends Seeder
      * Orders (paid + unpaid + refunded) with line items across the range.
      *
      * @param  array<int, array{name: string, email: string, user_id: int}>  $customers
-     * @param  \Illuminate\Support\Collection<int, Product>  $products
-     * @return \Illuminate\Support\Collection<int, Order>
+     * @param  Collection<int, Product>  $products
+     * @return Collection<int, Order>
      */
-    private function seedOrders(array $customers, \Illuminate\Support\Collection $products): \Illuminate\Support\Collection
+    private function seedOrders(array $customers, Collection $products): Collection
     {
         $orders = collect();
 
@@ -179,6 +181,7 @@ class ReportsDemoSeeder extends Seeder
                     'name' => $product->name,
                     'sku' => $product->sku,
                     'price' => $price,
+                    'unit_cost' => $product->cost_price,
                     'quantity' => $qty,
                     'line_total' => $lineTotal,
                 ]);
@@ -194,6 +197,19 @@ class ReportsDemoSeeder extends Seeder
                 'shipping_total' => $shipping,
                 'tax_total' => $tax,
                 'grand_total' => round($subtotal - $discount + $shipping + $tax, 2),
+            ]);
+
+            // Gateway transaction ledger — paid orders capture, others pend/fail.
+            Payment::create([
+                'order_id' => $order->id,
+                'gateway' => 'payway',
+                'tran_id' => $order->order_number,
+                'payment_option' => fake()->randomElement(['cards', 'abapay', 'khqr']),
+                'amount' => $order->grand_total,
+                'currency' => 'USD',
+                'status' => $isPaid ? 'completed' : fake()->randomElement(['pending', 'failed']),
+                'created_at' => $placedAt,
+                'updated_at' => $placedAt,
             ]);
 
             $orders->push($order);
@@ -229,9 +245,9 @@ class ReportsDemoSeeder extends Seeder
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, Order>  $orders
+     * @param  Collection<int, Order>  $orders
      */
-    private function seedReturns(\Illuminate\Support\Collection $orders): void
+    private function seedReturns(Collection $orders): void
     {
         $paidOrders = $orders->filter(
             fn (Order $order): bool => in_array($order->payment_status->value, [PaymentStatus::Paid->value, PaymentStatus::PartiallyRefunded->value, PaymentStatus::Refunded->value], true)

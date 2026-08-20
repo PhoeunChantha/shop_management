@@ -26,6 +26,9 @@ final class ProductReportService extends ReportService
                 'products' => $products->count(),
                 'units' => (int) $products->sum('quantity'),
                 'revenue' => (float) $products->sum('revenue'),
+                'cogs' => (float) $products->sum('cogs'),
+                'profit' => (float) $products->sum('profit'),
+                'margin' => $products->sum('revenue') > 0 ? round(($products->sum('profit') / $products->sum('revenue')) * 100, 1) : 0.0,
             ],
             'products' => $this->paginateRows($products, $filters, ['name', 'sku']),
         ];
@@ -40,7 +43,7 @@ final class ProductReportService extends ReportService
         [$start, $end] = $this->dateRange($filters);
 
         return $this->topProducts($start, $end, $filters)
-            ->prepend(['Product' => 'Product', 'SKU' => 'SKU', 'Quantity' => 'Quantity', 'Revenue' => 'Revenue'])
+            ->prepend(['Product' => 'Product', 'SKU' => 'SKU', 'Quantity' => 'Quantity', 'Revenue' => 'Revenue', 'COGS' => 'COGS', 'Profit' => 'Profit', 'Margin %' => 'Margin %'])
             ->map(fn ($row) => array_values($row))
             ->all();
     }
@@ -60,15 +63,24 @@ final class ProductReportService extends ReportService
             ->selectRaw('order_details.name, COALESCE(order_details.sku, "") as sku')
             ->selectRaw('SUM(order_details.quantity) as quantity')
             ->selectRaw('SUM(order_details.line_total) as revenue')
+            ->selectRaw('SUM(COALESCE(order_details.unit_cost, 0) * order_details.quantity) as cogs')
             ->groupBy('order_details.name', 'order_details.sku')
             ->orderByDesc('revenue')
             ->limit(5000)
             ->get()
-            ->map(fn (object $row): array => [
-                'name' => (string) $row->name,
-                'sku' => (string) $row->sku,
-                'quantity' => (int) $row->quantity,
-                'revenue' => (float) $row->revenue,
-            ]);
+            ->map(function (object $row): array {
+                $revenue = (float) $row->revenue;
+                $cogs = (float) $row->cogs;
+
+                return [
+                    'name' => (string) $row->name,
+                    'sku' => (string) $row->sku,
+                    'quantity' => (int) $row->quantity,
+                    'revenue' => $revenue,
+                    'cogs' => $cogs,
+                    'profit' => $revenue - $cogs,
+                    'margin' => $revenue > 0 ? round((($revenue - $cogs) / $revenue) * 100, 1) : 0.0,
+                ];
+            });
     }
 }

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Admin;
 
+use App\Models\OrderDetail;
 use App\Models\ReturnRequest;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -21,8 +23,19 @@ final class SalesReportService extends ReportService
         $orders = $this->ordersBetween($start, $end, $filters);
         $paidOrders = (clone $orders)->whereIn('payment_status', $this->paidStatuses());
 
-        $grossSales = (float) (clone $paidOrders)->sum('grand_total');
+        $merchandise = (float) (clone $paidOrders)->sum('subtotal');
+        $discounts = (float) (clone $paidOrders)->sum('discount_total');
+        $totalRevenue = (float) (clone $paidOrders)->sum('grand_total');
         $paidCount = (clone $paidOrders)->count();
+        $netSales = $merchandise - $discounts;
+
+        $cogs = (float) OrderDetail::query()
+            ->join('orders', 'orders.id', '=', 'order_details.order_id')
+            ->whereBetween(DB::raw('DATE(COALESCE(orders.placed_at, orders.created_at))'), [$start->toDateString(), $end->toDateString()])
+            ->whereIn('orders.payment_status', $this->paidStatuses())
+            ->when(filled($filters['status'] ?? null), fn (Builder $q) => $q->where('orders.status', $filters['status']))
+            ->when(filled($filters['payment_status'] ?? null), fn (Builder $q) => $q->where('orders.payment_status', $filters['payment_status']))
+            ->sum(DB::raw('COALESCE(order_details.unit_cost, 0) * order_details.quantity'));
 
         $refunds = (float) ReturnRequest::query()
             ->whereIn('refund_status', ['partial', 'refunded'])
@@ -32,15 +45,20 @@ final class SalesReportService extends ReportService
         return [
             'filters' => $this->appliedFilters($start, $end, $filters),
             'summary' => [
-                'gross_sales' => $grossSales,
-                'refunds' => $refunds,
-                'net_sales' => $grossSales - $refunds,
-                'orders' => (clone $orders)->count(),
-                'paid_orders' => $paidCount,
-                'average_order' => $paidCount > 0 ? $grossSales / $paidCount : 0.0,
+                'gross_sales' => $merchandise,
+                'discount_total' => $discounts,
+                'net_sales' => $netSales,
                 'tax_total' => (float) (clone $paidOrders)->sum('tax_total'),
                 'shipping_total' => (float) (clone $paidOrders)->sum('shipping_total'),
-                'discount_total' => (float) (clone $paidOrders)->sum('discount_total'),
+                'total_revenue' => $totalRevenue,
+                'refunds' => $refunds,
+                'net_revenue' => $totalRevenue - $refunds,
+                'cogs' => $cogs,
+                'gross_profit' => $netSales - $cogs,
+                'margin' => $netSales > 0 ? round((($netSales - $cogs) / $netSales) * 100, 1) : 0.0,
+                'orders' => (clone $orders)->count(),
+                'paid_orders' => $paidCount,
+                'average_order' => $paidCount > 0 ? $totalRevenue / $paidCount : 0.0,
             ],
             'salesByDay' => $this->paginateRows($this->salesByDay($start, $end, $filters), $filters, ['date']),
         ];

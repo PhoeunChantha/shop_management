@@ -32,8 +32,8 @@ final class RegisterReportController extends Controller
     {
         return $this->streamExport(
             $this->reports->exportRows($this->validatedFilters($request)),
-            'Registration Report',
-            'register-report',
+            'Customer Registrations',
+            'customer-registrations',
             (string) $request->query('format', 'csv'),
         );
     }

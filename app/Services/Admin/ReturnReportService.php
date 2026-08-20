@@ -23,10 +23,15 @@ final class ReturnReportService extends ReportService
         [$start, $end] = $this->dateRange($filters);
         $base = $this->returnsBetween($start, $end, $filters);
 
+        // Return rate = returns raised in the period ÷ orders placed in the period.
+        $totalReturns = (clone $base)->count();
+        $orderCount = $this->ordersBetween($start, $end, [])->count();
+
         return [
             'filters' => $this->appliedFilters($start, $end, $filters),
             'summary' => [
-                'total' => (clone $base)->count(),
+                'total' => $totalReturns,
+                'return_rate' => $orderCount > 0 ? round(($totalReturns / $orderCount) * 100, 1) : 0.0,
                 'refunded' => (clone $base)->where('refund_status', 'refunded')->count(),
                 'refund_amount' => (float) (clone $base)->whereIn('refund_status', ['partial', 'refunded'])->sum('refund_amount'),
                 'pending' => (clone $base)->whereIn('status', ['requested', 'approved', 'received'])->count(),

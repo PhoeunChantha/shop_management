@@ -18,30 +18,37 @@
 
         <div class="finance-report-rail">
             <div>
-                <span>{{ __('Gross sales') }}</span>
-                <strong>${{ number_format($summary['gross_sales'], 2) }}</strong>
+                <span>{{ __('Total revenue') }}</span>
+                <strong>${{ number_format($summary['total_revenue'], 2) }}</strong>
+                <x-admin.report-delta :data="$comparison['total_revenue'] ?? null" />
             </div>
             <div>
                 <span>{{ __('Refunds') }}</span>
                 <strong>${{ number_format($summary['refunds'], 2) }}</strong>
             </div>
             <div class="is-positive">
-                <span>{{ __('Net sales') }}</span>
-                <strong>${{ number_format($summary['net_sales'], 2) }}</strong>
+                <span>{{ __('Net revenue') }}</span>
+                <strong>${{ number_format($summary['net_revenue'], 2) }}</strong>
+                <x-admin.report-delta :data="$comparison['net_revenue'] ?? null" />
             </div>
             <div>
                 <span>{{ __('Average order') }}</span>
                 <strong>${{ number_format($summary['average_order'], 2) }}</strong>
+                <x-admin.report-delta :data="$comparison['average_order'] ?? null" />
             </div>
         </div>
 
         <div class="finance-report-metrics">
-            <div><span>{{ __('Orders') }}</span><strong>{{ number_format($summary['orders']) }}</strong></div>
-            <div><span>{{ __('Paid orders') }}</span><strong>{{ number_format($summary['paid_orders']) }}</strong></div>
+            <div><span>{{ __('Orders') }}</span><strong>{{ number_format($summary['orders']) }}</strong><x-admin.report-delta :data="$comparison['orders'] ?? null" /></div>
+            <div><span>{{ __('Gross sales') }}</span><strong>${{ number_format($summary['gross_sales'], 2) }}</strong></div>
+            <div><span>{{ __('Discounts') }}</span><strong>${{ number_format($summary['discount_total'], 2) }}</strong></div>
+            <div><span>{{ __('Net sales') }}</span><strong>${{ number_format($summary['net_sales'], 2) }}</strong></div>
+            <div><span>{{ __('Gross profit') }}</span><strong>${{ number_format($summary['gross_profit'], 2) }}</strong></div>
+            <div><span>{{ __('Margin') }}</span><strong>{{ number_format($summary['margin'], 1) }}%</strong></div>
             <div><span>{{ __('Tax collected') }}</span><strong>${{ number_format($summary['tax_total'], 2) }}</strong></div>
             <div><span>{{ __('Shipping') }}</span><strong>${{ number_format($summary['shipping_total'], 2) }}</strong></div>
-            <div><span>{{ __('Discounts') }}</span><strong>${{ number_format($summary['discount_total'], 2) }}</strong></div>
-            <div><span>{{ __('Purchase cost') }}</span><strong>${{ number_format($summary['purchase_cost'], 2) }}</strong></div>
+            <div><span>{{ __('Return rate') }}</span><strong>{{ number_format($summary['return_rate'], 1) }}%</strong></div>
+            <div><span>{{ __('Procurement spend') }}</span><strong>${{ number_format($summary['purchase_cost'], 2) }}</strong></div>
         </div>
 
         <div class="finance-report-grid">
