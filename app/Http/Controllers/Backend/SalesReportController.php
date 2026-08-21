@@ -9,6 +9,7 @@ use App\Enums\PaymentStatus;
 use App\Http\Controllers\Backend\Concerns\StreamsReportCsv;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\SalesReportService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -43,6 +44,16 @@ final class SalesReportController extends Controller
         );
     }
 
+    /** Server-side customer autocomplete for the report filter. */
+    public function customers(Request $request): JsonResponse
+    {
+        $term = trim((string) $request->query('q', ''));
+
+        return response()->json([
+            'results' => $this->reports->customerOptions($term),
+        ]);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -53,7 +64,10 @@ final class SalesReportController extends Controller
             'end_date' => ['nullable', 'date'],
             'status' => ['nullable', Rule::enum(OrderStatus::class)],
             'payment_status' => ['nullable', Rule::enum(PaymentStatus::class)],
+            'customer' => ['nullable', 'string', 'max:255'],
             'search' => ['nullable', 'string', 'max:255'],
+            'sort' => ['nullable', 'string', 'in:date,gross,net'],
+            'direction' => ['nullable', 'string', 'in:asc,desc'],
             'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
         ]);
     }

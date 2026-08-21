@@ -192,6 +192,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
         Route::middleware('permission:view sales reports')->group(function () {
             Route::get('/sales', [SalesReportController::class, 'index'])->name('sales');
+            Route::get('/sales/customers', [SalesReportController::class, 'customers'])->name('sales.customers');
             Route::get('/sales/export', [SalesReportController::class, 'export'])->name('sales.export');
         });
 

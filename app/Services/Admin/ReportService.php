@@ -57,7 +57,9 @@ abstract class ReportService
     }
 
     /**
-     * Orders placed within the range, honouring the optional status filters.
+     * Orders placed within the range, honouring the optional status filters and
+     * the optional customer filter (matched on the denormalised order snapshot,
+     * so it works for both registered and guest orders).
      *
      * @param  array<string, mixed>  $filters
      */
@@ -66,7 +68,27 @@ abstract class ReportService
         return Order::query()
             ->when(filled($filters['status'] ?? null), fn (Builder $query) => $query->where('status', $filters['status']))
             ->when(filled($filters['payment_status'] ?? null), fn (Builder $query) => $query->where('payment_status', $filters['payment_status']))
+            ->when(filled($filters['customer'] ?? null), fn (Builder $query) => $query->where(function (Builder $q) use ($filters) {
+                $q->where('customer_email', $filters['customer'])->orWhere('customer_name', $filters['customer']);
+            }))
             ->whereBetween(DB::raw('DATE(COALESCE(placed_at, created_at))'), [$start->toDateString(), $end->toDateString()]);
+    }
+
+    /**
+     * Apply the same status / payment / customer filters to a query that joins
+     * against the orders table (COGS, product, category rollups). The customer
+     * clause targets the qualified `orders.*` columns so it is join-safe.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    protected function applyOrderFilters(Builder $query, array $filters): Builder
+    {
+        return $query
+            ->when(filled($filters['status'] ?? null), fn (Builder $q) => $q->where('orders.status', $filters['status']))
+            ->when(filled($filters['payment_status'] ?? null), fn (Builder $q) => $q->where('orders.payment_status', $filters['payment_status']))
+            ->when(filled($filters['customer'] ?? null), fn (Builder $q) => $q->where(function (Builder $inner) use ($filters) {
+                $inner->where('orders.customer_email', $filters['customer'])->orWhere('orders.customer_name', $filters['customer']);
+            }));
     }
 
     /**
@@ -82,6 +104,7 @@ abstract class ReportService
             'end_date' => $end->toDateString(),
             'status' => $filters['status'] ?? null,
             'payment_status' => $filters['payment_status'] ?? null,
+            'customer' => $filters['customer'] ?? null,
         ];
     }
 
