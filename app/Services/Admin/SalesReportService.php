@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Admin;
 
-use App\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\ReturnRequest;
@@ -35,17 +34,14 @@ final class SalesReportService extends ReportService
         return [
             'filters' => $this->appliedFilters($start, $end, $filters),
             'summary' => $summary,
-            'comparison' => $this->comparison($summary, $previous, ['total_revenue', 'net_revenue', 'orders', 'gross_profit']),
+            'comparison' => $this->comparison($summary, $previous, ['total_revenue', 'orders', 'average_order', 'gross_profit']),
             'previousRange' => [
                 'start_date' => $prevStart->toDateString(),
                 'end_date' => $prevEnd->toDateString(),
             ],
             'series' => $this->dailySeries($start, $end, $filters),
-            'salesByDay' => $this->salesByDay($start, $end, $filters),
             'categories' => $this->categoryBreakdown($start, $end, $filters),
             'paymentMethods' => $this->paymentMethods($start, $end, $filters),
-            'topProducts' => $this->topProducts($start, $end, $filters),
-            'topCustomers' => $this->topCustomers($start, $end, $filters),
             'refunds' => $this->refundStats($start, $end, $filters, (int) $summary['orders']),
             'transactions' => $this->transactions($start, $end, $filters),
         ];
@@ -203,34 +199,6 @@ final class SalesReportService extends ReportService
     }
 
     /**
-     * Daily rollup kept for the compact "Daily performance" table.
-     *
-     * @param  array<string, mixed>  $filters
-     * @return Collection<int, array<string, string|int|float>>
-     */
-    private function salesByDay(CarbonImmutable $start, CarbonImmutable $end, array $filters): Collection
-    {
-        return $this->ordersBetween($start, $end, $filters)
-            ->whereIn('payment_status', $this->paidStatuses())
-            ->selectRaw('DATE(COALESCE(placed_at, created_at)) as date')
-            ->selectRaw('COUNT(*) as orders')
-            ->selectRaw('SUM(grand_total) as gross_sales')
-            ->selectRaw('SUM(discount_total) as discounts')
-            ->selectRaw('SUM(subtotal - discount_total) as net_sales')
-            ->groupBy('date')
-            ->orderByDesc('date')
-            ->limit(60)
-            ->get()
-            ->map(fn (object $row): array => [
-                'date' => (string) $row->date,
-                'orders' => (int) $row->orders,
-                'gross_sales' => (float) $row->gross_sales,
-                'discounts' => (float) $row->discounts,
-                'net_sales' => (float) $row->net_sales,
-            ]);
-    }
-
-    /**
      * Revenue / units share per product category (paid orders in range).
      *
      * @param  array<string, mixed>  $filters
@@ -304,85 +272,6 @@ final class SalesReportService extends ReportService
             'other', '' => 'Other',
             default => ucwords(str_replace('_', ' ', $method)),
         };
-    }
-
-    /**
-     * Best sellers by revenue, with unit/order counts, profit and the order-line
-     * image snapshot for thumbnails.
-     *
-     * @param  array<string, mixed>  $filters
-     * @return Collection<int, array<string, string|int|float>>
-     */
-    private function topProducts(CarbonImmutable $start, CarbonImmutable $end, array $filters): Collection
-    {
-        return $this->applyOrderFilters(
-            OrderDetail::query()->join('orders', 'orders.id', '=', 'order_details.order_id'),
-            $filters,
-        )
-            ->whereBetween(DB::raw('DATE(COALESCE(orders.placed_at, orders.created_at))'), [$start->toDateString(), $end->toDateString()])
-            ->whereIn('orders.payment_status', $this->paidStatuses())
-            ->selectRaw('order_details.name')
-            ->selectRaw("COALESCE(order_details.sku, '') as sku")
-            ->selectRaw('MAX(order_details.image) as image')
-            ->selectRaw('COUNT(DISTINCT order_details.order_id) as orders')
-            ->selectRaw('SUM(order_details.quantity) as quantity')
-            ->selectRaw('SUM(order_details.line_total) as revenue')
-            ->selectRaw('SUM(order_details.line_total - COALESCE(order_details.unit_cost, 0) * order_details.quantity) as profit')
-            ->groupBy('order_details.name', 'order_details.sku')
-            ->orderByDesc('revenue')
-            ->limit(10)
-            ->get()
-            ->map(fn (object $row): array => [
-                'name' => (string) $row->name,
-                'sku' => (string) $row->sku,
-                'image' => $row->image !== null ? (string) $row->image : null,
-                'orders' => (int) $row->orders,
-                'quantity' => (int) $row->quantity,
-                'revenue' => (float) $row->revenue,
-                'profit' => (float) $row->profit,
-            ]);
-    }
-
-    /**
-     * Highest-value customers (paid orders), with items, profit and last order.
-     * Grouped on the denormalised order snapshot so guests are included.
-     *
-     * @param  array<string, mixed>  $filters
-     * @return Collection<int, array<string, string|int|float|null>>
-     */
-    private function topCustomers(CarbonImmutable $start, CarbonImmutable $end, array $filters): Collection
-    {
-        $lineAgg = DB::table('order_details')
-            ->select('order_id')
-            ->selectRaw('SUM(quantity) as items')
-            ->selectRaw('SUM(COALESCE(unit_cost, 0) * quantity) as cogs')
-            ->groupBy('order_id');
-
-        return $this->applyOrderFilters(Order::query()->from('orders'), $filters)
-            ->leftJoinSub($lineAgg, 'la', 'la.order_id', '=', 'orders.id')
-            ->whereBetween(DB::raw('DATE(COALESCE(orders.placed_at, orders.created_at))'), [$start->toDateString(), $end->toDateString()])
-            ->whereIn('orders.payment_status', $this->paidStatuses())
-            ->selectRaw('orders.customer_name, orders.customer_email')
-            ->selectRaw('MAX(orders.user_id) as user_id')
-            ->selectRaw('COUNT(*) as orders')
-            ->selectRaw('SUM(COALESCE(la.items, 0)) as items')
-            ->selectRaw('SUM(orders.grand_total) as spend')
-            ->selectRaw('SUM((orders.subtotal - orders.discount_total) - COALESCE(la.cogs, 0)) as profit')
-            ->selectRaw('MAX(COALESCE(orders.placed_at, orders.created_at)) as last_order')
-            ->groupBy('orders.customer_name', 'orders.customer_email')
-            ->orderByDesc('spend')
-            ->limit(8)
-            ->get()
-            ->map(fn (object $row): array => [
-                'customer_name' => $this->customerName((string) ($row->customer_name ?? ''), $row->user_id),
-                'customer_email' => (string) ($row->customer_email ?? ''),
-                'is_guest' => $row->user_id === null,
-                'orders' => (int) $row->orders,
-                'items' => (int) $row->items,
-                'spend' => (float) $row->spend,
-                'profit' => (float) $row->profit,
-                'last_order' => $row->last_order ? (string) $row->last_order : null,
-            ]);
     }
 
     /**

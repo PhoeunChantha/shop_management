@@ -52,28 +52,6 @@
             <div><span>{{ __('Failed payments') }}</span><strong>{{ number_format($summary['failed']) }}</strong></div>
         </div>
 
-        @if ($byMethod->isNotEmpty())
-            <section class="finance-report-panel" style="margin-bottom:16px">
-                <div class="finance-report-panel__head">
-                    <div>
-                        <p class="section-kicker">{{ __('Distribution') }}</p>
-                        <h4>{{ __('Captured by method') }}</h4>
-                    </div>
-                </div>
-                <div class="finance-report-list">
-                    @foreach ($byMethod as $method)
-                        <div>
-                            <div>
-                                <strong>{{ $method['method'] }}</strong>
-                                <span>{{ number_format($method['count']) }} {{ __('transactions') }}</span>
-                            </div>
-                            <b>${{ number_format($method['captured'], 2) }}</b>
-                        </div>
-                    @endforeach
-                </div>
-            </section>
-        @endif
-
         <x-admin.table-card ajax :loader="false">
             <x-slot:toolbar>
                 <x-table-toolbar>

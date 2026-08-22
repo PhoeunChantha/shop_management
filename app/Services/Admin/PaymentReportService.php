@@ -43,7 +43,6 @@ final class PaymentReportService extends ReportService
                 'failed' => (clone $base)->where('status', 'failed')->count(),
                 'success_rate' => $total > 0 ? round(($capturedCount / $total) * 100, 1) : 0.0,
             ],
-            'byMethod' => $this->byMethod($start, $end, $filters),
             'transactions' => $this->paginateRows($this->rows($start, $end, $filters), $filters, ['tran_id', 'order', 'method', 'status']),
             'methodOptions' => $this->methodOptions(),
         ];
@@ -72,26 +71,6 @@ final class PaymentReportService extends ReportService
             ->whereBetween('created_at', [$start->startOfDay(), $end->endOfDay()])
             ->when(filled($filters['status'] ?? null), fn (Builder $q) => $q->where('status', $filters['status']))
             ->when(filled($filters['method'] ?? null), fn (Builder $q) => $q->where('payment_option', $filters['method']));
-    }
-
-    /**
-     * @param  array<string, mixed>  $filters
-     * @return Collection<int, array<string, string|int|float>>
-     */
-    private function byMethod(CarbonImmutable $start, CarbonImmutable $end, array $filters): Collection
-    {
-        return $this->paymentsBetween($start, $end, $filters)
-            ->selectRaw("COALESCE(NULLIF(payment_option, ''), 'unknown') as method")
-            ->selectRaw('COUNT(*) as count')
-            ->selectRaw("SUM(CASE WHEN status = 'completed' THEN amount ELSE 0 END) as captured")
-            ->groupBy('method')
-            ->orderByDesc('captured')
-            ->get()
-            ->map(fn (object $row): array => [
-                'method' => ucfirst((string) $row->method),
-                'count' => (int) $row->count,
-                'captured' => (float) $row->captured,
-            ]);
     }
 
     /**

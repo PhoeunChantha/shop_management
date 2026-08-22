@@ -1910,5 +1910,22 @@
     "Order-level detail behind the summary": "ព័ត៌មានលម្អិតកម្រិតការបញ្ជាទិញនៅពីក្រោយសេចក្តីសង្ខេប",
     "Search order or customer…": "ស្វែងរកការបញ្ជាទិញ ឬអតិថិជន…",
     "No transactions found": "រកមិនឃើញប្រតិបត្តិការ",
-    "Try a different date range, customer, or status filter.": "សាកល្បងចន្លោះកាលបរិច្ឆេទ អតិថិជន ឬតម្រងស្ថានភាពផ្សេង។"
+    "Try a different date range, customer, or status filter.": "សាកល្បងចន្លោះកាលបរិច្ឆេទ អតិថិជន ឬតម្រងស្ថានភាពផ្សេង។",
+    "Revenue trend": "និន្នាការចំណូល",
+    "Daily revenue vs the previous period": "ចំណូលប្រចាំថ្ងៃ ធៀបនឹងរយៈពេលមុន",
+    "Previous period": "រយៈពេលមុន",
+    "Profit & loss": "ចំណេញ និងខាត",
+    "Cost of goods": "ថ្លៃដើមទំនិញ",
+    "Explore reports": "រុករករបាយការណ៍",
+    "Full report": "របាយការណ៍ពេញ",
+    "Trends, transactions, profit": "និន្នាការ ប្រតិបត្តិការ ចំណេញ",
+    "Best sellers and slow movers": "លក់ដាច់បំផុត និងលក់យឺត",
+    "Spend, cohorts, repeat rate": "ការចំណាយ ក្រុម និងអត្រាទិញឡើងវិញ",
+    "Methods and settlement": "វិធីបង់ប្រាក់ និងការទូទាត់",
+    "Supplier spend and POs": "ចំណាយអ្នកផ្គត់ផ្គង់ និងបញ្ជាទិញ",
+    "Stock levels and valuation": "កម្រិតស្តុក និងតម្លៃស្តុក",
+    "Refunds and reasons": "ការបង្វិលប្រាក់ និងមូលហេតុ",
+    "New customer signups": "ការចុះឈ្មោះអតិថិជនថ្មី",
+    "No SKU": "គ្មាន SKU",
+    "Customers report": "របាយការណ៍អតិថិជន"
 }

@@ -37,17 +37,46 @@ final class FinanceReportService
             ],
             'summary' => $summary,
             // Period-over-period change vs the equal-length window before this one.
-            'comparison' => $this->comparison($summary, $previous, ['total_revenue', 'net_revenue', 'orders', 'average_order']),
+            'comparison' => $this->comparison($summary, $previous, ['total_revenue', 'net_revenue', 'orders', 'average_order', 'gross_profit']),
             'previousRange' => [
                 'start_date' => $prevStart->toDateString(),
                 'end_date' => $prevEnd->toDateString(),
             ],
-            'salesByDay' => $this->salesByDay($start, $end, $filters),
-            'topProducts' => $this->topProducts($start, $end, $filters),
-            'customerSpend' => $this->customerSpend($start, $end, $filters),
-            'purchaseOrders' => $this->purchaseOrders($start, $end),
+            // Day-by-day series for the trend chart, aligned with the previous
+            // period so the ghost line compares day N against day N.
+            'chart' => $this->chartSeries($start, $end, $prevStart, $prevEnd, $filters),
+            'topProducts' => $this->topProducts($start, $end, $filters, 5),
             'paymentMix' => $this->paymentMix($start, $end, $filters),
         ];
+    }
+
+    /**
+     * Zero-filled daily series across the full range (days without sales must
+     * still appear so the chart's x-axis is continuous), plus the previous
+     * period's revenue aligned by day offset for the comparison ghost line.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array{labels: array<int, string>, revenue: array<int, float>, orders: array<int, int>, prevRevenue: array<int, float>}
+     */
+    private function chartSeries(CarbonImmutable $start, CarbonImmutable $end, CarbonImmutable $prevStart, CarbonImmutable $prevEnd, array $filters): array
+    {
+        $current = $this->salesByDay($start, $end, $filters)->keyBy('date');
+        $previous = $this->salesByDay($prevStart, $prevEnd, $filters)->keyBy('date');
+
+        $labels = $revenue = $orders = $prevRevenue = [];
+        $days = (int) $start->startOfDay()->diffInDays($end->startOfDay());
+
+        for ($i = 0; $i <= $days; $i++) {
+            $day = $start->addDays($i)->toDateString();
+            $prevDay = $prevStart->addDays($i)->toDateString();
+
+            $labels[] = $day;
+            $revenue[] = (float) ($current[$day]['gross_sales'] ?? 0);
+            $orders[] = (int) ($current[$day]['orders'] ?? 0);
+            $prevRevenue[] = (float) ($previous[$prevDay]['gross_sales'] ?? 0);
+        }
+
+        return ['labels' => $labels, 'revenue' => $revenue, 'orders' => $orders, 'prevRevenue' => $prevRevenue];
     }
 
     /**
@@ -60,16 +89,25 @@ final class FinanceReportService
     {
         $orders = $this->ordersBetween($start, $end, $filters);
         $paidStatuses = [PaymentStatus::Paid->value, PaymentStatus::PartiallyRefunded->value, PaymentStatus::Refunded->value];
-        $paidOrders = (clone $orders)->whereIn('payment_status', $paidStatuses);
 
         // Real commerce revenue chain: subtotal is merchandise BEFORE discount,
         // grand_total is what was actually collected (incl. tax + shipping).
-        $merchandise = (float) (clone $paidOrders)->sum('subtotal');
-        $discounts = (float) (clone $paidOrders)->sum('discount_total');
-        $tax = (float) (clone $paidOrders)->sum('tax_total');
-        $shipping = (float) (clone $paidOrders)->sum('shipping_total');
-        $totalRevenue = (float) (clone $paidOrders)->sum('grand_total');
-        $paidCount = (clone $paidOrders)->count();
+        // One aggregate query instead of six separate sums/counts.
+        $paid = (clone $orders)->whereIn('payment_status', $paidStatuses)
+            ->selectRaw('COALESCE(SUM(subtotal), 0) as merchandise')
+            ->selectRaw('COALESCE(SUM(discount_total), 0) as discounts')
+            ->selectRaw('COALESCE(SUM(tax_total), 0) as tax')
+            ->selectRaw('COALESCE(SUM(shipping_total), 0) as shipping')
+            ->selectRaw('COALESCE(SUM(grand_total), 0) as total_revenue')
+            ->selectRaw('COUNT(*) as paid_count')
+            ->first();
+
+        $merchandise = (float) $paid->merchandise;
+        $discounts = (float) $paid->discounts;
+        $tax = (float) $paid->tax;
+        $shipping = (float) $paid->shipping;
+        $totalRevenue = (float) $paid->total_revenue;
+        $paidCount = (int) $paid->paid_count;
         $orderCount = (clone $orders)->count();
 
         // COGS from the per-line cost snapshot on paid orders in the window.
@@ -86,8 +124,12 @@ final class FinanceReportService
             ->whereBetween(DB::raw('DATE(COALESCE(refunded_at, updated_at))'), [$start->toDateString(), $end->toDateString()])
             ->sum('refund_amount');
 
+        // Apply the same order filters so return_rate compares like with like
+        // when a status/payment filter narrows the order count.
         $returnsCount = (int) ReturnRequest::query()
             ->whereBetween('requested_at', [$start->startOfDay(), $end->endOfDay()])
+            ->when(filled($filters['status'] ?? null), fn (Builder $q) => $q->whereHas('order', fn (Builder $o) => $o->where('status', $filters['status'])))
+            ->when(filled($filters['payment_status'] ?? null), fn (Builder $q) => $q->whereHas('order', fn (Builder $o) => $o->where('payment_status', $filters['payment_status'])))
             ->count();
 
         $purchaseCost = (float) PurchaseOrder::query()
@@ -249,7 +291,7 @@ final class FinanceReportService
      * @param  array<string, mixed>  $filters
      * @return Collection<int, array<string, string|int|float>>
      */
-    private function topProducts(CarbonImmutable $start, CarbonImmutable $end, array $filters): Collection
+    private function topProducts(CarbonImmutable $start, CarbonImmutable $end, array $filters, int $limit = 8): Collection
     {
         return OrderDetail::query()
             ->join('orders', 'orders.id', '=', 'order_details.order_id')
@@ -262,7 +304,7 @@ final class FinanceReportService
             ->selectRaw('SUM(order_details.line_total) as revenue')
             ->groupBy('order_details.name', 'order_details.sku')
             ->orderByDesc('revenue')
-            ->limit(8)
+            ->limit($limit)
             ->get()
             ->map(fn (object $row): array => [
                 'name' => (string) $row->name,

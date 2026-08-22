@@ -1,6 +1,4 @@
 @php
-    use Illuminate\Support\Str;
-
     $money = fn ($v) => '$'.number_format((float) $v, 2);
 
     // Renders a compact period-over-period delta chip. `positiveGood` flips the
@@ -150,10 +148,9 @@
                 <div class="kpi-spark" data-spark="revenue"></div>
             </article>
             <article class="kpi-card">
-                <header><span>{{ __('Net revenue') }}</span><i class="fa-solid fa-wallet"></i></header>
-                <strong class="kpi-value">{{ $money($summary['net_revenue']) }}</strong>
-                <footer>{!! $delta($comparison['net_revenue'] ?? null) !!}<span class="kpi-vs">{{ __('vs prev.') }}</span></footer>
-                <div class="kpi-spark" data-spark="revenue"></div>
+                <header><span>{{ __('Average order') }}</span><i class="fa-solid fa-receipt"></i></header>
+                <strong class="kpi-value">{{ $money($summary['average_order']) }}</strong>
+                <footer>{!! $delta($comparison['average_order'] ?? null) !!}<span class="kpi-vs">{{ __('vs prev.') }}</span></footer>
             </article>
             <article class="kpi-card">
                 <header><span>{{ __('Orders') }}</span><i class="fa-solid fa-bag-shopping"></i></header>
@@ -185,18 +182,15 @@
             <div class="sales-chart__canvas" data-sales-chart></div>
         </section>
 
-        {{-- ===================== SECONDARY METRICS ===================== --}}
+        {{-- ===================== SECONDARY METRICS =====================
+             Only metrics not already on a KPI card or in the Revenue & Profit
+             waterfall: gross/net sales, margin and AOV live there. --}}
         <div class="metric-strip">
-            <div><span>{{ __('Average order') }}</span><strong>{{ $money($summary['average_order']) }}</strong></div>
             <div><span>{{ __('Paid orders') }}</span><strong>{{ number_format($summary['paid_orders']) }}</strong></div>
-            <div><span>{{ __('Refunds') }}</span><strong>{{ $money($summary['refunds']) }}</strong></div>
-            <div><span>{{ __('Refund rate') }}</span><strong>{{ number_format($refunds['rate'], 1) }}%</strong></div>
             <div><span>{{ __('Discounts') }}</span><strong>{{ $money($summary['discount_total']) }}</strong></div>
+            <div><span>{{ __('Refunds') }}</span><strong>{{ $money($summary['refunds']) }} <em class="metric-strip__chip">{{ number_format($refunds['rate'], 1) }}%</em></strong></div>
             <div><span>{{ __('Tax collected') }}</span><strong>{{ $money($summary['tax_total']) }}</strong></div>
             <div><span>{{ __('Shipping') }}</span><strong>{{ $money($summary['shipping_total']) }}</strong></div>
-            <div><span>{{ __('Gross sales') }}</span><strong>{{ $money($summary['gross_sales']) }}</strong></div>
-            <div><span>{{ __('Net sales') }}</span><strong>{{ $money($summary['net_sales']) }}</strong></div>
-            <div><span>{{ __('Margin') }}</span><strong>{{ number_format($summary['margin'], 1) }}%</strong></div>
         </div>
 
         {{-- ===================== BUSINESS ANALYSIS ===================== --}}
@@ -263,80 +257,6 @@
             </section>
         </div>
 
-        {{-- ===================== TOP PRODUCTS + CUSTOMERS ===================== --}}
-        <div class="perf-grid">
-            <section class="premium-card">
-                <header class="panel-head"><h3>{{ __('Top Selling Products') }}</h3><span>{{ __('By revenue') }}</span></header>
-                <div class="premium-table-wrap">
-                    <table class="premium-table sales-mini-table">
-                        <thead><tr>
-                            <th>#</th><th>{{ __('Product') }}</th><th class="ta-r">{{ __('Units') }}</th>
-                            <th class="ta-r">{{ __('Orders') }}</th><th class="ta-r">{{ __('Revenue') }}</th><th class="ta-r">{{ __('Profit') }}</th>
-                        </tr></thead>
-                        <tbody>
-                            @forelse ($topProducts as $i => $p)
-                                <tr>
-                                    <td class="rank-badge">{{ $i + 1 }}</td>
-                                    <td>
-                                        <div class="product-cell">
-                                            @if ($p['image'])
-                                                <img src="{{ Imageurl($p['image'], 'products') }}" alt="" loading="lazy">
-                                            @else
-                                                <span class="product-cell__ph"><i class="fa-solid fa-box"></i></span>
-                                            @endif
-                                            <div>
-                                                <strong>{{ Str::limit($p['name'], 40) }}</strong>
-                                                @if ($p['sku'])<small>{{ $p['sku'] }}</small>@endif
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="ta-r">{{ number_format($p['quantity']) }}</td>
-                                    <td class="ta-r">{{ number_format($p['orders']) }}</td>
-                                    <td class="ta-r">{{ $money($p['revenue']) }}</td>
-                                    <td class="ta-r money-pos">{{ $money($p['profit']) }}</td>
-                                </tr>
-                            @empty
-                                <tr><td colspan="6"><p class="analysis-empty">{{ __('No product sales in range.') }}</p></td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section class="premium-card">
-                <header class="panel-head"><h3>{{ __('Top Customers') }}</h3><span>{{ __('By spend') }}</span></header>
-                <div class="premium-table-wrap">
-                    <table class="premium-table sales-mini-table">
-                        <thead><tr>
-                            <th>#</th><th>{{ __('Customer') }}</th><th class="ta-r">{{ __('Orders') }}</th>
-                            <th class="ta-r">{{ __('Items') }}</th><th class="ta-r">{{ __('Revenue') }}</th><th class="ta-r">{{ __('Last order') }}</th>
-                        </tr></thead>
-                        <tbody>
-                            @forelse ($topCustomers as $i => $c)
-                                <tr>
-                                    <td class="rank-badge">{{ $i + 1 }}</td>
-                                    <td>
-                                        <div class="cust-cell">
-                                            <strong>{{ $c['customer_name'] }}
-                                                @if ($c['is_guest'])<span class="guest-tag">{{ __('Guest') }}</span>@endif
-                                            </strong>
-                                            @if ($c['customer_email'])<small>{{ $c['customer_email'] }}</small>@endif
-                                        </div>
-                                    </td>
-                                    <td class="ta-r">{{ number_format($c['orders']) }}</td>
-                                    <td class="ta-r">{{ number_format($c['items']) }}</td>
-                                    <td class="ta-r">{{ $money($c['spend']) }}</td>
-                                    <td class="ta-r">{{ $c['last_order'] ? \Carbon\Carbon::parse($c['last_order'])->format('M d, Y') : '—' }}</td>
-                                </tr>
-                            @empty
-                                <tr><td colspan="6"><p class="analysis-empty">{{ __('No customer sales in range.') }}</p></td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-        </div>
-
         {{-- ===================== TRANSACTIONS ===================== --}}
         @php
             $sortLink = function (string $key) {
@@ -369,12 +289,9 @@
                                 <th><a href="{{ $dLink }}" class="th-sort {{ $dDir ? 'is-'.$dDir : '' }}">{{ __('Date') }}<i class="fa-solid fa-sort"></i></a></th>
                                 <th>{{ __('Order') }}</th>
                                 <th>{{ __('Customer') }}</th>
-                                <th class="ta-r">{{ __('Items') }}</th>
                                 <th>{{ __('Status') }}</th>
                                 <th>{{ __('Payment') }}</th>
                                 <th class="ta-r"><a href="{{ $gLink }}" class="th-sort {{ $gDir ? 'is-'.$gDir : '' }}">{{ __('Gross') }}<i class="fa-solid fa-sort"></i></a></th>
-                                <th class="ta-r">{{ __('Discount') }}</th>
-                                <th class="ta-r">{{ __('Refund') }}</th>
                                 <th class="ta-r"><a href="{{ $nLink }}" class="th-sort {{ $nDir ? 'is-'.$nDir : '' }}">{{ __('Net sales') }}<i class="fa-solid fa-sort"></i></a></th>
                                 <th class="ta-r">{{ __('Profit') }}</th>
                             </tr>
@@ -398,18 +315,15 @@
                                             @if ($tx['customer_email'])<small>{{ $tx['customer_email'] }}</small>@endif
                                         </div>
                                     </td>
-                                    <td class="ta-r">{{ number_format($tx['items']) }}</td>
                                     <td><span class="status-chip {{ $tx['status']->badge() }}">{{ $tx['status']->label() }}</span></td>
                                     <td><span class="status-chip {{ $tx['payment_status']->badge() }}">{{ $tx['payment_status']->label() }}</span></td>
                                     <td class="ta-r">{{ $money($tx['gross']) }}</td>
-                                    <td class="ta-r money-muted">{{ $tx['discount'] > 0 ? '-'.$money($tx['discount']) : '—' }}</td>
-                                    <td class="ta-r money-neg">{{ $tx['refund'] > 0 ? '-'.$money($tx['refund']) : '—' }}</td>
                                     <td class="ta-r"><strong>{{ $money($tx['net_sales']) }}</strong></td>
                                     <td class="ta-r {{ $tx['profit'] >= 0 ? 'money-pos' : 'money-neg' }}">{{ $money($tx['profit']) }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="11">
+                                    <td colspan="8">
                                         <x-admin.empty-state icon="fa-solid fa-receipt" title="{{ __('No transactions found') }}" message="{{ __('Try a different date range, customer, or status filter.') }}" />
                                     </td>
                                 </tr>
@@ -641,6 +555,7 @@
         .metric-strip > div:nth-last-child(-n+5) { border-bottom: none; }
         .metric-strip span { display: block; font-size: 0.72rem; color: #94a3b8; font-weight: 600; margin-bottom: 0.2rem; }
         .metric-strip strong { font-size: 1.02rem; font-weight: 650; color: #1e293b; }
+        .metric-strip__chip { font-style: normal; font-size: 0.7rem; font-weight: 700; color: #e11d48; background: #fef2f2; padding: 0.1rem 0.4rem; border-radius: 999px; vertical-align: middle; }
 
         /* Analysis grid */
         .analysis-grid { display: grid; grid-template-columns: 1.1fr 1.1fr 0.9fr; gap: 0.9rem; }
@@ -679,20 +594,12 @@
         .paymethod-legend__meta { grid-column: 2; font-size: 0.7rem; color: #94a3b8; }
         .paymethod-legend__pct { grid-row: 1 / span 2; font-weight: 650; color: #475569; }
 
-        /* Perf grid + mini tables */
-        .perf-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 0.9rem; }
+        /* Panel heads */
         .panel-head { display: flex; justify-content: space-between; align-items: baseline; padding: 1.05rem 1.2rem 0.75rem; }
         .panel-head--flush { padding: 0; }
         .panel-head h3 { font-size: 0.95rem; font-weight: 650; color: #0f172a; margin: 0; }
         .panel-head span { font-size: 0.74rem; color: #94a3b8; }
-        .sales-mini-table td, .sales-mini-table th { padding: 0.55rem 0.75rem; }
         .ta-r { text-align: right; }
-        .rank-badge { color: #94a3b8; font-weight: 700; font-size: 0.8rem; width: 32px; }
-        .product-cell { display: flex; align-items: center; gap: 0.6rem; }
-        .product-cell img, .product-cell__ph { width: 34px; height: 34px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
-        .product-cell__ph { display: grid; place-items: center; background: #f1f5f9; color: #94a3b8; }
-        .product-cell strong { display: block; font-size: 0.82rem; color: #1e293b; font-weight: 600; }
-        .product-cell small { font-size: 0.7rem; color: #94a3b8; }
         .cust-cell strong { display: block; font-size: 0.82rem; color: #1e293b; font-weight: 600; }
         .cust-cell small { font-size: 0.72rem; color: #94a3b8; }
         .money-pos { color: #059669; font-weight: 600; }
@@ -722,7 +629,6 @@
         @media (max-width: 1180px) {
             .kpi-grid { grid-template-columns: repeat(2, 1fr); }
             .analysis-grid { grid-template-columns: 1fr; }
-            .perf-grid { grid-template-columns: 1fr; }
             .metric-strip { grid-template-columns: repeat(2, 1fr); }
             .metric-strip > div { border-right: 1px solid #eef1f6; }
             .metric-strip > div:nth-child(2n) { border-right: none; }
