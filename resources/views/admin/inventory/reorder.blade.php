@@ -37,12 +37,15 @@
                             <x-per-page-selector :current="$perPage" />
                         </x-slot:left>
                         <x-slot:right>
+                            {{-- Severity + search are sibling GET forms (never nest forms); each
+                                 preserves the other's value via hidden inputs. --}}
                             <form method="GET" action="{{ route('admin.inventory.reorder') }}" class="toolbar-form">
                                 <input type="hidden" name="per_page" value="{{ $perPage }}">
-                                <x-select name="severity" size="sm" :value="request('severity')" placeholder="{{ __('Any alert') }}"
-                                    :options="['out' => 'Out of stock', 'low' => 'Low stock']" />
-                                <x-search-input name="search" placeholder="{{ __('Search product, SKU, brand...') }}" />
+                                <input type="hidden" name="search" value="{{ request('search') }}">
+                                <x-select name="severity" size="sm" class="reorder-severity" :value="request('severity')" placeholder="{{ __('Any alert') }}"
+                                    :options="['out' => __('Out of stock'), 'low' => __('Low stock')]" submitOnChange />
                             </form>
+                            <x-search-input name="search" placeholder="{{ __('Search product, SKU, brand...') }}" />
                         </x-slot:right>
                     </x-table-toolbar>
                 </x-slot:toolbar>

@@ -11,11 +11,13 @@ enum SettingGroup: string
     case Prefix = 'prefix';
     case Contact = 'contact';
     case Social = 'social';
+    case Footer = 'footer';
     case SocialLogin = 'social_login';
     case Payment = 'payment';
     case Notifications = 'notifications';
     case Localization = 'localization';
     case Appearance = 'appearance';
+    case Chat = 'chat';
 
     /**
      * Human-readable tab label.
@@ -28,11 +30,13 @@ enum SettingGroup: string
             self::Prefix => 'Prefix',
             self::Contact => 'Contact',
             self::Social => 'Social links',
+            self::Footer => 'Footer menu',
             self::SocialLogin => 'Login',
             self::Payment => 'Payment Methods',
             self::Notifications => 'Notifications',
             self::Localization => 'Languages',
             self::Appearance => 'Theme Colors',
+            self::Chat => 'Live Chat',
         };
     }
 
@@ -47,11 +51,13 @@ enum SettingGroup: string
             self::Prefix => 'fa-hashtag',
             self::Contact => 'fa-address-book',
             self::Social => 'fa-share-nodes',
+            self::Footer => 'fa-list',
             self::SocialLogin => 'fa-right-to-bracket',
             self::Payment => 'fa-credit-card',
             self::Notifications => 'fa-envelope',
             self::Localization => 'fa-language',
             self::Appearance => 'fa-palette',
+            self::Chat => 'fa-comments',
         };
     }
 
@@ -62,6 +68,7 @@ enum SettingGroup: string
     {
         return match ($this) {
             self::Social => 'repeater',
+            self::Footer => 'footer_menu',
             self::Payment => 'payment_methods',
             default => 'fields',
         };

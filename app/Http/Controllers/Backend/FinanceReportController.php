@@ -6,15 +6,18 @@ namespace App\Http\Controllers\Backend;
 
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
+use App\Http\Controllers\Backend\Concerns\StreamsReportCsv;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\FinanceReportService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 final class FinanceReportController extends Controller
 {
+    use StreamsReportCsv;
+
     public function __construct(
         private readonly FinanceReportService $reports,
     ) {}
@@ -29,23 +32,16 @@ final class FinanceReportController extends Controller
         ]));
     }
 
-    public function export(string $type, Request $request): StreamedResponse
+    public function export(string $type, Request $request): Response
     {
         abort_unless(in_array($type, ['sales', 'products', 'customers', 'purchases'], true), 404);
 
-        $rows = $this->reports->exportRows($type, $this->validatedFilters($request));
-
-        return response()->streamDownload(function () use ($rows): void {
-            $handle = fopen('php://output', 'w');
-
-            foreach ($rows as $row) {
-                fputcsv($handle, $row);
-            }
-
-            fclose($handle);
-        }, 'finance-'.$type.'-report-'.now()->format('Y-m-d-His').'.csv', [
-            'Content-Type' => 'text/csv',
-        ]);
+        return $this->streamExport(
+            $this->reports->exportRows($type, $this->validatedFilters($request)),
+            'Overview — '.ucfirst($type),
+            'finance-'.$type.'-report',
+            (string) $request->query('format', 'csv'),
+        );
     }
 
     /**

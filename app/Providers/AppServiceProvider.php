@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Color;
 use App\Models\Size;
 use App\Services\Admin\AdminNotificationService;
+use App\Services\Admin\ChatService;
 use App\Services\Frontend\NavigationService;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -64,6 +65,9 @@ class AppServiceProvider extends ServiceProvider
             $view->with([
                 'adminHeaderNotifications' => $notifications->recentForHeader(),
                 'adminUnreadNotifications' => $notifications->unreadCount(),
+                'adminChatUnread' => auth()->user()->can('view chats') && Schema::hasTable('conversations')
+                    ? app(ChatService::class)->unreadForAdmin()
+                    : 0,
             ]);
         });
 

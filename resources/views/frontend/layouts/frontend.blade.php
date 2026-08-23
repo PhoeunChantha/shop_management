@@ -87,11 +87,22 @@
         @yield('content')
     </main>
 
+    {{-- Live chat: the signed-in customer's thread (not created until they open the widget).
+         Keep these as single-line php directives: a multi-line php block here would pair
+         with the single-line favicon directive above and swallow the markup in between. --}}
+    @php($__chatConv = auth()->check() ? app(\App\Services\Admin\ChatService::class)->existingConversationFor(auth()->user()) : null)
+    @php($__chatUnread = (int) ($__chatConv?->customer_unread ?? 0))
+    @php($__onChatPage = request()->routeIs('frontend.account.messages'))
+    @php($__chatCfg = app(\App\Services\Admin\SettingService::class)->chat())
     @unless ($bareLayout ?? false)
         <x-frontend.footer />
         <x-frontend.mobile-bottom-nav />
         <x-frontend.cart-drawer />
         <x-frontend.mobile-profile-drawer />
+        @unless ($__onChatPage)
+            <x-frontend.chat-widget :conversation="$__chatConv" :unread="$__chatUnread" />
+        @endunless
+        <x-frontend.back-to-top />
     @endunless
 
     {{-- Bootstrap bundle (Offcanvas, Modal, Collapse) --}}
@@ -190,6 +201,37 @@
                     /* websockets unavailable — storefront still works */ }
             })();
         </script>
+
+        {{-- Live chat with the store team (widget + Account → Messages). Uses Echo when
+             available, otherwise polls the JSON endpoints. Settings → Live Chat can turn
+             the storefront side off entirely (the account page still works). --}}
+        @if ($__chatCfg['enabled'] || $__onChatPage)
+        <script>
+            window.UT_CHAT = {
+                sound: { kind: @json($__chatCfg['sound_customer']), volume: {{ (int) $__chatCfg['volume'] }} },
+                id: @json($__chatConv?->id),
+                status: @json($__chatConv?->status?->value ?? 'open'),
+                unread: {{ $__chatUnread }},
+                me: { id: {{ auth()->id() }}, name: @json(auth()->user()->name) },
+                urls: {
+                    feed: "{{ route('frontend.account.messages.feed') }}",
+                    store: "{{ route('frontend.account.messages.store') }}",
+                    read: "{{ route('frontend.account.messages.read') }}",
+                    state: "{{ route('frontend.account.messages.state') }}"
+                },
+                i18n: {
+                    today: @json(__('Today')), yesterday: @json(__('Yesterday')),
+                    seen: @json(__('Seen')), sent: @json(__('Sent')),
+                    you: @json(__('You')), team: @json(__('Support')),
+                    open: @json(__('Open')), closed: @json(__('Closed')),
+                    failed: @json(__('Could not send — try again.')),
+                    product: @json(__('Product')),
+                    askPrefill: @json($__chatCfg['product_prefill'])
+                }
+            };
+        </script>
+        <script src="{{ asset('assets/frontend/js/chat.js') }}?v={{ filemtime(public_path('assets/frontend/js/chat.js')) }}"></script>
+        @endif
     @endauth
 
     @stack('scripts')

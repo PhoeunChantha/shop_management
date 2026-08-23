@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Enums\OrderStatus;
 use App\Enums\FulfillmentStatus;
+use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Services\Admin\SettingService;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,7 +22,7 @@ final class Order extends Model
     protected static function booted(): void
     {
         // Auto-assign an order number (using the store prefix) when one isn't set.
-        static::creating(function (Order $order): void {
+        self::creating(function (Order $order): void {
             if (blank($order->order_number)) {
                 $order->order_number = self::generateNumber();
             }

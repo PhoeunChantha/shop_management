@@ -10,6 +10,7 @@
         ['wishlist', 'Wishlist', 'heart', route('frontend.account.wishlist')],
         ['addresses', 'Addresses', 'pin', route('frontend.account.addresses')],
         ['notifications', 'Notifications', 'bell', route('frontend.account.notifications')],
+        ['messages', 'Messages', 'chat', route('frontend.account.messages')],
         ['profile', 'Profile', 'user', route('frontend.account.profile')],
         ['password', 'Password', 'lock', route('frontend.account.password')],
     ];
@@ -23,6 +24,9 @@
             @endif
             @if($key === 'wishlist')
                 <span class="ut-tag ut-tag-soft" data-wish-count style="margin-left:auto;display:none">0</span>
+            @endif
+            @if($key === 'messages')
+                <span class="ut-tag ut-tag-sale" data-chat-count style="margin-left:auto;display:none">0</span>
             @endif
         </a>
     @endforeach

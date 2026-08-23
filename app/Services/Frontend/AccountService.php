@@ -34,6 +34,7 @@ class AccountService
             'name' => $name,
             'first' => $first,
             'last' => $last,
+            'avatar' => $user?->avatarUrl(),
             'email' => $user?->email ?: 'guest@example.com',
             'phone' => $user ? (string) CustomerProfile::where('email', $user->email)->value('phone') : '',
             'tier' => 'Standard',

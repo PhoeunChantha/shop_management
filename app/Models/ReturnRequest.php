@@ -67,7 +67,7 @@ final class ReturnRequest extends Model
 
     protected static function booted(): void
     {
-        static::creating(function (ReturnRequest $return): void {
+        self::creating(function (ReturnRequest $return): void {
             if (blank($return->return_number)) {
                 $return->return_number = self::generateNumber();
             }

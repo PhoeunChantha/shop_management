@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProductVariant extends Model
 {
@@ -37,7 +38,7 @@ class ProductVariant extends Model
         return $this->belongsTo(Product::class);
     }
 
-    public function stockMovements(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class, 'variant_id')->latest();
     }

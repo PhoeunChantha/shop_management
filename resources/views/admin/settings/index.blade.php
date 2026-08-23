@@ -9,8 +9,9 @@
     </x-slot>
 
     @php
-        // Open the tab that contains the first validation error, otherwise General.
-        $activeTab = array_key_first($schema);
+        // Open the tab that contains the first validation error, otherwise the
+        // ?tab= deep link (e.g. from the chat inbox), otherwise General.
+        $activeTab = array_key_exists((string) request('tab'), $schema) ? (string) request('tab') : array_key_first($schema);
         foreach ($schema as $groupKey => $group) {
             foreach ($group['fields'] ?? [] as $fieldKey => $field) {
                 if ($errors->has($fieldKey)) {
@@ -25,6 +26,9 @@
         if ($errors->has('payment_methods') || $errors->has('payment_method_images') || collect($errors->keys())->contains(fn ($k) => str_starts_with($k, 'payment_methods') || str_starts_with($k, 'payment_method_images'))) {
             $activeTab = 'payment';
         }
+        if ($errors->has('footer_links') || collect($errors->keys())->contains(fn ($k) => str_starts_with($k, 'footer_links'))) {
+            $activeTab = 'footer';
+        }
     @endphp
 
     <div class="" x-data="{ tab: '{{ $activeTab }}' }">
@@ -38,7 +42,7 @@
         <section class="premium-card form-panel settings-layout">
             <aside class="settings-tabs">
                 @foreach ($schema as $groupKey => $group)
-                    <button type="button" class="settings-tab" :class="{ 'is-active': tab === '{{ $groupKey }}' }"
+                    <button type="button" class="settings-tab" data-tab="{{ $groupKey }}" :class="{ 'is-active': tab === '{{ $groupKey }}' }"
                         @click="tab = '{{ $groupKey }}'">
                         <i class="fa-solid {{ $group['icon'] }}"></i>
                         <span>{{ $group['label'] }}</span>
@@ -47,7 +51,8 @@
             </aside>
 
             <div class="settings-content">
-                <form method="POST" action="{{ route('admin.settings.update') }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('admin.settings.update') }}" enctype="multipart/form-data"
+                    id="settings-form" data-ajax-form>
                     @csrf
                     @method('PUT')
 
@@ -62,6 +67,7 @@
                                 }
                             @endphp
                             <div class="form-panel-body grid-cols-1 sm:grid-cols-2 gap-x-5"
+                                data-tab-panel="{{ $groupKey }}"
                                 x-show="tab === '{{ $groupKey }}'" x-cloak
                                 x-data="{
                                     colors: @js($colorState),
@@ -97,6 +103,7 @@
                             </div>
                         @else
                         <div class="form-panel-body {{ ($group['type'] ?? 'fields') === 'fields' ? 'grid-cols-1 sm:grid-cols-2 gap-x-5' : '' }}"
+                            data-tab-panel="{{ $groupKey }}"
                             x-show="tab === '{{ $groupKey }}'" x-cloak>
                             @if (($group['type'] ?? 'fields') === 'fields')
                                 @foreach ($group['fields'] as $fieldKey => $field)
@@ -267,9 +274,10 @@
 
                                                     <div class="payment-method-grid">
                                                         <div class="form-field">
-                                                            <label>{{ __('Name') }}</label>
+                                                            <label>{{ __('Name') }} <span class="text-red-500">*</span></label>
                                                             <input type="text" class="form-input" :name="`payment_methods[${i}][name]`"
-                                                                x-model="method.name" placeholder="{{ __('Card') }}">
+                                                                x-model="method.name" placeholder="{{ __('Card') }}"
+                                                                data-required data-required-label="{{ __('Payment method name') }}">
                                                         </div>
                                                         <div class="form-field">
                                                             <label>{{ __('Code') }}</label>
@@ -410,6 +418,45 @@
                                     @enderror
                                     @foreach ($errors->keys() as $errorKey)
                                         @if (str_starts_with($errorKey, 'social_links.'))
+                                            <p class="text-red-500 text-sm mt-1.5">{{ $errors->first($errorKey) }}</p>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            @elseif (($group['type'] ?? '') === 'footer_menu')
+                                {{-- Footer menu: group links by a column heading (label + url). --}}
+                                <div class="form-field" x-data="{
+                                    rows: @js($footerRows),
+                                    add() { this.rows.push({ column: '', label: '', url: '' }); },
+                                    remove(i) { this.rows.splice(i, 1); if (this.rows.length === 0) this.add(); }
+                                }">
+                                    <div class="dynamic-field-header">
+                                        <div>
+                                            <label>{{ __('Footer menu links') }}</label>
+                                            <small class="text-gray-400 dark:text-slate-500 d-block mt-1">{{ __('Group links by a column heading (e.g. Help, Brand). The “Shop” column is generated from your categories automatically.') }}</small>
+                                        </div>
+                                        <button type="button" class="dynamic-add-button" @click="add()">
+                                            <i class="fa-solid fa-plus"></i> {{ __('Add link') }}
+                                        </button>
+                                    </div>
+
+                                    <div class="social-rows">
+                                        <template x-for="(row, i) in rows" :key="i">
+                                            <div class="social-row">
+                                                <input type="text" class="form-input" :name="`footer_links[${i}][column]`"
+                                                    x-model="row.column" placeholder="{{ __('Column (e.g. Help)') }}">
+                                                <input type="text" class="form-input" :name="`footer_links[${i}][label]`"
+                                                    x-model="row.label" placeholder="{{ __('Label (e.g. Shipping)') }}">
+                                                <input type="text" class="form-input" :name="`footer_links[${i}][url]`"
+                                                    x-model="row.url" placeholder="{{ __('https://… or /shop') }}">
+                                                <button type="button" class="dynamic-remove-button" @click="remove(i)" title="{{ __('Remove') }}">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    @foreach ($errors->keys() as $errorKey)
+                                        @if (str_starts_with($errorKey, 'footer_links'))
                                             <p class="text-red-500 text-sm mt-1.5">{{ $errors->first($errorKey) }}</p>
                                         @endif
                                     @endforeach

@@ -61,3 +61,31 @@ Put a TLS-terminating proxy (nginx) in front of Reverb for `wss://` and set
   update. Supervisor therefore keeps **both** `reverb:start` and `queue:work` alive.
 - Tests set `BROADCAST_CONNECTION=null` and `QUEUE_CONNECTION=sync` (see
   `phpunit.xml`), so notifications run inline and no server is needed for the suite.
+
+## Live chat (customer <-> admin)
+
+Real-time support chat built on the same Reverb setup. Full design in
+`docs/LIVE_CHAT_PLAN.md`.
+
+- **Data**: `conversations` (one per customer, `status` open/closed, unread counters,
+  `assigned_to` staff) + `chat_messages` (`sender_role` customer/staff, `read_at`).
+- **Service**: `App\Services\Admin\ChatService` (shared by both surfaces) - send, mark
+  read, close/reopen, assign, inbox pagination, message paging, serializers.
+- **Events** (`ShouldBroadcastNow`, no queue needed): `ChatMessageSent` (`.chat.message`)
+  and `ConversationUpdated` (`.chat.conversation`) on `private-chat.conversation.{id}`
+  **and** `private-admin.chat`. Typing indicators are client whispers (`typing`).
+  Broadcast failures are logged, never thrown - the message still persists.
+- **Channels** (`routes/channels.php`): thread channel = owning customer or `view chats`;
+  `admin.chat` = `view chats`.
+- **Permissions**: subject `chats` (`view/create/edit/delete chats`), seeded by
+  `RolePermissionSeeder` and migration `2026_08_23_000003_add_chat_permissions`.
+- **Storefront**: floating widget (`<x-frontend.chat-widget>`, every page) + Account ->
+  Messages (`/account/messages`). JS in `public/assets/frontend/js/chat.js` uses
+  `window.Echo` when present, otherwise polls every 8 s. JSON endpoints under
+  `frontend.account.messages.*`.
+- **Admin**: `/admin/chats` inbox (`admin.chats.*`), header chat badge, sidebar link.
+  Echo is bundled via `resources/js/echo.js` (npm `laravel-echo` + `pusher-js`),
+  configured from `<meta name="reverb-*">` tags in the admin layout; the inbox falls
+  back to polling when sockets are unavailable.
+
+Run `php artisan reverb:start` alongside `composer dev` to see messages flow live.

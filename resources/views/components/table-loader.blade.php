@@ -54,10 +54,13 @@
                         show();
                     });
 
-                    // Clear when navigating away or restoring from the bfcache.
+                    // Clear when navigating away or restoring from the bfcache, and
+                    // when an AJAX page/table swap finishes (or fails) without navigating.
                     const hide = () => { this.loading = false; };
                     window.addEventListener('pagehide', hide);
                     window.addEventListener('pageshow', (e) => { if (e.persisted) hide(); });
+                    document.addEventListener('ajax:page-loaded', hide);
+                    document.addEventListener('ajax:page-error', hide);
                 },
             };
         };

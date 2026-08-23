@@ -63,8 +63,13 @@
     $fieldId = $id ?? ($name ? $name . '_' . substr(md5($name . serialize($options)), 0, 5) : null);
 
     // Normalize any option shape into [ ['value' =>, 'label' =>, 'disabled' =>], ... ]
+    // A plain list ([v, v]) means value == label; any keyed array (including
+    // numeric-string keys like ['1' => 'Active', '0' => 'Inactive'], which PHP
+    // casts to ints) means value == key.
+    $optionsArray = $options instanceof \Illuminate\Support\Collection ? $options->all() : (array) $options;
+    $isList = array_is_list($optionsArray);
     $normalized = [];
-    foreach ($options as $key => $option) {
+    foreach ($optionsArray as $key => $option) {
         if (is_object($option)) {
             $optVal = data_get($option, $optionValue ?? 'id');
             $optLbl = data_get($option, $optionLabel ?? 'name');
@@ -74,8 +79,8 @@
             $optLbl = $option[$optionLabel ?? 'label'] ?? $option['label'] ?? $option['name'] ?? $optVal;
             $optDis = (bool) ($option['disabled'] ?? false);
         } else {
-            // Scalar list [v, v] => value == label; assoc [k => label] => value == k
-            $optVal = is_int($key) ? $option : $key;
+            // Scalar list [v, v] => value == label; keyed [k => label] => value == k
+            $optVal = $isList ? $option : $key;
             $optLbl = $option;
             $optDis = false;
         }
@@ -499,7 +504,8 @@
         aria-hidden="true"
         {{ $attributes->except('class')->merge(['class' => 'x-select__native']) }}
     >
-        @if (! is_null($placeholder))
+        {{-- Pass placeholder="" (or false) to render no blank option at all. --}}
+        @if (! is_null($placeholder) && $placeholder !== '' && $placeholder !== false)
             <option value="">{{ $placeholder }}</option>
         @endif
         @foreach ($normalized as $opt)

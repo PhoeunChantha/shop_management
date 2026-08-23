@@ -25,6 +25,7 @@
                 [__('My orders'), 'box', route('frontend.account.orders'), null],
                 [__('Wishlist'), 'heart', route('frontend.account.wishlist'), 'wish'],
                 [__('Notifications'), 'bell', route('frontend.account.notifications'), null],
+                [__('Messages'), 'chat', route('frontend.account.messages'), 'chat'],
                 [__('Addresses'), 'pin', route('frontend.account.addresses'), null],
                 [__('Profile'), 'user', route('frontend.account.profile'), null],
                 [__('Help center'), 'info', route('frontend.pages.faq'), null],
@@ -35,6 +36,7 @@
                 <span style="width:38px;height:38px;border-radius:11px;background:var(--bg);display:grid;place-items:center;color:var(--ink)"><x-frontend.icon :n="$ic" :size="19" /></span>
                 {{ $label }}
                 @if($badge === 'wish')<span class="ut-badge accent" data-wish-count style="position:static;margin-left:auto;display:none">0</span>@endif
+                @if($badge === 'chat')<span class="ut-badge accent" data-chat-count style="position:static;margin-left:auto;display:none">0</span>@endif
                 <x-frontend.icon n="chevR" :size="18" style="margin-left:auto;color:var(--text-3)" />
             </a>
         @endforeach

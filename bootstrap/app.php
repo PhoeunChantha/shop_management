@@ -51,7 +51,10 @@ return Application::configure(basePath: dirname(__DIR__))
         });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Render JSON for API routes and any AJAX/fetch request that explicitly
+        // asks for it (Accept: application/json or X-Requested-With) — this lets
+        // admin AJAX forms receive 422 validation payloads instead of redirects.
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*'),
+            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
     })->create();

@@ -149,7 +149,7 @@ class ProductService
     public function formData(): array
     {
         return [
-            'categories' => Category::orderBy('name')->get(['id', 'name']),
+            'categories' => Category::orderByName()->get(['id', 'name']),
             'brands' => Brand::orderBy('name')->get(['id', 'name']),
             'attributes' => Attribute::where('status', true)
                 ->with(['values' => fn ($q) => $q->where('status', true)->orderBy('sort_order')])

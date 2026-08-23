@@ -117,6 +117,11 @@
                     <h1 style="font-size:clamp(28px,3.4vw,40px);line-height:1.05">{{ $product['name'] }}</h1>
                     <div class="ut-row" style="gap:8px">
                         <button type="button" class="icon-btn" data-wish="{{ $product['id'] }}" aria-label="Wishlist"><x-frontend.icon n="heart" :size="18" /></button>
+                        @php($__askProduct = app(\App\Services\Admin\SettingService::class)->askProductEnabled())
+                        @if ($__askProduct)
+                        <button type="button" class="icon-btn" aria-label="{{ __('Ask about this product') }}" title="{{ __('Ask about this product') }}"
+                                data-chat-product="{{ json_encode(['id' => $product['id'], 'name' => $product['name'], 'image' => $product['image_url'] ?? null, 'price_label' => dprice((float) $product['price']), 'url' => $product['url'] ?? url()->current()], JSON_UNESCAPED_UNICODE) }}"><x-frontend.icon n="chat" :size="18" /></button>
+                        @endif
                         <button type="button" class="icon-btn" style="box-shadow:none;background:var(--bg)" onclick="utToast('{{ __('Share link copied') }}')"><x-frontend.icon n="share" :size="18" /></button>
                     </div>
                 </div>
@@ -170,6 +175,19 @@
                     <strong data-pdp-total data-unit-price="{{ (float) $product['price'] }}">{{ money((float) $product['price']) }}</strong>
                 </div>
                 <a href="{{ route('frontend.checkout.index') }}" class="ut-btn ut-btn-ink ut-btn-block ut-purchase-buy">{{ __('Buy it now') }}</a>
+
+                {{-- ask the team about this exact product (opens live chat with it attached) --}}
+                @if ($__askProduct ?? true)
+                <button type="button" class="ut-ask-product"
+                        data-chat-product="{{ json_encode(['id' => $product['id'], 'name' => $product['name'], 'image' => $product['image_url'] ?? null, 'price_label' => dprice((float) $product['price']), 'url' => $product['url'] ?? url()->current()], JSON_UNESCAPED_UNICODE) }}">
+                    <span class="ut-ask-product-icon"><x-frontend.icon n="chat" :size="17" /></span>
+                    <span class="ut-ask-product-copy">
+                        <strong>{{ __('Questions about this piece?') }}</strong>
+                        <small>{{ __('Ask our team — sizing, fabric, delivery. Usually replies in minutes.') }}</small>
+                    </span>
+                    <x-frontend.icon n="arrowR" :size="16" style="margin-left:auto;color:var(--text-3)" />
+                </button>
+                @endif
 
                 <div class="ut-row" style="gap:18px;margin-top:22px;flex-wrap:wrap">
                     @foreach([['truck', __('Free shipping over $75')], ['refresh', __('30-day returns')], ['shield', __('Secure checkout')]] as [$ic, $t])

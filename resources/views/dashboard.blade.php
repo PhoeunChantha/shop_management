@@ -20,11 +20,6 @@
                 'values' => collect($statusBreakdown)->pluck('count')->all(),
                 'colors' => collect($statusBreakdown)->pluck('color')->all(),
             ],
-            'topProducts' => [
-                'labels' => collect($topProducts)->pluck('name')->all(),
-                'sold' => collect($topProducts)->pluck('sold')->all(),
-                'revenue' => collect($topProducts)->pluck('revenue')->all(),
-            ],
         ];
     @endphp
 
@@ -38,7 +33,7 @@
                 <p class="dash-date">{{ now()->format('l, F j, Y') }}</p>
             </div>
             <div class="dash-bar__actions">
-                <form method="GET" action="{{ route('admin.dashboard') }}" class="dash-daterange">
+                <form method="GET" action="{{ route('admin.dashboard') }}" class="dash-daterange" data-ajax-filter>
                     <div class="daterange-control">
                         <i class="fa-regular fa-calendar"></i>
                         <input type="text" class="form-input" data-daterange data-daterange-submit
@@ -73,9 +68,8 @@
         </div>
 
         {{-- ============ Operations queue ============ --}}
-        <section class="dash-ops-panel">
-            <div class="dash-ops-panel__intro">
-                <span class="dash-ops-panel__icon"><i class="fa-solid fa-command"></i></span>
+        <section class="dash-panel">
+            <div class="dash-panel__head">
                 <div>
                     <h3>{{ __("Today's control queue") }}</h3>
                     <p>{{ __('High-signal tasks from orders, support, inventory, reviews, and alerts.') }}</p>
@@ -89,7 +83,6 @@
                             <strong>{{ number_format($item['value']) }}</strong>
                             <small>{{ $item['label'] }}</small>
                         </span>
-                        <i class="fa-solid fa-arrow-right dash-op__arrow"></i>
                     </a>
                 @endforeach
             </div>
@@ -109,7 +102,14 @@
                         <span>{{ __('total · peak') }} {{ $chart['peak'] }}</span>
                     </div>
                 </div>
-                <div id="revChart" class="dash-apex"></div>
+                @if ($chart['total'] === '$0')
+                    <div class="dash-empty">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <p>{{ __('No revenue in this range.') }}</p>
+                    </div>
+                @else
+                    <div id="revChart" class="dash-apex"></div>
+                @endif
             </section>
 
             {{-- Orders by status --}}
@@ -140,41 +140,8 @@
             </section>
         </div>
 
-        {{-- ============ Recent orders + low stock ============ --}}
+        {{-- ============ Top products + low stock ============ --}}
         <div class="dash-grid dash-grid--feeds">
-            {{-- Recent orders --}}
-            <section class="dash-panel">
-                <div class="dash-panel__head">
-                    <div>
-                        <h3>{{ __('Recent orders') }}</h3>
-                        <p>{{ __('Latest activity') }}</p>
-                    </div>
-                    <a href="{{ route('admin.orders.index') }}" class="dash-link">{{ __('View all') }} <i class="fa-solid fa-arrow-right"></i></a>
-                </div>
-                <div class="dash-table-wrap">
-                    <table class="dash-table">
-                        <thead>
-                            <tr><th>{{ __('Order') }}</th><th>{{ __('Customer') }}</th><th>{{ __('Status') }}</th><th class="text-end">{{ __('Total') }}</th><th class="text-end">{{ __('Date') }}</th></tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($recentOrders as $order)
-                                <tr>
-                                    <td>
-                                        <a href="{{ route('admin.orders.show', $order->id) }}" class="dash-table__id">{{ $order->order_number }}</a>
-                                    </td>
-                                    <td>{{ $order->customer_name }}</td>
-                                    <td><span class="status-chip {{ $order->status->badge() }}">{{ $order->status->label() }}</span></td>
-                                    <td class="text-end dash-table__amt">{{ money($order->grand_total) }}</td>
-                                    <td class="text-end dash-table__date">{{ ($order->placed_at ?? $order->created_at)?->format('d M') }}</td>
-                                </tr>
-                            @empty
-                                <tr><td colspan="5"><div class="dash-empty"><i class="fa-solid fa-receipt"></i><p>{{ __('No orders yet.') }}</p></div></td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
             {{-- Top products --}}
             <section class="dash-panel">
                 <div class="dash-panel__head">
@@ -184,13 +151,26 @@
                     </div>
                     <a href="{{ route('admin.products.index') }}" class="dash-link">{{ __('Catalog') }} <i class="fa-solid fa-arrow-right"></i></a>
                 </div>
-                <div class="dash-products">
-                    @if ($topProducts->isEmpty())
-                        <div class="dash-empty"><i class="fa-solid fa-box-open"></i><p>{{ __('No product sales in this range.') }}</p></div>
-                    @else
-                        <div id="topProductsChart"></div>
-                    @endif
-                </div>
+                @if ($topProducts->isEmpty())
+                    <div class="dash-empty"><i class="fa-solid fa-box-open"></i><p>{{ __('No product sales in this range.') }}</p></div>
+                @else
+                    @php $topMax = $topProducts->max('sold') ?: 1; @endphp
+                    <ol class="dash-top">
+                        @foreach ($topProducts as $i => $tp)
+                            <li class="dash-top__item">
+                                <span class="dash-top__rank">{{ str_pad($i + 1, 2, '0', STR_PAD_LEFT) }}</span>
+                                <div class="dash-top__body">
+                                    <div class="dash-top__meta">
+                                        <span class="dash-top__name">{{ $tp['name'] }}</span>
+                                        <span class="dash-top__revenue">{{ $tp['revenue'] }}</span>
+                                    </div>
+                                    <div class="dash-top__track"><span style="width: {{ round(($tp['sold'] / $topMax) * 100) }}%;"></span></div>
+                                    <span class="dash-top__sold">{{ number_format($tp['sold']) }} {{ __('sold') }}</span>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ol>
+                @endif
             </section>
 
             {{-- Low stock --}}
@@ -223,6 +203,39 @@
             </section>
         </div>
 
+        {{-- ============ Recent orders ============ --}}
+        <section class="dash-panel">
+            <div class="dash-panel__head">
+                <div>
+                    <h3>{{ __('Recent orders') }}</h3>
+                    <p>{{ __('Latest activity') }}</p>
+                </div>
+                <a href="{{ route('admin.orders.index') }}" class="dash-link">{{ __('View all') }} <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+            <div class="dash-table-wrap">
+                <table class="dash-table">
+                    <thead>
+                        <tr><th>{{ __('Order') }}</th><th>{{ __('Customer') }}</th><th>{{ __('Status') }}</th><th class="text-end">{{ __('Total') }}</th><th class="text-end">{{ __('Date') }}</th></tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($recentOrders as $order)
+                            <tr>
+                                <td>
+                                    <a href="{{ route('admin.orders.show', $order->id) }}" class="dash-table__id">{{ $order->order_number }}</a>
+                                </td>
+                                <td>{{ $order->customer_name }}</td>
+                                <td><span class="status-chip {{ $order->status->badge() }}">{{ $order->status->label() }}</span></td>
+                                <td class="text-end dash-table__amt">{{ money($order->grand_total) }}</td>
+                                <td class="text-end dash-table__date">{{ ($order->placed_at ?? $order->created_at)?->format('d M') }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="5"><div class="dash-empty"><i class="fa-solid fa-receipt"></i><p>{{ __('No orders yet.') }}</p></div></td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
         <section class="dash-fulfillment">
             <div class="dash-fulfillment__meter" style="--pct: {{ $fulfillment['health'] }};">
                 <span>{{ $fulfillment['health'] }}%</span>
@@ -245,7 +258,14 @@
     @push('js')
         <script>
             (function () {
-                const data = JSON.parse(document.getElementById('dash-data').textContent);
+                let charts = [];
+                const destroy = () => { charts.forEach((c) => { try { c.destroy(); } catch (e) {} }); charts = []; };
+
+                const boot = () => {
+                destroy();
+                const dataEl = document.getElementById('dash-data');
+                if (!dataEl) return;
+                const data = JSON.parse(dataEl.textContent);
 
                 // Count-up animation on the KPI card values (runs on page load).
                 document.querySelectorAll('.dash-kpi__value[data-count]').forEach((el) => {
@@ -283,20 +303,21 @@
                     data.kpis.forEach((kpi, i) => {
                         const el = document.getElementById('kpiSpark' + i);
                         if (!el) return;
-                        new ApexCharts(el, {
+                        charts.push(new ApexCharts(el, {
                             chart: { type: 'area', height: 42, sparkline: { enabled: true }, fontFamily: font },
                             series: [{ name: '', data: kpi.series }],
                             stroke: { width: 2, curve: 'smooth' },
                             fill: { type: 'gradient', gradient: { opacityFrom: 0.35, opacityTo: 0 } },
                             colors: [kpi.color],
                             tooltip: { enabled: false },
-                        }).render();
+                        }));
+                        charts[charts.length - 1].render();
                     });
 
                     // Revenue area chart
                     const rev = document.getElementById('revChart');
                     if (rev) {
-                        new ApexCharts(rev, {
+                        charts.push(new ApexCharts(rev, {
                             chart: { type: 'area', height: 330, fontFamily: font, toolbar: { show: false }, zoom: { enabled: false },
                                 animations: { enabled: true, easing: 'easeinout', speed: 800 } },
                             series: [{ name: 'Revenue', data: data.revenue.values }],
@@ -311,14 +332,15 @@
                             yaxis: { labels: { style: { colors: muted, fontSize: '11px' },
                                 formatter: (v) => v >= 1000 ? '$' + (v / 1000).toFixed(1) + 'k' : '$' + Math.round(v) } },
                             tooltip: { theme: dark ? 'dark' : 'light', y: { formatter: (v) => '$' + Number(v).toLocaleString() } },
-                        }).render();
+                        }));
+                        charts[charts.length - 1].render();
                     }
 
                     // Orders-by-status donut
                     const donut = document.getElementById('statusChart');
                     if (donut && data.status.values.length) {
                         const total = data.status.values.reduce((a, b) => a + b, 0);
-                        new ApexCharts(donut, {
+                        charts.push(new ApexCharts(donut, {
                             chart: { type: 'donut', height: 172, fontFamily: font },
                             series: data.status.values,
                             labels: data.status.labels,
@@ -331,32 +353,16 @@
                                 value: { color: dark ? '#e2e8f0' : '#101827', fontSize: '22px', fontWeight: 800 },
                                 total: { show: true, label: '{{ __('Orders') }}', color: muted, formatter: () => total } } } } },
                             tooltip: { theme: dark ? 'dark' : 'light' },
-                        }).render();
-                    }
-
-                    // Top products — units sold (horizontal bars)
-                    const top = document.getElementById('topProductsChart');
-                    if (top && data.topProducts.sold.length) {
-                        const palette = ['#0f766e', '#2563eb', '#7c3aed', '#ea580c', '#059669'];
-                        new ApexCharts(top, {
-                            chart: { type: 'bar', height: Math.max(160, data.topProducts.sold.length * 52), fontFamily: font, toolbar: { show: false },
-                                animations: { enabled: true, easing: 'easeinout', speed: 700 } },
-                            series: [{ name: 'Units sold', data: data.topProducts.sold }],
-                            colors: palette,
-                            plotOptions: { bar: { horizontal: true, borderRadius: 6, barHeight: '58%', distributed: true } },
-                            dataLabels: { enabled: true, textAnchor: 'start', offsetX: 4,
-                                formatter: (v) => Number(v).toLocaleString(),
-                                style: { colors: [dark ? '#e2e8f0' : '#101827'], fontSize: '11px', fontWeight: 700 } },
-                            legend: { show: false },
-                            grid: { borderColor: grid, strokeDashArray: 4, xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } } },
-                            xaxis: { categories: data.topProducts.labels, axisBorder: { show: false }, axisTicks: { show: false },
-                                labels: { style: { colors: muted, fontSize: '11px' } } },
-                            yaxis: { labels: { style: { colors: muted, fontSize: '12px' } } },
-                            tooltip: { theme: dark ? 'dark' : 'light',
-                                y: { formatter: (v, opts) => Number(v).toLocaleString() + ' {{ __('sold') }} · ' + data.topProducts.revenue[opts.dataPointIndex] } },
-                        }).render();
+                        }));
+                        charts[charts.length - 1].render();
                     }
                 }
+                };
+
+                boot();
+                // The period filter swaps the page in place — rebuild the charts.
+                document.addEventListener('ajax:page-unload', destroy);
+                document.addEventListener('ajax:page-loaded', boot);
             })();
         </script>
     @endpush

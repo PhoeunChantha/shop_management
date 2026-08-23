@@ -14,8 +14,7 @@
             <label for="name">Brand Name <span class="text-red-500">*</span></label>
             <input value="{{ old('name', $brand->name ?? '') }}" type="text" name="name" id="name"
                 class="form-input" placeholder="{{ __('e.g. Nike, Adidas, Atelier') }}" required>
-            <small class="text-gray-400 dark:text-slate-500 d-block mt-1">{{ __('The URL slug is generated automatically from
-                the name.') }}</small>
+            <small class="text-gray-400 dark:text-slate-500 d-block mt-1">{{ __('The URL slug is generated automatically from the name.') }}</small>
             @error('name')
                 <p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>
             @enderror

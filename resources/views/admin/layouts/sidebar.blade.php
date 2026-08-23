@@ -14,19 +14,28 @@
             'icon' => 'fa-chart-column',
             'routes' => ['admin.reports.*'],
             'items' => [
-                ['label' => __('Reports'), 'icon' => 'fa-chart-column', 'route' => 'admin.reports.index', 'active' => ['admin.reports.*']],
+                ['label' => __('Overview'), 'icon' => 'fa-gauge-high', 'route' => 'admin.reports.index', 'active' => ['admin.reports.index', 'admin.reports.export'], 'permission' => 'view reports'],
+                ['label' => __('Sales'), 'icon' => 'fa-chart-line', 'route' => 'admin.reports.sales', 'active' => ['admin.reports.sales', 'admin.reports.sales.*'], 'permission' => 'view sales reports'],
+                ['label' => __('Products'), 'icon' => 'fa-box-open', 'route' => 'admin.reports.products', 'active' => ['admin.reports.products', 'admin.reports.products.*'], 'permission' => 'view product reports'],
+                ['label' => __('Inventory'), 'icon' => 'fa-warehouse', 'route' => 'admin.reports.stock', 'active' => ['admin.reports.stock', 'admin.reports.stock.*'], 'permission' => 'view stock reports'],
+                ['label' => __('Payments'), 'icon' => 'fa-credit-card', 'route' => 'admin.reports.payments', 'active' => ['admin.reports.payments', 'admin.reports.payments.*'], 'permission' => 'view payment reports'],
+                ['label' => __('Customers'), 'icon' => 'fa-user-group', 'route' => 'admin.reports.customers', 'active' => ['admin.reports.customers', 'admin.reports.customers.*'], 'permission' => 'view customer reports'],
+                ['label' => __('Purchasing'), 'icon' => 'fa-clipboard-list', 'route' => 'admin.reports.purchasing', 'active' => ['admin.reports.purchasing', 'admin.reports.purchasing.*'], 'permission' => 'view purchasing reports'],
+                ['label' => __('Customer Registrations'), 'icon' => 'fa-user-plus', 'route' => 'admin.reports.register', 'active' => ['admin.reports.register', 'admin.reports.register.*'], 'permission' => 'view register reports'],
+                ['label' => __('Returns'), 'icon' => 'fa-rotate-left', 'route' => 'admin.reports.returns', 'active' => ['admin.reports.returns', 'admin.reports.returns.*'], 'permission' => 'view return reports'],
             ],
         ],
         [
             'label' => __('Sales'),
             'caption' => __('Orders and customers'),
             'icon' => 'fa-receipt',
-            'routes' => ['admin.orders.*', 'admin.customers.*', 'admin.returns.*', 'admin.abandoned-carts.*', 'admin.payments.*', 'admin.wallets.*'],
+            'routes' => ['admin.orders.*', 'admin.customers.*', 'admin.returns.*', 'admin.abandoned-carts.*', 'admin.payments.*', 'admin.wallets.*', 'admin.chats.*'],
             'items' => [
                 ['label' => __('Orders'), 'icon' => 'fa-list-check', 'route' => 'admin.orders.index', 'active' => ['admin.orders.*']],
                 ['label' => __('Payments'), 'icon' => 'fa-credit-card', 'route' => 'admin.payments.index', 'active' => ['admin.payments.*']],
                 ['label' => __('Wallets'), 'icon' => 'fa-wallet', 'route' => 'admin.wallets.index', 'active' => ['admin.wallets.*']],
                 ['label' => __('Customers'), 'icon' => 'fa-user-group', 'route' => 'admin.customers.index', 'active' => ['admin.customers.*']],
+                ['label' => __('Live Chat'), 'icon' => 'fa-comments', 'route' => 'admin.chats.index', 'active' => ['admin.chats.*'], 'permission' => 'view chats'],
                 ['label' => __('Returns & Refunds'), 'icon' => 'fa-rotate-left', 'route' => 'admin.returns.index', 'active' => ['admin.returns.*']],
                 ['label' => __('Abandoned Carts'), 'icon' => 'fa-cart-arrow-down', 'route' => 'admin.abandoned-carts.index', 'active' => ['admin.abandoned-carts.*']],
             ],
@@ -154,6 +163,7 @@
                     <div class="admin-module__submenu">
                         <div class="admin-module__submenu-inner">
                             @foreach ($module['items'] as $item)
+                                @continue(! empty($item['permission']) && ! auth()->user()?->can($item['permission']))
                                 <a href="{{ route($item['route']) }}"
                                     class="admin-module__link {{ request()->routeIs(...$item['active']) ? 'active' : '' }}">
                                     <span><i class="fa-solid {{ $item['icon'] }}"></i></span>

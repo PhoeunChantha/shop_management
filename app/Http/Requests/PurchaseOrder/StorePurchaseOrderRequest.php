@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\PurchaseOrder;
 
-use App\Models\PurchaseOrder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

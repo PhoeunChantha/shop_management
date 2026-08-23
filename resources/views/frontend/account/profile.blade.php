@@ -6,7 +6,11 @@
 <p class="muted" style="font-size:14px;margin-bottom:18px">{{ __('Manage your personal information') }}</p>
 <div class="ut-card" style="padding:26px">
     <div class="ut-row" style="gap:16px;margin-bottom:24px;padding-bottom:22px;border-bottom:1px solid var(--border)">
-        <span style="width:72px;height:72px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-family:var(--font-head);font-weight:700;font-size:28px">{{ $user['first'][0] }}</span>
+        @if(!empty($user['avatar']))
+            <img src="{{ $user['avatar'] }}" alt="{{ $user['first'] }}" style="width:72px;height:72px;border-radius:50%;object-fit:cover">
+        @else
+            <span style="width:72px;height:72px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-family:var(--font-head);font-weight:700;font-size:28px">{{ $user['first'][0] }}</span>
+        @endif
         <div><button type="button" class="ut-btn ut-btn-ghost ut-btn-sm">{{ __('Change photo') }}</button><p class="muted" style="font-size:12.5px;margin-top:8px">{{ __('JPG or PNG, max 2MB') }}</p></div>
     </div>
     <form class="ut-col" style="gap:16px;max-width:540px" method="POST" action="{{ route('frontend.account.profile.update') }}">

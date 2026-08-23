@@ -34,3 +34,19 @@ it('saves settings with the second currency enabled', function () {
 
     expect(\App\Models\Setting::get('currency_secondary_rate'))->toBe('4100');
 });
+
+it('returns a JSON success for an AJAX save (no redirect)', function () {
+    $this->actingAs($this->admin)
+        ->putJson(route('admin.settings.update'), ['currency_code' => 'USD'])
+        ->assertOk()
+        ->assertJson(['success' => true]);
+});
+
+it('returns 422 JSON validation errors for an AJAX save', function () {
+    $this->actingAs($this->admin)
+        ->putJson(route('admin.settings.update'), [
+            'social_links' => [['icon' => '', 'title' => 'Bad', 'url' => 'not-a-valid-url']],
+        ])
+        ->assertStatus(422)
+        ->assertJsonValidationErrors('social_links.0.url');
+});

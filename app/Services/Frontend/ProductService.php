@@ -2,6 +2,7 @@
 
 namespace App\Services\Frontend;
 
+use App\Models\Category;
 use App\Models\Color;
 use App\Models\Product;
 use App\Models\Size;
@@ -102,19 +103,23 @@ class ProductService
      */
     public function categoryFacets(): array
     {
+        // Names are translatable JSON, so group by id in SQL and resolve the
+        // display name (current locale) through the model afterwards.
+        $names = Category::query()->get(['id', 'name'])->mapWithKeys(fn (Category $c) => [$c->id => (string) $c->name]);
+
         return Product::query()
             ->where('products.status', 'active')
-            ->join('categories as c', 'c.id', '=', 'products.category_id')
-            ->leftJoin('categories as sc', 'sc.id', '=', 'products.sub_category_id')
-            ->selectRaw('c.name as category, sc.name as subcategory, COUNT(*) as total')
-            ->groupBy('c.name', 'sc.name')
+            ->selectRaw('products.category_id as category_id, products.sub_category_id as sub_category_id, COUNT(*) as total')
+            ->whereNotNull('products.category_id')
+            ->groupBy('products.category_id', 'products.sub_category_id')
             ->get()
-            ->groupBy('category')
+            ->filter(fn ($row): bool => $names->has((int) $row->category_id))
+            ->groupBy(fn ($row): string => $names[(int) $row->category_id])
             ->map(fn (Collection $rows): array => [
                 'count' => (int) $rows->sum('total'),
                 'subcategories' => $rows
-                    ->filter(fn ($row): bool => filled($row->subcategory))
-                    ->mapWithKeys(fn ($row): array => [$row->subcategory => (int) $row->total])
+                    ->filter(fn ($row): bool => $row->sub_category_id !== null && $names->has((int) $row->sub_category_id))
+                    ->mapWithKeys(fn ($row): array => [$names[(int) $row->sub_category_id] => (int) $row->total])
                     ->all(),
             ])
             ->all();
@@ -246,12 +251,13 @@ class ProductService
             });
         }
 
+        // Category URLs may carry a slug (navigation) or a display name (facets, any language).
         if (filled($filters['category'] ?? null) && $filters['category'] !== 'All') {
-            $query->whereHas('category', fn (Builder $c) => $c->where('name', $filters['category']));
+            $query->whereHas('category', fn (Builder $c) => $c->whereSlugOrName((string) $filters['category']));
         }
 
         if (filled($filters['subcategory'] ?? null) && $filters['subcategory'] !== 'All') {
-            $query->whereHas('subCategory', fn (Builder $c) => $c->where('name', $filters['subcategory']));
+            $query->whereHas('subCategory', fn (Builder $c) => $c->whereSlugOrName((string) $filters['subcategory']));
         }
 
         if (filled($filters['brand'] ?? null) && $filters['brand'] !== 'All') {

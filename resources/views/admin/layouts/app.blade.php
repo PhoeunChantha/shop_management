@@ -6,6 +6,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    {{-- Reverb websockets (resources/js/echo.js reads these). Only rendered when the
+         reverb connection is configured; otherwise the admin silently polls. --}}
+    @if (config('broadcasting.default') === 'reverb' && config('broadcasting.connections.reverb.key'))
+        <meta name="reverb-key" content="{{ config('broadcasting.connections.reverb.key') }}">
+        <meta name="reverb-host" content="{{ config('broadcasting.connections.reverb.options.host') }}">
+        <meta name="reverb-port" content="{{ (int) config('broadcasting.connections.reverb.options.port', 8080) }}">
+        <meta name="reverb-scheme" content="{{ config('broadcasting.connections.reverb.options.scheme', 'http') }}">
+    @endif
+    @if (auth()->check() && auth()->user()->can('view chats'))
+        @php
+            $__adminChatCfg = app(\App\Services\Admin\SettingService::class)->chat();
+        @endphp
+        <meta name="admin-chat" content="1">
+        <meta name="admin-chat-url" content="{{ route('admin.chats.index') }}">
+        <meta name="admin-chat-sound" content="{{ $__adminChatCfg['sound_admin'] }}">
+        <meta name="admin-chat-volume" content="{{ (int) $__adminChatCfg['volume'] }}">
+    @endif
+
     {{-- Site branding + semantic theme colors (Settings). Resolved once and
          reused by the head, sidebar (via @include scope) and theme variables. --}}
     @php
@@ -99,7 +117,10 @@
                 </header>
             @endisset
 
-            <main class="flex-grow-1 admin-main">
+            {{-- data-ajax-page: filter / search / per-page / pagination GET forms and
+                 links inside swap this region in place instead of reloading (see
+                 the "AJAX pages" section of resources/js/app.js). --}}
+            <main class="flex-grow-1 admin-main" data-ajax-page>
                 {{ $slot }}
             </main>
 

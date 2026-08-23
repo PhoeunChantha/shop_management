@@ -36,6 +36,29 @@ class User extends Authenticatable
     }
 
     /**
+     * Public URL for the profile photo, or null when none is set.
+     * Resolves the same storage conventions the admin avatar field uses:
+     * a bare filename lives in public/uploads/users, an "uploads/…" path is
+     * public-relative, and anything else is on the public disk (storage/…).
+     */
+    public function avatarUrl(): ?string
+    {
+        $avatar = $this->avatar;
+
+        if (blank($avatar)) {
+            return null;
+        }
+
+        if (! str_contains($avatar, '/')) {
+            return asset('uploads/users/'.$avatar);
+        }
+
+        return str_starts_with($avatar, 'uploads/')
+            ? asset($avatar)
+            : asset('storage/'.$avatar);
+    }
+
+    /**
      * @return HasMany<WalletTransaction, $this>
      */
     public function walletTransactions(): HasMany
@@ -71,5 +94,15 @@ class User extends Authenticatable
     public function cart(): HasOne
     {
         return $this->hasOne(Cart::class);
+    }
+
+    /**
+     * The customer's single support conversation with the store team.
+     *
+     * @return HasOne<Conversation, $this>
+     */
+    public function conversation(): HasOne
+    {
+        return $this->hasOne(Conversation::class);
     }
 }

@@ -209,6 +209,58 @@ final class SettingService
                 ],
             ],
             SettingGroup::Appearance->value => $this->themeFieldDefinitions(),
+            SettingGroup::Chat->value => [
+                'chat_enabled' => ['label' => 'Live chat', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '1', 'help' => 'Show the chat launcher on the storefront. Admin inbox keeps working either way.', 'rules' => 'nullable|in:0,1'],
+                'chat_guest_launcher' => ['label' => 'Launcher for guests', 'type' => 'select', 'options' => ['1' => 'Shown (asks to sign in)', '0' => 'Hidden'], 'default' => '1', 'help' => 'Signed-out visitors see a launcher that sends them to sign in.', 'rules' => 'nullable|in:0,1'],
+                'chat_ask_product_enabled' => ['label' => '“Ask about this product” buttons', 'type' => 'select', 'options' => ['1' => 'Shown', '0' => 'Hidden'], 'default' => '1', 'help' => 'Chat icon on product cards and the “Questions about this piece?” row on the product page.', 'rules' => 'nullable|in:0,1'],
+                'chat_header_title' => ['label' => 'Widget title', 'type' => 'text', 'placeholder' => 'Falls back to the site name', 'rules' => 'nullable|string|max:80'],
+                'chat_reply_note' => ['label' => 'Reply-time note', 'type' => 'text', 'placeholder' => 'Usually replies in minutes', 'help' => 'Small line under the widget title.', 'rules' => 'nullable|string|max:120'],
+                'chat_welcome_title' => ['label' => 'Welcome heading', 'type' => 'text', 'placeholder' => 'Talk to the atelier', 'help' => 'Shown before the first message.', 'rules' => 'nullable|string|max:120'],
+                'chat_welcome_text' => ['label' => 'Welcome text', 'type' => 'textarea', 'placeholder' => 'Questions about sizing, an order, or a return? Write to us here — a real person replies, usually within minutes during opening hours.', 'rules' => 'nullable|string|max:500'],
+                'chat_product_prefill' => ['label' => 'Product question prefill', 'type' => 'text', 'placeholder' => 'Hi! I have a question about this product.', 'help' => 'Pre-typed message when a customer clicks “Ask about this product”.', 'rules' => 'nullable|string|max:255'],
+                'chat_sound_admin' => ['label' => 'Admin alert sound', 'type' => 'select', 'options' => ['chime' => 'Chime (two notes)', 'pop' => 'Pop (short)', 'ding' => 'Ding (bell)', 'off' => 'Off'], 'default' => 'chime', 'help' => 'Played in the admin when a customer message arrives. Staff can mute it from the inbox.', 'rules' => 'nullable|in:chime,pop,ding,off'],
+                'chat_sound_customer' => ['label' => 'Customer alert sound', 'type' => 'select', 'options' => ['chime' => 'Chime (two notes)', 'pop' => 'Pop (short)', 'ding' => 'Ding (bell)', 'off' => 'Off'], 'default' => 'pop', 'help' => 'Played on the storefront when your team replies.', 'rules' => 'nullable|in:chime,pop,ding,off'],
+                'chat_sound_volume' => ['label' => 'Alert volume', 'type' => 'select', 'options' => ['25' => '25%', '50' => '50%', '75' => '75%', '100' => '100%'], 'default' => '75', 'rules' => 'nullable|in:25,50,75,100'],
+            ],
+        ];
+    }
+
+    /**
+     * Live-chat configuration (Settings → Live Chat), with defaults applied.
+     *
+     * @return array{
+     *     enabled: bool, guest_launcher: bool, ask_product: bool,
+     *     header_title: ?string, reply_note: string, welcome_title: string, welcome_text: string,
+     *     product_prefill: string, sound_admin: string, sound_customer: string, volume: int
+     * }
+     */
+    /**
+     * Whether "Ask about this product" buttons are shown (chat must be on too).
+     */
+    public function askProductEnabled(): bool
+    {
+        return (string) Setting::get('chat_enabled', '1') !== '0'
+            && (string) Setting::get('chat_ask_product_enabled', '1') !== '0';
+    }
+
+    public function chat(): array
+    {
+        $on = fn (string $key, string $default = '1'): bool => (string) Setting::get($key, $default) !== '0';
+        $text = fn (string $key, string $default): string => trim((string) Setting::get($key)) !== '' ? trim((string) Setting::get($key)) : $default;
+        $sound = fn (string $key, string $default): string => in_array(Setting::get($key), ['chime', 'pop', 'ding', 'off'], true) ? (string) Setting::get($key) : $default;
+
+        return [
+            'enabled' => $on('chat_enabled'),
+            'guest_launcher' => $on('chat_guest_launcher'),
+            'ask_product' => $on('chat_ask_product_enabled'),
+            'header_title' => trim((string) Setting::get('chat_header_title')) ?: null,
+            'reply_note' => $text('chat_reply_note', __('Usually replies in minutes')),
+            'welcome_title' => $text('chat_welcome_title', __('Talk to the atelier')),
+            'welcome_text' => $text('chat_welcome_text', __('Questions about sizing, an order, or a return? Write to us here — a real person replies, usually within minutes during opening hours.')),
+            'product_prefill' => $text('chat_product_prefill', __('Hi! I have a question about this product.')),
+            'sound_admin' => $sound('chat_sound_admin', 'chime'),
+            'sound_customer' => $sound('chat_sound_customer', 'pop'),
+            'volume' => max(0, min(100, (int) (Setting::get('chat_sound_volume') ?: 75))),
         ];
     }
 
@@ -343,6 +395,10 @@ final class SettingService
             'social_links.*.icon' => ['nullable', 'string', 'max:60'],
             'social_links.*.title' => ['nullable', 'string', 'max:100'],
             'social_links.*.url' => ['nullable', 'url', 'max:255'],
+            'footer_links' => ['nullable', 'array'],
+            'footer_links.*.column' => ['nullable', 'string', 'max:60'],
+            'footer_links.*.label' => ['nullable', 'string', 'max:100'],
+            'footer_links.*.url' => ['nullable', 'string', 'max:255'],
             'payment_methods' => ['nullable', 'array'],
             'payment_methods.*.id' => ['nullable', 'string', 'max:80'],
             'payment_methods.*.name' => ['nullable', 'string', 'max:100'],
@@ -438,6 +494,66 @@ final class SettingService
     public function socialLinks(): array
     {
         return json_decode(Setting::get('social_links', '[]'), true) ?: [];
+    }
+
+    /**
+     * Admin-managed footer link rows: [{column, label, url}]. Empty when the
+     * admin hasn't customised the footer (the defaults are then used).
+     *
+     * @return array<int, array<string, string>>
+     */
+    public function footerLinks(): array
+    {
+        return json_decode(Setting::get('footer_links', '[]'), true) ?: [];
+    }
+
+    /**
+     * Footer link columns for the storefront, grouped by heading and preserving
+     * order. Falls back to a sensible Help/Brand default when unconfigured.
+     *
+     * @return array<string, array<int, array{label: string, url: string}>>
+     */
+    public function footerColumns(): array
+    {
+        $links = $this->footerLinks() ?: $this->defaultFooterLinks();
+
+        $columns = [];
+
+        foreach ($links as $link) {
+            $column = trim((string) ($link['column'] ?? ''));
+            $label = trim((string) ($link['label'] ?? ''));
+            $url = trim((string) ($link['url'] ?? ''));
+
+            if ($column === '' || $label === '') {
+                continue;
+            }
+
+            $columns[$column][] = ['label' => $label, 'url' => $url ?: '#'];
+        }
+
+        return $columns;
+    }
+
+    /**
+     * Starter footer columns (Help + Brand). The storefront "Shop" column is
+     * generated from live categories, so it is intentionally not listed here.
+     *
+     * @return array<int, array<string, string>>
+     */
+    public function defaultFooterLinks(): array
+    {
+        return [
+            ['column' => 'Help', 'label' => 'Shipping', 'url' => route('frontend.pages.faq')],
+            ['column' => 'Help', 'label' => 'Returns', 'url' => route('frontend.pages.faq')],
+            ['column' => 'Help', 'label' => 'Size Guide', 'url' => route('frontend.pages.faq')],
+            ['column' => 'Help', 'label' => 'Track Order', 'url' => route('frontend.account.orders')],
+            ['column' => 'Help', 'label' => 'Contact', 'url' => route('frontend.pages.contact')],
+            ['column' => 'Brand', 'label' => 'Our Story', 'url' => route('frontend.pages.about')],
+            ['column' => 'Brand', 'label' => 'FAQ', 'url' => route('frontend.pages.faq')],
+            ['column' => 'Brand', 'label' => 'Contact', 'url' => route('frontend.pages.contact')],
+            ['column' => 'Brand', 'label' => 'Privacy', 'url' => route('frontend.pages.privacy')],
+            ['column' => 'Brand', 'label' => 'Terms', 'url' => route('frontend.pages.terms')],
+        ];
     }
 
     /**
@@ -815,6 +931,18 @@ final class SettingService
             ->all();
 
         Setting::set('social_links', json_encode($links), SettingGroup::Social->value);
+
+        $footerLinks = collect($validated['footer_links'] ?? [])
+            ->map(fn (array $row): array => [
+                'column' => trim((string) ($row['column'] ?? '')),
+                'label' => trim((string) ($row['label'] ?? '')),
+                'url' => trim((string) ($row['url'] ?? '')),
+            ])
+            ->filter(fn (array $row): bool => filled($row['column']) && filled($row['label']))
+            ->values()
+            ->all();
+
+        Setting::set('footer_links', json_encode($footerLinks), SettingGroup::Footer->value);
 
         $this->savePaymentMethods(
             (array) ($validated['payment_methods'] ?? []),

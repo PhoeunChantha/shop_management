@@ -17,15 +17,18 @@
         ->values()
         ->all();
 
-    $cols = [
+    // Help/Brand (and any custom) columns are admin-managed (Settings → Footer menu).
+    $managedColumns = collect($settings->footerColumns())
+        ->map(fn (array $links): array => array_map(fn (array $l): array => [$l['label'], $l['url']], $links))
+        ->all();
+
+    $cols = array_merge([
         'Shop' => array_merge(
             [[__('New Arrivals'), route('frontend.shop.index', ['new' => 1])], [__('Best Sellers'), route('frontend.shop.index', ['best' => 1])]],
             $categoryLinks,
             [[__('Sale'), route('frontend.shop.index', ['sale' => 1])]],
         ),
-        'Help' => [[__('Shipping'), route('frontend.pages.faq')], [__('Returns'), route('frontend.pages.faq')], [__('Size Guide'), route('frontend.pages.faq')], [__('Track Order'), route('frontend.account.orders')], [__('Contact'), route('frontend.pages.contact')]],
-        'Brand' => [[__('Our Story'), route('frontend.pages.about')], [__('FAQ'), route('frontend.pages.faq')], [__('Contact'), route('frontend.pages.contact')], [__('Privacy'), route('frontend.pages.privacy')], [__('Terms'), route('frontend.pages.terms')]],
-    ];
+    ], $managedColumns);
 @endphp
 <footer class="ut-footer">
     <div class="ut-wrap" style="padding:56px 24px 30px">
