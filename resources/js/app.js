@@ -17,10 +17,25 @@ toastr.options = {
 };
 window.toastr = toastr;
 
+// Reverb websockets (admin live chat). Loaded lazily and fully isolated: if the
+// websocket stack fails to import or boot, every other admin behaviour in this
+// bundle (AJAX forms/pages, tables, pickers) keeps working. No-op when the layout
+// renders no reverb meta tags.
+import('./echo')
+    .then((echo) => {
+        try {
+            echo.bootEcho();
+            echo.bootAdminChatFeed();
+        } catch (error) {
+            console.warn('Live chat websockets unavailable.', error);
+        }
+    })
+    .catch((error) => console.warn('Live chat websockets unavailable.', error));
+
 $(function () {
     let searchTimer;
 
-    $('[data-auto-search]').on('input', function () {
+    $(document).on('input', '[data-auto-search]', function () {
         const $input = $(this);
         const query = $.trim($input.val());
 
@@ -44,13 +59,18 @@ $(function () {
     // Date-range filter — daterangepicker + moment come from the CDN <script> tags
     // in the admin layout. They may finish loading just after DOMContentLoaded, so
     // wait until both are ready before initializing.
-    function initDateRanges() {
+    let dateRangeSeq = 0;
+
+    function initDateRanges(root) {
         const moment = window.moment;
         const format = 'MMMM D, YYYY';
         const label = (s, e) => s.format(format) + ' - ' + e.format(format);
 
-        $('[data-daterange]').each(function (index) {
+        $(root || document).find('[data-daterange]').each(function () {
             const $input = $(this);
+            // Idempotent: AJAX page swaps call this again for the fresh content only.
+            if ($input.data('daterangepicker')) return;
+            const index = dateRangeSeq++;
             const $form = $input.closest('form');
             const fromName = $input.data('daterangeFrom') || 'date_from';
             const toName = $input.data('daterangeTo') || 'date_to';
@@ -141,17 +161,31 @@ $(function () {
         });
     }
 
-    if ($('[data-daterange]').length) {
-        (function whenReady(tries) {
-            if (window.moment && $.fn.daterangepicker) {
-                initDateRanges();
-            } else if (tries < 60) {
-                setTimeout(function () { whenReady(tries + 1); }, 100);
-            } else {
-                console.error('Date-range picker failed to load from CDN.');
-            }
-        })(0);
+    function whenPickerReady(root, tries) {
+        if (window.moment && $.fn.daterangepicker) {
+            initDateRanges(root);
+        } else if (tries < 60) {
+            setTimeout(function () { whenPickerReady(root, tries + 1); }, 100);
+        } else {
+            console.error('Date-range picker failed to load from CDN.');
+        }
     }
+
+    if ($('[data-daterange]').length) {
+        whenPickerReady(document, 0);
+    }
+
+    // Re-initialise pickers inside content swapped in by the AJAX page loader,
+    // and drop the detached picker widgets (they live on <body>) before a swap.
+    document.addEventListener('ajax:page-loaded', function (e) {
+        whenPickerReady(e.detail.root, 0);
+    });
+    document.addEventListener('ajax:page-unload', function (e) {
+        $(e.detail.root).find('[data-daterange]').each(function () {
+            const picker = $(this).data('daterangepicker');
+            if (picker) picker.remove();
+        });
+    });
 
     $('[data-avatar-input]').on('change', function () {
         const file = this.files && this.files[0];
@@ -526,9 +560,166 @@ Alpine.data('commandPalette', (url) => ({
         loadInto(container, link.href);
     });
 
-    // Keep the Back/Forward buttons working by re-syncing each table.
+    // Sortable column headers inside the swapped region.
+    document.addEventListener('click', function (e) {
+        const link = e.target.closest('[data-ajax-table] [data-ajax-region] a.th-sort[href]');
+        if (!link) return;
+        if (e.metaKey || e.ctrlKey || e.shiftKey || link.target === '_blank') return;
+
+        const container = link.closest('[data-ajax-table]');
+        if (!container) return;
+
+        e.preventDefault();
+        loadInto(container, link.href);
+    });
+
+    // Keep the Back/Forward buttons working by re-syncing each table. Tables that
+    // sit inside an AJAX page are refreshed by the page loader instead.
     window.addEventListener('popstate', function () {
-        containers().forEach((container) => loadInto(container, window.location.href));
+        containers()
+            .filter((container) => !container.closest('[data-ajax-page]'))
+            .forEach((container) => loadInto(container, window.location.href));
+    });
+})();
+
+/**
+ * AJAX pages — global, opt-in filtering without a full reload.
+ *
+ *   <div data-ajax-page> … </div>            the region that is swapped
+ *   <form method="GET" data-ajax-filter>     filter forms inside it
+ *   <a href="…" data-ajax-link>              links (Reset, presets) inside it
+ *
+ * The page is fetched with the new query string, the fresh [data-ajax-page]
+ * content replaces the current one, the URL is pushed to history, Alpine is
+ * re-hydrated, and two events fire on `document`:
+ *
+ *   ajax:page-unload  { root }        before the swap (tear down charts/pickers)
+ *   ajax:page-loaded  { root, url }   after the swap (re-init charts/pickers)
+ *
+ * Only GET forms are intercepted; anything else submits normally.
+ */
+(function () {
+    const SELECTOR = '[data-ajax-page]';
+    let inflight = null;
+
+    function regions() {
+        return Array.from(document.querySelectorAll(SELECTOR));
+    }
+
+    function urlFromForm(form) {
+        const params = new URLSearchParams(new FormData(form));
+        // Reset paging whenever the filter set changes.
+        params.delete('page');
+        const base = (form.getAttribute('action') || window.location.pathname).split('?')[0];
+        const query = params.toString();
+
+        return query ? `${base}?${query}` : base;
+    }
+
+    async function loadPage(container, url, { push = true } = {}) {
+        if (inflight) inflight.abort();
+        const controller = new AbortController();
+        inflight = controller;
+
+        container.classList.add('is-loading');
+        container.setAttribute('aria-busy', 'true');
+
+        try {
+            const res = await fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'text/html' },
+                signal: controller.signal,
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+            const html = await res.text();
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            // Regions may nest (layout <main> + a page-level region); match the
+            // same one by its position in document order.
+            const fresh = doc.querySelectorAll(SELECTOR)[regions().indexOf(container)];
+
+            if (!fresh) {
+                window.location.assign(url); // structure changed — fall back to a real load
+                return;
+            }
+
+            document.dispatchEvent(new CustomEvent('ajax:page-unload', { detail: { root: container } }));
+            if (window.Alpine && typeof window.Alpine.destroyTree === 'function') {
+                window.Alpine.destroyTree(container);
+            }
+
+            container.innerHTML = fresh.innerHTML;
+
+            if (window.Alpine && typeof window.Alpine.initTree === 'function') {
+                window.Alpine.initTree(container);
+            }
+            if (push) {
+                window.history.pushState({ ajaxPage: true }, '', url);
+            }
+
+            document.dispatchEvent(new CustomEvent('ajax:page-loaded', { detail: { root: container, url } }));
+        } catch (error) {
+            if (error && error.name === 'AbortError') return;
+            console.error('AJAX page load failed.', error);
+            window.toastr?.error('Could not load results. Please try again.');
+            document.dispatchEvent(new CustomEvent('ajax:page-error', { detail: { root: container, url, error } }));
+        } finally {
+            if (inflight === controller) inflight = null;
+            container.classList.remove('is-loading');
+            container.removeAttribute('aria-busy');
+        }
+    }
+
+    // Which GET forms are page filters: anything flagged data-ajax-filter, plus
+    // the shared filter card and the search / per-page toolbar forms — unless
+    // they belong to an AJAX table, which refreshes itself.
+    function isPageFilter(form) {
+        if (!(form instanceof HTMLFormElement)) return false;
+        if ((form.getAttribute('method') || 'get').toLowerCase() !== 'get') return false;
+        if (form.hasAttribute('data-ajax-filter')) return true;
+        if (form.closest('[data-ajax-table]')) return false;
+
+        return form.matches('form.filter-card, form.toolbar-form');
+    }
+
+    // Which links refresh the page in place: anything flagged data-ajax-link,
+    // plus pagination and sortable column headers outside AJAX tables.
+    function isPageLink(link) {
+        if (link.hasAttribute('data-ajax-link')) return true;
+        if (link.closest('[data-ajax-table]')) return false;
+
+        return !!link.closest('.table-footer, .pager') || link.matches('a.th-sort');
+    }
+
+    document.addEventListener('submit', function (e) {
+        const form = e.target;
+        if (!isPageFilter(form)) return;
+        const container = form.closest(SELECTOR);
+        if (!container) return;
+
+        e.preventDefault();
+        loadPage(container, urlFromForm(form));
+    }, true);
+
+    document.addEventListener('click', function (e) {
+        const link = e.target.closest('a[href]');
+        if (!link || !isPageLink(link)) return;
+        if (e.metaKey || e.ctrlKey || e.shiftKey || link.target === '_blank' || link.hasAttribute('download')) return;
+        const href = link.getAttribute('href') || '';
+        if (href.startsWith('#') || href.startsWith('javascript:')) return;
+        const container = link.closest(SELECTOR);
+        if (!container) return;
+        // Only same-path links are swapped in place; anything else is a real navigation.
+        const target = new URL(link.href, window.location.href);
+        if (target.origin !== window.location.origin || target.pathname !== window.location.pathname) return;
+
+        e.preventDefault();
+        loadPage(container, link.href);
+    });
+
+    // Back / Forward — refresh the outermost region from the restored URL.
+    window.addEventListener('popstate', function () {
+        const container = document.querySelector(SELECTOR);
+        if (container) loadPage(container, window.location.href, { push: false });
     });
 })();
 

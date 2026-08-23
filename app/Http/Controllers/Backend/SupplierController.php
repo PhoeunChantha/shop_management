@@ -9,6 +9,7 @@ use App\Models\Supplier;
 use App\Services\Admin\SupplierService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class SupplierController extends Controller
@@ -22,6 +23,11 @@ class SupplierController extends Controller
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', 'in:0,1'],
+            'orders' => ['nullable', Rule::in(array_keys(SupplierService::PO_FILTERS))],
+            'contact' => ['nullable', Rule::in(array_keys(SupplierService::CONTACT_FILTERS))],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+            'sort' => ['nullable', Rule::in(array_keys(SupplierService::SORTS))],
             'per_page' => ['nullable', 'integer', 'in:10,25,50,100'],
         ]);
         $perPage = (int) ($filters['per_page'] ?? 10);
@@ -29,6 +35,9 @@ class SupplierController extends Controller
         return view('admin.suppliers.index', [
             'suppliers' => $this->suppliers->paginate($filters, $perPage),
             'stats' => $this->suppliers->stats(),
+            'orderFilters' => SupplierService::PO_FILTERS,
+            'contactFilters' => SupplierService::CONTACT_FILTERS,
+            'sortOptions' => SupplierService::SORTS,
             'perPage' => $perPage,
         ]);
     }

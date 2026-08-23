@@ -10,6 +10,7 @@ use App\Models\ProductVariant;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -19,15 +20,71 @@ final class PurchaseOrderService
         private readonly StockService $stock,
     ) {}
 
+    /** Expected-arrival quick filters for the PO list (key => label). */
+    public const EXPECTED_FILTERS = [
+        'overdue' => 'Overdue',
+        'week' => 'Next 7 days',
+        'month' => 'Next 30 days',
+        'none' => 'No date set',
+    ];
+
+    /** PO total buckets for the list filter ("min-max" key => label; open-ended max allowed). */
+    public const AMOUNT_RANGES = [
+        '0-500' => 'Under $500',
+        '500-1000' => '$500 – $1,000',
+        '1000-2500' => '$1,000 – $2,500',
+        '2500-5000' => '$2,500 – $5,000',
+        '5000-' => '$5,000+',
+    ];
+
+    /** Sort options for the PO list (key => label). */
+    public const SORTS = [
+        'newest' => 'Newest first',
+        'oldest' => 'Oldest first',
+        'expected' => 'Expected soonest',
+        'total_desc' => 'Highest total',
+        'total_asc' => 'Lowest total',
+    ];
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
     public function paginate(array $filters, int $perPage): LengthAwarePaginator
     {
+        $today = now()->toDateString();
+
         return PurchaseOrder::query()
             ->with('supplier:id,name')
             ->withCount('items')
             ->search($filters['search'] ?? null)
-            ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
-            ->when($filters['supplier_id'] ?? null, fn ($query, $supplier) => $query->where('supplier_id', $supplier))
-            ->latest()
+            ->when($filters['status'] ?? null, fn (Builder $query, $status) => $query->where('status', $status))
+            ->when($filters['supplier_id'] ?? null, fn (Builder $query, $supplier) => $query->where('supplier_id', $supplier))
+            // Order date: the day the PO was placed, falling back to creation for drafts.
+            ->when($filters['date_from'] ?? null, fn (Builder $query, $from) => $query->whereDate(DB::raw('COALESCE(ordered_at, created_at)'), '>=', $from))
+            ->when($filters['date_to'] ?? null, fn (Builder $query, $to) => $query->whereDate(DB::raw('COALESCE(ordered_at, created_at)'), '<=', $to))
+            ->when($filters['expected'] ?? null, fn (Builder $query, $expected) => match ($expected) {
+                'overdue' => $query->whereDate('expected_at', '<', $today)->whereNotIn('status', ['received', 'cancelled']),
+                'week' => $query->whereBetween('expected_at', [$today, now()->addDays(7)->toDateString()]),
+                'month' => $query->whereBetween('expected_at', [$today, now()->addDays(30)->toDateString()]),
+                'none' => $query->whereNull('expected_at'),
+                default => $query,
+            })
+            ->when($filters['amount'] ?? null, function (Builder $query, string $range): void {
+                [$min, $max] = array_pad(explode('-', $range, 2), 2, '');
+                if ($min !== '') {
+                    $query->where('subtotal', '>=', (float) $min);
+                }
+                if ($max !== '') {
+                    $query->where('subtotal', '<', (float) $max);
+                }
+            })
+            ->tap(fn (Builder $query) => match ($filters['sort'] ?? 'newest') {
+                'oldest' => $query->oldest(),
+                'expected' => $query->orderByRaw('expected_at IS NULL')->orderBy('expected_at')->latest(),
+                'total_desc' => $query->orderByDesc('subtotal')->latest(),
+                'total_asc' => $query->orderBy('subtotal')->latest(),
+                default => $query->latest(),
+            })
             ->paginate($perPage)
             ->withQueryString();
     }
@@ -49,26 +106,52 @@ final class PurchaseOrderService
 
     public function stockableOptions(): array
     {
-        $options = [];
+        return array_map(fn (array $meta): string => $meta['label'], $this->stockableMeta());
+    }
+
+    /**
+     * Every purchasable product / variant keyed by its stockable token, with the
+     * label shown in the picker plus the facts the PO form uses to pre-fill unit
+     * cost and show on-hand stock next to each line.
+     *
+     * @return array<string, array{label: string, name: string, sku: string, stock: int, cost: float|null}>
+     */
+    public function stockableMeta(): array
+    {
+        $meta = [];
 
         Product::query()
             ->with(['variants.values'])
             ->orderBy('name')
             ->get(['id', 'name', 'product_type', 'sku', 'stock', 'cost_price'])
-            ->each(function (Product $product) use (&$options): void {
+            ->each(function (Product $product) use (&$meta): void {
                 if ($product->product_type->value === 'single') {
-                    $options['product:'.$product->id] = $product->name.' - '.($product->sku ?: 'No SKU').' - stock '.$product->stock;
+                    $sku = (string) ($product->sku ?: '');
+                    $meta['product:'.$product->id] = [
+                        'label' => $product->name.($sku !== '' ? ' · '.$sku : ''),
+                        'name' => (string) $product->name,
+                        'sku' => $sku,
+                        'stock' => (int) $product->stock,
+                        'cost' => $product->cost_price !== null ? (float) $product->cost_price : null,
+                    ];
 
                     return;
                 }
 
                 foreach ($product->variants as $variant) {
-                    $label = $variant->variant_label ?: 'Variant';
-                    $options['variant:'.$variant->id] = $product->name.' / '.$label.' - '.($variant->sku ?: 'No SKU').' - stock '.$variant->stock;
+                    $sku = (string) ($variant->sku ?: '');
+                    $label = $product->name.' / '.($variant->variant_label ?: 'Variant');
+                    $meta['variant:'.$variant->id] = [
+                        'label' => $label.($sku !== '' ? ' · '.$sku : ''),
+                        'name' => $label,
+                        'sku' => $sku,
+                        'stock' => (int) $variant->stock,
+                        'cost' => $variant->cost_price !== null ? (float) $variant->cost_price : null,
+                    ];
                 }
             });
 
-        return $options;
+        return $meta;
     }
 
     public function findForShow(PurchaseOrder $purchaseOrder): PurchaseOrder

@@ -49,7 +49,7 @@
         :order-statuses="$orderStatuses"
         :payment-statuses="$paymentStatuses">
 
-        <div class="fino" data-finance-overview>
+        <div class="fino" data-finance-overview data-chart="{{ json_encode($chart) }}" data-paymix="{{ json_encode($paymentMix->values()) }}">
             <p class="fino-period">
                 <i class="fa-solid fa-circle-info"></i>
                 {{ __('Showing') }} <strong>{{ \Carbon\Carbon::parse($filters['start_date'])->format('M d, Y') }} – {{ \Carbon\Carbon::parse($filters['end_date'])->format('M d, Y') }}</strong>
@@ -189,11 +189,21 @@
     @push('js')
     <script>
         (function () {
+            let charts = [];
+
+            const destroy = () => {
+                charts.forEach((c) => { try { c.destroy(); } catch (e) {} });
+                charts = [];
+            };
+
+            const boot = () => {
+            destroy();
             const root = document.querySelector('[data-finance-overview]');
             if (!root || typeof ApexCharts === 'undefined') return;
 
-            const CHART = @json($chart);
-            const PAYMIX = @json($paymentMix->values());
+            let CHART = {}, PAYMIX = [];
+            try { CHART = JSON.parse(root.dataset.chart || '{}'); } catch (e) { CHART = {}; }
+            try { PAYMIX = JSON.parse(root.dataset.paymix || '[]'); } catch (e) { PAYMIX = []; }
             const INK = '#0f172a', GRID = '#eef1f6', MUTED = '#64748b';
             const PALETTE = ['#0f172a', '#0ea5e9', '#10b981', '#f59e0b', '#8b5cf6', '#f43f5e', '#14b8a6'];
             const money = (v) => '$' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -205,7 +215,7 @@
             // Main trend: current period solid area + previous period dashed ghost.
             const trendEl = root.querySelector('[data-trend-chart]');
             if (trendEl && labels.length) {
-                new ApexCharts(trendEl, {
+                charts.push(new ApexCharts(trendEl, {
                     chart: { type: 'area', height: 320, fontFamily: 'inherit', toolbar: { show: false }, zoom: { enabled: false },
                         animations: { enabled: true, easing: 'easeinout', speed: 500 } },
                     series: [
@@ -222,7 +232,8 @@
                         axisBorder: { show: false }, axisTicks: { show: false } },
                     yaxis: { labels: { style: { colors: MUTED, fontSize: '11px' }, formatter: (v) => money(v) } },
                     tooltip: { shared: true, y: { formatter: (v) => '$' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2 }) } },
-                }).render();
+                }));
+                charts[charts.length - 1].render();
             }
 
             // KPI sparklines (revenue + orders share the daily series).
@@ -230,20 +241,21 @@
             root.querySelectorAll('[data-spark]').forEach(node => {
                 const m = SPARKS[node.dataset.spark];
                 if (!m || !m.data.length) return;
-                new ApexCharts(node, {
+                charts.push(new ApexCharts(node, {
                     chart: { type: 'area', height: 44, sparkline: { enabled: true }, animations: { enabled: false } },
                     series: [{ data: m.data }],
                     colors: [m.color],
                     stroke: { curve: 'smooth', width: 1.8 },
                     fill: { type: 'gradient', gradient: { opacityFrom: 0.25, opacityTo: 0 } },
                     tooltip: { enabled: false },
-                }).render();
+                }));
+                charts[charts.length - 1].render();
             });
 
             // Payment-status donut.
             const donutEl = root.querySelector('[data-paymix-chart]');
             if (donutEl && PAYMIX.length) {
-                new ApexCharts(donutEl, {
+                charts.push(new ApexCharts(donutEl, {
                     chart: { type: 'donut', height: 200, fontFamily: 'inherit' },
                     series: PAYMIX.map(p => p.count),
                     labels: PAYMIX.map(p => p.payment_status),
@@ -255,11 +267,20 @@
                         total: { show: true, label: '{{ __('Orders') }}', color: MUTED, fontSize: '11px',
                             formatter: () => PAYMIX.reduce((a, p) => a + p.count, 0).toLocaleString() },
                         value: { color: INK, fontSize: '18px', fontWeight: 700 } } } } },
-                }).render();
+                }));
+                charts[charts.length - 1].render();
                 root.querySelectorAll('[data-pm-dot]').forEach((dot, i) => {
                     dot.style.background = PALETTE[i % PALETTE.length];
                 });
             }
+            };
+
+            // ApexCharts is loaded with `defer`; deferred scripts finish before DOMContentLoaded.
+            if (typeof ApexCharts !== 'undefined') boot(); else document.addEventListener('DOMContentLoaded', boot);
+
+            // AJAX filtering swaps the page in place — tear down and rebuild the charts.
+            document.addEventListener('ajax:page-unload', destroy);
+            document.addEventListener('ajax:page-loaded', boot);
         })();
     </script>
     @endpush

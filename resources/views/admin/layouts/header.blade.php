@@ -58,6 +58,16 @@
             <i class="fa-regular" :class="dark ? 'fa-sun' : 'fa-moon'"></i>
         </button>
 
+        {{-- Live chat inbox --}}
+        @can('view chats')
+            <a href="{{ route('admin.chats.index') }}"
+                class="icon-button admin-chat-trigger btn btn-link p-0 text-decoration-none fs-6 text-secondary position-relative"
+                aria-label="{{ __('Live Chat') }}" title="{{ __('Live Chat') }}">
+                <i class="fa-regular fa-comments"></i>
+                <span class="admin-notification-dot {{ ($adminChatUnread ?? 0) > 0 ? '' : 'd-none' }}" data-admin-chat-count>{{ ($adminChatUnread ?? 0) > 99 ? '99+' : ($adminChatUnread ?? 0) }}</span>
+            </a>
+        @endcan
+
         {{-- Notifications --}}
         <div class="position-relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
             <button type="button" class="icon-button admin-notification-trigger btn btn-link p-0 text-decoration-none fs-6 text-secondary position-relative" @click="open = !open" aria-label="{{ __('Notifications') }}">

@@ -95,4 +95,14 @@ class User extends Authenticatable
     {
         return $this->hasOne(Cart::class);
     }
+
+    /**
+     * The customer's single support conversation with the store team.
+     *
+     * @return HasOne<Conversation, $this>
+     */
+    public function conversation(): HasOne
+    {
+        return $this->hasOne(Conversation::class);
+    }
 }

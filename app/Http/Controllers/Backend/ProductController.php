@@ -41,7 +41,7 @@ class ProductController extends Controller
         return view('admin.products.index', [
             'products' => $this->products->paginate($filters, $perPage),
             'perPage' => $perPage,
-            'categories' => Category::orderBy('name')->get(['id', 'name']),
+            'categories' => Category::orderByName()->get(['id', 'name']),
             'brands' => Brand::orderBy('name')->get(['id', 'name']),
         ]);
     }
@@ -178,7 +178,7 @@ class ProductController extends Controller
         return Excel::download(
             new ProductTemplateExport(
                 array_keys($this->settings->activeLanguages()),
-                Category::orderBy('name')->pluck('name')->all(),
+                Category::orderByName()->get(['id', 'name'])->pluck('name')->all(),
                 Brand::orderBy('name')->pluck('name')->all(),
             ),
             'product-import-template.xlsx',

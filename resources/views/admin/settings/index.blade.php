@@ -9,8 +9,9 @@
     </x-slot>
 
     @php
-        // Open the tab that contains the first validation error, otherwise General.
-        $activeTab = array_key_first($schema);
+        // Open the tab that contains the first validation error, otherwise the
+        // ?tab= deep link (e.g. from the chat inbox), otherwise General.
+        $activeTab = array_key_exists((string) request('tab'), $schema) ? (string) request('tab') : array_key_first($schema);
         foreach ($schema as $groupKey => $group) {
             foreach ($group['fields'] ?? [] as $fieldKey => $field) {
                 if ($errors->has($fieldKey)) {

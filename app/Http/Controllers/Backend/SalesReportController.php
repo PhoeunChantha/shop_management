@@ -66,7 +66,7 @@ final class SalesReportController extends Controller
             'payment_status' => ['nullable', Rule::enum(PaymentStatus::class)],
             'customer' => ['nullable', 'string', 'max:255'],
             'search' => ['nullable', 'string', 'max:255'],
-            'sort' => ['nullable', 'string', 'in:date,gross,net'],
+            'sort' => ['nullable', 'string', 'in:date,net,total'],
             'direction' => ['nullable', 'string', 'in:asc,desc'],
             'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
         ]);

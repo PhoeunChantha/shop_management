@@ -64,8 +64,11 @@ final class ProductsImport implements ToCollection, WithChunkReading, WithHeadin
         $this->primaryLang = $settings->primaryLanguage();
         $this->skuPrefix = $settings->productSkuPrefix();
 
-        $this->categoryMap = Category::pluck('id', 'name')
-            ->mapWithKeys(fn ($id, $name) => [mb_strtolower(trim((string) $name)) => (int) $id])
+        // Match a category by its name in any language (names are translatable JSON).
+        $this->categoryMap = Category::query()->get(['id', 'name'])
+            ->flatMap(fn (Category $category) => collect($category->getTranslations('name'))
+                ->filter()
+                ->mapWithKeys(fn ($name) => [mb_strtolower(trim((string) $name)) => (int) $category->id]))
             ->all();
 
         $this->brandMap = Brand::pluck('id', 'name')

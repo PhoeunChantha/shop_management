@@ -9,6 +9,7 @@ use App\Http\Controllers\Backend\AttributeController;
 use App\Http\Controllers\Backend\BannerController;
 use App\Http\Controllers\Backend\BrandController;
 use App\Http\Controllers\Backend\CategoryController;
+use App\Http\Controllers\Backend\ChatController as AdminChatController;
 use App\Http\Controllers\Backend\CollectionController;
 use App\Http\Controllers\Backend\ColorController;
 use App\Http\Controllers\Backend\CommandPaletteController;
@@ -25,8 +26,8 @@ use App\Http\Controllers\Backend\NewsletterSubscriberController;
 use App\Http\Controllers\Backend\OrderController;
 use App\Http\Controllers\Backend\PageController as AdminPageController;
 use App\Http\Controllers\Backend\PaymentController as AdminPaymentController;
-use App\Http\Controllers\Backend\PermissionAuditController;
 use App\Http\Controllers\Backend\PaymentReportController;
+use App\Http\Controllers\Backend\PermissionAuditController;
 use App\Http\Controllers\Backend\PermissionController;
 use App\Http\Controllers\Backend\ProductController;
 use App\Http\Controllers\Backend\ProductReportController;
@@ -36,9 +37,9 @@ use App\Http\Controllers\Backend\PurchasingReportController;
 use App\Http\Controllers\Backend\RegisterReportController;
 use App\Http\Controllers\Backend\ReturnReportController;
 use App\Http\Controllers\Backend\ReturnRequestController;
-use App\Http\Controllers\Backend\SalesReportController;
 use App\Http\Controllers\Backend\ReviewController;
 use App\Http\Controllers\Backend\RoleController;
+use App\Http\Controllers\Backend\SalesReportController;
 use App\Http\Controllers\Backend\SeoManagerController;
 use App\Http\Controllers\Backend\SettingController;
 use App\Http\Controllers\Backend\SetupHealthController;
@@ -53,6 +54,7 @@ use App\Http\Controllers\Frontend\AccountController;
 use App\Http\Controllers\Frontend\AddressController;
 use App\Http\Controllers\Frontend\AuthController;
 use App\Http\Controllers\Frontend\CartController;
+use App\Http\Controllers\Frontend\ChatController;
 use App\Http\Controllers\Frontend\CheckoutController;
 use App\Http\Controllers\Frontend\HomeController;
 use App\Http\Controllers\Frontend\NewsletterController;
@@ -150,6 +152,12 @@ Route::name('frontend.')->group(function () {
         Route::get('/notifications', [AccountController::class, 'notifications'])->name('notifications');
         Route::post('/notifications/read-all', [AccountController::class, 'markAllNotificationsRead'])->name('notifications.read-all');
         Route::patch('/notifications/{id}/read', [AccountController::class, 'markNotificationRead'])->name('notifications.read');
+        // Live chat with the store team (one thread per customer, resolved server-side)
+        Route::get('/messages', [ChatController::class, 'index'])->name('messages');
+        Route::get('/messages/feed', [ChatController::class, 'feed'])->name('messages.feed');
+        Route::get('/messages/state', [ChatController::class, 'state'])->name('messages.state');
+        Route::post('/messages', [ChatController::class, 'store'])->middleware('throttle:30,1')->name('messages.store');
+        Route::post('/messages/read', [ChatController::class, 'read'])->name('messages.read');
         Route::get('/wishlist', [AccountController::class, 'wishlist'])->name('wishlist');
         Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
         Route::post('/wishlist/sync', [WishlistController::class, 'sync'])->name('wishlist.sync');
@@ -241,6 +249,18 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/', [SeoManagerController::class, 'index'])->name('index');
         Route::get('/export', [SeoManagerController::class, 'export'])->name('export');
         Route::patch('/{type}/{id}', [SeoManagerController::class, 'update'])->whereNumber('id')->name('update');
+    });
+
+    // Live chat inbox (Policy-gated via ConversationPolicy → "{action} chats")
+    Route::prefix('chats')->name('chats.')->group(function () {
+        Route::get('/', [AdminChatController::class, 'index'])->name('index');
+        Route::get('/unread', [AdminChatController::class, 'unread'])->name('unread');
+        Route::get('/{conversation}', [AdminChatController::class, 'show'])->name('show');
+        Route::get('/{conversation}/messages', [AdminChatController::class, 'messages'])->name('messages');
+        Route::post('/{conversation}/messages', [AdminChatController::class, 'store'])->middleware('throttle:60,1')->name('store');
+        Route::post('/{conversation}/read', [AdminChatController::class, 'read'])->name('read');
+        Route::patch('/{conversation}/status', [AdminChatController::class, 'updateStatus'])->name('status');
+        Route::patch('/{conversation}/assign', [AdminChatController::class, 'assign'])->name('assign');
     });
 
     Route::prefix('notifications')->name('notifications.')->group(function () {

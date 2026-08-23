@@ -23,6 +23,11 @@ class PurchaseOrderController extends Controller
             'search' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', Rule::in(array_keys(PurchaseOrder::STATUSES))],
             'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
+            'expected' => ['nullable', Rule::in(array_keys(PurchaseOrderService::EXPECTED_FILTERS))],
+            'amount' => ['nullable', Rule::in(array_keys(PurchaseOrderService::AMOUNT_RANGES))],
+            'sort' => ['nullable', Rule::in(array_keys(PurchaseOrderService::SORTS))],
             'per_page' => ['nullable', 'integer', 'in:10,25,50,100'],
         ]);
         $perPage = (int) ($filters['per_page'] ?? 10);
@@ -31,6 +36,9 @@ class PurchaseOrderController extends Controller
             'purchaseOrders' => $this->purchaseOrders->paginate($filters, $perPage),
             'stats' => $this->purchaseOrders->stats(),
             'suppliers' => $this->purchaseOrders->supplierOptions(),
+            'expectedOptions' => PurchaseOrderService::EXPECTED_FILTERS,
+            'amountRanges' => PurchaseOrderService::AMOUNT_RANGES,
+            'sortOptions' => PurchaseOrderService::SORTS,
             'perPage' => $perPage,
         ]);
     }
@@ -39,9 +47,12 @@ class PurchaseOrderController extends Controller
     {
         abort_unless($request->user()->hasPermissionTo('create purchase orders'), 403);
 
+        $stockableMeta = $this->purchaseOrders->stockableMeta();
+
         return view('admin.purchase-orders.create', [
             'suppliers' => $this->purchaseOrders->supplierOptions(),
-            'stockables' => $this->purchaseOrders->stockableOptions(),
+            'stockables' => array_map(fn (array $meta): string => $meta['label'], $stockableMeta),
+            'stockableMeta' => $stockableMeta,
         ]);
     }
 

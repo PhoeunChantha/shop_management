@@ -51,7 +51,7 @@
             </div>
         </div>
 
-        <form method="GET" action="{{ route('admin.permission-audit.index') }}" class="permission-audit-compare">
+        <form method="GET" action="{{ route('admin.permission-audit.index') }}" class="permission-audit-compare" data-ajax-filter>
             <div class="permission-audit-compare__intro">
                 <span><i class="fa-solid fa-code-compare"></i></span>
                 <div>

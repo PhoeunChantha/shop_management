@@ -11,47 +11,37 @@
     @php($importPreview = session('product_import_preview'))
 
     <div class="admin-page products-index-page" x-data="{ importOpen: false, importPreviewOpen: @js((bool) $importPreview) }">
-        <div class="page-section-header products-index-hero">
-            <div class="products-index-hero__copy">
-                <p class="section-kicker">{{ __('Product table') }}</p>
-                <h3>{{ __('All Products') }}</h3>
-                <p>{{ __('Manage catalog visibility, stock position, pricing, and merchandising flags from one clean workspace.') }}</p>
+        {{-- Page head: flat tool header — title, live catalog facts, and a grouped
+             action toolbar. Deliberately no card / gradient / blurb. --}}
+        <header class="products-head">
+            <div class="products-head__title">
+                <h3>{{ __('All Products') }} <span class="products-head__count">{{ number_format($products->total()) }}</span></h3>
+                <p class="products-head__facts">
+                    <span><b>{{ number_format($categories->count()) }}</b> {{ __('categories') }}</span>
+                    <span><b>{{ number_format($brands->count()) }}</b> {{ __('brands') }}</span>
+                    <span>{{ __('showing') }} <b>{{ number_format($products->count()) }}</b> {{ __('of') }} <b>{{ number_format($products->total()) }}</b></span>
+                    @if (request()->hasAny(['search', 'category_id', 'brand_id', 'status', 'stock', 'flag']))
+                        <a href="{{ route('admin.products.index') }}" class="products-head__clear" data-ajax-link><i class="fa-solid fa-xmark"></i>{{ __('Clear filters') }}</a>
+                    @endif
+                </p>
             </div>
-            <div class="products-index-actions">
-                <a href="{{ route('admin.products.template') }}" class="ghost-button product-action-link">
-                    <i class="fa-solid fa-file-arrow-down"></i><span>{{ __('Template') }}</span>
+            <div class="products-head__actions">
+                <div class="btn-group-flat" role="group" aria-label="{{ __('Catalog tools') }}">
+                    <a href="{{ route('admin.products.template') }}" class="btn-flat" title="{{ __('Download import template') }}">
+                        <i class="fa-solid fa-file-arrow-down"></i><span>{{ __('Template') }}</span>
+                    </a>
+                    <a href="{{ route('admin.products.export', request()->query()) }}" class="btn-flat" title="{{ __('Export current view') }}">
+                        <i class="fa-solid fa-file-export"></i><span>{{ __('Export') }}</span>
+                    </a>
+                    <button type="button" class="btn-flat" @click="importOpen = true">
+                        <i class="fa-solid fa-file-import"></i><span>{{ __('Import') }}</span>
+                    </button>
+                </div>
+                <a href="{{ route('admin.products.create') }}" class="btn-flat btn-flat--primary">
+                    <i class="fa-solid fa-plus"></i><span>{{ __('New Product') }}</span>
                 </a>
-                <a href="{{ route('admin.products.export', request()->query()) }}" class="ghost-button product-action-link">
-                    <i class="fa-solid fa-file-export"></i><span>{{ __('Export') }}</span>
-                </a>
-                <button type="button" class="ghost-button product-action-link" @click="importOpen = true">
-                    <i class="fa-solid fa-file-import"></i><span>{{ __('Import') }}</span>
-                </button>
-                <a href="{{ route('admin.products.create') }}" class="premium-button premium-button--dark product-create-button">
-                    <i class="fa-solid fa-plus"></i>
-                    <span>{{ __('New Product') }}</span>
-                </a>
             </div>
-        </div>
-
-        <div class="product-metric-strip">
-            <div class="product-metric">
-                <span>{{ __('Total catalog') }}</span>
-                <strong>{{ number_format($products->total()) }}</strong>
-            </div>
-            <div class="product-metric">
-                <span>{{ __('Categories') }}</span>
-                <strong>{{ number_format($categories->count()) }}</strong>
-            </div>
-            <div class="product-metric">
-                <span>{{ __('Brands') }}</span>
-                <strong>{{ number_format($brands->count()) }}</strong>
-            </div>
-            <div class="product-metric product-metric--muted">
-                <span>{{ __('Current view') }}</span>
-                <strong>{{ number_format($products->count()) }}</strong>
-            </div>
-        </div>
+        </header>
 
         @include('admin.saved-views._bar', ['scope' => 'products', 'icon' => 'fa-box-open', 'color' => '#0f766e'])
 

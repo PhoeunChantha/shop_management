@@ -10,6 +10,7 @@ use App\Http\Requests\Category\UpdateCategoryRequest;
 use App\Models\Category;
 use App\Services\Admin\BulkActionService;
 use App\Services\Admin\ImageFieldService;
+use App\Services\Admin\SettingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -23,6 +24,7 @@ class CategoryController extends Controller
 
     public function __construct(
         private readonly ImageFieldService $images,
+        private readonly SettingService $settings,
     ) {}
 
     public function index(Request $request): View
@@ -53,7 +55,7 @@ class CategoryController extends Controller
     {
         $this->authorize('create', Category::class);
 
-        return view('admin.categories.create');
+        return view('admin.categories.create', $this->formLocales());
     }
 
     public function store(StoreCategoryRequest $request): RedirectResponse
@@ -61,16 +63,12 @@ class CategoryController extends Controller
         $this->authorize('create', Category::class);
 
         try {
-            $validated = $request->safe()->except(['image', 'image_media']);
-            $validated['slug'] = $this->uniqueSlug($validated['name']);
+            $validated = $request->safe()->except(['image', 'image_media', 'seo_image', 'seo_image_media']);
+            $validated['slug'] = $this->uniqueSlug($this->primaryName($validated));
 
             $category = Category::create($validated);
 
-            if ($request->hasFile('image')) {
-                $this->images->attachUploaded($category, $request->file('image'), 'categories');
-            } elseif ($selected = $this->selectedMediaFilename($request, 'image', 'categories')) {
-                $this->images->attachSelected($category, $selected);
-            }
+            $this->syncImages($request, $category);
 
             return to_route('admin.categories.index')
                 ->with('success', __('Category created successfully!'));
@@ -94,7 +92,7 @@ class CategoryController extends Controller
 
         return view('admin.categories.edit', [
             'category' => $category,
-        ]);
+        ] + $this->formLocales());
     }
 
     public function update(UpdateCategoryRequest $request, string $id): RedirectResponse
@@ -103,16 +101,18 @@ class CategoryController extends Controller
 
         try {
             $category = Category::findOrFail($id);
-            $validated = $request->safe()->except(['image', 'image_media']);
-            $validated['slug'] = $this->uniqueSlug($validated['name'], $category->id);
+            $validated = $request->safe()->except(['image', 'image_media', 'seo_image', 'seo_image_media']);
+            $validated['slug'] = $this->uniqueSlug($this->primaryName($validated), $category->id);
 
-            $category->update($validated);
-
-            if ($request->hasFile('image')) {
-                $this->images->replaceUploaded($category, $request->file('image'), 'categories');
-            } elseif ($selected = $this->selectedMediaFilename($request, 'image', 'categories')) {
-                $this->images->attachSelected($category, $selected);
+            // Replace the translation sets wholesale so cleared languages are removed.
+            foreach (['name', 'description', 'seo_title', 'seo_description', 'seo_keywords'] as $field) {
+                $category->setTranslations($field, $validated[$field] ?? []);
+                unset($validated[$field]);
             }
+
+            $category->fill($validated)->save();
+
+            $this->syncImages($request, $category);
 
             return to_route('admin.categories.index')
                 ->with('success', __('Category updated successfully!'));
@@ -175,6 +175,46 @@ class CategoryController extends Controller
         $count = $bulk->setStatus(Category::class, $ids, $status);
 
         return back()->with('success', $count.' category(s) '.($status ? 'enabled' : 'disabled').'.');
+    }
+
+    /**
+     * Languages the form renders tabs for, plus the primary (required) one.
+     *
+     * @return array{locales: array<string, string>, primaryLang: string}
+     */
+    private function formLocales(): array
+    {
+        return [
+            'locales' => $this->settings->activeLanguages(),
+            'primaryLang' => $this->settings->primaryLanguage(),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    private function primaryName(array $validated): string
+    {
+        $names = (array) ($validated['name'] ?? []);
+
+        return (string) ($names[$this->settings->primaryLanguage()] ?? reset($names) ?: '');
+    }
+
+    /**
+     * Persist the category image and the SEO/social image — each accepts either a
+     * fresh upload or a pick from the media library.
+     */
+    private function syncImages(Request $request, Category $category): void
+    {
+        foreach (['image', 'seo_image'] as $field) {
+            if ($request->hasFile($field)) {
+                $category->{$field}
+                    ? $this->images->replaceUploaded($category, $request->file($field), 'categories', $field)
+                    : $this->images->attachUploaded($category, $request->file($field), 'categories', $field);
+            } elseif ($selected = $this->selectedMediaFilename($request, $field, 'categories')) {
+                $this->images->attachSelected($category, $selected, $field);
+            }
+        }
     }
 
     /**

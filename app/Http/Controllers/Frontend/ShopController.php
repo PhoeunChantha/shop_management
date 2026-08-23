@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Enums\ReviewStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductSpecification;
 use App\Models\Review;
@@ -52,6 +53,26 @@ class ShopController extends Controller
             'sort' => $validated['sort'] ?? 'featured',
         ];
 
+        // A category landing (?category=slug-or-name) uses that category's SEO fields.
+        $activeCategory = filled($filters['category']) && $filters['category'] !== 'All'
+            ? Category::query()->where('status', true)->whereSlugOrName((string) $filters['category'])->first()
+            : null;
+
+        $seo = [
+            'title' => 'Shop all — '.$this->settings->siteName(),
+            'description' => 'Browse the full collection — premium heavyweight tees, hoodies and streetwear essentials.',
+            'canonical' => route('frontend.shop.index'),
+        ];
+
+        if ($activeCategory) {
+            $seo = [
+                'title' => ($activeCategory->seo_title ?: $activeCategory->name).' — '.$this->settings->siteName(),
+                'description' => $activeCategory->seo_description ?: strip_tags((string) $activeCategory->description) ?: $seo['description'],
+                'image' => $activeCategory->seo_image ? Imageurl($activeCategory->seo_image, 'categories') : ($activeCategory->image ? Imageurl($activeCategory->image, 'categories') : null),
+                'canonical' => route('frontend.shop.index', ['category' => $activeCategory->slug ?: $activeCategory->id]),
+            ];
+        }
+
         return view('frontend.shop.index', [
             'products' => $this->products->filteredProducts($filters),
             'catalogTotal' => $this->products->activeCount(),
@@ -62,11 +83,8 @@ class ShopController extends Controller
             'minPrice' => $minPrice,
             'maxPrice' => $maxPrice,
             'filters' => $filters,
-            'seo' => [
-                'title' => 'Shop all — '.$this->settings->siteName(),
-                'description' => 'Browse the full collection — premium heavyweight tees, hoodies and streetwear essentials.',
-                'canonical' => route('frontend.shop.index'),
-            ],
+            'activeCategory' => $activeCategory,
+            'seo' => $seo,
         ]);
     }
 

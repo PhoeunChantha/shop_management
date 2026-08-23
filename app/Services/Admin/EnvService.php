@@ -48,10 +48,18 @@ final class EnvService
             return;
         }
 
-        $content = (string) file_get_contents($path);
+        $original = (string) file_get_contents($path);
+        $content = $original;
 
         foreach ($values as $key => $value) {
             $content = $this->writeKey($content, $key, (string) $value);
+        }
+
+        // Only touch the file when something actually changed. Rewriting an
+        // identical .env still bumps its mtime, which makes the Vite dev server
+        // restart and force-reload the admin page after every settings save.
+        if ($content === $original) {
+            return;
         }
 
         file_put_contents($path, $content);

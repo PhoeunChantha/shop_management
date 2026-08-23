@@ -24,9 +24,37 @@
             </a>
         </div>
 
-        <x-filter-card :action="route('admin.purchase-orders.index')" class="restock-filter-card">
-            <x-select name="status" size="sm" :value="request('status')" placeholder="{{ __('Any status') }}" :options="\App\Models\PurchaseOrder::STATUSES" />
-            <x-select name="supplier_id" size="sm" :value="request('supplier_id')" placeholder="{{ __('Any supplier') }}" :options="$suppliers" optionValue="id" optionLabel="name" searchable />
+        <x-filter-card :action="route('admin.purchase-orders.index')" class="restock-filter-card" :grid="'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3'">
+            <x-slot:hidden>
+                <input type="hidden" name="search" value="{{ request('search') }}">
+                <input type="hidden" name="per_page" value="{{ $perPage }}">
+            </x-slot:hidden>
+
+            <x-select name="status" size="sm" :label="__('Status')" :value="request('status')" :placeholder="__('Any status')"
+                :options="\App\Models\PurchaseOrder::STATUSES" />
+
+            <x-select name="supplier_id" size="sm" :label="__('Supplier')" :value="request('supplier_id')" :placeholder="__('Any supplier')"
+                :options="$suppliers" optionValue="id" optionLabel="name" searchable />
+
+            <div class="form-field">
+                <label>{{ __('Order date') }}</label>
+                <div class="daterange-control">
+                    <i class="fa-regular fa-calendar"></i>
+                    <input type="text" class="form-input" data-daterange placeholder="{{ __('Any date') }}" readonly autocomplete="off"
+                        value="{{ request('date_from') && request('date_to') ? \Illuminate\Support\Carbon::parse(request('date_from'))->format('M d, Y').' – '.\Illuminate\Support\Carbon::parse(request('date_to'))->format('M d, Y') : '' }}">
+                </div>
+                <input type="hidden" name="date_from" value="{{ request('date_from') }}">
+                <input type="hidden" name="date_to" value="{{ request('date_to') }}">
+            </div>
+
+            <x-select name="expected" size="sm" :label="__('Expected arrival')" :value="request('expected')" :placeholder="__('Any time')"
+                :options="collect($expectedOptions)->map(fn ($l) => __($l))->all()" />
+
+            <x-select name="amount" size="sm" :label="__('Amount')" :value="request('amount')" :placeholder="__('Any amount')"
+                :options="collect($amountRanges)->map(fn ($l) => __($l))->all()" />
+
+            <x-select name="sort" size="sm" :label="__('Sort by')" :value="request('sort', 'newest')" :placeholder="null"
+                :options="collect($sortOptions)->map(fn ($l) => __($l))->all()" />
         </x-filter-card>
 
         <x-admin.table-card class="restock-table-card">

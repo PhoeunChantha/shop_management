@@ -33,7 +33,7 @@
                 <p class="dash-date">{{ now()->format('l, F j, Y') }}</p>
             </div>
             <div class="dash-bar__actions">
-                <form method="GET" action="{{ route('admin.dashboard') }}" class="dash-daterange">
+                <form method="GET" action="{{ route('admin.dashboard') }}" class="dash-daterange" data-ajax-filter>
                     <div class="daterange-control">
                         <i class="fa-regular fa-calendar"></i>
                         <input type="text" class="form-input" data-daterange data-daterange-submit
@@ -258,7 +258,14 @@
     @push('js')
         <script>
             (function () {
-                const data = JSON.parse(document.getElementById('dash-data').textContent);
+                let charts = [];
+                const destroy = () => { charts.forEach((c) => { try { c.destroy(); } catch (e) {} }); charts = []; };
+
+                const boot = () => {
+                destroy();
+                const dataEl = document.getElementById('dash-data');
+                if (!dataEl) return;
+                const data = JSON.parse(dataEl.textContent);
 
                 // Count-up animation on the KPI card values (runs on page load).
                 document.querySelectorAll('.dash-kpi__value[data-count]').forEach((el) => {
@@ -296,20 +303,21 @@
                     data.kpis.forEach((kpi, i) => {
                         const el = document.getElementById('kpiSpark' + i);
                         if (!el) return;
-                        new ApexCharts(el, {
+                        charts.push(new ApexCharts(el, {
                             chart: { type: 'area', height: 42, sparkline: { enabled: true }, fontFamily: font },
                             series: [{ name: '', data: kpi.series }],
                             stroke: { width: 2, curve: 'smooth' },
                             fill: { type: 'gradient', gradient: { opacityFrom: 0.35, opacityTo: 0 } },
                             colors: [kpi.color],
                             tooltip: { enabled: false },
-                        }).render();
+                        }));
+                        charts[charts.length - 1].render();
                     });
 
                     // Revenue area chart
                     const rev = document.getElementById('revChart');
                     if (rev) {
-                        new ApexCharts(rev, {
+                        charts.push(new ApexCharts(rev, {
                             chart: { type: 'area', height: 330, fontFamily: font, toolbar: { show: false }, zoom: { enabled: false },
                                 animations: { enabled: true, easing: 'easeinout', speed: 800 } },
                             series: [{ name: 'Revenue', data: data.revenue.values }],
@@ -324,14 +332,15 @@
                             yaxis: { labels: { style: { colors: muted, fontSize: '11px' },
                                 formatter: (v) => v >= 1000 ? '$' + (v / 1000).toFixed(1) + 'k' : '$' + Math.round(v) } },
                             tooltip: { theme: dark ? 'dark' : 'light', y: { formatter: (v) => '$' + Number(v).toLocaleString() } },
-                        }).render();
+                        }));
+                        charts[charts.length - 1].render();
                     }
 
                     // Orders-by-status donut
                     const donut = document.getElementById('statusChart');
                     if (donut && data.status.values.length) {
                         const total = data.status.values.reduce((a, b) => a + b, 0);
-                        new ApexCharts(donut, {
+                        charts.push(new ApexCharts(donut, {
                             chart: { type: 'donut', height: 172, fontFamily: font },
                             series: data.status.values,
                             labels: data.status.labels,
@@ -344,9 +353,16 @@
                                 value: { color: dark ? '#e2e8f0' : '#101827', fontSize: '22px', fontWeight: 800 },
                                 total: { show: true, label: '{{ __('Orders') }}', color: muted, formatter: () => total } } } } },
                             tooltip: { theme: dark ? 'dark' : 'light' },
-                        }).render();
+                        }));
+                        charts[charts.length - 1].render();
                     }
                 }
+                };
+
+                boot();
+                // The period filter swaps the page in place — rebuild the charts.
+                document.addEventListener('ajax:page-unload', destroy);
+                document.addEventListener('ajax:page-loaded', boot);
             })();
         </script>
     @endpush

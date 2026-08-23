@@ -154,7 +154,7 @@ middleware from `session('locale')` (supported: `en`, `km`), switched via
 - Current admin service examples: `App\Services\Admin\{ProductService, OrderService,
   CustomerService, DashboardService, StockService, ReviewService, SettingService,,
   InventoryService, SupplierService, PurchaseOrderService, ReturnRequestService,
-  WalletService, PaymentService, FinanceReportService, SeoManagerService,
+  WalletService, PaymentService, FinanceReportService, SeoManagerService, ChatService,
   PermissionService, RoleService, UserService, ActivityLogService,
   AbandonedCartService, AdminNotificationService, DealCampaignService,
   MediaAssetService, ProductImportService, SetupHealthService

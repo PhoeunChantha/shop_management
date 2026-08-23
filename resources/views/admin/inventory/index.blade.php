@@ -16,18 +16,7 @@
             </div>
         </div>
 
-        {{-- Filters --}}
-        <x-filter-card :action="route('admin.inventory.index')" :grid="'grid grid-cols-1 sm:grid-cols-2 gap-3'">
-            <x-slot:hidden>
-                <input type="hidden" name="search" value="{{ request('search') }}">
-                <input type="hidden" name="per_page" value="{{ $perPage }}">
-            </x-slot:hidden>
-
-            <x-select name="stock" size="sm" label="{{ __('Stock status') }}" :value="request('stock')" placeholder="{{ __('Any stock') }}"
-                :options="['in_stock' => 'In stock', 'low_stock' => 'Low stock', 'out_of_stock' => 'Out of stock']" />
-        </x-filter-card>
-
-        <x-admin.table-card class="mt-3 orders-panel">
+        <x-admin.table-card class="orders-panel">
             <x-slot:toolbar>
                 <x-table-toolbar>
                     <x-slot:left>

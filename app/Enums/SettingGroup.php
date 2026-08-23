@@ -17,6 +17,7 @@ enum SettingGroup: string
     case Notifications = 'notifications';
     case Localization = 'localization';
     case Appearance = 'appearance';
+    case Chat = 'chat';
 
     /**
      * Human-readable tab label.
@@ -35,6 +36,7 @@ enum SettingGroup: string
             self::Notifications => 'Notifications',
             self::Localization => 'Languages',
             self::Appearance => 'Theme Colors',
+            self::Chat => 'Live Chat',
         };
     }
 
@@ -55,6 +57,7 @@ enum SettingGroup: string
             self::Notifications => 'fa-envelope',
             self::Localization => 'fa-language',
             self::Appearance => 'fa-palette',
+            self::Chat => 'fa-comments',
         };
     }
 

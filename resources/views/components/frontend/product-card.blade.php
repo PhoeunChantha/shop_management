@@ -35,17 +35,25 @@
             style="position:absolute;top:12px;right:12px;width:38px;height:38px">
         <x-frontend.icon n="heart" :size="18" />
     </button>
+    {{-- ask about this product (opens live chat with the product attached) --}}
+    @if (app(\App\Services\Admin\SettingService::class)->askProductEnabled())
+    <button type="button" class="icon-btn ut-pcard-ask" aria-label="{{ __('Ask about this product') }}" title="{{ __('Ask about this product') }}"
+            data-chat-product="{{ json_encode(['id' => $p['id'], 'name' => $p['name'], 'image' => $p['image_url'] ?? null, 'price_label' => dprice((float) $p['price']), 'url' => $url], JSON_UNESCAPED_UNICODE) }}"
+            style="position:absolute;top:56px;right:12px;width:38px;height:38px">
+        <x-frontend.icon n="chat" :size="18" />
+    </button>
+    @endif
 
-    <a href="{{ $url }}" style="display:block;padding:15px 16px 17px">
-        <div class="ut-row" style="justify-content:space-between;gap:8px">
-            <h4 style="font-size:15.5px;font-weight:600">{{ $p['name'] }}</h4>
+    <a href="{{ $url }}" class="ut-pcard-body" style="display:block;padding:15px 16px 17px">
+        <div class="ut-row ut-pcard-title" style="justify-content:space-between;gap:8px;align-items:flex-start">
+            <h4 class="ut-pcard-name" style="font-size:15.5px;font-weight:600" title="{{ $p['name'] }}">{{ $p['name'] }}</h4>
             @if($p['badge'])<span class="ut-tag ut-tag-soft" style="font-size:10px">{{ $p['badge'] }}</span>@endif
         </div>
         <div class="ut-row" style="gap:6px;margin:7px 0 12px">
             <x-frontend.stars :value="$p['rating']" :size="13" />
             <span class="muted" style="font-size:12.5px">{{ $p['rating'] }} · {{ $p['reviews'] }}</span>
         </div>
-        <div class="ut-row" style="justify-content:space-between">
+        <div class="ut-row ut-pcard-foot" style="justify-content:space-between">
             <div class="ut-row" style="gap:8px">
                 <span style="font-family:var(--font-head);font-weight:700;font-size:17px;color:var(--text)">{{ dprice((float) $p['price']) }}</span>
                 @if($p['was'])<span class="strike" style="font-size:13.5px;color:var(--text-2)">{{ dprice((float) $p['was']) }}</span>@endif

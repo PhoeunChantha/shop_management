@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\Admin;
 
 use App\Models\Order;
-use App\Models\OrderDetail;
 use App\Models\ReturnRequest;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -13,330 +12,205 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Classic sales report: a summary of what was sold in the period, a day-by-day
+ * breakdown with totals, and the order-level detail behind both. Profit / COGS,
+ * category mix and payment-method mix intentionally live in the Finance,
+ * Products and Payments reports — this page is about sales only.
+ */
 final class SalesReportService extends ReportService
 {
     /**
-     * Full analytics payload for the Sales dashboard. Every section honours the
-     * same date / status / payment / customer filter set, so selecting a single
-     * customer re-scopes the KPIs, chart, breakdowns and transactions together.
-     *
      * @param  array<string, mixed>  $filters
      * @return array<string, mixed>
      */
     public function report(array $filters): array
     {
         [$start, $end] = $this->dateRange($filters);
-        [$prevStart, $prevEnd] = $this->previousRange($start, $end);
 
-        $summary = $this->summaryFor($start, $end, $filters);
-        $previous = $this->summaryFor($prevStart, $prevEnd, $filters);
+        $daily = $this->salesByDay($start, $end, $filters);
 
         return [
             'filters' => $this->appliedFilters($start, $end, $filters),
-            'summary' => $summary,
-            'comparison' => $this->comparison($summary, $previous, ['total_revenue', 'orders', 'average_order', 'gross_profit']),
-            'previousRange' => [
-                'start_date' => $prevStart->toDateString(),
-                'end_date' => $prevEnd->toDateString(),
-            ],
-            'series' => $this->dailySeries($start, $end, $filters),
-            'categories' => $this->categoryBreakdown($start, $end, $filters),
-            'paymentMethods' => $this->paymentMethods($start, $end, $filters),
-            'refunds' => $this->refundStats($start, $end, $filters, (int) $summary['orders']),
-            'transactions' => $this->transactions($start, $end, $filters),
+            'summary' => $this->summary($start, $end, $filters),
+            'daily' => $daily,
+            'dailyTotals' => $this->totalsFor($daily),
+            'orders' => $this->orders($start, $end, $filters),
         ];
     }
 
     /**
-     * Summary KPIs for an arbitrary window — reused for the current and prior
-     * period so the comparison deltas share one definition of every metric.
+     * Period totals. Money figures come from paid orders only (paid, partially
+     * refunded, refunded) so unpaid / cancelled orders never inflate sales.
      *
      * @param  array<string, mixed>  $filters
      * @return array<string, float|int>
      */
-    private function summaryFor(CarbonImmutable $start, CarbonImmutable $end, array $filters): array
+    private function summary(CarbonImmutable $start, CarbonImmutable $end, array $filters): array
     {
-        $orders = $this->ordersBetween($start, $end, $filters);
-        $paidOrders = (clone $orders)->whereIn('payment_status', $this->paidStatuses());
+        $paid = $this->ordersBetween($start, $end, $filters)
+            ->whereIn('payment_status', $this->paidStatuses());
 
-        $merchandise = (float) (clone $paidOrders)->sum('subtotal');
-        $discounts = (float) (clone $paidOrders)->sum('discount_total');
-        $totalRevenue = (float) (clone $paidOrders)->sum('grand_total');
-        $paidCount = (clone $paidOrders)->count();
-        $netSales = $merchandise - $discounts;
+        $row = (clone $paid)
+            ->selectRaw('COUNT(*) as orders')
+            ->selectRaw('COALESCE(SUM(subtotal), 0) as gross_sales')
+            ->selectRaw('COALESCE(SUM(discount_total), 0) as discounts')
+            ->selectRaw('COALESCE(SUM(tax_total), 0) as tax')
+            ->selectRaw('COALESCE(SUM(shipping_total), 0) as shipping')
+            ->selectRaw('COALESCE(SUM(grand_total), 0) as total_sales')
+            ->first();
 
-        $cogs = (float) $this->applyOrderFilters(
-            OrderDetail::query()->join('orders', 'orders.id', '=', 'order_details.order_id'),
-            $filters,
-        )
-            ->whereBetween(DB::raw('DATE(COALESCE(orders.placed_at, orders.created_at))'), [$start->toDateString(), $end->toDateString()])
-            ->whereIn('orders.payment_status', $this->paidStatuses())
-            ->sum(DB::raw('COALESCE(order_details.unit_cost, 0) * order_details.quantity'));
+        $items = (int) DB::table('order_details')
+            ->whereIn('order_id', (clone $paid)->select('orders.id'))
+            ->sum('quantity');
 
-        $refunds = $this->refundStats($start, $end, $filters, (clone $orders)->count());
+        $refunds = $this->refundsBetween($start, $end, $filters);
+
+        $orders = (int) ($row->orders ?? 0);
+        $gross = (float) ($row->gross_sales ?? 0);
+        $discounts = (float) ($row->discounts ?? 0);
+        $total = (float) ($row->total_sales ?? 0);
 
         return [
-            'gross_sales' => $merchandise,
-            'discount_total' => $discounts,
-            'net_sales' => $netSales,
-            'tax_total' => (float) (clone $paidOrders)->sum('tax_total'),
-            'shipping_total' => (float) (clone $paidOrders)->sum('shipping_total'),
-            'total_revenue' => $totalRevenue,
-            'refunds' => $refunds['amount'],
-            'net_revenue' => $totalRevenue - $refunds['amount'],
-            'cogs' => $cogs,
-            'gross_profit' => $netSales - $cogs,
-            'margin' => $netSales > 0 ? round((($netSales - $cogs) / $netSales) * 100, 1) : 0.0,
-            'orders' => (clone $orders)->count(),
-            'paid_orders' => $paidCount,
-            'average_order' => $paidCount > 0 ? $totalRevenue / $paidCount : 0.0,
+            'orders' => $orders,
+            'all_orders' => $this->ordersBetween($start, $end, $filters)->count(),
+            'items' => $items,
+            'gross_sales' => $gross,
+            'discounts' => $discounts,
+            'refunds' => $refunds,
+            'net_sales' => $gross - $discounts,
+            'tax' => (float) ($row->tax ?? 0),
+            'shipping' => (float) ($row->shipping ?? 0),
+            'total_sales' => $total,
+            'average_order' => $orders > 0 ? $total / $orders : 0.0,
         ];
     }
 
     /**
-     * Equal-length window immediately before [$start, $end] for period comparison.
-     *
-     * @return array{0: CarbonImmutable, 1: CarbonImmutable}
-     */
-    private function previousRange(CarbonImmutable $start, CarbonImmutable $end): array
-    {
-        $days = (int) $start->startOfDay()->diffInDays($end->startOfDay()) + 1;
-        $prevEnd = $start->subDay()->endOfDay();
-        $prevStart = $prevEnd->subDays($days - 1)->startOfDay();
-
-        return [$prevStart, $prevEnd];
-    }
-
-    /**
-     * Percentage change per metric. change=null when the prior period is zero —
-     * we never fabricate a percentage against a zero base.
-     *
-     * @param  array<string, float|int>  $current
-     * @param  array<string, float|int>  $previous
-     * @param  array<int, string>  $keys
-     * @return array<string, array{previous: float, change: float|null, direction: string}>
-     */
-    private function comparison(array $current, array $previous, array $keys): array
-    {
-        $out = [];
-
-        foreach ($keys as $key) {
-            $cur = (float) ($current[$key] ?? 0);
-            $prev = (float) ($previous[$key] ?? 0);
-            $change = $prev > 0 ? round((($cur - $prev) / $prev) * 100, 1) : null;
-
-            $out[$key] = [
-                'previous' => $prev,
-                'change' => $change,
-                'direction' => $change === null ? 'flat' : ($change > 0 ? 'up' : ($change < 0 ? 'down' : 'flat')),
-            ];
-        }
-
-        return $out;
-    }
-
-    /**
-     * Continuous per-day series (gap-filled) powering the performance chart:
-     * revenue (collected), order count and gross profit for each day in range.
+     * Refunded amount in range (customer-aware via the parent order).
      *
      * @param  array<string, mixed>  $filters
-     * @return array<string, array<int, string|float|int>>
      */
-    private function dailySeries(CarbonImmutable $start, CarbonImmutable $end, array $filters): array
+    private function refundsBetween(CarbonImmutable $start, CarbonImmutable $end, array $filters): float
     {
-        $orders = $this->ordersBetween($start, $end, $filters)
-            ->whereIn('payment_status', $this->paidStatuses())
-            ->selectRaw('DATE(COALESCE(placed_at, created_at)) as d')
-            ->selectRaw('COUNT(*) as orders')
-            ->selectRaw('SUM(grand_total) as revenue')
-            ->selectRaw('SUM(subtotal - discount_total) as net_sales')
-            ->groupBy('d')
-            ->get()
-            ->keyBy('d');
-
-        $cogs = $this->applyOrderFilters(
-            OrderDetail::query()->join('orders', 'orders.id', '=', 'order_details.order_id'),
-            $filters,
-        )
-            ->whereBetween(DB::raw('DATE(COALESCE(orders.placed_at, orders.created_at))'), [$start->toDateString(), $end->toDateString()])
-            ->whereIn('orders.payment_status', $this->paidStatuses())
-            ->selectRaw('DATE(COALESCE(orders.placed_at, orders.created_at)) as d')
-            ->selectRaw('SUM(COALESCE(order_details.unit_cost, 0) * order_details.quantity) as cogs')
-            ->groupBy('d')
-            ->get()
-            ->keyBy('d');
-
-        $labels = [];
-        $revenue = [];
-        $ordersOut = [];
-        $profit = [];
-
-        $cursor = $start->startOfDay();
-        $last = $end->startOfDay();
-
-        // Cap the drawn points so a huge custom range never renders thousands of
-        // ticks; day granularity is fine for any range up to ~13 months.
-        while ($cursor->lessThanOrEqualTo($last) && count($labels) <= 400) {
-            $key = $cursor->toDateString();
-            $row = $orders->get($key);
-            $net = (float) ($row->net_sales ?? 0);
-            $dayCogs = (float) ($cogs->get($key)->cogs ?? 0);
-
-            $labels[] = $key;
-            $revenue[] = round((float) ($row->revenue ?? 0), 2);
-            $ordersOut[] = (int) ($row->orders ?? 0);
-            $profit[] = round($net - $dayCogs, 2);
-
-            $cursor = $cursor->addDay();
-        }
-
-        return [
-            'labels' => $labels,
-            'revenue' => $revenue,
-            'orders' => $ordersOut,
-            'profit' => $profit,
-        ];
-    }
-
-    /**
-     * Revenue / units share per product category (paid orders in range).
-     *
-     * @param  array<string, mixed>  $filters
-     * @return Collection<int, array<string, string|int|float>>
-     */
-    private function categoryBreakdown(CarbonImmutable $start, CarbonImmutable $end, array $filters): Collection
-    {
-        $rows = $this->applyOrderFilters(
-            OrderDetail::query()
-                ->join('orders', 'orders.id', '=', 'order_details.order_id')
-                ->leftJoin('products', 'products.id', '=', 'order_details.product_id')
-                ->leftJoin('categories', 'categories.id', '=', 'products.category_id'),
-            $filters,
-        )
-            ->whereBetween(DB::raw('DATE(COALESCE(orders.placed_at, orders.created_at))'), [$start->toDateString(), $end->toDateString()])
-            ->whereIn('orders.payment_status', $this->paidStatuses())
-            ->selectRaw("COALESCE(categories.name, 'Uncategorized') as category")
-            ->selectRaw('COUNT(DISTINCT order_details.order_id) as orders')
-            ->selectRaw('SUM(order_details.quantity) as units')
-            ->selectRaw('SUM(order_details.line_total) as revenue')
-            ->groupBy('category')
-            ->orderByDesc('revenue')
-            ->get();
-
-        $total = (float) $rows->sum('revenue');
-
-        return $rows->take(8)->map(fn (object $row): array => [
-            'category' => (string) $row->category,
-            'orders' => (int) $row->orders,
-            'units' => (int) $row->units,
-            'revenue' => (float) $row->revenue,
-            'percent' => $total > 0 ? round(((float) $row->revenue / $total) * 100, 1) : 0.0,
-        ]);
-    }
-
-    /**
-     * Orders / revenue share per payment method (paid orders in range).
-     *
-     * @param  array<string, mixed>  $filters
-     * @return Collection<int, array<string, string|int|float>>
-     */
-    private function paymentMethods(CarbonImmutable $start, CarbonImmutable $end, array $filters): Collection
-    {
-        $rows = $this->ordersBetween($start, $end, $filters)
-            ->whereIn('payment_status', $this->paidStatuses())
-            ->selectRaw("COALESCE(NULLIF(payment_method, ''), 'other') as method")
-            ->selectRaw('COUNT(*) as orders')
-            ->selectRaw('SUM(grand_total) as revenue')
-            ->groupBy('method')
-            ->orderByDesc('revenue')
-            ->get();
-
-        $total = (float) $rows->sum('revenue');
-
-        return $rows->map(fn (object $row): array => [
-            'method' => $this->methodLabel((string) $row->method),
-            'orders' => (int) $row->orders,
-            'revenue' => (float) $row->revenue,
-            'percent' => $total > 0 ? round(((float) $row->revenue / $total) * 100, 1) : 0.0,
-        ]);
-    }
-
-    private function methodLabel(string $method): string
-    {
-        return match (mb_strtolower($method)) {
-            'aba', 'aba_payway', 'payway' => 'ABA PayWay',
-            'wallet' => 'Wallet',
-            'cash', 'cod' => 'Cash',
-            'card', 'credit_card' => 'Credit Card',
-            'qr' => 'QR Payment',
-            'other', '' => 'Other',
-            default => ucwords(str_replace('_', ' ', $method)),
-        };
-    }
-
-    /**
-     * Refund amount, refunded-order count and refund rate — customer-aware via a
-     * join to the parent order.
-     *
-     * @param  array<string, mixed>  $filters
-     * @return array{amount: float, orders: int, rate: float}
-     */
-    private function refundStats(CarbonImmutable $start, CarbonImmutable $end, array $filters, int $orderCount): array
-    {
-        $base = ReturnRequest::query()
+        return (float) ReturnRequest::query()
             ->join('orders', 'orders.id', '=', 'return_requests.order_id')
             ->whereIn('return_requests.refund_status', ['partial', 'refunded'])
             ->whereBetween(DB::raw('DATE(COALESCE(return_requests.refunded_at, return_requests.updated_at))'), [$start->toDateString(), $end->toDateString()])
             ->when(filled($filters['customer'] ?? null), fn (Builder $q) => $q->where(function (Builder $inner) use ($filters) {
                 $inner->where('orders.customer_email', $filters['customer'])->orWhere('orders.customer_name', $filters['customer']);
-            }));
+            }))
+            ->sum('return_requests.refund_amount');
+    }
 
-        $amount = (float) (clone $base)->sum('return_requests.refund_amount');
-        $refundedOrders = (int) (clone $base)->distinct('return_requests.order_id')->count('return_requests.order_id');
+    /**
+     * One row per calendar day in range (gap-filled), paid orders only.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return Collection<int, array<string, string|int|float>>
+     */
+    private function salesByDay(CarbonImmutable $start, CarbonImmutable $end, array $filters): Collection
+    {
+        $rows = $this->ordersBetween($start, $end, $filters)
+            ->whereIn('payment_status', $this->paidStatuses())
+            ->leftJoinSub(
+                DB::table('order_details')->select('order_id')->selectRaw('SUM(quantity) as items')->groupBy('order_id'),
+                'la',
+                'la.order_id',
+                '=',
+                'orders.id',
+            )
+            ->selectRaw('DATE(COALESCE(orders.placed_at, orders.created_at)) as d')
+            ->selectRaw('COUNT(*) as orders')
+            ->selectRaw('COALESCE(SUM(la.items), 0) as items')
+            ->selectRaw('SUM(orders.subtotal) as gross_sales')
+            ->selectRaw('SUM(orders.discount_total) as discounts')
+            ->selectRaw('SUM(orders.tax_total) as tax')
+            ->selectRaw('SUM(orders.shipping_total) as shipping')
+            ->selectRaw('SUM(orders.grand_total) as total_sales')
+            ->groupBy('d')
+            ->get()
+            ->keyBy('d');
+
+        $out = [];
+        $cursor = $start->startOfDay();
+        $last = $end->startOfDay();
+
+        // Cap at ~13 months of daily rows so a runaway custom range stays sane.
+        while ($cursor->lessThanOrEqualTo($last) && count($out) <= 400) {
+            $key = $cursor->toDateString();
+            $row = $rows->get($key);
+            $gross = (float) ($row->gross_sales ?? 0);
+            $discounts = (float) ($row->discounts ?? 0);
+
+            $out[] = [
+                'date' => $key,
+                'label' => $cursor->format('D, M d'),
+                'orders' => (int) ($row->orders ?? 0),
+                'items' => (int) ($row->items ?? 0),
+                'gross_sales' => $gross,
+                'discounts' => $discounts,
+                'net_sales' => $gross - $discounts,
+                'tax' => (float) ($row->tax ?? 0),
+                'shipping' => (float) ($row->shipping ?? 0),
+                'total_sales' => (float) ($row->total_sales ?? 0),
+            ];
+
+            $cursor = $cursor->addDay();
+        }
+
+        return collect($out);
+    }
+
+    /**
+     * Footer totals for the day table.
+     *
+     * @param  Collection<int, array<string, string|int|float>>  $daily
+     * @return array<string, float|int>
+     */
+    private function totalsFor(Collection $daily): array
+    {
+        $sum = fn (string $key) => $daily->sum(fn (array $r) => $r[$key]);
 
         return [
-            'amount' => $amount,
-            'orders' => $refundedOrders,
-            'rate' => $orderCount > 0 ? round(($refundedOrders / $orderCount) * 100, 1) : 0.0,
+            'orders' => (int) $sum('orders'),
+            'items' => (int) $sum('items'),
+            'gross_sales' => (float) $sum('gross_sales'),
+            'discounts' => (float) $sum('discounts'),
+            'net_sales' => (float) $sum('net_sales'),
+            'tax' => (float) $sum('tax'),
+            'shipping' => (float) $sum('shipping'),
+            'total_sales' => (float) $sum('total_sales'),
         ];
     }
 
     /**
-     * Order-level transactions table — the source of truth behind the summary.
-     * DB-paginated, searchable and sortable, every column derived from the order
-     * snapshot plus per-order line (items, COGS) and refund rollups.
+     * Order-level detail: DB-paginated, searchable, sortable. Lists every order
+     * matching the filters (including unpaid) so the admin can reconcile the
+     * summary against what was actually placed.
      *
      * @param  array<string, mixed>  $filters
      * @return LengthAwarePaginator<int, array<string, mixed>>
      */
-    private function transactions(CarbonImmutable $start, CarbonImmutable $end, array $filters): LengthAwarePaginator
+    private function orders(CarbonImmutable $start, CarbonImmutable $end, array $filters): LengthAwarePaginator
     {
         $lineAgg = DB::table('order_details')
             ->select('order_id')
             ->selectRaw('SUM(quantity) as items')
-            ->selectRaw('SUM(COALESCE(unit_cost, 0) * quantity) as cogs')
-            ->groupBy('order_id');
-
-        $refundAgg = DB::table('return_requests')
-            ->select('order_id')
-            ->whereIn('refund_status', ['partial', 'refunded'])
-            ->selectRaw('SUM(refund_amount) as refund')
             ->groupBy('order_id');
 
         $sortMap = [
             'date' => DB::raw('COALESCE(orders.placed_at, orders.created_at)'),
-            'gross' => 'orders.subtotal',
-            'net' => 'orders.grand_total',
+            'net' => DB::raw('(orders.subtotal - orders.discount_total)'),
+            'total' => 'orders.grand_total',
         ];
         $sort = (string) ($filters['sort'] ?? 'date');
         $column = $sortMap[$sort] ?? $sortMap['date'];
         $direction = mb_strtolower((string) ($filters['direction'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
         $search = trim((string) ($filters['search'] ?? ''));
 
-        $query = $this->applyOrderFilters(Order::query()->from('orders'), $filters)
+        $query = $this->ordersBetween($start, $end, $filters)
             ->leftJoinSub($lineAgg, 'la', 'la.order_id', '=', 'orders.id')
-            ->leftJoinSub($refundAgg, 'ra', 'ra.order_id', '=', 'orders.id')
-            ->whereBetween(DB::raw('DATE(COALESCE(orders.placed_at, orders.created_at))'), [$start->toDateString(), $end->toDateString()])
             ->when($search !== '', fn (Builder $q) => $q->where(function (Builder $inner) use ($search) {
                 $inner->where('orders.order_number', 'like', "%{$search}%")
                     ->orWhere('orders.customer_name', 'like', "%{$search}%")
@@ -344,21 +218,15 @@ final class SalesReportService extends ReportService
             }))
             ->select('orders.*')
             ->selectRaw('COALESCE(la.items, 0) as items_count')
-            ->selectRaw('COALESCE(la.cogs, 0) as cogs_total')
-            ->selectRaw('COALESCE(ra.refund, 0) as refund_total')
             ->orderBy($column, $direction);
 
-        $perPage = $this->perPage($filters, 25);
-
-        return $query->paginate($perPage)->withQueryString()->through(function (Order $order): array {
+        return $query->paginate($this->perPage($filters, 25))->withQueryString()->through(function (Order $order): array {
             $gross = (float) $order->subtotal;
             $discount = (float) $order->discount_total;
-            $refund = (float) ($order->refund_total ?? 0);
-            $cogs = (float) ($order->cogs_total ?? 0);
-            $netSales = $gross - $discount - $refund;
 
             return [
                 'date' => optional($order->placed_at ?? $order->created_at)->format('M d, Y'),
+                'time' => optional($order->placed_at ?? $order->created_at)->format('H:i'),
                 'order_number' => $order->order_number,
                 'order_id' => $order->id,
                 'customer_name' => $this->customerName((string) ($order->customer_name ?? ''), $order->user_id),
@@ -370,9 +238,10 @@ final class SalesReportService extends ReportService
                 'payment_status' => $order->payment_status,
                 'gross' => $gross,
                 'discount' => $discount,
-                'refund' => $refund,
-                'net_sales' => $netSales,
-                'profit' => ($gross - $discount) - $cogs,
+                'net_sales' => $gross - $discount,
+                'tax' => (float) $order->tax_total,
+                'shipping' => (float) $order->shipping_total,
+                'total' => (float) $order->grand_total,
             ];
         });
     }
@@ -427,13 +296,13 @@ final class SalesReportService extends ReportService
     {
         [$start, $end] = $this->dateRange($filters);
 
-        // Reuse the transactions query but export the whole result set (no paging).
+        // Reuse the orders query but export the whole result set (no paging).
         $filters['per_page'] = 100000;
-        $rows = $this->transactions($start, $end, $filters)->items();
+        $rows = $this->orders($start, $end, $filters)->items();
 
         $out = [[
-            'Date', 'Order', 'Customer', 'Email', 'Phone', 'Status', 'Payment',
-            'Gross Sales', 'Discount', 'Refund', 'Net Sales', 'Profit',
+            'Date', 'Order', 'Customer', 'Email', 'Phone', 'Status', 'Payment', 'Items',
+            'Gross Sales', 'Discount', 'Net Sales', 'Tax', 'Shipping', 'Total',
         ]];
 
         foreach ($rows as $row) {
@@ -445,11 +314,13 @@ final class SalesReportService extends ReportService
                 $row['customer_phone'],
                 $row['status']->label(),
                 $row['payment_status']->label(),
+                $row['items'],
                 number_format($row['gross'], 2, '.', ''),
                 number_format($row['discount'], 2, '.', ''),
-                number_format($row['refund'], 2, '.', ''),
                 number_format($row['net_sales'], 2, '.', ''),
-                number_format($row['profit'], 2, '.', ''),
+                number_format($row['tax'], 2, '.', ''),
+                number_format($row['shipping'], 2, '.', ''),
+                number_format($row['total'], 2, '.', ''),
             ];
         }
 

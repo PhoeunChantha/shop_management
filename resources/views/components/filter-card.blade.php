@@ -25,6 +25,7 @@
         </x-filter-card>
 --}}
 <form method="{{ strtoupper($method) === 'GET' ? 'GET' : 'POST' }}" action="{{ $action }}"
+    @if (strtoupper($method) === 'GET') data-ajax-filter @endif
     {{ $attributes->merge(['class' => 'premium-card filter-card']) }}>
     @if (strtoupper($method) !== 'GET')
         @csrf
@@ -40,7 +41,7 @@
     </div>
 
     <div class="d-flex align-items-center justify-content-end gap-2 mt-3">
-        <a href="{{ $reset ?? $action }}" class="ghost-button">
+        <a href="{{ $reset ?? $action }}" class="ghost-button" data-ajax-link>
             <i class="fa-solid fa-rotate-left"></i> {{ $resetLabel }}
         </a>
         

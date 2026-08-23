@@ -24,7 +24,7 @@
     @if ($hasFilters || $exportUrl || $pdfUrl)
         <div class="report-controlbar">
             @if ($hasFilters)
-                <form method="GET" action="{{ $action }}" class="report-controlbar__filters">
+                <form method="GET" action="{{ $action }}" class="report-controlbar__filters" data-ajax-filter>
                     @if ($showRange)
                         <label class="report-controlbar__field report-controlbar__field--range">
                             <span>{{ __('Date range') }}</span>
@@ -50,7 +50,7 @@
                     @endif
                     {{ $controls ?? '' }}
                     <div class="report-controlbar__actions">
-                        <a href="{{ $action }}" class="ghost-button">
+                        <a href="{{ $action }}" class="ghost-button" data-ajax-link>
                             <i class="fa-solid fa-rotate-left"></i><span>{{ __('Reset') }}</span>
                         </a>
                         <button type="submit" class="filter-button">
