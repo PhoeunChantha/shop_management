@@ -49,7 +49,7 @@
                 <input type="hidden" name="date_to" value="{{ request('date_to') }}">
             </div>
 
-            <x-select name="sort" size="sm" :label="__('Sort by')" :value="request('sort', 'newest')" :placeholder="null"
+            <x-select name="sort" size="sm" :label="__('Sort by')" :value="request('sort', 'newest')" placeholder=""
                 :options="collect($sortOptions)->map(fn ($l) => __($l))->all()" />
         </x-filter-card>
 

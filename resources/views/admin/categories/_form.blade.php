@@ -84,7 +84,7 @@
             </div>
 
             <div class="form-field col-span-2 md:col-span-1">
-                <x-select name="status" size="sm" :label="__('Status')" :value="old('status', (string) (int) ($category->status ?? 1))" :placeholder="null"
+                <x-select name="status" size="sm" :label="__('Status')" :value="old('status', (string) (int) ($category->status ?? 1))" placeholder=""
                     :options="['1' => __('Enable'), '0' => __('Disable')]" required />
                 @error('status')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
             </div>
@@ -257,6 +257,16 @@
             if (desc) d.textContent = desc.slice(0, 160);
             if (s && name && !s.dataset.locked) s.textContent = slugify(name) || s.textContent;
         }
+
+        // Native validation can't focus a field hidden behind another language tab:
+        // jump to that tab first so the browser's message lands on a visible input.
+        form.addEventListener('invalid', (e) => {
+            const lang = e.target?.dataset?.lang;
+            const body = form.querySelector('[x-data]');
+            if (lang && body && window.Alpine) {
+                try { window.Alpine.$data(body).lang = lang; } catch (err) {}
+            }
+        }, true);
 
         counts(); preview();
     })();

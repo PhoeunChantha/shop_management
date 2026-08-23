@@ -128,9 +128,12 @@ via `app/Helpers/functions.php`) used in Blade to resolve the public URL.
 
 ### Translations & localization
 `Product` uses spatie/laravel-translatable: `name`, `short_description`,
-`description`, `seo_title`, `seo_description` are per-language JSON. Forms submit
-them as arrays (`name[en]`, `name[km]`); the primary/required language comes from
-`SettingService::primaryLanguage()`. UI locale is applied by the `SetLocale`
+`description`, `seo_title`, `seo_description` are per-language JSON. `Category`
+does the same for `name`, `description`, `seo_title`, `seo_description`,
+`seo_keywords` (plus a single `seo_image`); query categories by name via
+`Category::whereSlugOrName()` / `orderByName()`, never raw `name` comparisons.
+Forms submit translatable fields as arrays (`name[en]`, `name[km]`); the
+primary/required language comes from `SettingService::primaryLanguage()`. UI locale is applied by the `SetLocale`
 middleware from `session('locale')` (supported: `en`, `km`), switched via
 `/lang/{locale}`.
 

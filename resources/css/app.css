@@ -7970,6 +7970,11 @@ html.dark .lang-tabs {
     border-bottom-color: rgba(255, 255, 255, 0.1);
 }
 
+html.dark .lang-tab.is-active {
+    color: var(--admin-ink);
+    border-bottom-color: var(--admin-ink);
+}
+
 /* Product form refinements */
 .product-form-grid {
     grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
@@ -8427,37 +8432,6 @@ html.dark .variant-card:hover {
     gap: 24px;
 }
 
-.product-editor-page .lang-tabs {
-    padding: 8px 4px 0;
-    border-bottom: 0;
-}
-
-.product-editor-page .lang-tabs__label {
-    color: #0f172a;
-    font-size: 12px;
-    letter-spacing: .08em;
-}
-
-.product-editor-page .lang-tabs__buttons {
-    padding: 6px;
-    border: 1px solid rgba(148, 163, 184, 0.24);
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.82);
-}
-
-.product-editor-page .lang-tab {
-    min-height: 40px;
-    padding: 0 14px;
-    border: 0;
-    border-radius: 12px;
-}
-
-.product-editor-page .lang-tab.is-active {
-    color: #fff;
-    background: #0f172a;
-    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.2);
-}
-
 .product-editor-page .form-section {
     border-radius: 22px;
     border-color: rgba(148, 163, 184, 0.22);
@@ -8654,7 +8628,6 @@ html.dark .product-show-hero {
 }
 
 html.dark .product-editor-hero__stats span,
-html.dark .product-editor-page .lang-tabs__buttons,
 html.dark .product-show-hero__meta span:not(.status-chip),
 html.dark .product-editor-page .product-form-actions {
     background: rgba(15, 23, 42, 0.76);

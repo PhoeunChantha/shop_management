@@ -53,7 +53,7 @@
             <x-select name="amount" size="sm" :label="__('Amount')" :value="request('amount')" :placeholder="__('Any amount')"
                 :options="collect($amountRanges)->map(fn ($l) => __($l))->all()" />
 
-            <x-select name="sort" size="sm" :label="__('Sort by')" :value="request('sort', 'newest')" :placeholder="null"
+            <x-select name="sort" size="sm" :label="__('Sort by')" :value="request('sort', 'newest')" placeholder=""
                 :options="collect($sortOptions)->map(fn ($l) => __($l))->all()" />
         </x-filter-card>
 
