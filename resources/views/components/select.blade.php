@@ -70,14 +70,17 @@
     $isList = array_is_list($optionsArray);
     $normalized = [];
     foreach ($optionsArray as $key => $option) {
+        $optDepth = 0;
         if (is_object($option)) {
             $optVal = data_get($option, $optionValue ?? 'id');
             $optLbl = data_get($option, $optionLabel ?? 'name');
             $optDis = (bool) data_get($option, 'disabled', false);
+            $optDepth = (int) data_get($option, 'depth', 0);
         } elseif (is_array($option)) {
             $optVal = $option[$optionValue ?? 'value'] ?? $option['value'] ?? $option['id'] ?? $key;
             $optLbl = $option[$optionLabel ?? 'label'] ?? $option['label'] ?? $option['name'] ?? $optVal;
             $optDis = (bool) ($option['disabled'] ?? false);
+            $optDepth = (int) ($option['depth'] ?? 0);
         } else {
             // Scalar list [v, v] => value == label; keyed [k => label] => value == k
             $optVal = $isList ? $option : $key;
@@ -85,10 +88,13 @@
             $optDis = false;
         }
 
+        // `depth` (0 = top level) renders nested options indented and smaller —
+        // used by tree pickers such as categories.
         $normalized[] = [
             'value' => (string) $optVal,
             'label' => (string) $optLbl,
             'disabled' => $optDis,
+            'depth' => max(0, $optDepth),
         ];
     }
 @endphp
@@ -133,6 +139,7 @@
                         value: o.value,
                         label: (o.textContent || '').trim(),
                         disabled: o.disabled,
+                        depth: Number(o.dataset.depth || 0),
                     }));
                 },
 
@@ -431,6 +438,12 @@
         .x-select__option.is-selected { font-weight: 600; }
         .x-select__option.is-empty-opt { color: #667085; }
         .x-select__option.is-disabled { color: #cbd2dd; cursor: not-allowed; }
+        /* Nested (tree) options: indented per level, smaller than top-level ones. */
+        .x-select__option--sub { padding-top: 6px; padding-bottom: 6px; font-size: 12.5px; color: var(--admin-muted, #667085); }
+        .x-select__option--sub.is-selected { color: var(--admin-ink, #101827); }
+        .x-select--sm .x-select__option--sub { padding-top: 5px; padding-bottom: 5px; font-size: 12px; }
+        html.dark .x-select__option--sub { color: #93a1b8; }
+        html.dark .x-select__option--sub.is-selected { color: #e6eaf2; }
         .x-select__option-check { color: var(--primary-color, #101928); font-size: 12px; }
 
         .x-select__empty { padding: 16px 12px; text-align: center; color: #98a2b3; font-size: 13.5px; }
@@ -509,7 +522,7 @@
             <option value="">{{ $placeholder }}</option>
         @endif
         @foreach ($normalized as $opt)
-            <option value="{{ $opt['value'] }}" @selected($current === $opt['value']) @disabled($opt['disabled'])>{{ $opt['label'] }}</option>
+            <option value="{{ $opt['value'] }}" @selected($current === $opt['value']) @disabled($opt['disabled']) @if ($opt['depth'] > 0) data-depth="{{ $opt['depth'] }}" @endif>{{ $opt['label'] }}</option>
         @endforeach
         {{ $slot }}
     </select>
@@ -565,7 +578,8 @@
             <template x-for="(opt, i) in filtered" :key="opt.value + '::' + i">
                 <li
                     class="x-select__option"
-                    :class="{ 'is-active': i === activeIndex, 'is-selected': opt.value === value, 'is-disabled': opt.disabled, 'is-empty-opt': opt.value === '' }"
+                    :class="{ 'is-active': i === activeIndex, 'is-selected': opt.value === value, 'is-disabled': opt.disabled, 'is-empty-opt': opt.value === '', 'x-select__option--sub': opt.depth > 0 }"
+                    :style="opt.depth > 0 ? { paddingLeft: (12 + opt.depth * 16) + 'px' } : null"
                     :data-active="i === activeIndex ? true : null"
                     role="option"
                     :aria-selected="opt.value === value ? 'true' : 'false'"

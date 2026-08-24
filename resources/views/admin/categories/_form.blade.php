@@ -2,6 +2,7 @@
     $isEdit = ($mode ?? 'create') === 'edit';
     $locales = $locales ?? ['en' => 'English'];
     $primaryLang = $primaryLang ?? array_key_first($locales);
+    $parentOptions = $parentOptions ?? [];
 
     // Current value of a translatable field for one language (old() wins).
     $t = fn (string $field, string $code) => old("$field.$code", $isEdit ? ($category->getTranslation($field, $code, false) ?: '') : '');
@@ -51,6 +52,15 @@
                 </div>
             @endforeach
             @error('name')<p class="text-red-500 text-sm -mt-2 col-span-2">{{ $message }}</p>@enderror
+
+            {{-- Parent category — leave empty for a top-level category --}}
+            <div class="form-field col-span-2 md:col-span-1">
+                <x-select name="parent_id" size="sm" :label="__('Parent Category')"
+                    :options="$parentOptions" option-value="id" option-label="label"
+                    :value="old('parent_id', $category->parent_id ?? '')"
+                    :placeholder="__('None — top-level category')" searchable
+                    :help="__('Nest this category under another one, or leave empty to keep it at the top level.')" />
+            </div>
 
             <div class="form-field col-span-2 md:col-span-1">
                 <label for="sort_order">{{ __('Sort Order') }}</label>

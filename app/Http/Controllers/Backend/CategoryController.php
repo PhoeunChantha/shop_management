@@ -40,6 +40,7 @@ class CategoryController extends Controller
         $search = trim($filters['search'] ?? '');
 
         $categories = Category::query()
+            ->with('parent')
             ->search($search)
             ->orderBy('sort_order', 'asc')
             ->paginate($perPage)
@@ -55,7 +56,9 @@ class CategoryController extends Controller
     {
         $this->authorize('create', Category::class);
 
-        return view('admin.categories.create', $this->formLocales());
+        return view('admin.categories.create', [
+            'parentOptions' => Category::treeOptions(),
+        ] + $this->formLocales());
     }
 
     public function store(StoreCategoryRequest $request): RedirectResponse
@@ -92,6 +95,7 @@ class CategoryController extends Controller
 
         return view('admin.categories.edit', [
             'category' => $category,
+            'parentOptions' => Category::treeOptions($category),
         ] + $this->formLocales());
     }
 
@@ -136,6 +140,10 @@ class CategoryController extends Controller
         try {
             $category = Category::findOrFail($id);
 
+            if ($category->children()->exists()) {
+                return back()->with('error', __('Cannot delete “:name” because it has sub-categories. Move or delete them first.', ['name' => $category->name]));
+            }
+
             if ($category->isInUse()) {
                 return back()->with('error', "Cannot delete “{$category->name}” because it is assigned to one or more products.");
             }
@@ -164,7 +172,7 @@ class CategoryController extends Controller
         $ids = $this->validatedIds($request);
         $result = $bulk->destroy(Category::class, $ids, 'categories');
 
-        return back()->with($this->bulkFlash($result, 'category', 'assigned to products'));
+        return back()->with($this->bulkFlash($result, 'category', 'assigned to products or have sub-categories'));
     }
 
     public function bulkStatus(Request $request, BulkActionService $bulk): RedirectResponse

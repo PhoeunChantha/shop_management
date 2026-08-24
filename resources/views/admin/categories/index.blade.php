@@ -83,6 +83,11 @@
                             </td>
                             <td>
                                 <strong class="text-gray-900 dark:text-slate-100">{{ $category->name }}</strong>
+                                @if ($category->parent)
+                                    <span class="d-block text-xs text-gray-500 dark:text-slate-400 mt-0.5" title="{{ __('Parent Category') }}">
+                                        <i class="fa-solid fa-turn-up fa-rotate-90 me-1 opacity-60"></i>{{ $category->parent->name }}
+                                    </span>
+                                @endif
                             </td>
                             <td>
                                 <span

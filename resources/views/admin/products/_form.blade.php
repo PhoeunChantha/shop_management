@@ -645,25 +645,15 @@
                     <div><h4>{{ __('Organization') }}</h4><p>{{ __('Catalog placement, brand and tags.') }}</p></div>
                 </div>
                 <div class="form-section__body d-flex flex-column gap-3">
+                    {{-- One tree picker: sub-categories are listed under their parent.
+                         Picking a sub-category files the product under it and its
+                         top-level parent becomes the main category automatically. --}}
                     <div class="form-field">
-                        <label for="category_id">Category <span class="text-red-500">*</span></label>
-                        <select name="category_id" id="category_id" class="form-input" required>
-                            <option value="">{{ __('Select category') }}</option>
-                            @foreach ($categories as $category)
-                                <option value="{{ $category->id }}" @selected(old('category_id', $product->category_id ?? '') == $category->id)>{{ $category->name }}</option>
-                            @endforeach
-                        </select>
-                        <p class="form-help">{{ __('Required for storefront navigation and filters.') }}</p>
-                        @error('category_id')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
-                    </div>
-                    <div class="form-field">
-                        <label for="sub_category_id">{{ __('Sub Category') }}</label>
-                        <select name="sub_category_id" id="sub_category_id" class="form-input">
-                            <option value="">{{ __('None') }}</option>
-                            @foreach ($categories as $category)
-                                <option value="{{ $category->id }}" @selected(old('sub_category_id', $product->sub_category_id ?? '') == $category->id)>{{ $category->name }}</option>
-                            @endforeach
-                        </select>
+                        <x-select name="category_id" id="category_id" :label="__('Category')"
+                            :options="$categoryOptions" option-value="id" option-label="label"
+                            :value="old('category_id', $product->sub_category_id ?? $product->category_id ?? '')"
+                            :placeholder="__('Select category')" searchable required
+                            :help="__('Required for storefront navigation and filters. Pick a sub-category to file the product under it — its main category is set automatically.')" />
                     </div>
                     <div class="form-field">
                         <label for="brand_id">{{ __('Brand') }}</label>

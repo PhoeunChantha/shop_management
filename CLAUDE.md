@@ -132,6 +132,12 @@ via `app/Helpers/functions.php`) used in Blade to resolve the public URL.
 does the same for `name`, `description`, `seo_title`, `seo_description`,
 `seo_keywords` (plus a single `seo_image`); query categories by name via
 `Category::whereSlugOrName()` / `orderByName()`, never raw `name` comparisons.
+Categories form a tree via nullable `parent_id` (`parent()` / `children()` /
+`descendantIds()`); category pickers use `Category::treeOptions($except)`, which flattens
+the tree in sort order (children indented under parents) and omits `$except`
++ its descendants. Products store `category_id` (root) + `sub_category_id`
+(chosen child); the product form has one tree picker and
+`ProductService` derives the pair via `rootAncestor()`.
 Forms submit translatable fields as arrays (`name[en]`, `name[km]`); the
 primary/required language comes from `SettingService::primaryLanguage()`. UI locale is applied by the `SetLocale`
 middleware from `session('locale')` (supported: `en`, `km`), switched via
