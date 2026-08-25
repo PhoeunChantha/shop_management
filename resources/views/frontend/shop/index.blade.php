@@ -12,20 +12,16 @@
     .ut-pager .is-disabled { opacity:.4; pointer-events:none; }
     /* Reusable filter-section heading (replaces the repeated inline style). */
     .ut-filter-heading { font-family:var(--font-head); font-weight:700; font-size:13px; text-transform:uppercase; letter-spacing:.06em; margin-bottom:12px; }
+    #shopResults.is-loading { opacity:.5; pointer-events:none; transition:opacity .15s ease; }
 </style>
 @endpush
 
 @php
     // Server is the source of truth for filtering. Every control lives inside the
-    // GET form below; changing one submits the form and reloads a filtered,
-    // paginated page. Active states are rendered from $filters (no client filter).
+    // GET form below; changing one AJAX-fetches a filtered, paginated page and
+    // swaps #shopSidebar / #shopResults in place (index.blade.php script block)
+    // — no full reload. Active states are rendered from $filters either way.
     $f = $filters;
-    $activeCat = $f['category'] ?: 'All';
-    $activeSub = $f['subcategory'] ?: 'All';
-    $activeBrand = $f['brand'] ?: 'All';
-    $activeSizes = $f['sizes'] ?? [];
-    $activeColors = $f['colors'] ?? [];
-    $priceValue = $f['max_price'] !== null ? (int) $f['max_price'] : $maxPrice;
 @endphp
 
 @section('content')
@@ -56,144 +52,13 @@
 
         <div class="ut-listing-grid">
             {{-- FILTERS --}}
-            <aside class="ut-filters-side" style="position:sticky;top:160px">
-                <div class="ut-col" style="gap:26px">
-                    <div>
-                        <div class="ut-filter-heading">{{ __('Category') }}</div>
-                        <div class="ut-col" style="gap:4px" id="catFilter">
-                            <button type="button" class="cat-btn {{ $activeCat === 'All' ? 'is-active' : '' }}" data-cat="All" onclick="setCat('')" style="border:0;text-align:left;padding:8px 12px;border-radius:10px;font-family:var(--font-head);font-weight:600;font-size:14px;display:flex;justify-content:space-between">{{ __('All') }} <span class="muted" style="font-weight:500">{{ $catalogTotal }}</span></button>
-                            @foreach($categories as $category => $details)
-                                <div class="ut-filter-group {{ $activeCat === $category ? '' : 'is-collapsed' }}">
-                                    <button type="button" class="cat-btn ut-parent-cat {{ $activeCat === $category && $activeSub === 'All' ? 'is-active' : '' }}" data-cat="{{ $category }}" onclick="setCat(@js($category))" aria-expanded="{{ $activeCat === $category ? 'true' : 'false' }}"><span>{{ $category }}</span><span class="muted">{{ $details['count'] }} <x-frontend.icon n="chevD" :size="14" /></span></button>
-                                    <div class="ut-subcategory-list">
-                                        @foreach($details['subcategories'] as $subcategory => $count)
-                                            <button type="button" class="subcat-btn {{ $activeCat === $category && $activeSub === $subcategory ? 'is-active' : '' }}" data-cat="{{ $category }}" data-subcat="{{ $subcategory }}" onclick="setSubcat(@js($category), @js($subcategory))"><span>{{ $subcategory }}</span><span>{{ $count }}</span></button>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                    <hr class="divider">
-                    <div>
-                        <div class="ut-filter-heading">{{ __('Availability') }}</div>
-                        <label class="ut-filter-toggle"><span>{{ __('Sale only') }}</span><input type="checkbox" name="sale" value="1" form="shopFilter" @checked($f['sale']) onchange="submitFilter()"><i></i></label>
-                        <label class="ut-filter-toggle"><span>{{ __('New arrivals') }}</span><input type="checkbox" name="new" value="1" form="shopFilter" @checked($f['new']) onchange="submitFilter()"><i></i></label>
-                        <label class="ut-filter-toggle"><span>{{ __('Best sellers') }}</span><input type="checkbox" name="best" value="1" form="shopFilter" @checked($f['best']) onchange="submitFilter()"><i></i></label>
-                    </div>
-                    <hr class="divider">
-                    <div>
-                        <div class="ut-filter-heading">{{ __('Brand') }}</div>
-                        <div class="ut-col" style="gap:4px" id="brandFilter">
-                            <button type="button" class="brand-btn {{ $activeBrand === 'All' ? 'is-active' : '' }}" data-brand="All" onclick="setBrand('')"><span>{{ __('All brands') }}</span><span>{{ $catalogTotal }}</span></button>
-                            @foreach($brands as $brand => $count)
-                                <button type="button" class="brand-btn {{ $activeBrand === $brand ? 'is-active' : '' }}" data-brand="{{ $brand }}" onclick="setBrand(@js($brand))"><span>{{ $brand }}</span><span>{{ $count }}</span></button>
-                            @endforeach
-                        </div>
-                    </div>
-                    <hr class="divider">
-                    <div>
-                        <div class="ut-filter-heading">{{ __('Size') }}</div>
-                        <div style="display:flex;flex-wrap:wrap;gap:8px">
-                            @foreach($sizes as $s)
-                                <button type="button" class="ut-chip size-btn {{ in_array($s, $activeSizes, true) ? 'is-active' : '' }}" data-size="{{ $s }}" style="width:50px;justify-content:center;padding:9px 0" onclick="toggleSize(@js($s))">{{ $s }}</button>
-                            @endforeach
-                        </div>
-                    </div>
-                    <hr class="divider">
-                    <div>
-                        <div class="ut-filter-heading">{{ __('Color') }}</div>
-                        <div style="display:flex;flex-wrap:wrap;gap:12px">
-                            @foreach($colors as $k => $c)
-                                <button type="button" class="color-btn" data-color="{{ $k }}" style="border:0;background:none;padding:0" title="{{ $c['name'] }}" onclick="toggleColor(@js((string) $k))">
-                                    <span class="swatch {{ in_array((string) $k, $activeColors, true) ? 'is-active' : '' }}" style="background:{{ $c['hex'] }};width:28px;height:28px"></span>
-                                </button>
-                            @endforeach
-                        </div>
-                    </div>
-                    <hr class="divider">
-                    <div>
-                        <div class="ut-filter-heading">{{ __('Max price') }} — <span id="priceVal" style="color:var(--blue)">${{ $priceValue }}</span></div>
-                        <input type="range" name="max_price" form="shopFilter" min="{{ $minPrice }}" max="{{ $maxPrice }}" value="{{ $priceValue }}" style="width:100%;accent-color:var(--blue)" oninput="document.getElementById('priceVal').textContent='$'+this.value" onchange="submitFilter()">
-                        <div class="ut-row muted" style="justify-content:space-between;font-size:12px;margin-top:4px"><span>${{ $minPrice }}</span><span>${{ $maxPrice }}</span></div>
-                    </div>
-                </div>
+            <aside class="ut-filters-side" style="position:sticky;top:160px" id="shopSidebar">
+                @include('frontend.shop._sidebar')
             </aside>
 
             {{-- RESULTS --}}
-            <div>
-                @php
-                    $activeChips = [];
-                    if ($activeCat !== 'All') $activeChips[] = $activeCat;
-                    if ($activeSub !== 'All' && $activeSub !== $activeCat) $activeChips[] = $activeSub;
-                    if ($activeBrand !== 'All') $activeChips[] = $activeBrand;
-                    foreach ($activeSizes as $s) $activeChips[] = $s;
-                    foreach ($activeColors as $c) $activeChips[] = ($colors[$c]['name'] ?? $c);
-                    if ($f['sale']) $activeChips[] = __('Sale only');
-                    if ($f['new']) $activeChips[] = __('New arrivals');
-                    if ($f['best']) $activeChips[] = __('Best sellers');
-                    if ($f['max_price'] !== null && (int) $f['max_price'] < $maxPrice) $activeChips[] = __('Under').' $'.(int) $f['max_price'];
-                    if (filled($f['q'])) $activeChips[] = '“'.$f['q'].'”';
-                @endphp
-                @if(count($activeChips))
-                    <div class="ut-active-filters" aria-live="polite">
-                        @foreach($activeChips as $chip)<span class="ut-active-filter">{{ $chip }}</span>@endforeach
-                        <a href="{{ route('frontend.shop.index') }}" style="text-decoration:none"><button type="button">{{ __('Clear all') }}</button></a>
-                    </div>
-                @endif
-                <div class="ut-row" style="justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap">
-                    <span class="muted" style="font-size:14px">{{ __('Showing') }} <b style="color:var(--ink)">{{ $products->count() }}</b> {{ __('of') }} {{ $products->total() }}</span>
-                    <div class="ut-row" style="gap:8px">
-                        <span class="muted" style="font-size:13px">{{ __('Sort') }}</span>
-                        <select name="sort" form="shopFilter" class="ut-input" style="padding:9px 36px 9px 14px;border-radius:var(--r-pill);font-family:var(--font-head);font-weight:500;font-size:13px;width:auto" onchange="submitFilter()">
-                            <option value="featured" @selected($f['sort'] === 'featured')>{{ __('Featured') }}</option>
-                            <option value="newest" @selected($f['sort'] === 'newest')>{{ __('Newest') }}</option>
-                            <option value="low" @selected($f['sort'] === 'low')>{{ __('Price: Low to High') }}</option>
-                            <option value="high" @selected($f['sort'] === 'high')>{{ __('Price: High to Low') }}</option>
-                            <option value="rated" @selected($f['sort'] === 'rated')>{{ __('Top rated') }}</option>
-                        </select>
-                    </div>
-                </div>
-
-                @if($products->isEmpty())
-                    <div class="ut-card" style="text-align:center;padding:80px 20px">
-                        <div style="width:60px;height:60px;border-radius:18px;background:var(--bg);display:grid;place-items:center;margin:0 auto 16px;color:var(--text-2)"><x-frontend.icon n="search" :size="26" /></div>
-                        <h3>{{ __('No products match') }}</h3><p class="muted" style="margin-top:6px">{{ __('Try clearing a filter or two.') }}</p>
-                        <a href="{{ route('frontend.shop.index') }}" class="ut-btn ut-btn-ink ut-btn-sm" style="margin-top:16px;text-decoration:none">{{ __('Clear all') }}</a>
-                    </div>
-                @else
-                    <div class="ut-results-grid" id="productGrid">
-                        @foreach($products as $p)
-                            <div class="product-cell">
-                                <x-frontend.product-card :product="$p" />
-                            </div>
-                        @endforeach
-                    </div>
-
-                    @if($products->hasPages())
-                        <nav class="ut-pager" aria-label="{{ __('Pagination Navigation') }}">
-                            @if($products->onFirstPage())
-                                <span class="is-disabled" aria-hidden="true"><x-frontend.icon n="arrowL" :size="16" /></span>
-                            @else
-                                <a href="{{ $products->previousPageUrl() }}" rel="prev" aria-label="{{ __('Previous') }}"><x-frontend.icon n="arrowL" :size="16" /></a>
-                            @endif
-
-                            @foreach($products->getUrlRange(max(1, $products->currentPage() - 2), min($products->lastPage(), $products->currentPage() + 2)) as $page => $url)
-                                @if($page === $products->currentPage())
-                                    <span class="is-active" aria-current="page">{{ $page }}</span>
-                                @else
-                                    <a href="{{ $url }}">{{ $page }}</a>
-                                @endif
-                            @endforeach
-
-                            @if($products->hasMorePages())
-                                <a href="{{ $products->nextPageUrl() }}" rel="next" aria-label="{{ __('Next') }}"><x-frontend.icon n="arrowR" :size="16" /></a>
-                            @else
-                                <span class="is-disabled" aria-hidden="true"><x-frontend.icon n="arrowR" :size="16" /></span>
-                            @endif
-                        </nav>
-                    @endif
-                @endif
+            <div id="shopResults">
+                @include('frontend.shop._results')
             </div>
         </div>
     </div>
@@ -204,18 +69,67 @@
 <script>
     (function(){
         var form = document.getElementById('shopFilter');
+        var sidebar = document.getElementById('shopSidebar');
+        var results = document.getElementById('shopResults');
+
+        // The 5 hidden inputs + the search box live outside the swapped
+        // sidebar/results (persistent form / page header), so a navigation
+        // that changes filter state via a plain link — pagination,
+        // "Clear all", back/forward — has to resync them; otherwise the next
+        // setCat/setBrand/etc. would FormData a stale value back in.
+        function syncFormFromUrl(url){
+            var params = new URL(url, location.origin).searchParams;
+            document.getElementById('fCategory').value = params.get('category') || '';
+            document.getElementById('fSubcategory').value = params.get('subcategory') || '';
+            document.getElementById('fBrand').value = params.get('brand') || '';
+            document.getElementById('fSizes').value = params.get('sizes') || '';
+            document.getElementById('fColors').value = params.get('colors') || '';
+            var search = document.getElementById('shopSearch');
+            if(search) search.value = params.get('q') || '';
+        }
+
+        // Every filter control AJAX-fetches a filtered page and swaps the
+        // sidebar + results markup in place — no full reload. The URL is kept
+        // in sync via pushState so back/forward and reload/share still work.
+        function loadResults(url, pushState){
+            results.classList.add('is-loading');
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+                .then(function(r){ return r.json(); })
+                .then(function(data){
+                    syncFormFromUrl(url);
+                    sidebar.innerHTML = data.sidebar;
+                    results.innerHTML = data.results;
+                    if(pushState !== false) history.pushState({ shopUrl: url }, '', url);
+                })
+                .catch(function(){ window.location.href = url; })
+                .finally(function(){ results.classList.remove('is-loading'); });
+        }
+        window.addEventListener('popstate', function(e){
+            loadResults((e.state && e.state.shopUrl) || location.href, false);
+        });
+
         function submitForm(){
+            var params = new URLSearchParams(new FormData(form));
             // Drop empty params so the URL stays clean; unchecked boxes are omitted natively.
-            form.querySelectorAll('input[type=hidden], input[name=q], input[name=max_price]').forEach(function(el){
-                if(!el.value) el.disabled = true;
+            Array.from(params.keys()).forEach(function(key){
+                if(!params.get(key)) params.delete(key);
             });
-            form.requestSubmit ? form.requestSubmit() : form.submit();
+            var qs = params.toString();
+            loadResults(form.action + (qs ? '?' + qs : ''));
         }
         window.submitFilter = submitForm;
         window.setCat = function(cat){
             document.getElementById('fCategory').value = cat || '';
             document.getElementById('fSubcategory').value = '';
             submitForm();
+        };
+        // Expands/collapses a category's sub-category list in place — no
+        // navigation, unlike picking the category (setCat) or a sub-category.
+        window.toggleCatGroup = function(toggleBtn){
+            var group = toggleBtn.closest('.ut-filter-group');
+            if(!group) return;
+            var collapsed = group.classList.toggle('is-collapsed');
+            toggleBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
         };
         window.setSubcat = function(cat, sub){
             document.getElementById('fCategory').value = cat || '';
@@ -254,6 +168,16 @@
                 timer = setTimeout(submitForm, 450);
             });
         }
+        // Pagination links and "Clear all" (.js-shop-nav) live inside the
+        // swapped #shopResults markup — delegate from a stable ancestor so
+        // they keep working after every re-render, and AJAX-load instead of
+        // navigating. Product card links are untouched (no matching class).
+        results.addEventListener('click', function(e){
+            var link = e.target.closest('.ut-pager a[href], .js-shop-nav');
+            if(!link) return;
+            e.preventDefault();
+            loadResults(link.href);
+        });
     })();
 </script>
 @endpush

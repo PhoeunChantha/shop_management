@@ -63,6 +63,7 @@ class NavigationService
         $featureClasses = ['ut-mega-collection', 'ut-mega-sale', 'ut-mega-oversized', 'ut-mega-graphic', 'ut-mega-collection'];
 
         $menus = Category::query()
+            ->whereNull('parent_id')
             ->where('status', true)
             ->whereHas('products', fn ($query) => $query->where('status', 'active'))
             ->withCount(['products' => fn ($query) => $query->where('status', 'active')])
@@ -89,27 +90,23 @@ class NavigationService
     }
 
     /**
+     * The header's per-category hover dropdown: the category's actual
+     * sub-categories (admin-managed tree via `parent_id`), not a guess
+     * derived from which products happen to have one set.
+     *
      * @return array<int, array{label: string, url: string}>
      */
-    private function subCategoriesFor(Category $category, int $limit = 5): array
+    private function subCategoriesFor(Category $category, int $limit = 6): array
     {
-        return Product::query()
-            ->where('status', 'active')
-            ->where('category_id', $category->id)
-            ->whereNotNull('sub_category_id')
-            ->with(['subCategory' => fn ($query) => $query->where('status', true)->select(['id', 'name', 'slug'])])
-            ->latest()
-            ->limit(40)
-            ->get(['id', 'category_id', 'sub_category_id'])
-            ->pluck('subCategory')
-            ->filter()
-            ->unique('id')
-            ->take($limit)
-            ->map(fn (Category $subCategory): array => [
-                'label' => $subCategory->name,
+        return $category->children()
+            ->where('status', true)
+            ->limit($limit)
+            ->get(['id', 'name', 'slug'])
+            ->map(fn (Category $child): array => [
+                'label' => $child->name,
                 'url' => route('frontend.shop.index', [
                     'category' => $category->slug ?: $category->id,
-                    'subcategory' => $subCategory->slug ?: $subCategory->id,
+                    'subcategory' => $child->slug ?: $child->id,
                 ]),
             ])
             ->values()

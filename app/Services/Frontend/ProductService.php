@@ -98,6 +98,9 @@ class ProductService
     /**
      * Category facet tree with per-category and per-subcategory counts across
      * the whole active catalog (stable totals, independent of the active filter).
+     * Subcategories come from the admin-managed tree (`parent_id`) — every real
+     * sub-category is listed, even ones with zero products yet — not just the
+     * ones a product happens to reference.
      *
      * @return array<string, array{count: int, subcategories: array<string, int>}>
      */
@@ -105,23 +108,37 @@ class ProductService
     {
         // Names are translatable JSON, so group by id in SQL and resolve the
         // display name (current locale) through the model afterwards.
-        $names = Category::query()->get(['id', 'name'])->mapWithKeys(fn (Category $c) => [$c->id => (string) $c->name]);
+        $categories = Category::query()->get(['id', 'parent_id', 'name']);
+        $names = $categories->mapWithKeys(fn (Category $c) => [$c->id => (string) $c->name]);
+        $childrenByParent = $categories->whereNotNull('parent_id')->groupBy('parent_id');
 
-        return Product::query()
+        $rows = Product::query()
             ->where('products.status', 'active')
             ->selectRaw('products.category_id as category_id, products.sub_category_id as sub_category_id, COUNT(*) as total')
             ->whereNotNull('products.category_id')
             ->groupBy('products.category_id', 'products.sub_category_id')
             ->get()
-            ->filter(fn ($row): bool => $names->has((int) $row->category_id))
+            ->filter(fn ($row): bool => $names->has((int) $row->category_id));
+
+        $subCategoryCounts = $rows
+            ->filter(fn ($row): bool => $row->sub_category_id !== null)
+            ->groupBy('sub_category_id')
+            ->map(fn (Collection $group): int => (int) $group->sum('total'));
+
+        return $rows
             ->groupBy(fn ($row): string => $names[(int) $row->category_id])
-            ->map(fn (Collection $rows): array => [
-                'count' => (int) $rows->sum('total'),
-                'subcategories' => $rows
-                    ->filter(fn ($row): bool => $row->sub_category_id !== null && $names->has((int) $row->sub_category_id))
-                    ->mapWithKeys(fn ($row): array => [$names[(int) $row->sub_category_id] => (int) $row->total])
-                    ->all(),
-            ])
+            ->map(function (Collection $group) use ($childrenByParent, $names, $subCategoryCounts): array {
+                $categoryId = (int) $group->first()->category_id;
+
+                return [
+                    'count' => (int) $group->sum('total'),
+                    'subcategories' => $childrenByParent->get($categoryId, collect())
+                        ->mapWithKeys(fn (Category $child): array => [
+                            $names[$child->id] => (int) ($subCategoryCounts[$child->id] ?? 0),
+                        ])
+                        ->all(),
+                ];
+            })
             ->all();
     }
 

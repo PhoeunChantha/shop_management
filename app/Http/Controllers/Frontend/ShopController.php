@@ -24,7 +24,7 @@ class ShopController extends Controller
         private readonly RecentlyViewedService $recentlyViewed,
     ) {}
 
-    public function index(Request $request): View
+    public function index(Request $request): View|JsonResponse
     {
         $validated = $request->validate([
             'q' => ['nullable', 'string', 'max:100'],
@@ -73,7 +73,7 @@ class ShopController extends Controller
             ];
         }
 
-        return view('frontend.shop.index', [
+        $data = [
             'products' => $this->products->filteredProducts($filters),
             'catalogTotal' => $this->products->activeCount(),
             'categories' => $this->products->categoryFacets(),
@@ -83,9 +83,26 @@ class ShopController extends Controller
             'minPrice' => $minPrice,
             'maxPrice' => $maxPrice,
             'filters' => $filters,
+            'activeCat' => $filters['category'] ?: 'All',
+            'activeSub' => $filters['subcategory'] ?: 'All',
+            'activeBrand' => $filters['brand'] ?: 'All',
+            'activeSizes' => $filters['sizes'],
+            'activeColors' => $filters['colors'],
+            'priceValue' => $filters['max_price'] !== null ? (int) $filters['max_price'] : $maxPrice,
             'activeCategory' => $activeCategory,
             'seo' => $seo,
-        ]);
+        ];
+
+        // The sidebar + results partials are also rendered standalone here so
+        // filter/pagination clicks can swap them in without a full reload.
+        if ($request->ajax()) {
+            return response()->json([
+                'sidebar' => view('frontend.shop._sidebar', $data)->render(),
+                'results' => view('frontend.shop._results', $data)->render(),
+            ]);
+        }
+
+        return view('frontend.shop.index', $data);
     }
 
     /**
