@@ -14,7 +14,7 @@
     </div>
 
     @if(count($topupMethods))
-        <form method="POST" action="{{ route('frontend.account.wallet.topup') }}" id="topup-form">
+        <form method="POST" action="{{ route('frontend.account.wallet.topup') }}" id="topup-form" enctype="multipart/form-data">
             @csrf
             <div class="field" style="max-width:220px;margin-bottom:16px">
                 <label>{{ __('Top up amount ($)') }}</label>
@@ -57,6 +57,14 @@
                         <p style="font-size:12.5px;color:#b45309;background:rgba(245,158,11,.1);border-radius:10px;padding:9px 12px;margin:12px 0 0">
                             <b>{{ __('Note:') }}</b> {{ __('After you transfer, submit the request below. Your balance is credited once we confirm your payment.') }}
                         </p>
+
+                        {{-- revealed once the customer clicks "Submit top-up request" --}}
+                        <div data-payslip-block style="display:none;margin-top:14px;padding-top:14px;border-top:1px dashed var(--border)">
+                            <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px">{{ __('Upload your payment payslip') }}</label>
+                            <p class="muted" style="font-size:12.5px;margin:0 0 10px">{{ __("Attach a clear photo or screenshot of your transfer receipt. We'll verify it and credit your wallet shortly.") }}</p>
+                            <input class="ut-input" type="file" name="payslip" accept="image/*" data-payslip-input>
+                            @error('payslip')<p style="color:var(--accent);font-size:12.5px;margin-top:8px">{{ $message }}</p>@enderror
+                        </div>
                     </div>
                 @endif
             @endforeach
@@ -108,24 +116,69 @@
 </div>
 
 <script>
+    function resetPayslipBlock(panel) {
+        if (!panel) return;
+        const block = panel.querySelector('[data-payslip-block]');
+        const input = panel.querySelector('[data-payslip-input]');
+        if (block) block.style.display = 'none';
+        if (input) input.required = false;
+    }
+
     function topupSelect(input) {
         document.querySelectorAll('.topup-method__box').forEach(b => b.style.borderColor = 'var(--border)');
         const label = input.closest('.topup-method');
         label.querySelector('.topup-method__box').style.borderColor = 'var(--ink)';
 
-        document.querySelectorAll('[data-topup-panel]').forEach(p => p.style.display = 'none');
+        document.querySelectorAll('[data-topup-panel]').forEach(p => { p.style.display = 'none'; resetPayslipBlock(p); });
         const panel = document.querySelector(`[data-topup-panel="${input.value}"]`);
         if (panel) panel.style.display = 'block';
 
+        const isManual = label.dataset.type === 'manual';
         const btn = document.getElementById('topup-submit');
-        if (btn) btn.textContent = label.dataset.type === 'manual'
-            ? @json(__('Submit top-up request'))
-            : @json(__('Continue to payment'));
+        if (btn) {
+            btn.textContent = isManual ? @json(__('Submit top-up request')) : @json(__('Continue to payment'));
+            btn.dataset.stage = isManual ? 'reveal' : 'submit';
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function () {
         const checked = document.querySelector('.topup-method input:checked');
         if (checked) topupSelect(checked);
+
+        @if ($errors->has('payslip'))
+            // Reload after a payslip validation error: keep the upload field open so the error is visible.
+            if (checked) {
+                const panel = document.querySelector(`[data-topup-panel="${checked.value}"]`);
+                const block = panel?.querySelector('[data-payslip-block]');
+                const input = panel?.querySelector('[data-payslip-input]');
+                if (block) block.style.display = 'block';
+                if (input) input.required = true;
+                const btn = document.getElementById('topup-submit');
+                if (btn) { btn.textContent = @json(__('Confirm & submit request')); btn.dataset.stage = 'submit'; }
+            }
+        @endif
+
+        const form = document.getElementById('topup-form');
+        const btn = document.getElementById('topup-submit');
+        if (!form || !btn) return;
+
+        form.addEventListener('submit', function (e) {
+            // Manual methods: first click just reveals the payslip upload field
+            // instead of submitting, so the customer attaches proof before we send it.
+            if (btn.dataset.stage !== 'reveal') return;
+
+            e.preventDefault();
+
+            const selected = document.querySelector('.topup-method input:checked');
+            const panel = selected ? document.querySelector(`[data-topup-panel="${selected.value}"]`) : null;
+            const block = panel?.querySelector('[data-payslip-block]');
+            const input = panel?.querySelector('[data-payslip-input]');
+            if (block) block.style.display = 'block';
+            if (input) { input.required = true; input.focus(); }
+
+            btn.textContent = @json(__('Confirm & submit request'));
+            btn.dataset.stage = 'submit';
+        });
     });
 </script>
 @endsection

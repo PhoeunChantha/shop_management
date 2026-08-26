@@ -229,6 +229,76 @@ body.admin-shell {
         linear-gradient(180deg, #0d1625 0%, #111827 60%, #0b1220 100%);
     border-right: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 18px 0 40px rgba(16, 24, 40, 0.12);
+    overflow: hidden;
+    transition: width 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+}
+
+/* Manual collapse via the topbar's sidebar-toggle button (persisted in
+   localStorage, applied pre-paint on <html> to avoid a flash): shrink to
+   the same icon-only rail used at the responsive breakpoint below, rather
+   than hiding the sidebar outright. */
+html.sidebar-collapsed .admin-sidebar {
+    width: 88px !important;
+    min-width: 88px !important;
+}
+
+html.sidebar-collapsed .admin-brand,
+html.sidebar-collapsed .admin-sidebar-user {
+    justify-content: center;
+}
+
+html.sidebar-collapsed .admin-brand .ms-3,
+html.sidebar-collapsed .admin-brand-status,
+html.sidebar-collapsed .admin-sidebar-user .ms-3,
+html.sidebar-collapsed .admin-nav .small,
+html.sidebar-collapsed .admin-nav-heading,
+html.sidebar-collapsed .admin-module__copy,
+html.sidebar-collapsed .admin-nav-caret,
+html.sidebar-collapsed .admin-nav-sub-inner::before {
+    display: none;
+}
+
+html.sidebar-collapsed .admin-nav-toggle {
+    display: none;
+}
+
+html.sidebar-collapsed .admin-nav-sub {
+    grid-template-rows: 1fr;
+}
+
+html.sidebar-collapsed .admin-nav-sub-inner {
+    padding-left: 0;
+    margin: 3px 0;
+    gap: 3px;
+}
+
+html.sidebar-collapsed .admin-nav .nav-link {
+    justify-content: center;
+}
+
+html.sidebar-collapsed .admin-nav .nav-ico {
+    margin-right: 0 !important;
+}
+
+html.sidebar-collapsed .admin-module {
+    margin-bottom: 7px;
+    border-radius: 16px;
+}
+
+html.sidebar-collapsed .admin-module__toggle {
+    justify-content: center;
+    min-height: 56px;
+    padding: 9px;
+}
+
+html.sidebar-collapsed .admin-module__icon {
+    width: 38px;
+    height: 38px;
+}
+
+html.sidebar-collapsed .admin-module__caret,
+html.sidebar-collapsed .admin-module__submenu {
+    display: none;
 }
 
 .admin-brand {
@@ -2453,6 +2523,7 @@ html.dark .bulk-bar {
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
+    white-space: nowrap;
 }
 
 .premium-table tbody td {

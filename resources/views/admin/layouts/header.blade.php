@@ -8,8 +8,17 @@
     x-data="commandPalette('{{ route('admin.command-palette') }}')"
     x-init="init()">
 
-    <div class="page-title fs-5 fw-bold text-dark min-w-0">
-        {{ $header }}
+    <div class="d-flex align-items-center gap-2 min-w-0">
+        <button type="button" class="icon-button btn btn-link p-0 text-decoration-none fs-6 text-secondary flex-shrink-0"
+            aria-label="{{ __('Toggle sidebar') }}" title="{{ __('Toggle sidebar') }}"
+            x-data="{ collapsed: document.documentElement.classList.contains('sidebar-collapsed') }"
+            @click="collapsed = !collapsed; document.documentElement.classList.toggle('sidebar-collapsed', collapsed); localStorage.setItem('admin-sidebar-collapsed', collapsed ? '1' : '0')">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <div class="page-title fs-5 fw-bold text-dark min-w-0">
+            {{ $header }}
+        </div>
     </div>
 
     <div class="d-flex align-items-center text-secondary small flex-shrink-0 gap-2">

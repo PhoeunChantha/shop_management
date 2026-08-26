@@ -1,8 +1,10 @@
 <?php
 
+use App\Models\Setting;
 use App\Models\User;
 use App\Models\WalletTopup;
 use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Http\UploadedFile;
 use Spatie\Permission\Models\Role;
 
 beforeEach(function () {
@@ -18,23 +20,57 @@ function customer(): User
     return $user;
 }
 
-it('creates a pending manual top-up without crediting the wallet', function () {
+it('renders the wallet page with the payslip upload field', function () {
+    $this->actingAs(customer())
+        ->get(route('frontend.account.wallet'))
+        ->assertOk()
+        ->assertSee('Upload your payment payslip');
+});
+
+it('shows the payment QR when a manual method has one configured', function () {
+    Setting::set('payment_methods', json_encode([
+        [
+            'id' => 'manual_qr', 'name' => 'ABA QR', 'code' => 'manual_qr', 'type' => 'manual',
+            'status' => true, 'sort_order' => 1, 'qr_image' => 'https://example.com/qr.png',
+        ],
+    ]), 'payment');
+
+    $this->actingAs(customer())
+        ->get(route('frontend.account.wallet'))
+        ->assertOk()
+        ->assertSee('Payment QR');
+});
+
+it('creates a pending manual top-up with a payslip and without crediting the wallet', function () {
     $user = customer();
 
     $this->actingAs($user)
         ->post(route('frontend.account.wallet.topup'), [
             'amount' => 25,
             'payment_method' => 'manual_qr',
+            'payslip' => UploadedFile::fake()->image('payslip.jpg'),
         ])
         ->assertRedirect(route('frontend.account.wallet'));
 
     $topup = WalletTopup::first();
     expect($topup)->not->toBeNull()
         ->and($topup->status)->toBe('pending')
-        ->and($topup->method_type)->toBe('manual');
+        ->and($topup->method_type)->toBe('manual')
+        ->and($topup->payslip)->not->toBeNull();
 
     // Balance is untouched until an admin approves.
     expect((float) $user->fresh()->wallet_balance)->toBe(0.0);
+});
+
+it('rejects a manual top-up without a payslip', function () {
+    $this->actingAs(customer())
+        ->post(route('frontend.account.wallet.topup'), [
+            'amount' => 25,
+            'payment_method' => 'manual_qr',
+        ])
+        ->assertSessionHasErrors('payslip');
+
+    expect(WalletTopup::count())->toBe(0);
 });
 
 it('rejects an unknown payment method', function () {

@@ -47,6 +47,7 @@
                         <th>{{ __('Image') }}</th>
                         <th>{{ __('Icon') }}</th>
                         <th>{{ __('Name') }}</th>
+                        <th>{{ __('Parent Category') }}</th>
                         <th>{{ __('Slug') }}</th>
                         <th>{{ __('Description') }}</th>
                         <th>{{ __('Sort Order') }}</th>
@@ -83,19 +84,22 @@
                             </td>
                             <td>
                                 <strong class="text-gray-900 dark:text-slate-100">{{ $category->name }}</strong>
+                            </td>
+                            <td>
                                 @if ($category->parent)
-                                    <span class="d-block text-xs text-gray-500 dark:text-slate-400 mt-0.5" title="{{ __('Parent Category') }}">
-                                        <i class="fa-solid fa-turn-up fa-rotate-90 me-1 opacity-60"></i>{{ $category->parent->name }}
-                                    </span>
+                                    <span class="text-sm text-gray-600 dark:text-slate-300">{{ $category->parent->name }}</span>
+                                @else
+                                    <span class="text-gray-400 dark:text-slate-500 text-xs italic">{{ __('— Root —') }}</span>
                                 @endif
                             </td>
                             <td>
                                 <span
                                     class="text-sm text-gray-500 dark:text-slate-400 font-mono">{{ $category->slug }}</span>
                             </td>
-                            <td>
+                            <td style="max-width:220px">
                                 @if ($category->description)
-                                    <span class="text-sm text-gray-600 dark:text-slate-300"
+                                    <span class="text-sm text-gray-600 dark:text-slate-300 d-block"
+                                        style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"
                                         title="{{ $category->description }}">
                                         {{ Str::limit($category->description, 50, '...') }}
                                     </span>
@@ -133,7 +137,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10">
+                            <td colspan="11">
                                 <x-admin.empty-state
                                     icon="fa-solid fa-layer-group"
                                     title="{{ __('No categories found') }}"

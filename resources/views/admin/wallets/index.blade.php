@@ -35,6 +35,7 @@
                             <th>{{ __('Amount') }}</th>
                             <th>{{ __('Method') }}</th>
                             <th>{{ __('Reference') }}</th>
+                            <th>{{ __('Proof') }}</th>
                             <th>{{ __('Requested') }}</th>
                             <th style="width:280px">{{ __('Action') }}</th>
                         </tr>
@@ -49,6 +50,15 @@
                                 <td><strong style="font-size:16px">${{ number_format((float) $topup->amount, 2) }}</strong></td>
                                 <td>{{ $topup->payment_method }}</td>
                                 <td class="text-gray-500">{{ $topup->tran_id }}</td>
+                                <td>
+                                    @if($topup->payslip)
+                                        <a href="{{ Imageurl($topup->payslip, 'wallet-topups') }}" target="_blank" rel="noopener">
+                                            <img src="{{ Imageurl($topup->payslip, 'wallet-topups') }}" alt="{{ __('Payslip') }}" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid var(--border-2, #e5e7eb)">
+                                        </a>
+                                    @else
+                                        <span class="text-gray-400">—</span>
+                                    @endif
+                                </td>
                                 <td class="text-gray-500">{{ $topup->created_at?->format('M j, Y · g:i A') }}</td>
                                 <td>
                                     <div class="d-flex" style="gap:8px;align-items:center;flex-wrap:wrap">

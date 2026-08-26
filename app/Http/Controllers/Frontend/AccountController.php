@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Frontend;
 
+use App\Helpers\ImageManager;
 use App\Http\Controllers\Controller;
 use App\Models\WalletTopup;
 use App\Services\Frontend\AccountService;
@@ -133,6 +134,7 @@ class AccountController extends Controller
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'min:1', 'max:100000'],
             'payment_method' => ['required', 'string', Rule::in($methods->pluck('code')->all())],
+            'payslip' => ['nullable', 'image', 'max:4096'],
         ]);
 
         $method = $methods->firstWhere('code', $data['payment_method']);
@@ -142,12 +144,18 @@ class AccountController extends Controller
             return back()->with('error', __('Online top-up is not available right now.'));
         }
 
+        // Manual (bank/QR) top-ups need proof of payment before an admin can review them.
+        if (! $isOnline && ! $request->hasFile('payslip')) {
+            return back()->withErrors(['payslip' => __('Please attach your payment payslip or screenshot.')])->withInput();
+        }
+
         $topup = WalletTopup::create([
             'user_id' => $request->user()->id,
             'tran_id' => 'WT'.now()->format('ymdHis').Str::upper(Str::random(4)),
             'payment_method' => $method['code'],
             'method_type' => $isOnline ? 'online' : 'manual',
             'amount' => round((float) $data['amount'], 2),
+            'payslip' => $request->hasFile('payslip') ? ImageManager::upload($request->file('payslip'), 'wallet-topups') : null,
             'status' => 'pending',
         ]);
 
