@@ -57,13 +57,12 @@
                                 <small class="d-block text-gray-400">{{ ($subscriber->subscribed_at ?? $subscriber->created_at)?->diffForHumans() }}</small>
                             </td>
                             <td class="text-end">
-                                <form method="POST" action="{{ route('admin.subscribers.destroy', $subscriber) }}"
-                                    onsubmit="return confirm('Remove {{ $subscriber->email }} from the list?')">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="ghost-button ghost-button--panel">
-                                        <i class="fa-solid fa-trash"></i><span>{{ __('Remove') }}</span>
-                                    </button>
-                                </form>
+                                <button type="button" class="ghost-button ghost-button--danger"
+                                    data-delete-modal-target="deleteSubscriberModal"
+                                    data-delete-action="{{ route('admin.subscribers.destroy', $subscriber) }}"
+                                    data-delete-name="{{ $subscriber->email }}">
+                                    <i class="fa-solid fa-trash"></i><span>{{ __('Remove') }}</span>
+                                </button>
                             </td>
                         </tr>
                     @empty
@@ -79,5 +78,9 @@
 
             <x-slot:footer><x-table-footer :paginator="$subscribers" label="{{ __('subscribers') }}" /></x-slot:footer>
         </x-admin.table-card>
+
+        <x-delete-confirm-modal id="deleteSubscriberModal"
+            title="{{ __('Remove this subscriber?') }}"
+            message-after="{{ __('from the mailing list. This cannot be undone.') }}" />
     </div>
 </x-app-layout>

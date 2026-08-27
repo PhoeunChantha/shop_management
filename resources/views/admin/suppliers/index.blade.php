@@ -53,6 +53,10 @@
                 :options="collect($sortOptions)->map(fn ($l) => __($l))->all()" />
         </x-filter-card>
 
+        <x-delete-confirm-modal id="deleteSupplierModal"
+            title="{{ __('Delete this supplier?') }}"
+            message-after="{{ __('from the system. This cannot be undone.') }}" />
+
         <x-admin.table-card class="restock-table-card">
             <x-slot:toolbar>
                 <x-table-toolbar>
@@ -81,11 +85,12 @@
                             <td class="text-end">
                                 <div class="d-inline-flex gap-2">
                                     <a href="{{ route('admin.suppliers.edit', $supplier) }}" class="ghost-button ghost-button--panel"><i class="fa-solid fa-pen"></i><span>{{ __('Edit') }}</span></a>
-                                    <form method="POST" action="{{ route('admin.suppliers.destroy', $supplier) }}" onsubmit="return confirm('Delete this supplier?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button class="ghost-button ghost-button--danger"><i class="fa-solid fa-trash"></i><span>{{ __('Delete') }}</span></button>
-                                    </form>
+                                    <button type="button" class="ghost-button ghost-button--danger"
+                                        data-delete-modal-target="deleteSupplierModal"
+                                        data-delete-action="{{ route('admin.suppliers.destroy', $supplier) }}"
+                                        data-delete-name="{{ $supplier->name }}">
+                                        <i class="fa-solid fa-trash"></i><span>{{ __('Delete') }}</span>
+                                    </button>
                                 </div>
                             </td>
                         </tr>

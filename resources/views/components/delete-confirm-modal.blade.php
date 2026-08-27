@@ -3,32 +3,42 @@
     'title' => 'Delete this item?',
     'messageBefore' => 'This action will permanently remove',
     'messageAfter' => 'from the system. This cannot be undone.',
-    'cancelText' => 'Cancel',
-    'confirmText' => 'Confirm Delete',
+    'cancelText' => 'Keep it',
+    'confirmText' => 'Yes, delete',
 ])
 
 <div id="{{ $id }}" class="modal-backdrop-premium" data-delete-modal hidden>
-    <div class="delete-modal">
-        <div class="modal-warning-icon">
-            <i class="fa-solid fa-triangle-exclamation"></i>
+    <div class="delete-modal" role="dialog" aria-modal="true" aria-labelledby="{{ $id }}-title">
+
+        {{-- Danger icon zone --}}
+        <div class="delete-modal__icon-zone">
+            <div class="delete-modal__icon-ring">
+                <i class="fa-solid fa-trash-can"></i>
+            </div>
         </div>
 
-        <div>
-            <h3>{{ $title }}</h3>
-            <p>
-                {{ $messageBefore }}
-                <strong data-delete-name></strong>
-                {{ $messageAfter }}
-            </p>
+        {{-- Content --}}
+        <div class="delete-modal__body">
+            <h3 id="{{ $id }}-title">{{ $title }}</h3>
+            <p>{{ $messageBefore }} <strong data-delete-name></strong> {{ $messageAfter }}</p>
         </div>
 
-        <div class="modal-actions">
-            <button type="button" class="modal-cancel" data-delete-cancel>{{ $cancelText }}</button>
-            <form method="POST" class="mb-0" data-delete-form>
+        {{-- Warning strip --}}
+        <div class="delete-modal__warning">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>{{ __('This action cannot be undone') }}</span>
+        </div>
+
+        {{-- Actions --}}
+        <div class="delete-modal__actions">
+            <button type="button" class="delete-modal__cancel" data-delete-cancel>
+                {{ $cancelText }}
+            </button>
+            <form method="POST" class="mb-0 flex-1" data-delete-form>
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="modal-delete">
-                    <i class="fa-solid fa-trash"></i>
+                <button type="submit" class="delete-modal__confirm">
+                    <i class="fa-solid fa-trash-can"></i>
                     <span>{{ $confirmText }}</span>
                 </button>
             </form>
@@ -63,16 +73,12 @@
 
                     cancelButton.addEventListener('click', closeModal);
 
-                    modal.addEventListener('click', (event) => {
-                        if (event.target === modal) {
-                            closeModal();
-                        }
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) closeModal();
                     });
 
-                    document.addEventListener('keydown', (event) => {
-                        if (event.key === 'Escape' && !modal.hidden) {
-                            closeModal();
-                        }
+                    document.addEventListener('keydown', (e) => {
+                        if (e.key === 'Escape' && !modal.hidden) closeModal();
                     });
                 });
             });

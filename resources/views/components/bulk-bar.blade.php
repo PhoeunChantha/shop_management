@@ -48,24 +48,27 @@
 {{-- Confirm modal — inside the Alpine root so it can read `selected`. --}}
 <div class="modal-backdrop-premium" x-show="confirmingDelete" x-cloak style="display:none;"
     @keydown.escape.window="confirmingDelete = false" @click.self="confirmingDelete = false">
-    <div class="delete-modal">
-        <div class="modal-warning-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <div>
-            <h3>Delete selected {{ $noun }}s?</h3>
-            <p>
-                This will permanently remove <strong><span x-text="count"></span> {{ $noun }}(s)</strong>.
-                Any that are still in use will be skipped. This cannot be undone.
-            </p>
+    <div class="delete-modal" role="dialog" aria-modal="true">
+        <div class="delete-modal__icon-zone">
+            <div class="delete-modal__icon-ring"><i class="fa-solid fa-trash-can"></i></div>
         </div>
-        <div class="modal-actions">
-            <button type="button" class="modal-cancel" @click="confirmingDelete = false">Cancel</button>
-            <form method="POST" action="{{ $destroy }}" class="mb-0">
+        <div class="delete-modal__body">
+            <h3>Delete selected {{ $noun }}s?</h3>
+            <p>This will permanently remove <strong><span x-text="count"></span> {{ $noun }}(s)</strong>. Any that are still in use will be skipped.</p>
+        </div>
+        <div class="delete-modal__warning">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>This action cannot be undone</span>
+        </div>
+        <div class="delete-modal__actions">
+            <button type="button" class="delete-modal__cancel" @click="confirmingDelete = false">Keep them</button>
+            <form method="POST" action="{{ $destroy }}" class="mb-0 flex-1">
                 @csrf
                 @method('DELETE')
                 <template x-for="id in selected" :key="'del-' + id"><input type="hidden" name="ids[]" :value="id"></template>
-                <button type="submit" class="modal-delete">
-                    <i class="fa-solid fa-trash"></i>
-                    <span>Delete selected</span>
+                <button type="submit" class="delete-modal__confirm">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span>Yes, delete</span>
                 </button>
             </form>
         </div>

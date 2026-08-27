@@ -70,7 +70,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($purchaseOrder->items as $item)
+                    @forelse($purchaseOrder->items as $item)
                         <tr>
                             <td><strong>{{ $item->name }}</strong></td>
                             <td><span class="dash-table__id">{{ $item->sku ?: '-' }}</span></td>
@@ -79,7 +79,17 @@
                             <td>${{ number_format((float) $item->unit_cost, 2) }}</td>
                             <td class="text-end"><strong>${{ number_format((float) $item->line_total, 2) }}</strong></td>
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="6">
+                                <x-admin.empty-state
+                                    icon="fa-solid fa-clipboard-list"
+                                    title="{{ __('No items found') }}"
+                                    message="{{ __('No line items have been added to this purchase order.') }}"
+                                />
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </x-admin.table-card>

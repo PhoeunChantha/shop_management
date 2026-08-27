@@ -1,5 +1,9 @@
 <x-guest-layout>
-    <form method="POST" action="{{ route('register') }}">
+    @if($recaptchaSiteKey ?? null)
+        <script src="https://www.google.com/recaptcha/api.js?render={{ $recaptchaSiteKey }}"></script>
+    @endif
+
+    <form method="POST" action="{{ route('register') }}" id="register-form">
         @csrf
 
 
@@ -91,6 +95,10 @@
             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
         </div>
 
+        @if($recaptchaSiteKey ?? null)
+            <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response">
+        @endif
+
         <div class="flex items-center justify-end mt-5">
             <a class="underline text-sm text-gray-600 hover:text-gray-900 " href="{{ route('login') }}">
                 {{ __('Already registered?') }}
@@ -101,4 +109,19 @@
             </x-primary-button>
         </div>
     </form>
+
+    @if($recaptchaSiteKey ?? null)
+        <script>
+            document.getElementById('register-form').addEventListener('submit', function (e) {
+                e.preventDefault();
+                var form = this;
+                grecaptcha.ready(function () {
+                    grecaptcha.execute('{{ $recaptchaSiteKey }}', { action: 'register' }).then(function (token) {
+                        document.getElementById('g-recaptcha-response').value = token;
+                        form.submit();
+                    });
+                });
+            });
+        </script>
+    @endif
 </x-guest-layout>

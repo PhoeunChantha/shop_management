@@ -18,6 +18,7 @@ enum SettingGroup: string
     case Localization = 'localization';
     case Appearance = 'appearance';
     case Chat = 'chat';
+    case Recaptcha = 'recaptcha';
 
     /**
      * Human-readable tab label.
@@ -37,6 +38,7 @@ enum SettingGroup: string
             self::Localization => 'Languages',
             self::Appearance => 'Theme Colors',
             self::Chat => 'Live Chat',
+            self::Recaptcha => 'reCAPTCHA',
         };
     }
 
@@ -58,6 +60,7 @@ enum SettingGroup: string
             self::Localization => 'fa-language',
             self::Appearance => 'fa-palette',
             self::Chat => 'fa-comments',
+            self::Recaptcha => 'fa-shield-halved',
         };
     }
 
