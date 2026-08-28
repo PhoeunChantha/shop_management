@@ -24,18 +24,36 @@ class CheckoutController extends Controller
 
     public function index(): View
     {
-        // Wallet is only usable by signed-in customers — hide it from guests.
+        // Strip any wallet entries from the configurable methods — wallet is a
+        // platform feature and is injected separately below so it can never be
+        // accidentally removed by editing Settings → Payment Methods.
         $methods = collect($this->checkout->paymentMethods())
-            ->reject(fn (array $m): bool => ($m['type'] ?? '') === 'wallet' && ! Auth::check())
+            ->reject(fn (array $m): bool => ($m['type'] ?? '') === 'wallet')
             ->values()
             ->all();
 
+        // Always offer wallet to signed-in customers as the first option.
+        if (Auth::check()) {
+            array_unshift($methods, [
+                'code'           => 'wallet',
+                'name'           => __('Pay by Wallet'),
+                'type'           => 'wallet',
+                'description'    => __('Pay instantly from your store wallet balance.'),
+                'instructions'   => '',
+                'image'          => null,
+                'qr_image'       => null,
+                'bank_name'      => '',
+                'account_name'   => '',
+                'account_number' => '',
+            ]);
+        }
+
         return view('frontend.checkout.index', [
             'shippingMethods' => $this->checkout->shippingMethods(),
-            'paymentMethods' => $methods,
-            'taxRate' => $this->checkout->taxRate(),
-            'prefill' => $this->prefill(),
-            'walletBalance' => (float) (Auth::user()?->wallet_balance ?? 0),
+            'paymentMethods'  => $methods,
+            'taxRate'         => $this->checkout->taxRate(),
+            'prefill'         => $this->prefill(),
+            'walletBalance'   => (float) (Auth::user()?->wallet_balance ?? 0),
         ]);
     }
 

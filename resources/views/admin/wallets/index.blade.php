@@ -6,85 +6,137 @@
         </div>
     </x-slot>
 
-    <div class="admin-page">
-        <div class="cart-recovery-strip">
-            <div class="cart-recovery-stat">
-                <span><i class="fa-solid fa-users"></i> {{ __('Customers') }}</span>
-                <strong>{{ number_format($customers->total()) }}</strong>
+    <div class="admin-page wallet-page">
+
+        {{-- ── Hero stats ────────────────────────────────────────────── --}}
+        <div class="wallet-stats">
+            <div class="wallet-stat wallet-stat--teal">
+                <div class="wallet-stat__ring">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <div class="wallet-stat__body">
+                    <span class="wallet-stat__label">{{ __('Total Customers') }}</span>
+                    <strong class="wallet-stat__value">{{ number_format($customers->total()) }}</strong>
+                </div>
+                <div class="wallet-stat__bg"></div>
             </div>
-            <div class="cart-recovery-stat cart-recovery-stat--active">
-                <span><i class="fa-solid fa-wallet"></i> {{ __('Total balance held') }}</span>
-                <strong>${{ number_format($totalBalance, 2) }}</strong>
+
+            <div class="wallet-stat wallet-stat--emerald">
+                <div class="wallet-stat__ring">
+                    <i class="fa-solid fa-wallet"></i>
+                </div>
+                <div class="wallet-stat__body">
+                    <span class="wallet-stat__label">{{ __('Total Balance Held') }}</span>
+                    <strong class="wallet-stat__value">${{ number_format($totalBalance, 2) }}</strong>
+                </div>
+                <div class="wallet-stat__bg"></div>
             </div>
+
+            @if($pendingTopups->isNotEmpty())
+            <div class="wallet-stat wallet-stat--amber">
+                <div class="wallet-stat__ring">
+                    <i class="fa-solid fa-hourglass-half"></i>
+                </div>
+                <div class="wallet-stat__body">
+                    <span class="wallet-stat__label">{{ __('Pending Requests') }}</span>
+                    <strong class="wallet-stat__value">{{ $pendingTopups->count() }}</strong>
+                </div>
+                <div class="wallet-stat__bg"></div>
+            </div>
+            @endif
         </div>
 
+        {{-- ── Pending top-ups ───────────────────────────────────────── --}}
         @if($pendingTopups->isNotEmpty())
-            <div class="page-section-header">
-                <div>
-                    <p class="section-kicker">{{ __('Manual top-ups') }}</p>
-                    <h3>{{ __('Pending top-up requests') }} <span class="badge bg-warning text-dark">{{ $pendingTopups->count() }}</span></h3>
-                    <p class="text-gray-500">{{ __('Approve to credit the wallet, or reject if payment was not received.') }}</p>
+        <div class="wallet-pending">
+            <div class="wallet-pending__header">
+                <div class="wallet-pending__alert-dot"></div>
+                <div class="wallet-pending__titles">
+                    <p class="wallet-pending__kicker">{{ __('Manual top-ups') }}</p>
+                    <h3 class="wallet-pending__heading">
+                        {{ __('Pending top-up requests') }}
+                        <span class="wallet-pending__count">{{ $pendingTopups->count() }}</span>
+                    </h3>
+                    <p class="wallet-pending__sub">{{ __('Approve to credit the wallet, or reject if payment was not received.') }}</p>
                 </div>
             </div>
 
-            <x-admin.table-card class="mb-4">
-                <table class="premium-table">
-                    <thead>
-                        <tr>
-                            <th>{{ __('Customer') }}</th>
-                            <th>{{ __('Amount') }}</th>
-                            <th>{{ __('Method') }}</th>
-                            <th>{{ __('Reference') }}</th>
-                            <th>{{ __('Proof') }}</th>
-                            <th>{{ __('Requested') }}</th>
-                            <th style="width:280px">{{ __('Action') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($pendingTopups as $topup)
-                            <tr>
-                                <td>
-                                    <strong>{{ $topup->user?->name ?? __('Unknown') }}</strong>
-                                    <small class="d-block text-gray-400">{{ $topup->user?->email }}</small>
-                                </td>
-                                <td><strong style="font-size:16px">${{ number_format((float) $topup->amount, 2) }}</strong></td>
-                                <td>{{ $topup->payment_method }}</td>
-                                <td class="text-gray-500">{{ $topup->tran_id }}</td>
-                                <td>
-                                    @if($topup->payslip)
-                                        <a href="{{ Imageurl($topup->payslip, 'wallet-topups') }}" target="_blank" rel="noopener">
-                                            <img src="{{ Imageurl($topup->payslip, 'wallet-topups') }}" alt="{{ __('Payslip') }}" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid var(--border-2, #e5e7eb)">
-                                        </a>
-                                    @else
-                                        <span class="text-gray-400">—</span>
-                                    @endif
-                                </td>
-                                <td class="text-gray-500">{{ $topup->created_at?->format('M j, Y · g:i A') }}</td>
-                                <td>
-                                    <div class="d-flex" style="gap:8px;align-items:center;flex-wrap:wrap">
-                                        <form method="POST" action="{{ route('admin.wallets.topups.approve', $topup) }}">
-                                            @csrf
-                                            <button type="submit" class="premium-button premium-button--dark" style="padding:8px 12px"><i class="fa-solid fa-check"></i> {{ __('Approve') }}</button>
-                                        </form>
-                                        <form method="POST" action="{{ route('admin.wallets.topups.reject', $topup) }}" class="d-flex" style="gap:6px;align-items:center">
-                                            @csrf
-                                            <input type="text" name="note" placeholder="{{ __('Reason (optional)') }}" class="form-input" style="width:140px">
-                                            <button type="submit" class="ghost-button ghost-button--panel" style="padding:8px 12px"><i class="fa-solid fa-xmark"></i> {{ __('Reject') }}</button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </x-admin.table-card>
+            <div class="wallet-topup-cards">
+                @foreach($pendingTopups as $topup)
+                <div class="wallet-topup-card">
+                    {{-- customer --}}
+                    <div class="wallet-topup-card__customer">
+                        <div class="wallet-topup-avatar">{{ strtoupper(substr($topup->user?->name ?? '?', 0, 2)) }}</div>
+                        <div class="wallet-topup-card__who">
+                            <strong>{{ $topup->user?->name ?? __('Unknown') }}</strong>
+                            <small>{{ $topup->user?->email }}</small>
+                        </div>
+                    </div>
+
+                    {{-- amount --}}
+                    <div class="wallet-topup-card__amount">
+                        <span class="wallet-topup-card__amount-label">{{ __('Amount') }}</span>
+                        <strong>${{ number_format((float) $topup->amount, 2) }}</strong>
+                    </div>
+
+                    {{-- method + ref --}}
+                    <div class="wallet-topup-card__meta">
+                        <span class="wallet-topup-pill">{{ $topup->payment_method }}</span>
+                        <code class="wallet-topup-ref">{{ $topup->tran_id }}</code>
+                    </div>
+
+                    {{-- proof image --}}
+                    <div class="wallet-topup-card__proof">
+                        @if($topup->payslip)
+                            <a href="{{ Imageurl($topup->payslip, 'wallet-topups') }}" target="_blank" rel="noopener" class="wallet-topup-proof">
+                                <img src="{{ Imageurl($topup->payslip, 'wallet-topups') }}" alt="{{ __('Payslip') }}">
+                                <div class="wallet-topup-proof__overlay"><i class="fa-solid fa-arrow-up-right-from-square"></i></div>
+                            </a>
+                        @else
+                            <span class="wallet-topup-no-proof">{{ __('No proof') }}</span>
+                        @endif
+                    </div>
+
+                    {{-- date --}}
+                    <div class="wallet-topup-card__date">
+                        <i class="fa-regular fa-calendar-check"></i>
+                        <span>
+                            {{ $topup->created_at?->format('M j, Y') }}<br>
+                            <small>{{ $topup->created_at?->format('g:i A') }}</small>
+                        </span>
+                    </div>
+
+                    {{-- actions --}}
+                    <div class="wallet-topup-card__actions">
+                        <form method="POST" action="{{ route('admin.wallets.topups.approve', $topup) }}">
+                            @csrf
+                            <button type="submit" class="wallet-topup-approve">
+                                <i class="fa-solid fa-check"></i> {{ __('Approve') }}
+                            </button>
+                        </form>
+                        <form method="POST" action="{{ route('admin.wallets.topups.reject', $topup) }}" class="wallet-topup-reject-form">
+                            @csrf
+                            <input type="text" name="note" placeholder="{{ __('Reason (optional)') }}" class="wallet-topup-reject-note">
+                            <button type="submit" class="wallet-topup-reject">
+                                <i class="fa-solid fa-xmark"></i> {{ __('Reject') }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
         @endif
 
-        <div class="page-section-header">
+        {{-- ── Customer wallets ──────────────────────────────────────── --}}
+        <div class="wallet-section-head">
+            <div class="wallet-section-head__icon">
+                <i class="fa-solid fa-scale-balanced"></i>
+            </div>
             <div>
                 <p class="section-kicker">{{ __('Store credit') }}</p>
                 <h3>{{ __('Customer Wallets') }}</h3>
-                <p class="text-gray-500">{{ __("Credit or debit a customer's store-wallet balance. Every change is logged.") }}</p>
+                <p class="text-gray-500 mb-0">{{ __("Credit or debit a customer's store-wallet balance. Every change is logged.") }}</p>
             </div>
         </div>
 
@@ -96,44 +148,58 @@
                 </x-table-toolbar>
             </x-slot:toolbar>
 
-            <table class="premium-table">
+            <table class="premium-table wallet-table">
                 <thead>
                     <tr>
                         <th>{{ __('Customer') }}</th>
-                        <th>{{ __('Balance') }}</th>
-                        <th style="width:420px">{{ __('Adjust') }}</th>
+                        <th style="width:160px">{{ __('Balance') }}</th>
+                        <th>{{ __('Adjust Balance') }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($customers as $customer)
-                        <tr>
-                            <td>
-                                <strong>{{ $customer->name }}</strong>
-                                <small class="d-block text-gray-400">{{ $customer->email }}</small>
-                            </td>
-                            <td><strong style="font-size:16px">${{ number_format((float) $customer->wallet_balance, 2) }}</strong></td>
-                            <td>
-                                <form method="POST" action="{{ route('admin.wallets.adjust', $customer) }}" class="d-flex" style="gap:8px;align-items:center;flex-wrap:wrap">
-                                    @csrf
-                                    <input type="number" name="amount" min="0.01" step="0.01" placeholder="0.00" required class="form-input" style="width:100px">
-                                    <input type="text" name="note" placeholder="{{ __('Note (optional)') }}" class="form-input" style="width:150px">
-                                    <button type="submit" name="direction" value="credit" class="premium-button premium-button--dark" style="padding:8px 12px"><i class="fa-solid fa-plus"></i> {{ __('Credit') }}</button>
-                                    <button type="submit" name="direction" value="debit" class="ghost-button ghost-button--panel" style="padding:8px 12px"><i class="fa-solid fa-minus"></i> {{ __('Debit') }}</button>
-                                </form>
-                            </td>
-                        </tr>
+                    <tr>
+                        <td>
+                            <div class="wallet-cust-cell">
+                                <div class="wallet-cust-avatar">{{ strtoupper(substr($customer->name, 0, 2)) }}</div>
+                                <div>
+                                    <strong>{{ $customer->name }}</strong>
+                                    <small class="d-block text-gray-400">{{ $customer->email }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="wallet-balance @if((float)$customer->wallet_balance > 0) wallet-balance--positive @endif">
+                                ${{ number_format((float) $customer->wallet_balance, 2) }}
+                            </span>
+                        </td>
+                        <td>
+                            <form method="POST" action="{{ route('admin.wallets.adjust', $customer) }}" class="wallet-adjust">
+                                @csrf
+                                <input type="number" name="amount" min="0.01" step="0.01" placeholder="0.00" required class="wallet-adjust__amount">
+                                <input type="text" name="note" placeholder="{{ __('Note…') }}" class="wallet-adjust__note">
+                                <button type="submit" name="direction" value="credit" class="wallet-adjust__credit">
+                                    <i class="fa-solid fa-plus"></i> {{ __('Credit') }}
+                                </button>
+                                <button type="submit" name="direction" value="debit" class="wallet-adjust__debit">
+                                    <i class="fa-solid fa-minus"></i> {{ __('Debit') }}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
                     @empty
-                        <tr>
-                            <td colspan="3">
-                                <x-admin.empty-state icon="fa-solid fa-wallet" title="{{ __('No customers found') }}"
-                                    message="{{ __('Customer wallet balances will appear here.') }}" />
-                            </td>
-                        </tr>
+                    <tr>
+                        <td colspan="3">
+                            <x-admin.empty-state icon="fa-solid fa-wallet" title="{{ __('No customers found') }}"
+                                message="{{ __('Customer wallet balances will appear here.') }}" />
+                        </td>
+                    </tr>
                     @endforelse
                 </tbody>
             </table>
 
             <x-slot:footer><x-table-footer :paginator="$customers" label="{{ __('customers') }}" /></x-slot:footer>
         </x-admin.table-card>
+
     </div>
 </x-app-layout>

@@ -81,6 +81,7 @@ final class CheckoutService
     {
         return collect($this->settings->paymentMethods())
             ->filter(fn (array $p): bool => (bool) ($p['status'] ?? false))
+            ->reject(fn (array $p): bool => ($p['type'] ?? '') === 'wallet')
             ->sortBy('sort_order')
             ->map(fn (array $p): array => [
                 'code' => $p['code'] ?? $p['id'] ?? 'card',

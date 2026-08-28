@@ -736,7 +736,7 @@ select.ut-input {
 /* ---- Inline field validation ---- */
 .ut-field-error {
   display: block;
-  color: var(--accent);
+  color: #dc2626;
   font-size: 12.5px;
   margin-top: 6px;
 }

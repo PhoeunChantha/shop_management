@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\Admin\RecaptchaService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,16 +17,24 @@ use Illuminate\View\View;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        private readonly RecaptchaService $recaptcha,
+    ) {}
+
     // ---- Page renderers ------------------------------------------------
 
     public function login(): View
     {
-        return view('frontend.auth.login');
+        return view('frontend.auth.login', [
+            'recaptchaSiteKey' => $this->recaptcha->protectsLogin() ? $this->recaptcha->siteKey() : null,
+        ]);
     }
 
     public function register(): View
     {
-        return view('frontend.auth.register');
+        return view('frontend.auth.register', [
+            'recaptchaSiteKey' => $this->recaptcha->protectsRegister() ? $this->recaptcha->siteKey() : null,
+        ]);
     }
 
     public function forgotPassword(): View
@@ -82,6 +91,14 @@ class AuthController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', PasswordRule::defaults()],
         ]);
+
+        if ($this->recaptcha->protectsRegister()) {
+            if (! $this->recaptcha->verify((string) $request->input('g-recaptcha-response', ''), 'register')) {
+                return back()
+                    ->withErrors(['email' => __('Security check failed. Please try again.')])
+                    ->withInput($request->only('first_name', 'last_name', 'email'));
+            }
+        }
 
         $user = User::create([
             'name' => trim($validated['first_name'].' '.$validated['last_name']),
