@@ -1,6 +1,11 @@
 @extends('frontend.layouts.frontend')
 @section('title', __('Order Confirmed').' — T-Shirt Shop')
 
+{{-- Clear the cart from localStorage BEFORE main.js loads so initCart() never re-syncs stale items. --}}
+@push('head')
+<script>try { localStorage.removeItem('ut_cart'); localStorage.removeItem('ut_coupon'); } catch(e) {}</script>
+@endpush
+
 @section('content')
 <div class="ut-wrap anim-up" style="padding-top:40px;padding-bottom:40px;max-width:720px">
     <div style="text-align:center">
@@ -57,7 +62,7 @@
 </div>
 
 @push('scripts')
-<script>localStorage.removeItem('ut_cart'); localStorage.removeItem('ut_coupon'); /* order placed — clear bag + coupon */</script>
+<script>if (window.__clearCart) { window.__clearCart(); } else { localStorage.removeItem('ut_cart'); localStorage.removeItem('ut_coupon'); }</script>
 @endpush
 @endsection
 
