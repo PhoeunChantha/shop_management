@@ -17,11 +17,12 @@
                     <i class="fa-solid fa-arrow-left"></i><span>{{ __('Back') }}</span>
                 </a>
                 
-                <form method="POST" action="{{ route('admin.abandoned-carts.destroy', $cart) }}" onsubmit="return confirm('Delete this abandoned cart?')">
-                    @csrf
-                    @method('DELETE')
-                    <button class="ghost-button ghost-button--danger"><i class="fa-solid fa-trash"></i><span>{{ __('Delete') }}</span></button>
-                </form>
+                <button type="button" class="ghost-button ghost-button--danger"
+                    data-delete-modal-target="deleteCartModal"
+                    data-delete-action="{{ route('admin.abandoned-carts.destroy', $cart) }}"
+                    data-delete-name="{{ $cart->customer_name ?: $cart->customer_email ?: __('this cart') }}">
+                    <i class="fa-solid fa-trash"></i><span>{{ __('Delete') }}</span>
+                </button>
             </div>
         </div>
 
@@ -106,4 +107,8 @@
             </section>
         </div>
     </div>
+
+    <x-delete-confirm-modal id="deleteCartModal"
+        title="{{ __('Delete this cart?') }}"
+        message-after="{{ __('from the system. This cannot be undone.') }}" />
 </x-app-layout>

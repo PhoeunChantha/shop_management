@@ -327,6 +327,35 @@
       return;
     }
 
+    const buy = e.target.closest('[data-buy-now]');
+    if (buy) {
+      e.preventDefault(); e.stopPropagation();
+      const ds = buy.dataset;
+      const scope = buy.closest('[data-product-scope]') || document;
+      const sizeEl = scope.querySelector('[data-size].is-active') || scope.querySelector('[data-size]');
+      const colorEl = scope.querySelector('[data-color].is-active');
+      const qtyEl = scope.querySelector('[data-qty-value]');
+      if (buy.hasAttribute('data-require-size') && !sizeEl && !ds.size) { toast('Please select a size'); return; }
+      var bSize = sizeEl ? sizeEl.getAttribute('data-size') : (ds.size || 'M');
+      var bColor = colorEl ? colorEl.getAttribute('data-color') : (ds.color || '');
+      var bVariantId = ds.variantId ? Number(ds.variantId) : null;
+      if (!bVariantId && scope && scope.dataset && scope.dataset.variantIndex) {
+        try {
+          var bMap = JSON.parse(scope.dataset.variantIndex);
+          var bKey = String(bSize).toLowerCase() + '|' + String(bColor).toLowerCase();
+          if (bMap && bMap[bKey]) bVariantId = Number(bMap[bKey]);
+        } catch (err) {}
+      }
+      addToCart({
+        id: Number(ds.id), variant_id: bVariantId, name: ds.name, price: Number(ds.price),
+        tint: ds.tint || 'linear-gradient(150deg,#eef2f7,#e2e8f0)',
+        image: ds.image || '', size: bSize, color: bColor,
+        qty: qtyEl ? Number(qtyEl.textContent) : 1,
+      });
+      window.location.href = ds.checkoutUrl || '/checkout';
+      return;
+    }
+
     const wishBtn = e.target.closest('[data-wish]');
     if (wishBtn) { e.preventDefault(); e.stopPropagation(); toggleWish(wishBtn.getAttribute('data-wish')); return; }
 

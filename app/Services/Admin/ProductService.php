@@ -149,7 +149,7 @@ class ProductService
     public function formData(): array
     {
         return [
-            'categories' => Category::orderByName()->get(['id', 'name']),
+            'categoryOptions' => Category::treeOptions(),
             'brands' => Brand::orderBy('name')->get(['id', 'name']),
             'attributes' => Attribute::where('status', true)
                 ->with(['values' => fn ($q) => $q->where('status', true)->orderBy('sort_order')])
@@ -218,10 +218,34 @@ class ProductService
 
     /* ------------------------------------------------------------------ */
 
+    /**
+     * The form has a single tree picker: choosing a sub-category files the
+     * product under it with its top-level ancestor as the main category;
+     * choosing a top-level category clears the sub-category. An explicit
+     * `sub_category_id` (imports / API clients) is still honoured.
+     *
+     * @return array{0: int|null, 1: int|null}
+     */
+    private function resolveCategoryPair(BaseProductRequest $request): array
+    {
+        $chosenId = (int) $request->input('category_id') ?: null;
+
+        if ($request->filled('sub_category_id')) {
+            return [$chosenId, (int) $request->input('sub_category_id')];
+        }
+
+        $chosen = $chosenId ? Category::query()->find($chosenId) : null;
+
+        if (! $chosen || ! $chosen->parent_id) {
+            return [$chosenId, null];
+        }
+
+        return [$chosen->rootAncestor()->id, $chosen->id];
+    }
+
     private function fill(Product $product, BaseProductRequest $request): void
     {
-        $product->category_id = $request->input('category_id');
-        $product->sub_category_id = $request->input('sub_category_id') ?: null;
+        [$product->category_id, $product->sub_category_id] = $this->resolveCategoryPair($request);
         $product->brand_id = $request->input('brand_id') ?: null;
         $product->product_type = $request->input('product_type', 'variable');
         $this->fillTranslations($product, $request);

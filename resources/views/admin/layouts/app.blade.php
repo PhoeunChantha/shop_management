@@ -47,13 +47,16 @@
 
     <title>{{ filled($pageTitle) ? $pageTitle : $adminSiteName }}</title>
 
-    {{-- Apply saved theme before paint to avoid a flash --}}
+    {{-- Apply saved theme + sidebar state before paint to avoid a flash --}}
     <script>
         (function() {
             try {
                 var t = localStorage.getItem('admin-theme');
                 if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                     document.documentElement.classList.add('dark');
+                }
+                if (localStorage.getItem('admin-sidebar-collapsed') === '1') {
+                    document.documentElement.classList.add('sidebar-collapsed');
                 }
             } catch (e) {}
         })();

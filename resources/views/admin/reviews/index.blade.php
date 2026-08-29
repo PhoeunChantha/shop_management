@@ -6,7 +6,7 @@
         </div>
     </x-slot>
 
-    <div class="admin-page" x-data="{ viewOpen: false, vr: {} }">
+    <div class="admin-page" x-data="{ viewOpen: false, vr: {}, confirmingDelete: false }">
         <div class="page-section-header">
             <div>
                 <p class="section-kicker">{{ __('Moderation') }}</p>
@@ -46,13 +46,39 @@
                     <input type="hidden" name="status" value="rejected">
                     <button type="submit" class="bulk-btn"><i class="fa-solid fa-circle-xmark"></i> {{ __('Reject') }}</button>
                 </form>
-                <form method="POST" action="{{ route('admin.reviews.bulk-destroy') }}" class="bulk-bar__form"
-                    onsubmit="return confirm('Delete the selected reviews? This cannot be undone.')">
-                    @csrf @method('DELETE')
-                    <template x-for="id in selected" :key="'dl-' + id"><input type="hidden" name="ids[]" :value="id"></template>
-                    <button type="submit" class="bulk-btn bulk-btn--danger"><i class="fa-solid fa-trash"></i> {{ __('Delete') }}</button>
-                </form>
+                <button type="button" class="bulk-btn bulk-btn--danger" @click="confirmingDelete = true">
+                    <i class="fa-solid fa-trash"></i> {{ __('Delete') }}
+                </button>
                 <button type="button" class="bulk-bar__clear" @click="clear()"><i class="fa-solid fa-xmark"></i> {{ __('Clear') }}</button>
+                </div>
+
+                {{-- Bulk delete confirmation modal --}}
+                <div class="modal-backdrop-premium" x-show="confirmingDelete" x-cloak style="display:none;"
+                    @keydown.escape.window="confirmingDelete = false" @click.self="confirmingDelete = false">
+                    <div class="delete-modal" role="dialog" aria-modal="true">
+                        <div class="delete-modal__icon-zone">
+                            <div class="delete-modal__icon-ring"><i class="fa-solid fa-trash-can"></i></div>
+                        </div>
+                        <div class="delete-modal__body">
+                            <h3>{{ __('Delete selected reviews?') }}</h3>
+                            <p>{{ __('This will permanently remove') }} <strong><span x-text="count"></span> {{ __('review(s)') }}</strong>. {{ __('This cannot be undone.') }}</p>
+                        </div>
+                        <div class="delete-modal__warning">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            <span>{{ __('This action cannot be undone') }}</span>
+                        </div>
+                        <div class="delete-modal__actions">
+                            <button type="button" class="delete-modal__cancel" @click="confirmingDelete = false">{{ __('Keep them') }}</button>
+                            <form method="POST" action="{{ route('admin.reviews.bulk-destroy') }}" class="mb-0 flex-1">
+                                @csrf @method('DELETE')
+                                <template x-for="id in selected" :key="'dl-' + id"><input type="hidden" name="ids[]" :value="id"></template>
+                                <button type="submit" class="delete-modal__confirm">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                    <span>{{ __('Yes, delete') }}</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </x-slot:bulkBar>
 

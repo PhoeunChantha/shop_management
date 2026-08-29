@@ -13,6 +13,7 @@ class WalletTopup extends Model
         'payment_method',
         'method_type',
         'amount',
+        'payslip',
         'status',
         'admin_note',
         'approved_by',

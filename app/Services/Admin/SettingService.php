@@ -209,6 +209,14 @@ final class SettingService
                 ],
             ],
             SettingGroup::Appearance->value => $this->themeFieldDefinitions(),
+            SettingGroup::Recaptcha->value => [
+                'recaptcha_enabled' => ['label' => 'reCAPTCHA v3', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '0', 'help' => 'Protect forms from bots using Google reCAPTCHA v3 (invisible, score-based).', 'rules' => 'nullable|in:0,1'],
+                'recaptcha_site_key' => ['label' => 'Site key', 'type' => 'text', 'env' => 'RECAPTCHA_SITE_KEY', 'placeholder' => '6Lc...', 'help' => 'Public key — embedded in the page. From Google reCAPTCHA Admin Console.', 'rules' => 'nullable|string|max:255'],
+                'recaptcha_secret_key' => ['label' => 'Secret key', 'type' => 'password', 'env' => 'RECAPTCHA_SECRET_KEY', 'placeholder' => '6Lc...', 'help' => 'Private key — used server-side only, never exposed to the browser. Saved to .env.', 'rules' => 'nullable|string|max:255'],
+                'recaptcha_min_score' => ['label' => 'Minimum score', 'type' => 'select', 'options' => ['0.3' => '0.3 — Permissive', '0.5' => '0.5 — Balanced (recommended)', '0.7' => '0.7 — Strict', '0.9' => '0.9 — Very strict'], 'default' => '0.5', 'help' => 'Google returns 1.0 (likely human) to 0.0 (likely bot). Requests below this score are blocked.', 'rules' => 'nullable|in:0.3,0.5,0.7,0.9'],
+                'recaptcha_protect_register' => ['label' => 'Protect registration', 'type' => 'select', 'options' => ['1' => 'Yes', '0' => 'No'], 'default' => '1', 'help' => 'Run the reCAPTCHA check on the Create Account form.', 'rules' => 'nullable|in:0,1'],
+                'recaptcha_protect_login' => ['label' => 'Protect login', 'type' => 'select', 'options' => ['1' => 'Yes', '0' => 'No'], 'default' => '0', 'help' => 'Run the reCAPTCHA check on the Sign In form.', 'rules' => 'nullable|in:0,1'],
+            ],
             SettingGroup::Chat->value => [
                 'chat_enabled' => ['label' => 'Live chat', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '1', 'help' => 'Show the chat launcher on the storefront. Admin inbox keeps working either way.', 'rules' => 'nullable|in:0,1'],
                 'chat_guest_launcher' => ['label' => 'Launcher for guests', 'type' => 'select', 'options' => ['1' => 'Shown (asks to sign in)', '0' => 'Hidden'], 'default' => '1', 'help' => 'Signed-out visitors see a launcher that sends them to sign in.', 'rules' => 'nullable|in:0,1'],
@@ -478,12 +486,35 @@ final class SettingService
     }
 
     /**
+     * reCAPTCHA v3 configuration, with defaults applied.
+     *
+     * @return array{enabled: bool, site_key: string, secret_key: string, min_score: float, protect_register: bool, protect_login: bool}
+     */
+    public function recaptcha(): array
+    {
+        $env = app(EnvService::class);
+
+        return [
+            'enabled' => (string) Setting::get('recaptcha_enabled', '0') === '1',
+            'site_key' => (string) $env->get('RECAPTCHA_SITE_KEY'),
+            'secret_key' => (string) $env->get('RECAPTCHA_SECRET_KEY'),
+            'min_score' => (float) (Setting::get('recaptcha_min_score') ?: '0.5'),
+            'protect_register' => (string) Setting::get('recaptcha_protect_register', '1') !== '0',
+            'protect_login' => (string) Setting::get('recaptcha_protect_login', '0') !== '0',
+        ];
+    }
+
+    /**
      * True when Google OAuth credentials are present so the login button works.
+     * Reads directly from .env (via EnvService) so a config cache never hides
+     * credentials that were just saved from the Settings form.
      */
     public function googleConfigured(): bool
     {
-        return filled(config('services.google.client_id'))
-            && filled(config('services.google.client_secret'));
+        $env = app(EnvService::class);
+
+        return filled($env->get('GOOGLE_CLIENT_ID'))
+            && filled($env->get('GOOGLE_CLIENT_SECRET'));
     }
 
     /**

@@ -38,13 +38,12 @@
                                     <i class="fa-solid fa-arrow-up-right-from-square"></i><span>{{ __('Open') }}</span>
                                 </a>
                                 @if (! $view->is_global || auth()->user()?->can('delete saved views'))
-                                    <form method="POST" action="{{ route('admin.saved-views.destroy', $view) }}" class="mb-0">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="saved-views-row__delete">
-                                            <i class="fa-solid fa-trash"></i>
-                                        </button>
-                                    </form>
+                                    <button type="button" class="saved-views-row__delete"
+                                        data-delete-modal-target="deleteSavedViewModal"
+                                        data-delete-action="{{ route('admin.saved-views.destroy', $view) }}"
+                                        data-delete-name="{{ $view->name }}">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
                                 @endif
                             </div>
                         @endforeach
@@ -54,5 +53,9 @@
                 <x-admin.empty-state icon="fa-solid fa-bookmark" title="{{ __('No saved views yet') }}" message="{{ __('Save a filtered table view from products, orders, customers, returns, or media.') }}" />
             @endforelse
         </div>
+
+        <x-delete-confirm-modal id="deleteSavedViewModal"
+            title="{{ __('Delete this saved view?') }}"
+            message-after="{{ __('from your presets. This cannot be undone.') }}" />
     </div>
 </x-app-layout>

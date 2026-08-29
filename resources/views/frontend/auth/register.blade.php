@@ -14,8 +14,11 @@
             {{-- social login (managed in Settings → Login) --}}
             @include('frontend.auth.partials.social')
 
-            <form class="ut-col" style="gap:16px" action="{{ route('frontend.register.store') }}" method="POST">
+            <form class="ut-col" style="gap:16px" action="{{ route('frontend.register.store') }}" method="POST" id="frontend-register-form">
                 @csrf
+                @if($recaptchaSiteKey ?? null)
+                    <input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response-frontend">
+                @endif
                 <div class="ut-form-2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                     <div class="field"><label>{{ __('First name') }}</label><input class="ut-input" name="first_name" value="{{ old('first_name') }}" placeholder="Alex" required>
                         @error('first_name')<span style="color:var(--accent);font-size:12.5px;margin-top:6px;display:block">{{ $message }}</span>@enderror
@@ -46,6 +49,21 @@
 @endsection
 
 @push('scripts')
+@if($recaptchaSiteKey ?? null)
+<script src="https://www.google.com/recaptcha/api.js?render={{ $recaptchaSiteKey }}"></script>
+<script>
+    document.getElementById('frontend-register-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var form = this;
+        grecaptcha.ready(function() {
+            grecaptcha.execute('{{ $recaptchaSiteKey }}', { action: 'register' }).then(function(token) {
+                document.getElementById('g-recaptcha-response-frontend').value = token;
+                form.submit();
+            });
+        });
+    });
+</script>
+@endif
 <script>
     function pwStrength(v){
         var meter = document.getElementById('pwMeter');

@@ -1875,6 +1875,12 @@
     "Payment method": "វិធីទូទាត់",
     "Previous": "មុន",
     "Submit top-up request": "ដាក់ស្នើសំណើបញ្ចូលលុយ",
+    "Upload your payment payslip": "បញ្ចូលរូបភាពបញ្ជាក់ការទូទាត់",
+    "Attach a clear photo or screenshot of your transfer receipt. We'll verify it and credit your wallet shortly.": "ភ្ជាប់រូបថត ឬរូបថតអេក្រង់ច្បាស់នៃបង្កាន់ដៃផ្ទេរប្រាក់របស់អ្នក។ យើងនឹងផ្ទៀងផ្ទាត់ ហើយបញ្ចូលទឹកប្រាក់ចូលកាបូបរបស់អ្នកឆាប់ៗនេះ។",
+    "Confirm & submit request": "បញ្ជាក់ និងដាក់ស្នើសំណើ",
+    "Please attach your payment payslip or screenshot.": "សូមភ្ជាប់រូបភាពបញ្ជាក់ការទូទាត់ ឬរូបថតអេក្រង់របស់អ្នក។",
+    "Proof": "ភស្តុតាង",
+    "Payslip": "បង្កាន់ដៃទូទាត់",
     "Monitor revenue, orders, profitability, customers, and sales performance.": "តាមដានចំណូល ការបញ្ជាទិញ ប្រាក់ចំណេញ អតិថិជន និងសមិទ្ធផលលក់។",
     "Refresh": "ផ្ទុកឡើងវិញ",
     "Export PDF": "នាំចេញ PDF",
@@ -2080,5 +2086,12 @@
     "category-slug": "category-slug",
     "Category title": "ចំណងជើងប្រភេទ",
     "A short description of what shoppers will find in this category.": "ការពិពណ៌នាខ្លីអំពីអ្វីដែលអ្នកទិញនឹងរកឃើញក្នុងប្រភេទនេះ។",
-    "category name": "ឈ្មោះប្រភេទ"
+    "category name": "ឈ្មោះប្រភេទ",
+    "Parent Category": "ប្រភេទមេ",
+    "None — top-level category": "គ្មាន — ប្រភេទកម្រិតកំពូល",
+    "Nest this category under another one, or leave empty to keep it at the top level.": "ដាក់ប្រភេទនេះនៅក្រោមប្រភេទផ្សេង ឬទុកទទេដើម្បីរក្សាវានៅកម្រិតកំពូល។",
+    "A category cannot be placed under itself or one of its own sub-categories.": "ប្រភេទមិនអាចដាក់នៅក្រោមខ្លួនឯង ឬក្រោមប្រភេទរងរបស់វាបានទេ។",
+    "Cannot delete “:name” because it has sub-categories. Move or delete them first.": "មិនអាចលុប “:name” បានទេ ព្រោះវាមានប្រភេទរង។ សូមផ្លាស់ទី ឬលុបពួកវាជាមុនសិន។",
+    "parent category": "ប្រភេទមេ",
+    "Required for storefront navigation and filters. Pick a sub-category to file the product under it — its main category is set automatically.": "ចាំបាច់សម្រាប់ការរុករក និងតម្រងហាង។ ជ្រើសប្រភេទរងដើម្បីដាក់ផលិតផលក្រោមវា — ប្រភេទមេនឹងត្រូវកំណត់ដោយស្វ័យប្រវត្តិ។"
 }

@@ -115,8 +115,8 @@
                             @endforelse
                         </div>
                         @php($firstPay = $paymentMethods[0] ?? ['code' => 'card', 'type' => 'online'])
-                        {{-- Online payment (redirect to the ABA PayWay hosted checkout) --}}
-                        <div data-pay-online style="{{ ($firstPay['type'] ?? 'online') === 'manual' ? 'display:none' : '' }}">
+                        {{-- Online payment panel — hidden when first method is manual or wallet --}}
+                        <div data-pay-online style="{{ in_array($firstPay['type'] ?? 'online', ['manual', 'wallet']) ? 'display:none' : '' }}">
                             <div style="background:var(--bg);border-radius:var(--r-md);padding:20px;text-align:center">
                                 <div style="width:48px;height:48px;border-radius:14px;background:#dcfce7;color:#15803d;display:grid;place-items:center;margin:0 auto 12px"><x-frontend.icon n="lock" :size="22" /></div>
                                 <p style="font-family:var(--font-head);font-weight:700;margin:0 0 4px">{{ __("You'll be redirected to ABA PayWay") }}</p>
@@ -127,7 +127,7 @@
                         {{-- Wallet payment --}}
                         @auth
                             @if(collect($paymentMethods)->firstWhere('type', 'wallet'))
-                                <div data-pay-wallet style="display:none">
+                                <div data-pay-wallet style="{{ ($firstPay['type'] ?? '') === 'wallet' ? '' : 'display:none' }}">
                                     <div style="background:var(--bg);border-radius:var(--r-md);padding:18px 20px">
                                         <div class="ut-row" style="justify-content:space-between;margin-bottom:6px"><span class="muted" style="font-size:14px">{{ __('Wallet balance') }}</span><b style="font-family:var(--font-head)">{{ money($walletBalance) }}</b></div>
                                         <p class="muted" style="font-size:13px;margin:0;line-height:1.6">{{ __('Your order total is deducted from your wallet balance. If your balance is too low, top up in') }} <a href="{{ route('frontend.account.wallet') }}" style="color:var(--blue);font-weight:600">{{ __('your wallet') }}</a> {{ __('or choose another method.') }}</p>
@@ -209,6 +209,24 @@
 
 @push('scripts')
     <script>window.UT_CHECKOUT = { shipping: @json($shippingMethods ?? []), taxRate: {{ $taxRate ?? 0 }} };</script>
+    {{-- After main.js wires the step navigator, restore the correct step when
+         server-side validation failed and sent the user back with errors. --}}
+    @if($errors->any())
+    <script>
+    (function () {
+        // Map each field name to the step index (0-based) it lives on.
+        var stepMap = { email:0, phone:0, first_name:0, last_name:0, address:0, city:0, zip:0, del:1, payment:2 };
+        var errFields = @json(array_keys($errors->toArray()));
+        var targetStep = 0;
+        errFields.forEach(function (f) { if (stepMap[f] !== undefined && stepMap[f] > targetStep) targetStep = stepMap[f]; });
+        var nextBtn = document.getElementById('coNext');
+        for (var n = 0; n < targetStep; n++) { if (nextBtn) nextBtn.click(); }
+        // Scroll the first visible error into view.
+        var firstErr = document.querySelector('.ut-field-error');
+        if (firstErr) setTimeout(function () { firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 80);
+    })();
+    </script>
+    @endif
     <script>
         // Payment tab select — highlight, set hidden payment code, show card fields
         // for online methods or the matching manual/QR panel for manual methods.

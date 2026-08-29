@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests\Category;
 
+use App\Models\Category;
 use App\Services\Admin\SettingService;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 abstract class BaseCategoryRequest extends FormRequest
 {
@@ -22,6 +24,7 @@ abstract class BaseCategoryRequest extends FormRequest
         $primary = app(SettingService::class)->primaryLanguage();
 
         return [
+            'parent_id' => ['nullable', 'integer', 'exists:categories,id'],
             'name' => ['required', 'array'],
             'name.'.$primary => ['required', 'string', 'min:2', 'max:255'],
             'name.*' => ['nullable', 'string', 'max:255'],
@@ -69,6 +72,41 @@ abstract class BaseCategoryRequest extends FormRequest
         if ($clean !== []) {
             $this->merge($clean);
         }
+
+        // An empty picker value means "top-level".
+        if ($this->input('parent_id') === '' || $this->input('parent_id') === '0') {
+            $this->merge(['parent_id' => null]);
+        }
+    }
+
+    /**
+     * A category cannot be nested under itself or under one of its own
+     * sub-categories (that would create a cycle in the tree).
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $parentId = (int) $this->input('parent_id');
+            $selfId = $this->categoryId();
+
+            if (! $parentId || ! $selfId) {
+                return;
+            }
+
+            $self = Category::query()->find($selfId);
+
+            if ($self && ($parentId === $self->id || in_array($parentId, $self->descendantIds(), true))) {
+                $validator->errors()->add('parent_id', __('A category cannot be placed under itself or one of its own sub-categories.'));
+            }
+        });
+    }
+
+    /**
+     * The category being edited (null when creating).
+     */
+    protected function categoryId(): ?int
+    {
+        return null;
     }
 
     public function attributes(): array
@@ -77,6 +115,7 @@ abstract class BaseCategoryRequest extends FormRequest
 
         return [
             'name.'.$primary => __('category name'),
+            'parent_id' => __('parent category'),
         ];
     }
 }

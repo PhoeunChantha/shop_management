@@ -1875,6 +1875,12 @@
     "Payment method": "Payment method",
     "Previous": "Previous",
     "Submit top-up request": "Submit top-up request",
+    "Upload your payment payslip": "Upload your payment payslip",
+    "Attach a clear photo or screenshot of your transfer receipt. We'll verify it and credit your wallet shortly.": "Attach a clear photo or screenshot of your transfer receipt. We'll verify it and credit your wallet shortly.",
+    "Confirm & submit request": "Confirm & submit request",
+    "Please attach your payment payslip or screenshot.": "Please attach your payment payslip or screenshot.",
+    "Proof": "Proof",
+    "Payslip": "Payslip",
     "Revenue trend": "Revenue trend",
     "Daily revenue vs the previous period": "Daily revenue vs the previous period",
     "Previous period": "Previous period",
@@ -2053,5 +2059,12 @@
     "category-slug": "category-slug",
     "Category title": "Category title",
     "A short description of what shoppers will find in this category.": "A short description of what shoppers will find in this category.",
-    "category name": "category name"
+    "category name": "category name",
+    "Parent Category": "Parent Category",
+    "None — top-level category": "None — top-level category",
+    "Nest this category under another one, or leave empty to keep it at the top level.": "Nest this category under another one, or leave empty to keep it at the top level.",
+    "A category cannot be placed under itself or one of its own sub-categories.": "A category cannot be placed under itself or one of its own sub-categories.",
+    "Cannot delete “:name” because it has sub-categories. Move or delete them first.": "Cannot delete “:name” because it has sub-categories. Move or delete them first.",
+    "parent category": "parent category",
+    "Required for storefront navigation and filters. Pick a sub-category to file the product under it — its main category is set automatically.": "Required for storefront navigation and filters. Pick a sub-category to file the product under it — its main category is set automatically."
 }

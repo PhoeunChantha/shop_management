@@ -174,7 +174,11 @@
                     <span>{{ __('Total for') }} <span data-pdp-qty-label>1</span> <span data-pdp-item-label>{{ __('item') }}</span></span>
                     <strong data-pdp-total data-unit-price="{{ (float) $product['price'] }}">{{ money((float) $product['price']) }}</strong>
                 </div>
-                <a href="{{ route('frontend.checkout.index') }}" class="ut-btn ut-btn-ink ut-btn-block ut-purchase-buy">{{ __('Buy it now') }}</a>
+                <button type="button" class="ut-btn ut-btn-ink ut-btn-block ut-purchase-buy"
+                        data-buy-now data-require-size
+                        data-id="{{ $product['id'] }}" data-name="{{ $product['name'] }}" data-price="{{ $product['price'] }}"
+                        data-tint="{{ $product['tint'] ?? '' }}" data-image="{{ $product['image_url'] ?? '' }}"
+                        data-checkout-url="{{ route('frontend.checkout.index') }}">{{ __('Buy it now') }}</button>
 
                 {{-- ask the team about this exact product (opens live chat with it attached) --}}
                 @if ($__askProduct ?? true)
