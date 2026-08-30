@@ -53,7 +53,10 @@ final class ProductReportController extends Controller
             'end_date' => ['nullable', 'date'],
             'status' => ['nullable', Rule::enum(OrderStatus::class)],
             'payment_status' => ['nullable', Rule::enum(PaymentStatus::class)],
+            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'search' => ['nullable', 'string', 'max:255'],
+            'sort' => ['nullable', 'string', 'in:name,sku,quantity,revenue,cogs,profit,margin'],
+            'direction' => ['nullable', 'string', 'in:asc,desc'],
             'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
         ]);
     }

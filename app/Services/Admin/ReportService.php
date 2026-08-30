@@ -114,6 +114,99 @@ abstract class ReportService
     }
 
     /**
+     * The equal-length window immediately preceding [$start, $end], for
+     * period-over-period comparison.
+     *
+     * @return array{0: CarbonImmutable, 1: CarbonImmutable}
+     */
+    protected function previousRange(CarbonImmutable $start, CarbonImmutable $end): array
+    {
+        $days = $start->startOfDay()->diffInDays($end->startOfDay()) + 1;
+        $prevEnd = $start->subDay()->endOfDay();
+        $prevStart = $prevEnd->subDays($days - 1)->startOfDay();
+
+        return [$prevStart, $prevEnd];
+    }
+
+    /**
+     * Percentage change per metric between two comparable summary arrays.
+     * Returns change=null when the prior period has no base value — never
+     * fabricate a percentage against zero.
+     *
+     * @param  array<string, float|int>  $current
+     * @param  array<string, float|int>  $previous
+     * @param  array<int, string>  $keys
+     * @return array<string, array{previous: float, change: float|null, direction: string}>
+     */
+    protected function comparison(array $current, array $previous, array $keys): array
+    {
+        $out = [];
+
+        foreach ($keys as $key) {
+            $cur = (float) ($current[$key] ?? 0);
+            $prev = (float) ($previous[$key] ?? 0);
+            $change = $prev > 0 ? round((($cur - $prev) / $prev) * 100, 1) : null;
+
+            $out[$key] = [
+                'previous' => $prev,
+                'change' => $change,
+                'direction' => $change === null ? 'flat' : ($change > 0 ? 'up' : ($change < 0 ? 'down' : 'flat')),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Apply the report table's free-text search, keyed on the given columns.
+     * Split out from pagination so callers (e.g. table totals) can act on the
+     * filtered-but-not-yet-paginated set.
+     *
+     * @param  Collection<int, array<string, mixed>>  $rows
+     * @param  array<int, string>  $searchKeys
+     * @return Collection<int, array<string, mixed>>
+     */
+    protected function filterRows(Collection $rows, array $filters, array $searchKeys): Collection
+    {
+        $search = trim((string) ($filters['search'] ?? ''));
+
+        if ($search === '') {
+            return $rows;
+        }
+
+        $needle = mb_strtolower($search);
+
+        return $rows->filter(function (array $row) use ($needle, $searchKeys): bool {
+            foreach ($searchKeys as $key) {
+                if (str_contains(mb_strtolower((string) ($row[$key] ?? '')), $needle)) {
+                    return true;
+                }
+            }
+
+            return false;
+        })->values();
+    }
+
+    /**
+     * Slice an already-filtered collection into a page. Order is preserved as
+     * given by the caller (e.g. a prior SQL ORDER BY) — this never re-sorts.
+     *
+     * @param  Collection<int, array<string, mixed>>  $rows
+     * @return LengthAwarePaginatorContract<int, array<string, mixed>>
+     */
+    protected function paginate(Collection $rows, array $filters, int $default = 25): LengthAwarePaginatorContract
+    {
+        $perPage = $this->perPage($filters, $default);
+        $page = Paginator::resolveCurrentPage();
+        $items = $rows->slice(($page - 1) * $perPage, $perPage)->values();
+
+        return new LengthAwarePaginator($items, $rows->count(), $perPage, $page, [
+            'path' => Paginator::resolveCurrentPath(),
+            'query' => request()->query(),
+        ]);
+    }
+
+    /**
      * Turn an in-memory report collection into a searchable, paginated result —
      * used for the report tables so exports can still return the full dataset.
      *
@@ -123,28 +216,6 @@ abstract class ReportService
      */
     protected function paginateRows(Collection $rows, array $filters, array $searchKeys, int $default = 25): LengthAwarePaginatorContract
     {
-        $search = trim((string) ($filters['search'] ?? ''));
-
-        if ($search !== '') {
-            $needle = mb_strtolower($search);
-            $rows = $rows->filter(function (array $row) use ($needle, $searchKeys): bool {
-                foreach ($searchKeys as $key) {
-                    if (str_contains(mb_strtolower((string) ($row[$key] ?? '')), $needle)) {
-                        return true;
-                    }
-                }
-
-                return false;
-            })->values();
-        }
-
-        $perPage = $this->perPage($filters, $default);
-        $page = Paginator::resolveCurrentPage();
-        $items = $rows->slice(($page - 1) * $perPage, $perPage)->values();
-
-        return new LengthAwarePaginator($items, $rows->count(), $perPage, $page, [
-            'path' => Paginator::resolveCurrentPath(),
-            'query' => request()->query(),
-        ]);
+        return $this->paginate($this->filterRows($rows, $filters, $searchKeys), $filters, $default);
     }
 }
