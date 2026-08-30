@@ -16060,7 +16060,12 @@ html.dark .reorder-selection {
     flex-wrap: wrap;
     align-items: flex-end;
     gap: 12px;
-    flex: 1 1 auto;
+    /* Always claim the full row. Letting this share a line with the export
+       buttons made the wrap point depend on how many filters a given report
+       has (fine with 2-3 fields, but a 4th — e.g. Product Report's category
+       filter — tipped it over on common desktop widths, stranding PDF/CSV
+       alone on their own line with a large, unbalanced gap beside them). */
+    flex: 1 1 100%;
     margin: 0;
 }
 .report-controlbar__field { display: grid; gap: 6px; margin: 0; }
@@ -16100,6 +16105,16 @@ html.dark .reorder-selection {
     gap: 8px;
     margin-left: auto;
     align-self: flex-end;
+}
+.report-controlbar__exports {
+    /* Filters now always occupy their own row (see .report-controlbar__filters),
+       so this is always a deliberate second row — give it a divider instead of
+       floating on bare whitespace. */
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-end;
+    padding-top: 12px;
+    border-top: 1px solid var(--rep-line);
 }
 
 /* ---------- Stat cards (summary rail + metrics) ---------- */
