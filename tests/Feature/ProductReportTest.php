@@ -109,8 +109,14 @@ it('filters the report to a single category', function () {
         ->get(route('admin.reports.products', $this->range + ['category_id' => $this->accessories->id]));
 
     $response->assertOk();
-    $response->assertSee('Beta Cap');
-    $response->assertDontSee('Alpha Shirt');
+
+    // Asserted against the service's own data, not the rendered page — the full
+    // admin layout (notification bell, command palette, chat) can independently
+    // mention product names and would make a whole-page text assertion fragile.
+    $report = app(ProductReportService::class)->report($this->range + ['category_id' => $this->accessories->id]);
+    $names = collect($report['products']->items())->pluck('name');
+
+    expect($names)->toContain('Beta Cap')->not->toContain('Alpha Shirt');
 });
 
 it('reports period-over-period comparison against the equal-length prior window', function () {
