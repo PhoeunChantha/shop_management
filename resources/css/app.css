@@ -1107,6 +1107,18 @@ html.sidebar-collapsed .admin-module__submenu {
     line-height: 1.2;
 }
 
+/* The topbar is a two-item flex row (title | search+icons) with the icon
+   cluster pinned to flex-shrink:0, so at medium widths the title had nowhere
+   to shrink but down — wrapping to a second line that then overlapped the
+   vertically-centered search bar next to it. Truncate instead of wrapping. */
+.page-title { overflow: hidden; }
+.page-title :is(h1, h2, p) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
 .admin-topbar .header-kicker {
     font-size: 9.5px;
 }
@@ -16106,10 +16118,11 @@ html.dark .reorder-selection {
     margin-left: auto;
     align-self: flex-end;
 }
-.report-controlbar__exports {
-    /* Filters now always occupy their own row (see .report-controlbar__filters),
-       so this is always a deliberate second row — give it a divider instead of
-       floating on bare whitespace. */
+/* Only when a filters row actually precedes the exports (reports with no
+   filters at all, e.g. Inventory, render exports as the bar's only child)
+   does it become a deliberate second row with a divider — otherwise it just
+   stays the single right-aligned row it always was. */
+.report-controlbar__filters + .report-controlbar__exports {
     width: 100%;
     margin-left: 0;
     justify-content: flex-end;
