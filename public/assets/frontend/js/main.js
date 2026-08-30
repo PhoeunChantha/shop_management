@@ -430,6 +430,13 @@
     store.coupon = null;
     renderCartPage();
   };
+  window.__clearCart = function () {
+    store.cart = [];
+    store.coupon = null;
+    syncBadges();
+    renderCartDrawer();
+    renderCartPage();
+  };
 
   /* ---------- header scroll ---------- */
   const header = document.querySelector('.ut-header');

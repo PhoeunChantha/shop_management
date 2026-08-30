@@ -104,15 +104,22 @@ final class CheckoutService
      */
     public function isOnlineMethod(?string $code): bool
     {
+        // Wallet is never an online gateway — check it first to avoid a false positive.
+        if ($this->isWalletMethod($code)) {
+            return false;
+        }
+
         return $this->methodType($code) === 'online';
     }
 
     /**
      * True when the given payment-method code is the in-house wallet.
+     * paymentMethods() excludes wallet entries intentionally, so we check
+     * the code directly instead of looking it up in that list.
      */
     public function isWalletMethod(?string $code): bool
     {
-        return $this->methodType($code) === 'wallet';
+        return $code === 'wallet';
     }
 
     private function methodType(?string $code): ?string
