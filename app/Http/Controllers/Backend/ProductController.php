@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Backend;
 
+use App\Exceptions\FacebookPublishException;
 use App\Exports\ProductsExport;
 use App\Exports\ProductTemplateExport;
 use App\Http\Controllers\Backend\Concerns\HandlesBulkActions;
@@ -11,6 +12,7 @@ use App\Http\Requests\Product\UpdateProductRequest;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Services\Admin\FacebookPostService;
 use App\Services\Admin\ProductImportService;
 use App\Services\Admin\ProductService;
 use App\Services\Admin\SettingService;
@@ -29,6 +31,7 @@ class ProductController extends Controller
         private readonly ProductService $products,
         private readonly ProductImportService $imports,
         private readonly SettingService $settings,
+        private readonly FacebookPostService $facebook,
     ) {}
 
     public function index(Request $request): View
@@ -43,6 +46,7 @@ class ProductController extends Controller
             'perPage' => $perPage,
             'categories' => Category::orderByName()->get(['id', 'name']),
             'brands' => Brand::orderBy('name')->get(['id', 'name']),
+            'facebookConfigured' => $this->settings->facebookConfigured(),
         ]);
     }
 
@@ -67,7 +71,10 @@ class ProductController extends Controller
     {
         $this->authorize('view', Product::class);
 
-        return view('admin.products.show', ['product' => $this->products->findForShow($id)]);
+        return view('admin.products.show', [
+            'product' => $this->products->findForShow($id),
+            'facebookConfigured' => $this->settings->facebookConfigured(),
+        ]);
     }
 
     public function edit(string $id): View
@@ -98,6 +105,21 @@ class ProductController extends Controller
 
         return to_route('admin.products.index')
             ->with('success', __('Product deleted successfully!'));
+    }
+
+    public function publishToFacebook(string $id): RedirectResponse
+    {
+        $this->authorize('update', Product::class);
+
+        $product = Product::with('images')->findOrFail($id);
+
+        try {
+            $this->facebook->publish($product);
+        } catch (FacebookPublishException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', __('Product ":name" published to Facebook.', ['name' => $product->name]));
     }
 
     public function bulkDestroy(Request $request): RedirectResponse

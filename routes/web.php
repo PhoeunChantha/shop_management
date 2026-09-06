@@ -346,6 +346,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/{id}/edit', [ProductController::class, 'edit'])->name('edit');
         Route::put('/{id}', [ProductController::class, 'update'])->name('update');
         Route::delete('/{id}', [ProductController::class, 'destroy'])->name('destroy');
+        Route::post('/{id}/publish-facebook', [ProductController::class, 'publishToFacebook'])->name('publish-facebook');
     });
 
     Route::prefix('brands')->name('brands.')->group(function () {
