@@ -75,6 +75,7 @@ class Product extends Model
         'sort_order' => 'integer',
         'rating_avg' => 'decimal:2',
         'rating_count' => 'integer',
+        'facebook_posted_at' => 'datetime',
     ];
 
     /* ---------------- Relationships ---------------- */
@@ -182,6 +183,14 @@ class Product extends Model
         }
 
         return (int) ($this->variants_sum_stock ?? $this->variants()->sum('stock'));
+    }
+
+    /**
+     * Whether this product has ever been published to the Facebook Page.
+     */
+    public function getFacebookPublishedAttribute(): bool
+    {
+        return filled($this->facebook_post_id);
     }
 
     /**

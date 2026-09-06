@@ -19,6 +19,7 @@ enum SettingGroup: string
     case Appearance = 'appearance';
     case Chat = 'chat';
     case Recaptcha = 'recaptcha';
+    case Facebook = 'facebook';
 
     /**
      * Human-readable tab label.
@@ -39,6 +40,7 @@ enum SettingGroup: string
             self::Appearance => 'Theme Colors',
             self::Chat => 'Live Chat',
             self::Recaptcha => 'reCAPTCHA',
+            self::Facebook => 'Facebook Page',
         };
     }
 
@@ -61,6 +63,7 @@ enum SettingGroup: string
             self::Appearance => 'fa-palette',
             self::Chat => 'fa-comments',
             self::Recaptcha => 'fa-shield-halved',
+            self::Facebook => 'fa-share-from-square',
         };
     }
 

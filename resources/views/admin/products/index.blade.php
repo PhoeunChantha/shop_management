@@ -348,6 +348,11 @@
                                         @if ($product->is_new)<span class="pill-badge pill-new">{{ __('New') }}</span>@endif
                                         @if ($product->is_best_seller)<span class="pill-badge pill-best">{{ __('Best') }}</span>@endif
                                         @if ($product->is_on_sale)<span class="pill-badge pill-sale">{{ __('Sale') }}</span>@endif
+                                        @if ($product->facebook_published)
+                                            <a href="{{ $product->facebook_permalink_url }}" target="_blank" rel="noopener" class="pill-badge pill-fb" title="{{ __('Posted to Facebook') }}">
+                                                <i class="fa-brands fa-facebook"></i> {{ __('Posted') }}
+                                            </a>
+                                        @endif
                                     </div>
                                 </td>
                                 <td>
@@ -364,6 +369,15 @@
                                             <a href="{{ route('admin.products.edit', $product->id) }}" class="table-actions__item" role="menuitem">
                                                 <i class="fa-solid fa-pen"></i><span>{{ __('Edit') }}</span>
                                             </a>
+                                            @if ($facebookConfigured)
+                                                <form method="POST" action="{{ route('admin.products.publish-facebook', $product->id) }}" class="mb-0">
+                                                    @csrf
+                                                    <button type="submit" class="table-actions__item" role="menuitem">
+                                                        <i class="fa-brands fa-facebook"></i>
+                                                        <span>{{ $product->facebook_published ? __('Re-publish to Facebook') : __('Publish to Facebook') }}</span>
+                                                    </button>
+                                                </form>
+                                            @endif
                                             <button type="button" class="table-actions__item table-actions__item--danger" role="menuitem"
                                                 data-delete-modal-target="deleteProductModal"
                                                 data-delete-action="{{ route('admin.products.destroy', $product->id) }}"

@@ -39,6 +39,15 @@
                 </div>
             </div>
             <div class="pd-header__actions">
+                @if ($facebookConfigured)
+                    <form method="POST" action="{{ route('admin.products.publish-facebook', $product->id) }}" class="mb-0">
+                        @csrf
+                        <button type="submit" class="ghost-button ghost-button--panel">
+                            <i class="fa-brands fa-facebook"></i>
+                            <span>{{ $product->facebook_published ? __('Re-publish to Facebook') : __('Publish to Facebook') }}</span>
+                        </button>
+                    </form>
+                @endif
                 <a href="{{ route('admin.products.edit', $product->id) }}" class="premium-button premium-button--dark">
                     <i class="fa-solid fa-pen"></i><span>{{ __('Edit') }}</span>
                 </a>
@@ -47,6 +56,12 @@
                 </a>
             </div>
         </div>
+
+        @if ($product->facebook_published)
+            <p class="pd-meta">
+                <span><i class="fa-brands fa-facebook"></i> {{ __('Posted to Facebook') }} {{ $product->facebook_posted_at?->diffForHumans() }} — <a href="{{ $product->facebook_permalink_url }}" target="_blank" rel="noopener">{{ __('View post') }}</a></span>
+            </p>
+        @endif
 
         <x-message />
 

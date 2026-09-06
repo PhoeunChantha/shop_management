@@ -217,6 +217,11 @@ final class SettingService
                 'recaptcha_protect_register' => ['label' => 'Protect registration', 'type' => 'select', 'options' => ['1' => 'Yes', '0' => 'No'], 'default' => '1', 'help' => 'Run the reCAPTCHA check on the Create Account form.', 'rules' => 'nullable|in:0,1'],
                 'recaptcha_protect_login' => ['label' => 'Protect login', 'type' => 'select', 'options' => ['1' => 'Yes', '0' => 'No'], 'default' => '0', 'help' => 'Run the reCAPTCHA check on the Sign In form.', 'rules' => 'nullable|in:0,1'],
             ],
+            SettingGroup::Facebook->value => [
+                'facebook_publish_enabled' => ['label' => 'Publish to Facebook', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '0', 'help' => 'Show the “Publish to Facebook” action on products.', 'rules' => 'nullable|in:0,1'],
+                'facebook_page_id' => ['label' => 'Facebook Page ID', 'type' => 'text', 'placeholder' => '123456789012345', 'help' => 'Found under your Page’s About → Page transparency, or in Meta Business Settings.', 'rules' => 'nullable|string|max:60'],
+                'facebook_page_access_token' => ['label' => 'Page access token', 'type' => 'password', 'env' => 'FACEBOOK_PAGE_ACCESS_TOKEN', 'placeholder' => 'EAAG...', 'help' => 'A long-lived Page access token (Meta Business Settings → System Users is recommended so it never expires). Saved to .env, never shown in page source.', 'rules' => 'nullable|string|max:1000'],
+            ],
             SettingGroup::Chat->value => [
                 'chat_enabled' => ['label' => 'Live chat', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '1', 'help' => 'Show the chat launcher on the storefront. Admin inbox keeps working either way.', 'rules' => 'nullable|in:0,1'],
                 'chat_guest_launcher' => ['label' => 'Launcher for guests', 'type' => 'select', 'options' => ['1' => 'Shown (asks to sign in)', '0' => 'Hidden'], 'default' => '1', 'help' => 'Signed-out visitors see a launcher that sends them to sign in.', 'rules' => 'nullable|in:0,1'],
@@ -515,6 +520,30 @@ final class SettingService
 
         return filled($env->get('GOOGLE_CLIENT_ID'))
             && filled($env->get('GOOGLE_CLIENT_SECRET'));
+    }
+
+    /**
+     * Facebook Page publishing configuration, with defaults applied.
+     *
+     * @return array{enabled: bool, page_id: string, access_token: string}
+     */
+    public function facebook(): array
+    {
+        return [
+            'enabled' => (string) Setting::get('facebook_publish_enabled', '0') === '1',
+            'page_id' => trim((string) Setting::get('facebook_page_id')),
+            'access_token' => trim((string) app(EnvService::class)->get('FACEBOOK_PAGE_ACCESS_TOKEN')),
+        ];
+    }
+
+    /**
+     * True when Facebook publishing is turned on and has a Page ID + token.
+     */
+    public function facebookConfigured(): bool
+    {
+        $facebook = $this->facebook();
+
+        return $facebook['enabled'] && filled($facebook['page_id']) && filled($facebook['access_token']);
     }
 
     /**

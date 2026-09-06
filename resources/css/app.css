@@ -8019,6 +8019,13 @@ html.dark .erp-img {
     color: var(--danger-color);
 }
 
+.pill-fb {
+    background: color-mix(in srgb, #1877f2 14%, #fff);
+    color: #1877f2;
+    gap: 4px;
+    text-decoration: none;
+}
+
 .status-chip {
     display: inline-flex;
     align-items: center;
