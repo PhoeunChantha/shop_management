@@ -417,6 +417,7 @@ final class DashboardService
             ->orderBy('stock')
             ->limit($limit)
             ->get(['id', 'name', 'sku', 'stock', 'low_stock_alert'])
+            ->toBase()
             ->map(fn (Product $p) => [
                 'name' => $p->name,
                 'sku' => $p->sku ?: '—',
@@ -431,6 +432,7 @@ final class DashboardService
             ->orderBy('stock')
             ->limit($limit)
             ->get()
+            ->toBase()
             ->map(fn (ProductVariant $v) => [
                 'name' => $v->product?->name ?? 'Product',
                 'sku' => $v->sku ?: '—',
