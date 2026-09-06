@@ -83,6 +83,7 @@ final class StockReportService extends ReportService
             ->orderBy('stock')
             ->limit(5000)
             ->get()
+            ->toBase()
             ->map(fn (Product $product): array => [
                 'name' => (string) $product->name,
                 'sku' => (string) ($product->sku ?? ''),
@@ -99,6 +100,7 @@ final class StockReportService extends ReportService
             ->orderBy('stock')
             ->limit(5000)
             ->get()
+            ->toBase()
             ->map(fn (ProductVariant $variant): array => [
                 'name' => trim(((string) ($variant->product?->name ?? 'Variant')).' — '.((string) $variant->sku)),
                 'sku' => (string) $variant->sku,
