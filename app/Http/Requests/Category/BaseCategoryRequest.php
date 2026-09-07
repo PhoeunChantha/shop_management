@@ -30,7 +30,7 @@ abstract class BaseCategoryRequest extends FormRequest
             'name.*' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'array'],
             'description.*' => ['nullable', 'string', 'max:5000'],
-            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg,webp', 'max:2048'],
+            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
             'image_media' => ['nullable', 'string', 'max:255'],
             'icon' => ['nullable', 'string', 'max:255'],
             'sort_order' => ['nullable', 'integer', 'min:0'],

@@ -45,12 +45,12 @@ abstract class BaseProductRequest extends FormRequest
             'short_description.*' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'array'],
             'description.*' => ['nullable', 'string'],
-            'thumbnail' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
+            'thumbnail' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'thumbnail_media' => ['nullable', 'string', 'max:255'],
 
             // Gallery
             'images' => ['nullable', 'array'],
-            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
+            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'images_media' => ['nullable', 'array'],
             'images_media.*' => ['string', 'max:255'],
             'removed_images' => ['nullable', 'array'],
@@ -96,7 +96,7 @@ abstract class BaseProductRequest extends FormRequest
             'variants' => ['required_if:product_type,variable', 'array'],
             'variants.*.value_ids' => ['required', 'array', 'min:1'],
             'variants.*.value_ids.*' => ['integer', 'exists:attribute_values,id'],
-            'variants.*.image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
+            'variants.*.image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'variants.*.image_existing' => ['nullable', 'string', 'max:255'],
             'variants.*.image_media' => ['nullable', 'string', 'max:255'],
             'variants.*.sku' => ['nullable', 'string', 'max:100'],

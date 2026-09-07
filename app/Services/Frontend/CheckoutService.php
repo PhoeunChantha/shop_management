@@ -255,8 +255,10 @@ final class CheckoutService
             }
 
             // Coupon (re-validated server-side — client discount is never trusted).
+            // Row-locked so two concurrent checkouts using the same coupon can't
+            // both pass the usage-limit check before either commits.
             $coupon = filled($data['coupon'] ?? null)
-                ? Coupon::active()->code((string) $data['coupon'])->first()
+                ? Coupon::active()->code((string) $data['coupon'])->lockForUpdate()->first()
                 : null;
 
             // Enforce the per-customer redemption cap (global cap is in the scope).

@@ -55,17 +55,17 @@ final class ProductsExport implements FromQuery, WithHeadings, WithMapping, With
     public function map($product): array
     {
         $names = array_map(
-            fn (string $lang) => $product->getTranslation('name', $lang, false),
+            fn (string $lang) => self::escapeFormula($product->getTranslation('name', $lang, false)),
             $this->languages,
         );
 
         return array_merge(
-            [$product->sku],
+            [self::escapeFormula($product->sku)],
             $names,
             [
-                $product->category?->name,
-                $product->subCategory?->name,
-                $product->brand?->name,
+                self::escapeFormula($product->category?->name),
+                self::escapeFormula($product->subCategory?->name),
+                self::escapeFormula($product->brand?->name),
                 $product->product_type?->value,
                 $product->price,
                 $product->cost_price,
@@ -80,12 +80,26 @@ final class ProductsExport implements FromQuery, WithHeadings, WithMapping, With
                 (int) $product->is_best_seller,
                 (int) $product->is_on_sale,
                 $product->sort_order,
-                $product->getTranslation('short_description', $this->primaryLang, false),
-                $product->getTranslation('description', $this->primaryLang, false),
-                $product->getTranslation('seo_title', $this->primaryLang, false),
-                $product->getTranslation('seo_description', $this->primaryLang, false),
+                self::escapeFormula($product->getTranslation('short_description', $this->primaryLang, false)),
+                self::escapeFormula($product->getTranslation('description', $this->primaryLang, false)),
+                self::escapeFormula($product->getTranslation('seo_title', $this->primaryLang, false)),
+                self::escapeFormula($product->getTranslation('seo_description', $this->primaryLang, false)),
             ],
         );
+    }
+
+    /**
+     * Neutralize spreadsheet formula/DDE injection: a cell value starting with
+     * =, +, -, @, tab, or CR is prefixed with a leading apostrophe so Excel/Sheets
+     * treats it as literal text instead of evaluating it as a formula.
+     */
+    private static function escapeFormula(?string $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        return preg_match('/^[=+\-@\t\r]/', $value) === 1 ? "'".$value : $value;
     }
 
     /**

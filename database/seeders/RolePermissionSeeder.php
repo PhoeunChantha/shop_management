@@ -21,7 +21,7 @@ class RolePermissionSeeder extends Seeder
             'colors', 'coupons', 'deals', 'returns', 'orders', 'banners', 'collections', 'announcements',
             'shipping', 'taxes', 'pages', 'faqs', 'reviews', 'suppliers', 'purchase orders', 'abandoned carts', 'subscribers', 'payments', 'wallets', 'reports',
             'sales reports', 'product reports', 'stock reports', 'payment reports', 'customer reports', 'register reports', 'return reports', 'purchasing reports',
-            'saved views', 'users', 'settings', 'notifications', 'seo', 'chats', 'role', 'permission',
+            'saved views', 'users', 'settings', 'notifications', 'seo', 'chats', 'role', 'permission', 'media', 'activity logs',
         ];
         $actions = ['view', 'create', 'edit', 'delete'];
 

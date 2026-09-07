@@ -17,6 +17,8 @@ class ActivityLogController extends Controller
 
     public function index(Request $request): View
     {
+        abort_unless($request->user()->can('view activity logs'), 403);
+
         $filters = $this->validatedFilters($request);
         $perPage = (int) ($filters['per_page'] ?? 25);
 
@@ -31,6 +33,8 @@ class ActivityLogController extends Controller
 
     public function export(Request $request): StreamedResponse
     {
+        abort_unless($request->user()->can('view activity logs'), 403);
+
         $filters = $this->validatedFilters($request);
         $filename = 'activity-log-'.now()->format('Y-m-d-His').'.csv';
 

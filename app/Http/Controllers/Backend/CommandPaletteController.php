@@ -18,7 +18,7 @@ class CommandPaletteController extends Controller
         ]);
 
         return response()->json([
-            'groups' => $this->palette->search($data['q'] ?? null),
+            'groups' => $this->palette->search($data['q'] ?? null, $request->user()),
         ]);
     }
 }

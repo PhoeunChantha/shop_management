@@ -33,6 +33,8 @@ class MediaAssetController extends Controller
 
     public function index(Request $request, MediaUsageService $mediaUsage): View
     {
+        abort_unless($request->user()->can('view media'), 403);
+
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
             'folder' => ['nullable', Rule::in(array_keys(self::FOLDERS))],
@@ -52,11 +54,13 @@ class MediaAssetController extends Controller
 
     public function store(Request $request): RedirectResponse|JsonResponse
     {
+        abort_unless($request->user()->can('create media'), 403);
+
         $validated = $request->validate([
             'folder' => ['required', Rule::in(array_keys(self::FOLDERS))],
             'alt_text' => ['nullable', 'string', 'max:255'],
             'files' => ['required', 'array', 'min:1', 'max:12'],
-            'files.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,svg,gif', 'max:4096'],
+            'files.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:4096'],
         ]);
 
         try {
@@ -87,6 +91,8 @@ class MediaAssetController extends Controller
 
     public function picker(Request $request): JsonResponse
     {
+        abort_unless($request->user()->can('view media'), 403);
+
         $filters = $request->validate([
             'folder' => ['required', Rule::in(array_keys(self::FOLDERS))],
             'search' => ['nullable', 'string', 'max:255'],
@@ -95,16 +101,21 @@ class MediaAssetController extends Controller
         return response()->json(['data' => $this->mediaAssets->picker($filters['folder'], $filters['search'] ?? null)]);
     }
 
-    public function optimizePending(): RedirectResponse
+    public function optimizePending(Request $request): RedirectResponse
     {
+        abort_unless($request->user()->can('edit media'), 403);
+
         $count = $this->mediaAssets->optimizePending();
 
         return back()->with('success', $count.' media file(s) processed for optimization.');
     }
 
     public function destroy(
+        Request $request,
         MediaAsset $media,
     ): RedirectResponse {
+        abort_unless($request->user()->can('delete media'), 403);
+
         try {
             $this->mediaAssets->delete($media);
         } catch (\InvalidArgumentException $e) {

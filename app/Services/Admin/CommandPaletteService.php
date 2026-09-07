@@ -7,23 +7,28 @@ use App\Models\MediaAsset;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ReturnRequest;
+use App\Models\User;
 
 class CommandPaletteService
 {
     /**
+     * Each data group is only searched when the requesting user holds the
+     * matching permission, so the palette can't be used to enumerate data
+     * (customer PII, order totals, media) a role isn't allowed to view.
+     *
      * @return array<int, array<string, mixed>>
      */
-    public function search(?string $term): array
+    public function search(?string $term, User $user): array
     {
         $term = trim((string) $term);
 
         return [
             $this->pages($term),
-            $this->products($term),
-            $this->orders($term),
-            $this->customers($term),
-            $this->returns($term),
-            $this->media($term),
+            $user->can('view products') ? $this->products($term) : $this->group('Products', []),
+            $user->can('view orders') ? $this->orders($term) : $this->group('Orders', []),
+            $user->can('view orders') ? $this->customers($term) : $this->group('Customers', []),
+            $user->can('view returns') ? $this->returns($term) : $this->group('Returns', []),
+            $user->can('view media') ? $this->media($term) : $this->group('Media', []),
         ];
     }
 
