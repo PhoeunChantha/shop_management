@@ -28,6 +28,11 @@ class ProductService
 
     private const VARIANT_FOLDER = 'variants';
 
+    /** Max size of the WebP preview generated alongside each uploaded image, for responsive <img srcset>. */
+    private const THUMB_WIDTH = 480;
+
+    private const THUMB_HEIGHT = 480;
+
     private const TRANSLATABLE = ['name', 'short_description', 'description', 'seo_title', 'seo_description'];
 
     public function __construct(private readonly SettingService $settings) {}
@@ -179,6 +184,7 @@ class ProductService
                     $name = ImageManager::update($request->file('thumbnail'), $product->thumbnail, self::FOLDER);
                     $product->thumbnail = $name;
                     $uploaded[] = $name;
+                    ImageManager::generateThumbnail($name, self::FOLDER, self::THUMB_WIDTH, self::THUMB_HEIGHT);
                 } elseif ($selected = $this->selectedMediaFilename($request->input('thumbnail_media'), self::FOLDER)) {
                     $product->thumbnail = $selected;
                 }
@@ -319,6 +325,7 @@ class ProductService
         foreach ((array) $request->file('images', []) as $i => $file) {
             $name = ImageManager::upload($file, self::FOLDER);
             $uploaded[] = $name;
+            ImageManager::generateThumbnail($name, self::FOLDER, self::THUMB_WIDTH, self::THUMB_HEIGHT);
 
             $product->images()->create([
                 'image' => $name,
@@ -419,6 +426,7 @@ class ProductService
             if ($imageFile) {
                 $image = ImageManager::upload($imageFile, self::VARIANT_FOLDER);
                 $uploaded[] = $image;
+                ImageManager::generateThumbnail($image, self::VARIANT_FOLDER, self::THUMB_WIDTH, self::THUMB_HEIGHT);
             } elseif ($selected = $this->selectedMediaFilename($variant['image_media'] ?? null, self::VARIANT_FOLDER)) {
                 $image = $selected;
             } else {

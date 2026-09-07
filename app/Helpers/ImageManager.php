@@ -108,6 +108,95 @@ final class ImageManager
         return $path ? asset($path) : null;
     }
 
+    /**
+     * Generate (or regenerate) a compressed WebP thumbnail for a stored image,
+     * saved alongside it as "thumbs/{basename}.webp" under the same folder.
+     * Used to power responsive <img srcset> without re-fetching the full-size
+     * original. Returns the thumbnail's stored filename (relative to the
+     * folder), or null if GD/WebP support is unavailable or the source can't
+     * be read — callers should treat that as "no thumbnail yet" and fall back
+     * to the full-size image, never as a hard failure.
+     */
+    public static function generateThumbnail(string $filename, string $folder, int $maxWidth, int $maxHeight): ?string
+    {
+        if (! function_exists('imagewebp') || self::isExternalUrl($filename)) {
+            return null;
+        }
+
+        $path = self::path($filename, $folder);
+        $absolutePath = $path ? public_path($path) : null;
+
+        if (! $absolutePath || ! File::exists($absolutePath)) {
+            return null;
+        }
+
+        $extension = Str::lower(pathinfo($filename, PATHINFO_EXTENSION));
+        $image = match ($extension) {
+            'jpg', 'jpeg' => @imagecreatefromjpeg($absolutePath),
+            'png' => @imagecreatefrompng($absolutePath),
+            'webp' => function_exists('imagecreatefromwebp') ? @imagecreatefromwebp($absolutePath) : false,
+            default => false,
+        };
+
+        if (! $image) {
+            return null;
+        }
+
+        $sourceWidth = imagesx($image);
+        $sourceHeight = imagesy($image);
+
+        if ($sourceWidth <= 0 || $sourceHeight <= 0) {
+            imagedestroy($image);
+
+            return null;
+        }
+
+        $ratio = min($maxWidth / $sourceWidth, $maxHeight / $sourceHeight, 1);
+        $targetWidth = max(1, (int) round($sourceWidth * $ratio));
+        $targetHeight = max(1, (int) round($sourceHeight * $ratio));
+
+        $thumbnail = imagecreatetruecolor($targetWidth, $targetHeight);
+        imagealphablending($thumbnail, false);
+        imagesavealpha($thumbnail, true);
+        imagecopyresampled($thumbnail, $image, 0, 0, 0, 0, $targetWidth, $targetHeight, $sourceWidth, $sourceHeight);
+        imagedestroy($image);
+
+        $thumbnailName = self::thumbnailName($filename);
+        $thumbnailPath = self::path($thumbnailName, $folder);
+
+        if (! $thumbnailPath) {
+            imagedestroy($thumbnail);
+
+            return null;
+        }
+
+        File::ensureDirectoryExists(dirname(public_path($thumbnailPath)));
+        $written = imagewebp($thumbnail, public_path($thumbnailPath), 80);
+        imagedestroy($thumbnail);
+
+        return $written ? $thumbnailName : null;
+    }
+
+    /**
+     * URL of a previously generated thumbnail (see generateThumbnail()), or
+     * null when none exists yet — callers fall back to the full-size url().
+     */
+    public static function thumbnailUrl(?string $filename, string $folder): ?string
+    {
+        if (empty($filename) || self::isExternalUrl($filename)) {
+            return null;
+        }
+
+        $path = self::path(self::thumbnailName($filename), $folder);
+
+        return $path && File::exists(public_path($path)) ? asset($path) : null;
+    }
+
+    private static function thumbnailName(string $filename): string
+    {
+        return 'thumbs/'.pathinfo($filename, PATHINFO_FILENAME).'.webp';
+    }
+
     private static function isExternalUrl(string $name): bool
     {
         return Str::startsWith($name, ['http://', 'https://']);

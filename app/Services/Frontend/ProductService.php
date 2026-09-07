@@ -2,8 +2,11 @@
 
 namespace App\Services\Frontend;
 
+use App\Enums\OrderStatus;
+use App\Helpers\ImageManager;
 use App\Models\Category;
 use App\Models\Color;
+use App\Models\OrderDetail;
 use App\Models\Product;
 use App\Models\Size;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -69,6 +72,89 @@ class ProductService
             ->limit($limit)
             ->get()
             ->map(fn (Product $product): array => $this->map($product))
+            ->values();
+    }
+
+    /**
+     * "You may also like" picks for the PDP: real co-purchase signal first
+     * (other products that shipped in the same completed orders as this
+     * one), topped up with same-category products when there isn't enough
+     * purchase history yet (e.g. a brand-new product).
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function relatedProducts(Product $product, int $limit = 4): Collection
+    {
+        $picks = $this->frequentlyBoughtWith($product, $limit);
+
+        if ($picks->count() >= $limit) {
+            return $picks;
+        }
+
+        $excludeIds = $picks->pluck('id')->push($product->id)->all();
+
+        $fallback = Product::query()
+            ->with($this->relations())
+            ->withSum('variants', 'stock')
+            ->where('status', 'active')
+            ->where('category_id', $product->category_id)
+            ->whereNotIn('id', $excludeIds)
+            ->orderBy('sort_order')
+            ->latest()
+            ->limit($limit - $picks->count())
+            ->get()
+            ->map(fn (Product $item): array => $this->map($item));
+
+        return $picks->concat($fallback)->values();
+    }
+
+    /**
+     * Other products most often bought in the same order as $product, across
+     * every completed (non-pending, non-cancelled/refunded) order. Empty
+     * when the product has no such order history yet.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function frequentlyBoughtWith(Product $product, int $limit = 4): Collection
+    {
+        $orderIds = OrderDetail::query()
+            ->where('product_id', $product->id)
+            ->whereHas('order', fn (Builder $query) => $query->whereNotIn('status', [
+                OrderStatus::Pending->value,
+                OrderStatus::Cancelled->value,
+                OrderStatus::Refunded->value,
+            ]))
+            ->pluck('order_id');
+
+        if ($orderIds->isEmpty()) {
+            return collect();
+        }
+
+        $productIds = OrderDetail::query()
+            ->whereIn('order_id', $orderIds)
+            ->where('product_id', '!=', $product->id)
+            ->selectRaw('product_id, COUNT(DISTINCT order_id) as co_purchase_count')
+            ->groupBy('product_id')
+            ->orderByDesc('co_purchase_count')
+            ->limit($limit)
+            ->pluck('product_id');
+
+        if ($productIds->isEmpty()) {
+            return collect();
+        }
+
+        $products = Product::query()
+            ->with($this->relations())
+            ->withSum('variants', 'stock')
+            ->whereIn('id', $productIds)
+            ->where('status', 'active')
+            ->get()
+            ->keyBy('id');
+
+        return $productIds
+            ->map(fn (int $id) => $products->get($id))
+            ->filter()
+            ->map(fn (Product $item): array => $this->map($item))
             ->values();
     }
 
@@ -396,6 +482,7 @@ class ProductService
             'gallery' => max(1, count($images)),
             'images' => $images,
             'image_url' => $product->thumbnail_url,
+            'image_thumb_url' => $product->thumbnail_preview_url,
             'variant_index' => $variantIndex,
         ];
     }
@@ -453,19 +540,36 @@ class ProductService
     /**
      * @return array<int, string>
      */
+    /**
+     * @return array<int, array{url: string, thumb: ?string}>
+     */
     private function images(Product $product): array
     {
         $images = $product->images
             ->sortByDesc('is_primary')
-            ->map(fn ($image): ?string => $image->image ? Imageurl($image->image, 'products') : null)
+            ->map(fn ($image): ?array => $image->image ? [
+                'url' => Imageurl($image->image, 'products'),
+                'thumb' => ImageManager::thumbnailUrl($image->image, 'products'),
+            ] : null)
             ->filter()
             ->values();
 
         if ($product->thumbnail_url) {
-            $images->prepend($product->thumbnail_url);
+            $images->prepend([
+                'url' => $product->thumbnail_url,
+                'thumb' => $product->thumbnail_preview_url,
+            ]);
         }
 
-        return array_values(array_unique($images->all()));
+        $seen = [];
+
+        return $images->filter(function (array $entry) use (&$seen): bool {
+            if (isset($seen[$entry['url']])) {
+                return false;
+            }
+
+            return $seen[$entry['url']] = true;
+        })->values()->all();
     }
 
     private function colorKey(Color $color): string

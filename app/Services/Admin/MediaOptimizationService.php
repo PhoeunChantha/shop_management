@@ -55,9 +55,10 @@ class MediaOptimizationService
             }
 
             $optimized = $this->writeOptimized($image, $absolutePath, $extension);
-            $thumbnail = $this->writeThumbnail($image, $asset, $dimensions);
 
             imagedestroy($image);
+
+            $thumbnail = ImageManager::generateThumbnail($asset->filename, $asset->folder, self::MAX_THUMBNAIL_WIDTH, self::MAX_THUMBNAIL_HEIGHT);
 
             $optimizedSize = File::size($absolutePath);
 
@@ -121,52 +122,21 @@ class MediaOptimizationService
             return false;
         }
 
-        File::replace($path, File::get($tempPath));
+        try {
+            // Best-effort: replacing the original with its compressed version
+            // can transiently fail (e.g. a brief OS-level file lock). That
+            // should degrade to "keep the original", not abort optimize()
+            // entirely — thumbnail generation doesn't depend on this step.
+            File::replace($path, File::get($tempPath));
+        } catch (\Throwable) {
+            File::delete($tempPath);
+
+            return false;
+        }
+
         File::delete($tempPath);
 
         return true;
-    }
-
-    /**
-     * @param  array<int, int>|null  $dimensions
-     */
-    private function writeThumbnail(mixed $image, MediaAsset $asset, ?array $dimensions): ?string
-    {
-        if (! function_exists('imagewebp')) {
-            return null;
-        }
-
-        $sourceWidth = $dimensions[0] ?? imagesx($image);
-        $sourceHeight = $dimensions[1] ?? imagesy($image);
-
-        if ($sourceWidth <= 0 || $sourceHeight <= 0) {
-            return null;
-        }
-
-        $ratio = min(self::MAX_THUMBNAIL_WIDTH / $sourceWidth, self::MAX_THUMBNAIL_HEIGHT / $sourceHeight, 1);
-        $targetWidth = max(1, (int) round($sourceWidth * $ratio));
-        $targetHeight = max(1, (int) round($sourceHeight * $ratio));
-
-        $thumbnail = imagecreatetruecolor($targetWidth, $targetHeight);
-        imagealphablending($thumbnail, false);
-        imagesavealpha($thumbnail, true);
-        imagecopyresampled($thumbnail, $image, 0, 0, 0, 0, $targetWidth, $targetHeight, $sourceWidth, $sourceHeight);
-
-        $baseName = pathinfo($asset->filename, PATHINFO_FILENAME);
-        $thumbnailName = 'thumbs/'.$baseName.'.webp';
-        $thumbnailPath = ImageManager::path($thumbnailName, $asset->folder);
-
-        if (! $thumbnailPath) {
-            imagedestroy($thumbnail);
-
-            return null;
-        }
-
-        File::ensureDirectoryExists(dirname(public_path($thumbnailPath)));
-        $written = imagewebp($thumbnail, public_path($thumbnailPath), 80);
-        imagedestroy($thumbnail);
-
-        return $written ? $thumbnailName : null;
     }
 
     /**

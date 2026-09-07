@@ -105,6 +105,16 @@
                         <div class="form-panel-body {{ ($group['type'] ?? 'fields') === 'fields' ? 'grid-cols-1 sm:grid-cols-2 gap-x-5' : '' }}"
                             data-tab-panel="{{ $groupKey }}"
                             x-show="tab === '{{ $groupKey }}'" x-cloak>
+                            @if ($groupKey === 'facebook')
+                                <div class="sm:col-span-2" style="margin-bottom:16px;padding:12px 14px;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb">
+                                    <label style="display:block;font-weight:600;font-size:13px;margin-bottom:6px">{{ __('Product catalog feed URL') }}</label>
+                                    <input type="text" readonly value="{{ route('frontend.feed.products') }}" onclick="this.select()"
+                                        style="width:100%;font-size:13px;padding:7px 9px;border:1px solid #d1d5db;border-radius:6px;background:#fff">
+                                    <p style="font-size:12px;color:#6b7280;margin:6px 0 0">
+                                        {{ __('Paste this into Meta Commerce Manager (or Google Merchant Center) as a scheduled feed to keep your whole catalog — price, stock, images — in sync automatically. No app or access token needed for this.') }}
+                                    </p>
+                                </div>
+                            @endif
                             @if (($group['type'] ?? 'fields') === 'fields')
                                 @foreach ($group['fields'] as $fieldKey => $field)
                                     {{-- Image fields are grouped into their own row below. --}}

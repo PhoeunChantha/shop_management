@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ProductType;
+use App\Helpers\ImageManager;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -207,5 +208,24 @@ class Product extends Model
             : $this->images()->orderByDesc('is_primary')->first();
 
         return $primary ? Imageurl($primary->image, 'products') : null;
+    }
+
+    /**
+     * Small WebP preview of the same file thumbnail_url resolves to, for
+     * responsive <img srcset>. Null when no thumbnail has been generated yet
+     * (e.g. the image was uploaded before this existed) — callers fall back
+     * to thumbnail_url.
+     */
+    public function getThumbnailPreviewUrlAttribute(): ?string
+    {
+        if ($this->thumbnail) {
+            return ImageManager::thumbnailUrl($this->thumbnail, 'products');
+        }
+
+        $primary = $this->relationLoaded('images')
+            ? $this->images->firstWhere('is_primary', true) ?? $this->images->first()
+            : $this->images()->orderByDesc('is_primary')->first();
+
+        return $primary ? ImageManager::thumbnailUrl($primary->image, 'products') : null;
     }
 }
