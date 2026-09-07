@@ -60,6 +60,7 @@ use App\Http\Controllers\Frontend\HomeController;
 use App\Http\Controllers\Frontend\NewsletterController;
 use App\Http\Controllers\Frontend\PageController;
 use App\Http\Controllers\Frontend\PaymentController;
+use App\Http\Controllers\Frontend\ProductFeedController;
 use App\Http\Controllers\Frontend\ShopController;
 use App\Http\Controllers\Frontend\SitemapController;
 use App\Http\Controllers\Frontend\SocialAuthController;
@@ -71,6 +72,9 @@ use Illuminate\Support\Facades\Route;
 Route::name('frontend.')->group(function () {
     Route::get('/', [HomeController::class, 'index'])->name('home');
     Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
+    // Public product catalog feed for Meta Commerce Manager / Google Merchant
+    // Center — a scheduled-feed URL, no API credentials needed on either side.
+    Route::get('/feed/products.xml', [ProductFeedController::class, 'index'])->name('feed.products');
     // Dynamic robots.txt so the Sitemap directive is an absolute URL (required by
     // crawlers). Served by Laravel because the static public/robots.txt was removed.
     Route::get('/robots.txt', function () {

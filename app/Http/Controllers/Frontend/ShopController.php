@@ -152,19 +152,7 @@ class ShopController extends Controller
         }
 
         $product = $this->products->map($dynamicProduct);
-        $related = Product::query()
-            ->with($this->products->relations())
-            ->withSum('variants', 'stock')
-            ->where('status', 'active')
-            ->where('id', '!=', $dynamicProduct->id)
-            ->where('category_id', $dynamicProduct->category_id)
-            ->orderBy('sort_order')
-            ->latest()
-            ->limit(4)
-            ->get()
-            ->map(fn (Product $product): array => $this->products->map($product))
-            ->values()
-            ->all();
+        $related = $this->products->relatedProducts($dynamicProduct, 4)->all();
 
         $reviews = Review::query()
             ->with('user:id,name')

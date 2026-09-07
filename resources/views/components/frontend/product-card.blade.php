@@ -11,6 +11,10 @@
         <div class="ut-pcard-media" style="position:relative">
             @if (!empty($p['image_url']))
                 <img src="{{ $p['image_url'] }}" alt="{{ $p['name'] }}"
+                    @if (!empty($p['image_thumb_url']))
+                        srcset="{{ $p['image_thumb_url'] }} 480w, {{ $p['image_url'] }} 960w"
+                        sizes="(max-width: 640px) 50vw, 280px"
+                    @endif
                     class="ut-pcard-image" loading="lazy" decoding="async"
                     style="width:100%;aspect-ratio:3/4;object-fit:cover;display:block">
             @else

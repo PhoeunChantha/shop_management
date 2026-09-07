@@ -75,7 +75,8 @@
     $firstColor = $product['colors'][0] ?? 'black';
     $firstColorMeta = $colors[$firstColor] ?? ['name' => ucfirst($firstColor), 'hex' => '#1a1a1d'];
     $productImages = $product['images'] ?? [];
-    $mainImage = $productImages[0] ?? $product['image_url'] ?? null;
+    $mainImage = $productImages[0]['url'] ?? $product['image_url'] ?? null;
+    $mainThumb = $productImages[0]['thumb'] ?? $product['image_thumb_url'] ?? null;
 @endphp
 <div class="anim-up" data-product-scope data-variant-index='@json($product['variant_index'] ?? [])' style="padding-bottom:90px">
     <div class="ut-wrap" style="padding-top:28px">
@@ -85,7 +86,9 @@
                 <div style="display:flex;flex-direction:column;gap:14px">
                     <div class="ut-pdp-main-media" style="position:relative;border-radius:var(--r-xl);overflow:hidden">
                         @if($mainImage)
-                            <img id="pdpMainImg" src="{{ $mainImage }}" alt="{{ $product['name'] }}" style="width:100%;aspect-ratio:4/5;object-fit:cover;display:block">
+                            <img id="pdpMainImg" src="{{ $mainImage }}"
+                                @if($mainThumb) srcset="{{ $mainThumb }} 480w, {{ $mainImage }} 960w" sizes="(max-width: 1024px) 90vw, 520px" @endif
+                                alt="{{ $product['name'] }}" style="width:100%;aspect-ratio:4/5;object-fit:cover;display:block">
                         @else
                             <x-frontend.ph id="pdpMain" :tint="$product['tint']" :dark="$product['dark']" label="product Â· view 1" style="aspect-ratio:4/5" />
                         @endif
@@ -94,9 +97,9 @@
                     </div>
                     <div class="ut-pdp-thumbs">
                         @forelse($productImages as $i => $image)
-                            <button type="button" class="ut-pdp-thumb" onclick="setThumb(this,{{ $i }}, @js($image))"
+                            <button type="button" class="ut-pdp-thumb" onclick="setThumb(this,{{ $i }}, @js($image['url']), @js($image['thumb']))"
                                 style="outline:{{ $i === 0 ? '2.5px solid var(--ink)' : '1px solid var(--border)' }}">
-                                <img src="{{ $image }}" alt="{{ $product['name'] }} view {{ $i + 1 }}" loading="lazy" decoding="async">
+                                <img src="{{ $image['thumb'] ?? $image['url'] }}" alt="{{ $product['name'] }} view {{ $i + 1 }}" loading="lazy" decoding="async">
                             </button>
                         @empty
                             @for($i = 0; $i < $product['gallery']; $i++)
@@ -294,10 +297,14 @@
 
 @push('scripts')
 <script>
-    function setThumb(btn, i, image){
+    function setThumb(btn, i, image, thumb){
         document.querySelectorAll('.ut-pdp button[onclick^="setThumb"]').forEach(b=>b.style.outline='1px solid var(--border)');
         btn.style.outline='2.5px solid var(--ink)';
-        var img = document.getElementById('pdpMainImg'); if(img && image) img.src = image;
+        var img = document.getElementById('pdpMainImg');
+        if(img && image){
+            img.src = image;
+            if (thumb) { img.srcset = thumb + ' 480w, ' + image + ' 960w'; } else { img.removeAttribute('srcset'); }
+        }
         var lbl = document.querySelector('#pdpMain .ph-label'); if(lbl) lbl.textContent = 'product · view '+(i+1);
     }
     function setTab(btn, key){
