@@ -15,6 +15,7 @@
                 <p class="section-kicker">{{ __('Category setup') }}</p>
                 <h3>Edit Category: {{ $category->name }}</h3>
             </div>
+            
             <a href="{{ route('admin.categories.index') }}" class="ghost-button ghost-button--panel">
                 <i class="fa-solid fa-arrow-left"></i>
                 <span>{{ __('Back') }}</span>

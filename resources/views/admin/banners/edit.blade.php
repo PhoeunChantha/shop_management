@@ -35,6 +35,7 @@
                 'action' => route('admin.banners.update', $banner->id),
                 'submitText' => __('Update Banner'),
             ])
+            
         </section>
     </div>
 </x-app-layout>

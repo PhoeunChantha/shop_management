@@ -52,6 +52,7 @@
                                 <p class="section-kicker mb-0">{{ __('Inbox') }}</p>
                                 <h3 class="mb-0">{{ __('Conversations') }}</h3>
                             </div>
+
                             <div class="admin-chat-list__tools">
                                 <button type="button" class="admin-chat-iconbtn" :class="{ 'is-muted': muted }" @click="toggleMute()"
                                     :title="muted ? '{{ __('Unmute alert sound') }}' : '{{ __('Mute alert sound') }}'" :aria-label="muted ? '{{ __('Unmute alert sound') }}' : '{{ __('Mute alert sound') }}'">
@@ -99,10 +100,12 @@
                                             <strong data-row-name>{{ $customer?->name ?? __('Deleted customer') }}</strong>
                                             <time data-row-time datetime="{{ $c->last_message_at?->toIso8601String() }}">{{ $c->last_message_at?->diffForHumans(short: true) }}</time>
                                         </span>
+
                                         <span class="admin-chat-row__bottom">
                                             <span class="admin-chat-row__preview" data-row-preview>{{ $c->last_message_preview ?: __('No messages yet') }}</span>
                                             <span class="admin-chat-row__unread" data-row-unread style="{{ $c->admin_unread > 0 ? '' : 'display:none' }}">{{ $c->admin_unread }}</span>
                                         </span>
+                                        
                                         <span class="admin-chat-row__meta">
                                             <span class="admin-chat-dot {{ $c->isOpen() ? 'is-open' : 'is-closed' }}" data-row-status></span>
                                             <span data-row-assignee>{{ $c->assignee?->name ?? __('Unassigned') }}</span>

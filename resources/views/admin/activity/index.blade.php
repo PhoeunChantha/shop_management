@@ -16,6 +16,7 @@
                 <p class="activity-log-lede">{{ __('Review order activity, admin actions, and system events from one searchable timeline.') }}</p>
             </div>
 
+
             <a href="{{ route('admin.activity.export', request()->query()) }}" class="premium-button premium-button--dark">
                 <i class="fa-solid fa-file-export"></i>
                 <span>{{ __('Export CSV') }}</span>
@@ -31,6 +32,7 @@
                 <span>{{ __('Today') }}</span>
                 <strong>{{ number_format($stats['today']) }}</strong>
             </div>
+
             <div class="activity-stat">
                 <span>{{ __('Admin actions') }}</span>
                 <strong>{{ number_format($stats['manual']) }}</strong>
@@ -95,6 +97,7 @@
                             <span class="activity-row__icon">
                                 <i class="fa-solid {{ $event->icon() }}"></i>
                             </span>
+
 
                             <div class="activity-row__body">
                                 <div class="activity-row__head">
