@@ -6,8 +6,11 @@ namespace App\Services\Admin;
 
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
+use App\Enums\StockMovementType;
 use App\Models\Order;
 use App\Models\OrderDetail;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\ReturnRequest;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
@@ -16,6 +19,8 @@ use Illuminate\Validation\ValidationException;
 
 final class ReturnRequestService
 {
+    public function __construct(private readonly StockService $stock) {}
+
     /**
      * @param  array<string, mixed>  $filters
      */
@@ -119,6 +124,15 @@ final class ReturnRequestService
             }
 
             $return->save();
+
+            // Give back the returned quantities once the items are physically
+            // back in hand — not on every save while status stays 'received',
+            // and not merely on a refund (a refund can be issued without a
+            // physical return, e.g. goodwill).
+            if ($oldStatus !== $return->status && $return->status === 'received') {
+                $this->restockReturnedItems($return);
+            }
+
             $this->syncOrderPayment($return);
 
             if ($oldStatus !== $return->status) {
@@ -179,6 +193,37 @@ final class ReturnRequestService
         }
 
         return $items;
+    }
+
+    /**
+     * Give back the returned quantities now that they're physically in hand.
+     * Skips a line whose product/variant has since been deleted, or whose
+     * original order line was removed.
+     */
+    private function restockReturnedItems(ReturnRequest $return): void
+    {
+        foreach ($return->items()->with('orderDetail')->get() as $item) {
+            $detail = $item->orderDetail;
+
+            if (! $detail) {
+                continue;
+            }
+
+            $stockable = $detail->product_variant_id
+                ? ProductVariant::find($detail->product_variant_id)
+                : Product::find($detail->product_id);
+
+            if (! $stockable) {
+                continue;
+            }
+
+            $this->stock->adjust(
+                $stockable,
+                $item->quantity,
+                StockMovementType::Return,
+                'Return '.$return->return_number.' received',
+            );
+        }
     }
 
     private function syncOrderPayment(ReturnRequest $return): void

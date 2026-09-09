@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Backend;
 
 use App\Exceptions\FacebookPublishException;
+use App\Exceptions\ProductInUseException;
 use App\Exports\ProductsExport;
 use App\Exports\ProductTemplateExport;
 use App\Http\Controllers\Backend\Concerns\HandlesBulkActions;
@@ -101,7 +102,11 @@ class ProductController extends Controller
     {
         $this->authorize('delete', Product::class);
 
-        $this->products->delete(Product::with('images')->findOrFail($id));
+        try {
+            $this->products->delete(Product::with('images')->findOrFail($id));
+        } catch (ProductInUseException $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return to_route('admin.products.index')
             ->with('success', __('Product deleted successfully!'));
@@ -126,9 +131,15 @@ class ProductController extends Controller
     {
         $this->authorize('delete', Product::class);
 
-        $count = $this->products->bulkDelete($this->validatedIds($request));
+        $result = $this->products->bulkDelete($this->validatedIds($request));
 
-        return back()->with('success', $count.' product(s) deleted successfully!');
+        $message = $result['deleted'].' product(s) deleted successfully!';
+
+        if (! empty($result['blocked'])) {
+            $message .= ' '.count($result['blocked']).' skipped (referenced by purchase orders): '.implode(', ', $result['blocked']).'.';
+        }
+
+        return back()->with($result['deleted'] > 0 || empty($result['blocked']) ? 'success' : 'error', $message);
     }
 
     public function bulkStatus(Request $request): RedirectResponse
