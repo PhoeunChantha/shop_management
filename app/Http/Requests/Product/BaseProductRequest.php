@@ -138,27 +138,44 @@ abstract class BaseProductRequest extends FormRequest
             // Provided SKUs must be unique within the form and across other
             // products. Blank SKUs are auto-generated later, so they're skipped.
             $seen = [];
+            // Two variants sharing the same attribute-value combination would
+            // both create/match the same signature in syncVariants(), either
+            // creating a duplicate row or silently overwriting one entry with
+            // the other's data — reject it up front instead.
+            $seenSignatures = [];
 
             foreach ((array) $this->input('variants', []) as $i => $variant) {
                 $sku = trim($variant['sku'] ?? '');
 
-                if ($sku === '') {
+                if ($sku !== '') {
+                    if (isset($seen[$sku])) {
+                        $validator->errors()->add("variants.{$i}.sku", "Duplicate SKU \"{$sku}\" in the variant list.");
+                    }
+                    $seen[$sku] = true;
+
+                    $exists = DB::table('product_variants')
+                        ->where('sku', $sku)
+                        ->when($this->productId(), fn ($q) => $q->where('product_id', '!=', $this->productId()))
+                        ->exists();
+
+                    if ($exists) {
+                        $validator->errors()->add("variants.{$i}.sku", "SKU \"{$sku}\" is already in use.");
+                    }
+                }
+
+                $valueIds = array_values(array_filter(array_map('intval', (array) ($variant['value_ids'] ?? []))));
+
+                if ($valueIds === []) {
                     continue;
                 }
 
-                if (isset($seen[$sku])) {
-                    $validator->errors()->add("variants.{$i}.sku", "Duplicate SKU \"{$sku}\" in the variant list.");
-                }
-                $seen[$sku] = true;
+                sort($valueIds);
+                $signature = implode('-', $valueIds);
 
-                $exists = DB::table('product_variants')
-                    ->where('sku', $sku)
-                    ->when($this->productId(), fn ($q) => $q->where('product_id', '!=', $this->productId()))
-                    ->exists();
-
-                if ($exists) {
-                    $validator->errors()->add("variants.{$i}.sku", "SKU \"{$sku}\" is already in use.");
+                if (isset($seenSignatures[$signature])) {
+                    $validator->errors()->add("variants.{$i}.value_ids", 'This exact combination of options is already used by another variant in the list.');
                 }
+                $seenSignatures[$signature] = true;
             }
         });
     }
