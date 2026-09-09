@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Admin;
 
+use App\Exceptions\ProductInUseException;
 use App\Helpers\ImageManager;
 use App\Http\Requests\Product\BaseProductRequest;
 use App\Models\Attribute;
@@ -114,13 +115,28 @@ class ProductService
 
     /**
      * @param  array<int, int|string>  $ids
+     * @return array{deleted: int, blocked: array<int, string>} blocked holds the name
+     *                                                          of each product skipped
+     *                                                          because it's in use
      */
-    public function bulkDelete(array $ids): int
+    public function bulkDelete(array $ids): array
     {
         $products = Product::with('images')->whereKey($ids)->get();
-        $products->each(fn (Product $product) => $this->delete($product));
+        $deleted = 0;
+        $blocked = [];
 
-        return $products->count();
+        foreach ($products as $product) {
+            if ($product->isInUse()) {
+                $blocked[] = (string) $product->name;
+
+                continue;
+            }
+
+            $this->delete($product);
+            $deleted++;
+        }
+
+        return ['deleted' => $deleted, 'blocked' => $blocked];
     }
 
     /**
@@ -211,6 +227,10 @@ class ProductService
 
     public function delete(Product $product): void
     {
+        if ($product->isInUse()) {
+            throw new ProductInUseException('This product cannot be deleted because it appears on one or more purchase orders. Deactivate it instead.');
+        }
+
         DB::transaction(function () use ($product) {
             ImageManager::delete($product->thumbnail, self::FOLDER);
 

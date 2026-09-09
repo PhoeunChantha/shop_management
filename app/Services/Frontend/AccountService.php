@@ -259,7 +259,18 @@ class AccountService
             ->when(
                 $user,
                 fn ($query, User $user) => $query->where(function ($query) use ($user): void {
-                    $query->where('user_id', $user->id)->orWhere('customer_email', $user->email);
+                    // Own account orders, plus any true guest order (no
+                    // account attached) placed with this email — so a
+                    // customer who checked out as a guest before creating an
+                    // account can still see that history. An order that
+                    // belongs to a DIFFERENT account must never match here on
+                    // email alone — that would leak one customer's order
+                    // (address, phone, invoice) into another's account just
+                    // because they typed that email at checkout.
+                    $query->where('user_id', $user->id)
+                        ->orWhere(function ($query) use ($user): void {
+                            $query->whereNull('user_id')->where('customer_email', $user->email);
+                        });
                 }),
                 fn ($query) => $query->whereRaw('1 = 0')
             );

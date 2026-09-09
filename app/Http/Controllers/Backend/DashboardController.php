@@ -13,6 +13,8 @@ class DashboardController extends Controller
 
     public function index(Request $request): View
     {
+        abort_unless($request->user()->can('view dashboard'), 403);
+
         $validated = $request->validate([
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],

@@ -7,13 +7,18 @@ namespace App\Services\Admin;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
+use App\Enums\StockMovementType;
 use App\Models\Order;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Notifications\OrderStatusUpdated;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 final class OrderService
 {
+    public function __construct(private readonly StockService $stock) {}
+
     /**
      * Headline KPIs for the orders index stat bar.
      *
@@ -152,6 +157,17 @@ final class OrderService
 
             $order->save();
 
+            // Stock was decremented for every line when the order was placed
+            // (regardless of status), so moving into a terminal
+            // cancelled/refunded state must give it back. transitionsTo()
+            // already forbids ever leaving Cancelled/Refunded, so this can
+            // only fire once per order.
+            if ($oldStatus !== $newStatus
+                && in_array($newStatus, [OrderStatus::Cancelled, OrderStatus::Refunded], true)
+                && ! in_array($oldStatus, [OrderStatus::Cancelled, OrderStatus::Refunded], true)) {
+                $this->restock($order);
+            }
+
             // Activity log entries for anything that actually changed.
             if ($oldStatus !== $newStatus) {
                 $order->logEvent('status', 'Status → '.$newStatus->label(), 'Was '.$oldStatus->label());
@@ -173,6 +189,31 @@ final class OrderService
 
             return $order;
         });
+    }
+
+    /**
+     * Give back the stock decremented at checkout for every line on this
+     * order. Skips a line whose product/variant has since been deleted —
+     * there is nothing left to restock.
+     */
+    private function restock(Order $order): void
+    {
+        foreach ($order->details as $detail) {
+            $stockable = $detail->product_variant_id
+                ? ProductVariant::find($detail->product_variant_id)
+                : Product::find($detail->product_id);
+
+            if (! $stockable) {
+                continue;
+            }
+
+            $this->stock->adjust(
+                $stockable,
+                $detail->quantity,
+                StockMovementType::Return,
+                'Order '.$order->order_number.' '.$order->status->label(),
+            );
+        }
     }
 
     /**

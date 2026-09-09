@@ -28,7 +28,15 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('admin.dashboard', absolute: false));
+        // This endpoint serves the admin login form, but a non-admin account
+        // (e.g. a customer who reaches it directly) must never land on the
+        // admin dashboard — send it to the surface that fits its role.
+        $user = $request->user();
+        $default = $user && $user->hasRole('admin')
+            ? route('admin.dashboard', absolute: false)
+            : route('frontend.account.dashboard', absolute: false);
+
+        return redirect()->intended($default);
     }
 
     /**

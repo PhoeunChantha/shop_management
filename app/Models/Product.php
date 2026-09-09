@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 use Spatie\Translatable\HasTranslations;
 
 class Product extends Model
@@ -227,5 +228,16 @@ class Product extends Model
             : $this->images()->orderByDesc('is_primary')->first();
 
         return $primary ? ImageManager::thumbnailUrl($primary->image, 'products') : null;
+    }
+
+    /**
+     * Whether this product (or any of its variants) is referenced by
+     * purchase-order history — those rows restrict their FK on delete, so a
+     * referenced product must be deactivated instead of destroyed.
+     */
+    public function isInUse(): bool
+    {
+        return DB::table('purchase_order_items')->where('product_id', $this->id)->exists()
+            || DB::table('purchase_order_items')->whereIn('variant_id', $this->variants()->pluck('id'))->exists();
     }
 }

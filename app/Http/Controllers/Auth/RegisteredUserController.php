@@ -38,8 +38,8 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
@@ -54,15 +54,19 @@ class RegisteredUserController extends Controller
         }
 
         $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
+            'name' => $request->name,
+            'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
+
+        // Match the real storefront registration flow: a self-registered
+        // account is a customer, never a bare admin-panel account.
+        $user->assignRole('customer');
 
         event(new Registered($user));
 
         Auth::login($user);
 
-        return redirect(route('admin.dashboard', absolute: false));
+        return redirect(route('frontend.account.dashboard', absolute: false));
     }
 }
