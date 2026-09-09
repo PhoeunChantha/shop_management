@@ -72,6 +72,15 @@ final class ImageManager
         if (File::exists(public_path($path))) {
             File::delete(public_path($path));
         }
+
+        // Clean up the paired responsive thumbnail (see generateThumbnail()),
+        // if one was ever generated for this file — otherwise it's orphaned
+        // forever under thumbs/, since nothing else references it by name.
+        $thumbPath = self::path(self::thumbnailName($name), $folder);
+
+        if ($thumbPath && File::exists(public_path($thumbPath))) {
+            File::delete(public_path($thumbPath));
+        }
     }
 
     /**

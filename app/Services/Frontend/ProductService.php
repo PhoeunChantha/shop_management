@@ -17,6 +17,18 @@ use Illuminate\Support\Str;
 class ProductService
 {
     /**
+     * A discount-aware price expression, mirroring Product::getFinalPriceAttribute()
+     * in SQL (minus the zero-floor clamp, which only matters for a
+     * misconfigured discount that exceeds the price) — so price filtering and
+     * sorting matches what map() actually displays as the product's price.
+     */
+    private const FINAL_PRICE_SQL = "CASE
+        WHEN discount_type = 'fixed' THEN price - discount_amount
+        WHEN discount_type = 'percentage' THEN price - (price * discount_amount / 100)
+        ELSE price
+    END";
+
+    /**
      * @return array<int, string>
      */
     public function relations(): array
@@ -384,29 +396,40 @@ class ProductService
         }
 
         if (filled($filters['max_price'] ?? null)) {
-            $query->where('price', '<=', (float) $filters['max_price']);
+            $query->whereRaw(self::FINAL_PRICE_SQL.' <= ?', [(float) $filters['max_price']]);
         }
 
-        if ($sizes = array_filter((array) ($filters['sizes'] ?? []))) {
-            $query->whereHas('variants.size', fn (Builder $s) => $s->whereIn('code', $sizes));
-        }
+        $sizes = array_filter((array) ($filters['sizes'] ?? []));
+        $colors = array_filter((array) ($filters['colors'] ?? []));
 
-        if ($colors = array_filter((array) ($filters['colors'] ?? []))) {
-            $keys = array_map(fn ($c): string => mb_strtolower((string) $c), $colors);
-            $query->whereHas('variants.color', function (Builder $c) use ($keys): void {
-                $c->where(function (Builder $q) use ($keys): void {
-                    foreach ($keys as $key) {
-                        $q->orWhereRaw('LOWER(code) = ?', [$key])
-                            ->orWhereRaw('LOWER(name) = ?', [$key]);
-                    }
-                });
+        // Size and color must match the SAME variant row — two independent
+        // whereHas() calls would match a product whose size-M/red variant and
+        // size-L/blue variant satisfy the two filters separately, even though
+        // no single variant is both size M and red.
+        if ($sizes || $colors) {
+            $query->whereHas('variants', function (Builder $v) use ($sizes, $colors): void {
+                if ($sizes) {
+                    $v->whereHas('size', fn (Builder $s) => $s->whereIn('code', $sizes));
+                }
+
+                if ($colors) {
+                    $keys = array_map(fn ($c): string => mb_strtolower((string) $c), $colors);
+                    $v->whereHas('color', function (Builder $c) use ($keys): void {
+                        $c->where(function (Builder $q) use ($keys): void {
+                            foreach ($keys as $key) {
+                                $q->orWhereRaw('LOWER(code) = ?', [$key])
+                                    ->orWhereRaw('LOWER(name) = ?', [$key]);
+                            }
+                        });
+                    });
+                }
             });
         }
 
         return match ($filters['sort'] ?? 'featured') {
             'newest' => $query->latest(),
-            'low' => $query->orderBy('price'),
-            'high' => $query->orderByDesc('price'),
+            'low' => $query->orderByRaw(self::FINAL_PRICE_SQL),
+            'high' => $query->orderByRaw(self::FINAL_PRICE_SQL.' DESC'),
             'rated' => $query->orderByDesc('rating_avg'),
             default => $query->orderBy('sort_order')->latest(),
         };

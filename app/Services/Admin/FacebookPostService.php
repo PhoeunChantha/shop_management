@@ -62,7 +62,11 @@ final class FacebookPostService
 
     private function firstImagePath(Product $product): ?string
     {
-        $image = $product->thumbnail ?: optional($product->images->first())->image;
+        // Mirrors Product::getThumbnailUrlAttribute()'s primary-aware fallback
+        // so Facebook posts the same image shown everywhere else on the site,
+        // not just whichever gallery image happens to sort first.
+        $image = $product->thumbnail
+            ?: optional($product->images->firstWhere('is_primary', true) ?? $product->images->first())->image;
 
         $relative = $image ? ImageManager::path($image, 'products') : null;
 
