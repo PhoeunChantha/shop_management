@@ -197,7 +197,9 @@ final class CheckoutService
         }
 
         $products = Product::query()
-            ->with('variants.values')
+            // Only active variants are sellable — a variant an admin has
+            // deactivated must never be matched or charged for.
+            ->with(['variants' => fn ($q) => $q->where('status', true)->with('values')])
             ->where('status', 'active')
             ->whereKey($items->pluck('id')->map(fn ($v) => (int) $v)->unique()->all())
             ->get()
@@ -221,17 +223,16 @@ final class CheckoutService
                     isset($item['variant_id']) ? (int) $item['variant_id'] : null,
                 );
 
-                // Row-lock the stockable being sold so two concurrent checkouts
-                // can't both pass the check and oversell the same stock.
-                $stockable = $variant ?: ($product->product_type->value === 'single' ? $product : null);
-                if ($stockable) {
-                    $stockable = $stockable->newQuery()->lockForUpdate()->find($stockable->getKey());
-                }
-                if ($stockable && (int) $stockable->stock < $qty) {
+                $stockable = $variant ?: ($product->isSingle() ? $product : null);
+
+                // A variable product that never resolved to a concrete variant
+                // (deleted/deactivated/renamed since it was added to the cart)
+                // has no stock to check or decrement — it must not be sold
+                // untracked at the parent product's price.
+                if (! $stockable && $product->isVariable()) {
                     throw new CheckoutException(sprintf(
-                        '"%s" only has %d left in stock. Please adjust the quantity.',
+                        '"%s" is no longer available in the selected option. Please remove it and add it again.',
                         $product->name,
-                        max(0, (int) $stockable->stock),
                     ));
                 }
 
@@ -242,16 +243,55 @@ final class CheckoutService
                 $lines[] = [
                     'product' => $product,
                     'variant' => $variant,
-                    'stockable' => $stockable,
+                    'stockable_class' => $stockable ? $stockable::class : null,
+                    'stockable_id' => $stockable?->getKey(),
                     'qty' => $qty,
                     'price' => $price,
                     'line_total' => $lineTotal,
-                    'label' => trim(($item['size'] ?? '').($item['color'] ? ' / '.$item['color'] : ''), ' /'),
+                    'label' => trim(($item['size'] ?? '').(($item['color'] ?? null) ? ' / '.$item['color'] : ''), ' /'),
                 ];
             }
 
             if (empty($lines)) {
                 throw new CheckoutException('None of the cart items are available.');
+            }
+
+            // Row-lock every distinct stockable exactly once and validate the
+            // COMBINED quantity requested across all lines against it — two
+            // cart lines that resolve to the same stockable (e.g. a
+            // duplicated/aliased line) must not each pass an independent
+            // check against the same undecremented stock.
+            $stockTotals = [];
+            foreach ($lines as $line) {
+                if ($line['stockable_id'] === null) {
+                    continue;
+                }
+                $key = $line['stockable_class'].':'.$line['stockable_id'];
+                $stockTotals[$key] = ($stockTotals[$key] ?? 0) + $line['qty'];
+            }
+
+            $lockedStockables = [];
+            foreach ($stockTotals as $key => $totalQty) {
+                [$class, $id] = explode(':', $key, 2);
+                $model = $class::query()->lockForUpdate()->find($id);
+
+                if (! $model) {
+                    throw new CheckoutException('One of the items in your bag is no longer available.');
+                }
+
+                if ((int) $model->stock < $totalQty) {
+                    $productName = collect($lines)
+                        ->first(fn (array $l): bool => $l['stockable_class'] === $class && (string) $l['stockable_id'] === (string) $id)['product']
+                        ->name;
+
+                    throw new CheckoutException(sprintf(
+                        '"%s" only has %d left in stock. Please adjust the quantity.',
+                        $productName,
+                        max(0, (int) $model->stock),
+                    ));
+                }
+
+                $lockedStockables[$key] = $model;
             }
 
             // Coupon (re-validated server-side — client discount is never trusted).
@@ -320,11 +360,12 @@ final class CheckoutService
                     'quantity' => $line['qty'],
                     'line_total' => $line['line_total'],
                 ]);
+            }
 
-                // Decrement the row-locked stockable captured during the check.
-                if ($stockable = $line['stockable']) {
-                    $this->stock->adjust($stockable, -$line['qty'], StockMovementType::Sale, 'Order '.$order->order_number);
-                }
+            // Decrement each distinct row-locked stockable once, by its
+            // combined quantity across every line that referenced it.
+            foreach ($stockTotals as $key => $totalQty) {
+                $this->stock->adjust($lockedStockables[$key], -$totalQty, StockMovementType::Sale, 'Order '.$order->order_number);
             }
 
             // Pay from the store wallet: block unless it covers the whole order,
@@ -378,15 +419,23 @@ final class CheckoutService
             return null;
         }
 
+        // An explicit id is authoritative — if the client sent one, that's the
+        // exact variant selected, or it no longer exists (deleted/deactivated
+        // since it was added to the cart). Never silently fall back to a
+        // size/color guess for a stale id: that could sell a different
+        // color/size/price than the one the customer actually picked.
         if ($variantId) {
-            $exact = $product->variants->firstWhere('id', $variantId);
-            if ($exact) {
-                return $exact;
-            }
+            return $product->variants->firstWhere('id', $variantId);
         }
 
         $size = $size ? mb_strtolower(trim($size)) : null;
         $color = $color ? mb_strtolower(trim($color)) : null;
+
+        // Nothing to match on (no id, no labels) — never guess by returning
+        // an arbitrary variant.
+        if ($size === null && $color === null) {
+            return null;
+        }
 
         return $product->variants->first(function (ProductVariant $variant) use ($size, $color): bool {
             $values = $variant->relationLoaded('values')
