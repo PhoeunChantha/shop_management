@@ -15,6 +15,7 @@ use App\Http\Controllers\Backend\ColorController;
 use App\Http\Controllers\Backend\CommandPaletteController;
 use App\Http\Controllers\Backend\CouponController;
 use App\Http\Controllers\Backend\CustomerController;
+use App\Http\Controllers\Backend\CustomerNotificationController;
 use App\Http\Controllers\Backend\CustomerReportController;
 use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\DealCampaignController;
@@ -22,7 +23,6 @@ use App\Http\Controllers\Backend\FaqController;
 use App\Http\Controllers\Backend\FinanceReportController;
 use App\Http\Controllers\Backend\InventoryController;
 use App\Http\Controllers\Backend\MediaAssetController;
-use App\Http\Controllers\Backend\CustomerNotificationController;
 use App\Http\Controllers\Backend\NewsletterSubscriberController;
 use App\Http\Controllers\Backend\OrderController;
 use App\Http\Controllers\Backend\PageController as AdminPageController;
@@ -57,6 +57,7 @@ use App\Http\Controllers\Frontend\AuthController;
 use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\Frontend\ChatController;
 use App\Http\Controllers\Frontend\CheckoutController;
+use App\Http\Controllers\Frontend\CustomerUnsubscribeController;
 use App\Http\Controllers\Frontend\HomeController;
 use App\Http\Controllers\Frontend\NewsletterController;
 use App\Http\Controllers\Frontend\PageController;
@@ -92,6 +93,9 @@ Route::name('frontend.')->group(function () {
         return response($body)->header('Content-Type', 'text/plain');
     })->name('robots');
     Route::post('/newsletter', [NewsletterController::class, 'store'])->middleware('throttle:5,1')->name('newsletter.subscribe');
+    // Reached only via the signed link in a bulk customer notification email —
+    // no login required, so a guest (no account) can still opt out.
+    Route::get('/unsubscribe', CustomerUnsubscribeController::class)->middleware('signed')->name('unsubscribe');
 
     // ---- Shop ----
     Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');

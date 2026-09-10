@@ -16,12 +16,16 @@ class CustomerProfile extends Model
         'phone',
         'status',
         'notes',
+        'marketing_opt_out',
+        'marketing_opt_out_at',
     ];
 
     protected function casts(): array
     {
         return [
             'status' => 'boolean',
+            'marketing_opt_out' => 'boolean',
+            'marketing_opt_out_at' => 'datetime',
         ];
     }
 

@@ -13,6 +13,7 @@ use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\URL;
 
 class CustomerBroadcastMail extends Mailable implements ShouldQueue
 {
@@ -20,6 +21,7 @@ class CustomerBroadcastMail extends Mailable implements ShouldQueue
 
     public function __construct(
         public readonly CustomerNotificationCampaign $campaign,
+        public readonly string $recipientEmail,
         public readonly ?string $recipientName = null,
     ) {}
 
@@ -42,6 +44,9 @@ class CustomerBroadcastMail extends Mailable implements ShouldQueue
                 'campaign' => $this->campaign,
                 'recipientName' => $this->recipientName,
                 'storeName' => app(SettingService::class)->siteName(),
+                // No expiration — an unsubscribe link must keep working
+                // indefinitely, however long the email sits unread.
+                'unsubscribeUrl' => URL::signedRoute('frontend.unsubscribe', ['email' => $this->recipientEmail]),
             ],
         );
     }

@@ -6,6 +6,7 @@ namespace App\Services\Admin;
 
 use App\Mail\CustomerBroadcastMail;
 use App\Models\CustomerNotificationCampaign;
+use App\Models\CustomerProfile;
 use App\Models\CustomerTag;
 use App\Models\User;
 use App\Notifications\CustomerBroadcastNotification;
@@ -46,17 +47,36 @@ final class CustomerNotificationService
     /**
      * The distinct customer emails a given audience selection would reach —
      * used both for the live "N recipients" preview and the actual send.
+     * Excludes anyone who has unsubscribed from bulk notifications.
      *
      * @param  array<string, mixed>  $data
      * @return array<int, string>
      */
     public function targetEmails(array $data): array
     {
-        if (($data['audience_type'] ?? 'all') === 'all') {
-            return $this->customers->targetEmails([]);
+        $emails = ($data['audience_type'] ?? 'all') === 'all'
+            ? $this->customers->targetEmails([])
+            : $this->customers->targetEmails($this->segmentFilters($data));
+
+        if ($emails === []) {
+            return $emails;
         }
 
-        return $this->customers->targetEmails($this->segmentFilters($data));
+        $optedOut = CustomerProfile::query()
+            ->whereIn('email', $emails)
+            ->where('marketing_opt_out', true)
+            ->pluck('email')
+            ->map(fn (string $email): string => mb_strtolower($email))
+            ->all();
+
+        if ($optedOut === []) {
+            return $emails;
+        }
+
+        return array_values(array_filter(
+            $emails,
+            fn (string $email): bool => ! in_array(mb_strtolower($email), $optedOut, true),
+        ));
     }
 
     /**
@@ -99,7 +119,7 @@ final class CustomerNotificationService
                 $registeredCount++;
             }
 
-            Mail::to($email)->queue(new CustomerBroadcastMail($campaign, $user?->name));
+            Mail::to($email)->queue(new CustomerBroadcastMail($campaign, $email, $user?->name));
         }
 
         $campaign->update(['registered_recipient_count' => $registeredCount]);
