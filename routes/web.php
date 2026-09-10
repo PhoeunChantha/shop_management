@@ -22,6 +22,7 @@ use App\Http\Controllers\Backend\FaqController;
 use App\Http\Controllers\Backend\FinanceReportController;
 use App\Http\Controllers\Backend\InventoryController;
 use App\Http\Controllers\Backend\MediaAssetController;
+use App\Http\Controllers\Backend\CustomerNotificationController;
 use App\Http\Controllers\Backend\NewsletterSubscriberController;
 use App\Http\Controllers\Backend\OrderController;
 use App\Http\Controllers\Backend\PageController as AdminPageController;
@@ -480,6 +481,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/', [NewsletterSubscriberController::class, 'index'])->name('index');
         Route::get('/export', [NewsletterSubscriberController::class, 'export'])->name('export');
         Route::delete('/{subscriber}', [NewsletterSubscriberController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('customer-notifications')->name('customer-notifications.')->group(function () {
+        Route::get('/', [CustomerNotificationController::class, 'index'])->name('index');
+        Route::get('/create', [CustomerNotificationController::class, 'create'])->name('create');
+        Route::post('/', [CustomerNotificationController::class, 'store'])->name('store');
+        Route::get('/preview-count', [CustomerNotificationController::class, 'previewCount'])->name('preview-count');
     });
 
     Route::prefix('payments')->name('payments.')->group(function () {

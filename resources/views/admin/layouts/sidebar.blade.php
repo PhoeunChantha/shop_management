@@ -63,7 +63,7 @@
             'label' => __('Marketing'),
             'caption' => __('Campaign surfaces'),
             'icon' => 'fa-bullhorn',
-            'routes' => ['admin.coupons.*', 'admin.deals.*', 'admin.banners.*', 'admin.collections.*', 'admin.announcements.*', 'admin.media.*', 'admin.subscribers.*'],
+            'routes' => ['admin.coupons.*', 'admin.deals.*', 'admin.banners.*', 'admin.collections.*', 'admin.announcements.*', 'admin.media.*', 'admin.subscribers.*', 'admin.customer-notifications.*'],
             'items' => [
                 ['label' => __('Coupons'), 'icon' => 'fa-ticket', 'route' => 'admin.coupons.index', 'active' => ['admin.coupons.*']],
                 ['label' => __('Offers & Deals'), 'icon' => 'fa-tags', 'route' => 'admin.deals.index', 'active' => ['admin.deals.*']],
@@ -72,6 +72,7 @@
                 ['label' => __('Collections'), 'icon' => 'fa-layer-group', 'route' => 'admin.collections.index', 'active' => ['admin.collections.*']],
                 ['label' => __('Announcement Bar'), 'icon' => 'fa-bullhorn', 'route' => 'admin.announcements.index', 'active' => ['admin.announcements.*']],
                 ['label' => __('Subscribers'), 'icon' => 'fa-envelope', 'route' => 'admin.subscribers.index', 'active' => ['admin.subscribers.*']],
+                ['label' => __('Customer Notifications'), 'icon' => 'fa-paper-plane', 'route' => 'admin.customer-notifications.index', 'active' => ['admin.customer-notifications.*'], 'permission' => 'view customer notifications'],
             ],
         ],
         [
