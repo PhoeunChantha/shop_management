@@ -73,14 +73,24 @@
 
                 <div class="form-panel-body grid grid-cols-1 gap-4">
                     <div class="form-field">
-                        <label style="display:flex;align-items:center;gap:8px;font-weight:500;cursor:pointer">
-                            <input type="radio" name="audience_type" value="all" x-model="audience">
-                            {{ __('All customers') }}
-                        </label>
-                        <label style="display:flex;align-items:center;gap:8px;font-weight:500;cursor:pointer;margin-top:8px">
-                            <input type="radio" name="audience_type" value="segment" x-model="audience">
-                            {{ __('Filtered segment') }}
-                        </label>
+                        <div class="choice-cards">
+                            <label class="choice-card" :class="{ 'is-on': audience === 'all' }">
+                                <input type="radio" name="audience_type" value="all" x-model="audience">
+                                <span class="choice-card__dot"></span>
+                                <span class="choice-card__text">
+                                    <b>{{ __('All customers') }}</b>
+                                    <small>{{ __('Every customer who has ever placed an order.') }}</small>
+                                </span>
+                            </label>
+                            <label class="choice-card" :class="{ 'is-on': audience === 'segment' }">
+                                <input type="radio" name="audience_type" value="segment" x-model="audience">
+                                <span class="choice-card__dot"></span>
+                                <span class="choice-card__text">
+                                    <b>{{ __('Filtered segment') }}</b>
+                                    <small>{{ __('Narrow it down by search, tag, or spend tier.') }}</small>
+                                </span>
+                            </label>
+                        </div>
                         @error('audience_type')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
                     </div>
 
@@ -96,8 +106,8 @@
                             placeholder="{{ __('Any') }}" :options="['new' => 'New (1 order)', 'repeat' => 'Repeat buyers', 'vip' => 'VIP ($500+)']" />
                     </div>
 
-                    <div style="padding:14px 16px;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb;display:flex;align-items:center;gap:10px">
-                        <i class="fa-solid fa-users" style="color:#6b7280"></i>
+                    <div class="live-count-card">
+                        <i class="fa-solid fa-users"></i>
                         <span>
                             <strong x-text="loading ? '…' : count"></strong>
                             {{ __('customer(s) will be notified by email; those with an account also get it in their notification inbox.') }}

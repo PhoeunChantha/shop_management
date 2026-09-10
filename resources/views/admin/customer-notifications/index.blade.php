@@ -22,14 +22,14 @@
 
         <x-message />
 
-        <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px">
-            <div style="flex:1;min-width:180px;padding:16px 18px;border:1px solid #e5e7eb;border-radius:12px;background:#fff">
-                <span style="display:block;font-size:12.5px;color:#6b7280;margin-bottom:4px">{{ __('Notifications sent') }}</span>
-                <strong style="font-size:22px">{{ number_format($stats['campaigns']) }}</strong>
+        <div class="customer-stat-strip" style="grid-template-columns:repeat(2, minmax(0, 1fr));max-width:560px">
+            <div class="customer-stat">
+                <span>{{ __('Notifications sent') }}</span>
+                <strong>{{ number_format($stats['campaigns']) }}</strong>
             </div>
-            <div style="flex:1;min-width:180px;padding:16px 18px;border:1px solid #e5e7eb;border-radius:12px;background:#fff">
-                <span style="display:block;font-size:12.5px;color:#6b7280;margin-bottom:4px">{{ __('Total recipients reached') }}</span>
-                <strong style="font-size:22px">{{ number_format($stats['recipients']) }}</strong>
+            <div class="customer-stat customer-stat--revenue">
+                <span>{{ __('Total recipients reached') }}</span>
+                <strong>{{ number_format($stats['recipients']) }}</strong>
             </div>
         </div>
 
