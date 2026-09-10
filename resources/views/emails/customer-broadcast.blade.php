@@ -13,4 +13,8 @@
 
 {{ __('Thanks,') }}<br>
 {{ $storeName }}
+
+<x-slot:subcopy>
+{{ __("Don't want emails like this?") }} <a href="{{ $unsubscribeUrl }}">{{ __('Unsubscribe') }}</a>
+</x-slot:subcopy>
 </x-mail::message>

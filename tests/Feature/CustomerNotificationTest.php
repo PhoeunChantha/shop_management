@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {
@@ -143,4 +144,51 @@ it('previews the recipient count for the current audience selection', function (
         ->getJson(route('admin.customer-notifications.preview-count', ['audience_type' => 'all']))
         ->assertOk()
         ->assertJson(['count' => 2]);
+});
+
+// -- Unsubscribe / opt-out ---------------------------------------------------------------
+
+it('opts an email out via the signed unsubscribe link and excludes it from future sends', function () {
+    customerOrder('optout@example.com');
+    customerOrder('stays@example.com');
+
+    $url = URL::signedRoute('frontend.unsubscribe', ['email' => 'optout@example.com']);
+
+    $this->get($url)->assertOk()->assertSee('optout@example.com');
+
+    $this->assertDatabaseHas('customer_profiles', [
+        'email' => 'optout@example.com',
+        'marketing_opt_out' => true,
+    ]);
+
+    $this->actingAs($this->admin)->post(route('admin.customer-notifications.store'), [
+        'title' => 'Sale', 'message' => 'msg', 'audience_type' => 'all',
+    ]);
+
+    Mail::assertNotQueued(CustomerBroadcastMail::class, fn ($mail) => $mail->hasTo('optout@example.com'));
+    Mail::assertQueued(CustomerBroadcastMail::class, fn ($mail) => $mail->hasTo('stays@example.com'));
+
+    $campaign = CustomerNotificationCampaign::first();
+    expect($campaign->recipient_count)->toBe(1);
+});
+
+it('rejects an unsubscribe request with an invalid or missing signature', function () {
+    $this->get(route('frontend.unsubscribe', ['email' => 'nosig@example.com']))
+        ->assertForbidden();
+
+    $this->assertDatabaseMissing('customer_profiles', ['email' => 'nosig@example.com']);
+});
+
+it('includes a working unsubscribe link in the broadcast email', function () {
+    Mail::fake();
+
+    $campaign = CustomerNotificationCampaign::create([
+        'title' => 'Promo', 'message' => 'Hello', 'audience_type' => 'all',
+        'recipient_count' => 1, 'registered_recipient_count' => 0,
+    ]);
+
+    $mail = new CustomerBroadcastMail($campaign, 'linktest@example.com');
+    $rendered = $mail->render();
+
+    expect($rendered)->toContain('unsubscribe');
 });
