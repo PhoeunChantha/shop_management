@@ -133,6 +133,19 @@ final class CustomerService
     }
 
     /**
+     * The distinct customer emails matching the same filters as the admin
+     * Customers list (search/tag/spend) — the recipient set for a bulk
+     * customer notification.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return array<int, string>
+     */
+    public function targetEmails(array $filters): array
+    {
+        return $this->query($filters)->get()->pluck('customer_email')->filter()->unique()->values()->all();
+    }
+
+    /**
      * @param  array<int, string>  $emails
      * @return array<int, string>
      */
