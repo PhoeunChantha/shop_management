@@ -110,6 +110,10 @@
 
     <div class="d-flex vh-100 w-100 overflow-hidden">
 
+        {{-- Only visible ≤640px, when the sidebar becomes an off-canvas
+             drawer (see app.css) — tapping it closes the drawer. --}}
+        <div class="admin-mobile-nav-backdrop" data-mobile-nav-backdrop></div>
+
         @include('admin.layouts.sidebar')
 
         <div class="d-flex flex-column flex-grow-1 h-100 overflow-auto admin-workspace">
