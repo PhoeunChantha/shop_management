@@ -12,7 +12,15 @@
         <button type="button" class="icon-button btn btn-link p-0 text-decoration-none fs-6 text-secondary flex-shrink-0"
             aria-label="{{ __('Toggle sidebar') }}" title="{{ __('Toggle sidebar') }}"
             x-data="{ collapsed: document.documentElement.classList.contains('sidebar-collapsed') }"
-            @click="collapsed = !collapsed; document.documentElement.classList.toggle('sidebar-collapsed', collapsed); localStorage.setItem('admin-sidebar-collapsed', collapsed ? '1' : '0')">
+            @click="
+                if (window.matchMedia('(max-width: 640px)').matches) {
+                    document.documentElement.classList.toggle('mobile-nav-open');
+                } else {
+                    collapsed = !collapsed;
+                    document.documentElement.classList.toggle('sidebar-collapsed', collapsed);
+                    localStorage.setItem('admin-sidebar-collapsed', collapsed ? '1' : '0');
+                }
+            ">
             <i class="fa-solid fa-bars"></i>
         </button>
 

@@ -33,6 +33,29 @@ import('./echo')
     .catch((error) => console.warn('Live chat websockets unavailable.', error));
 
 $(function () {
+    // Mobile admin nav drawer (≤640px — see app.css): the topbar hamburger
+    // (admin/layouts/header.blade.php) opens it by toggling
+    // html.mobile-nav-open; these are the ways to close it again.
+    $(document).on('click', '[data-mobile-nav-backdrop]', function () {
+        document.documentElement.classList.remove('mobile-nav-open');
+    });
+
+    $(document).on('click', '.admin-sidebar .admin-module__link, .admin-sidebar .admin-module--link', function () {
+        document.documentElement.classList.remove('mobile-nav-open');
+    });
+
+    $(document).on('keydown', function (e) {
+        if (e.key === 'Escape') {
+            document.documentElement.classList.remove('mobile-nav-open');
+        }
+    });
+
+    $(window).on('resize', function () {
+        if (window.innerWidth > 640) {
+            document.documentElement.classList.remove('mobile-nav-open');
+        }
+    });
+
     let searchTimer;
 
     $(document).on('input', '[data-auto-search]', function () {
