@@ -26,6 +26,12 @@
     @media (max-width:640px){ .ut-pdp-gallery{ max-width:none; } .ut-pdp-main-media, .ut-pdp-main-media img, .ut-pdp-main-media .ph{ max-height:none; } .ut-pdp-thumbs{ grid-auto-columns:68px; } .ut-pdp-thumb{ width:68px; } .ut-purchase-box{ grid-template-columns:1fr; } }
     .ut-tab-btn{ border:0;background:none;font-family:var(--font-head);font-weight:600;font-size:14.5px;color:var(--text-2);padding:0 0 8px;border-bottom:2px solid transparent; }
     .ut-tab-btn.active{ color:var(--ink);border-bottom-color:var(--ink); }
+    /* Only ever 2 review cards render here (array_slice ...,0,2), so 2
+       columns is the deliberate desktop layout — the shared .ut-rev-grid
+       class defaults to 4 and doesn't fit that, hence a dedicated class
+       instead of reusing it. Still needs its own mobile collapse though. */
+    .ut-pdp-reviews-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:18px; }
+    @media (max-width:640px){ .ut-pdp-reviews-grid{ grid-template-columns:1fr; } }
 </style>
 @endpush
 
@@ -231,7 +237,7 @@
     {{-- reviews --}}
     <section class="ut-wrap" style="margin-top:72px">
         <div class="ut-sec-head"><div><span class="ut-eyebrow">{{ __('Verified reviews') }}</span><h2 style="margin-top:8px">{{ $product['rating'] }} · {{ $product['reviews'] }} {{ __('reviews') }}</h2></div></div>
-        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:18px" class="ut-rev-grid">
+        <div class="ut-pdp-reviews-grid">
             @forelse(array_slice($reviews, 0, 2) as $r)
                 <div class="ut-card" style="padding:24px">
                     <div class="ut-row" style="justify-content:space-between;margin-bottom:12px">

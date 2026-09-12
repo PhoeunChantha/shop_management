@@ -23,11 +23,13 @@
             $links = [
                 [__('Dashboard'), 'home', route('frontend.account.dashboard'), null],
                 [__('My orders'), 'box', route('frontend.account.orders'), null],
+                [__('Wallet'), 'spark', route('frontend.account.wallet'), null],
                 [__('Wishlist'), 'heart', route('frontend.account.wishlist'), 'wish'],
                 [__('Notifications'), 'bell', route('frontend.account.notifications'), null],
                 [__('Messages'), 'chat', route('frontend.account.messages'), 'chat'],
                 [__('Addresses'), 'pin', route('frontend.account.addresses'), null],
                 [__('Profile'), 'user', route('frontend.account.profile'), null],
+                [__('Password'), 'lock', route('frontend.account.password'), null],
                 [__('Help center'), 'info', route('frontend.pages.faq'), null],
             ];
         @endphp
