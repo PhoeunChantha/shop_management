@@ -2188,6 +2188,27 @@ input[type=number]::-webkit-inner-spin-button {
   background: var(--bg);
 }
 
+/* The two minmax(420px, ...) tracks need >=840px combined — below that
+   (roughly 768-840px, e.g. a standard tablet) the grid can't shrink to fit
+   and the page overflows horizontally. Collapse to one column a bit before
+   that point, same as the <=767px rule further down does for phones, so
+   there's no width range where it can't fit. */
+@media (max-width: 860px) {
+  .ut-auth {
+    grid-template-columns: 1fr;
+  }
+
+  .ut-auth-brand {
+    display: none;
+  }
+
+  .ut-auth-form {
+    min-height: 100dvh;
+    justify-content: flex-start;
+    padding-top: 40px;
+  }
+}
+
 .ut-auth-brand {
   position: relative;
   overflow: hidden;
