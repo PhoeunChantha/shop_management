@@ -15,6 +15,7 @@ use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductTag;
 use App\Models\ProductVariant;
+use App\Services\Frontend\NavigationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +37,10 @@ class ProductService
 
     private const TRANSLATABLE = ['name', 'short_description', 'description', 'seo_title', 'seo_description'];
 
-    public function __construct(private readonly SettingService $settings) {}
+    public function __construct(
+        private readonly SettingService $settings,
+        private readonly NavigationService $nav,
+    ) {}
 
     /**
      * Paginated, filtered product list for the admin index.
@@ -144,7 +148,11 @@ class ProductService
      */
     public function setStatus(array $ids, bool $status): int
     {
-        return Product::whereKey($ids)->update(['status' => $status ? 'active' : 'inactive']);
+        $count = Product::whereKey($ids)->update(['status' => $status ? 'active' : 'inactive']);
+
+        $this->nav->flush();
+
+        return $count;
     }
 
     /**
@@ -159,7 +167,11 @@ class ProductService
             'flag' => [$data['flag'] => (bool) $data['flag_value']],
         };
 
-        return Product::whereKey($data['ids'])->update($payload);
+        $count = Product::whereKey($data['ids'])->update($payload);
+
+        $this->nav->flush();
+
+        return $count;
     }
 
     /**
@@ -214,6 +226,8 @@ class ProductService
                 $this->syncSpecifications($product, $request);
                 $this->syncTags($product, $request);
 
+                $this->nav->flush();
+
                 return $product;
             });
         } catch (\Throwable $e) {
@@ -240,6 +254,8 @@ class ProductService
 
             $product->delete(); // cascades images/variants/specs/pivot
         });
+
+        $this->nav->flush();
     }
 
     /* ------------------------------------------------------------------ */

@@ -11,6 +11,7 @@ use App\Models\Category;
 use App\Services\Admin\BulkActionService;
 use App\Services\Admin\ImageFieldService;
 use App\Services\Admin\SettingService;
+use App\Services\Frontend\NavigationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -25,6 +26,7 @@ class CategoryController extends Controller
     public function __construct(
         private readonly ImageFieldService $images,
         private readonly SettingService $settings,
+        private readonly NavigationService $nav,
     ) {}
 
     public function index(Request $request): View
@@ -73,6 +75,8 @@ class CategoryController extends Controller
 
             $this->syncImages($request, $category);
 
+            $this->nav->flush();
+
             return to_route('admin.categories.index')
                 ->with('success', __('Category created successfully!'));
         } catch (\Exception $e) {
@@ -118,6 +122,8 @@ class CategoryController extends Controller
 
             $this->syncImages($request, $category);
 
+            $this->nav->flush();
+
             return to_route('admin.categories.index')
                 ->with('success', __('Category updated successfully!'));
         } catch (\Exception $e) {
@@ -151,6 +157,8 @@ class CategoryController extends Controller
             $this->images->delete($category->image, 'categories');
 
             $category->delete();
+
+            $this->nav->flush();
         } catch (\Exception $e) {
             Log::error('Error deleting category: '.$e->getMessage(), [
                 'exception' => $e,
@@ -172,6 +180,8 @@ class CategoryController extends Controller
         $ids = $this->validatedIds($request);
         $result = $bulk->destroy(Category::class, $ids, 'categories');
 
+        $this->nav->flush();
+
         return back()->with($this->bulkFlash($result, 'category', 'assigned to products or have sub-categories'));
     }
 
@@ -181,6 +191,8 @@ class CategoryController extends Controller
 
         [$ids, $status] = $this->validatedStatus($request);
         $count = $bulk->setStatus(Category::class, $ids, $status);
+
+        $this->nav->flush();
 
         return back()->with('success', $count.' category(s) '.($status ? 'enabled' : 'disabled').'.');
     }
