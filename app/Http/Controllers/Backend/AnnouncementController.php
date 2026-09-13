@@ -8,6 +8,7 @@ use App\Http\Requests\Announcement\StoreAnnouncementRequest;
 use App\Http\Requests\Announcement\UpdateAnnouncementRequest;
 use App\Models\Announcement;
 use App\Services\Admin\BulkActionService;
+use App\Services\Frontend\NavigationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -16,6 +17,8 @@ use Illuminate\View\View;
 class AnnouncementController extends Controller
 {
     use HandlesBulkActions;
+
+    public function __construct(private readonly NavigationService $nav) {}
 
     public function index(Request $request): View
     {
@@ -56,6 +59,8 @@ class AnnouncementController extends Controller
         try {
             Announcement::create($request->validated());
 
+            $this->nav->flush();
+
             return to_route('admin.announcements.index')->with('success', __('Announcement created successfully!'));
         } catch (\Exception $e) {
             Log::error('Error creating announcement: '.$e->getMessage(), ['exception' => $e, 'request_data' => $request->all()]);
@@ -78,6 +83,8 @@ class AnnouncementController extends Controller
         try {
             Announcement::findOrFail($id)->update($request->validated());
 
+            $this->nav->flush();
+
             return to_route('admin.announcements.index')->with('success', __('Announcement updated successfully!'));
         } catch (\Exception $e) {
             Log::error('Error updating announcement: '.$e->getMessage(), ['exception' => $e, 'request_data' => $request->all(), 'announcement_id' => $id]);
@@ -92,6 +99,8 @@ class AnnouncementController extends Controller
 
         try {
             Announcement::findOrFail($id)->delete();
+
+            $this->nav->flush();
         } catch (\Exception $e) {
             Log::error('Error deleting announcement: '.$e->getMessage(), ['exception' => $e, 'announcement_id' => $id]);
 
@@ -107,6 +116,8 @@ class AnnouncementController extends Controller
 
         $result = $bulk->destroy(Announcement::class, $this->validatedIds($request));
 
+        $this->nav->flush();
+
         return back()->with($this->bulkFlash($result, 'announcement', 'in use'));
     }
 
@@ -116,6 +127,8 @@ class AnnouncementController extends Controller
 
         [$ids, $status] = $this->validatedStatus($request);
         $count = $bulk->setStatus(Announcement::class, $ids, $status);
+
+        $this->nav->flush();
 
         return back()->with('success', $count.' announcement(s) '.($status ? 'enabled' : 'disabled').'.');
     }
