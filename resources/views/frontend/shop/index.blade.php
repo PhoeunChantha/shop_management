@@ -98,7 +98,7 @@
         <div class="ut-listing-grid">
             {{-- FILTERS — a sticky column on desktop; becomes an off-canvas
                  drawer at <=1024px (see the mobile filter trigger above and
-                 the CSS in @push('head')). The head/foot chrome lives outside
+                 the CSS block above). The head/foot chrome lives outside
                  #shopSidebar since AJAX filtering replaces its innerHTML. --}}
             <div class="ut-filter-drawer" id="filterDrawer">
                 <div class="ut-filter-drawer__head">
@@ -132,7 +132,7 @@
         var sidebar = document.getElementById('shopSidebar');
         var results = document.getElementById('shopResults');
 
-        // Mobile filter drawer (<=1024px — see the CSS in @push('head')).
+        // Mobile filter drawer (<=1024px — see the CSS block above).
         // Not auto-closed on every filter tap: size/color are multi-select,
         // so the explicit "Show results" button (and backdrop/X/Escape) are
         // what dismiss it, matching the common mobile-filter-sheet pattern.

@@ -74,3 +74,16 @@ it('paginates the listing at 24 products per page', function () {
         ->and($paginator->count())->toBe(24)
         ->and($paginator->hasPages())->toBeTrue();
 });
+
+it('renders a clean document with nothing before the doctype', function () {
+    // Regression: a JS comment containing the literal text "@push('head')"
+    // was mistaken by Blade for a real directive, leaking script text above
+    // <!DOCTYPE html>.
+    $content = $this->get(route('frontend.shop.index'))->assertOk()->getContent();
+
+    expect(ltrim($content))->toStartWith('<!DOCTYPE html>');
+
+    $content = $this->get(route('frontend.shop.index', ['category' => 'tees']))->assertOk()->getContent();
+
+    expect(ltrim($content))->toStartWith('<!DOCTYPE html>');
+});
