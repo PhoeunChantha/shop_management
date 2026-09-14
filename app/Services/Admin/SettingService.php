@@ -235,6 +235,10 @@ final class SettingService
                 'chat_sound_customer' => ['label' => 'Customer alert sound', 'type' => 'select', 'options' => ['chime' => 'Chime (two notes)', 'pop' => 'Pop (short)', 'ding' => 'Ding (bell)', 'off' => 'Off'], 'default' => 'pop', 'help' => 'Played on the storefront when your team replies.', 'rules' => 'nullable|in:chime,pop,ding,off'],
                 'chat_sound_volume' => ['label' => 'Alert volume', 'type' => 'select', 'options' => ['25' => '25%', '50' => '50%', '75' => '75%', '100' => '100%'], 'default' => '75', 'rules' => 'nullable|in:25,50,75,100'],
             ],
+            SettingGroup::Loyalty->value => [
+                'loyalty_enabled' => ['label' => 'Loyalty rewards', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '0', 'help' => 'Credit customers a % of every paid order back to their store wallet.', 'rules' => 'nullable|in:0,1'],
+                'loyalty_earn_rate' => ['label' => 'Earn rate (%)', 'type' => 'text', 'placeholder' => '5', 'help' => 'Percent of the order total credited to the wallet once it is paid — e.g. 5 credits $0.50 back on a $10 order.', 'rules' => 'nullable|numeric|min:0|max:100'],
+            ],
         ];
     }
 
@@ -274,6 +278,19 @@ final class SettingService
             'sound_admin' => $sound('chat_sound_admin', 'chime'),
             'sound_customer' => $sound('chat_sound_customer', 'pop'),
             'volume' => max(0, min(100, (int) (Setting::get('chat_sound_volume') ?: 75))),
+        ];
+    }
+
+    /**
+     * Loyalty-rewards configuration (Settings → Loyalty Points), with defaults applied.
+     *
+     * @return array{enabled: bool, earn_rate: float}
+     */
+    public function loyalty(): array
+    {
+        return [
+            'enabled' => (string) Setting::get('loyalty_enabled', '0') === '1',
+            'earn_rate' => max(0.0, min(100.0, (float) (Setting::get('loyalty_earn_rate') ?: 0))),
         ];
     }
 

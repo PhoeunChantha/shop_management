@@ -17,7 +17,10 @@ use Illuminate\Support\Facades\DB;
 
 final class OrderService
 {
-    public function __construct(private readonly StockService $stock) {}
+    public function __construct(
+        private readonly StockService $stock,
+        private readonly LoyaltyService $loyalty,
+    ) {}
 
     /**
      * Headline KPIs for the orders index stat bar.
@@ -156,6 +159,13 @@ final class OrderService
             }
 
             $order->save();
+
+            // Reward loyalty points the moment an order becomes paid. Idempotent
+            // (guarded by orders.loyalty_credited_at), so re-saving an already-paid
+            // order here is harmless.
+            if ($newPayment === PaymentStatus::Paid) {
+                $this->loyalty->awardForOrder($order);
+            }
 
             // Stock was decremented for every line when the order was placed
             // (regardless of status), so moving into a terminal

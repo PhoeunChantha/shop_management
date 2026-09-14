@@ -15,6 +15,7 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\ShippingMethod;
 use App\Models\TaxRule;
+use App\Services\Admin\LoyaltyService;
 use App\Services\Admin\SettingService;
 use App\Services\Admin\StockService;
 use App\Services\Admin\WalletService;
@@ -32,6 +33,7 @@ final class CheckoutService
         private readonly SettingService $settings,
         private readonly StockService $stock,
         private readonly WalletService $wallet,
+        private readonly LoyaltyService $loyalty,
     ) {}
 
     /**
@@ -383,6 +385,7 @@ final class CheckoutService
 
                 $this->wallet->debit($user, (float) $grand, 'payment', 'Order '.$order->order_number, $order->id);
                 $order->forceFill(['payment_status' => 'paid', 'paid_at' => now()])->save();
+                $this->loyalty->awardForOrder($order);
             }
 
             // Empty the customer's saved cart now that the order is placed.
