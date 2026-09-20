@@ -225,7 +225,7 @@
                     attributes: @js($attributesJs),
                     selected: @js($selectedSeed),
                     variants: @js($variantsSeed),
-                    variantMediaUrl: @js(route('admin.media.picker', ['folder' => 'variants'])),
+                    variantMediaUrl: @js(route('admin.media.picker', ['folder' => 'variants'])), {{-- folder = sort preference only --}}
                     single: {
                         sku: @js($singleSku),
                         stock: @js($singleStock),
@@ -511,11 +511,11 @@
                                             <div class="media-picker-panel__empty">Loading media...</div>
                                         </template>
                                         <template x-if="!variantMediaLoading && filteredVariantMedia.length === 0">
-                                            <div class="media-picker-panel__empty">No variant media found.</div>
+                                            <div class="media-picker-panel__empty">{{ __('No media found.') }}</div>
                                         </template>
                                         <template x-for="asset in filteredVariantMedia" :key="asset.id">
                                             <button type="button" class="media-picker-option"
-                                                :class="{ 'is-selected': variantMediaTarget && variantMediaTarget.image_media === asset.filename }"
+                                                :class="{ 'is-selected': variantMediaTarget && variantMediaTarget.image_media === (asset.value || asset.filename) }"
                                                 @click="selectVariantMedia(asset)">
                                                 <img :src="asset.url" :alt="asset.name">
                                                 <span>
@@ -775,7 +775,7 @@
                     },
                     selectVariantMedia(asset) {
                         if (!this.variantMediaTarget) return;
-                        this.variantMediaTarget.image_media = asset.filename;
+                        this.variantMediaTarget.image_media = asset.value || asset.filename;
                         this.variantMediaTarget.image = '';
                         this.variantMediaTarget.preview = asset.url;
                         this.variantMediaOpen = false;

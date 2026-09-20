@@ -3,6 +3,7 @@
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\Admin\EnvService;
+use App\Services\Admin\SettingService;
 use Database\Seeders\RolePermissionSeeder;
 
 beforeEach(function () {
@@ -35,6 +36,20 @@ it('saves settings with the second currency enabled', function () {
         ->assertRedirect(route('admin.settings.index'));
 
     expect(Setting::get('currency_secondary_rate'))->toBe('4100');
+});
+
+it('saves the loyalty rewards rate', function () {
+    $this->actingAs($this->admin)
+        ->put(route('admin.settings.update'), [
+            'currency_code' => 'USD',
+            'loyalty_enabled' => '1',
+            'loyalty_earn_rate' => '7.5',
+        ])
+        ->assertRedirect(route('admin.settings.index'));
+
+    expect(Setting::get('loyalty_enabled'))->toBe('1')
+        ->and(Setting::get('loyalty_earn_rate'))->toBe('7.5')
+        ->and(app(SettingService::class)->loyalty())->toBe(['enabled' => true, 'earn_rate' => 7.5]);
 });
 
 it('returns a JSON success for an AJAX save (no redirect)', function () {

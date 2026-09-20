@@ -18,6 +18,7 @@ enum SettingGroup: string
     case Localization = 'localization';
     case Appearance = 'appearance';
     case Chat = 'chat';
+    case Loyalty = 'loyalty';
     case Recaptcha = 'recaptcha';
     case Facebook = 'facebook';
 
@@ -39,6 +40,7 @@ enum SettingGroup: string
             self::Localization => 'Languages',
             self::Appearance => 'Theme Colors',
             self::Chat => 'Live Chat',
+            self::Loyalty => 'Loyalty Points',
             self::Recaptcha => 'reCAPTCHA',
             self::Facebook => 'Facebook Page',
         };
@@ -62,6 +64,7 @@ enum SettingGroup: string
             self::Localization => 'fa-language',
             self::Appearance => 'fa-palette',
             self::Chat => 'fa-comments',
+            self::Loyalty => 'fa-gift',
             self::Recaptcha => 'fa-shield-halved',
             self::Facebook => 'fa-share-from-square',
         };

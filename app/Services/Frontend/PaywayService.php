@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\User;
 use App\Models\WalletTopup;
+use App\Services\Admin\LoyaltyService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
@@ -25,6 +26,8 @@ use Illuminate\Support\Str;
  */
 final class PaywayService
 {
+    public function __construct(private readonly LoyaltyService $loyalty) {}
+
     /**
      * Fields concatenated (in this exact order) to build the purchase HMAC.
      */
@@ -197,6 +200,8 @@ final class PaywayService
             ])->save();
 
             $payment?->update(['status' => 'completed', 'meta' => $result['raw']]);
+
+            $this->loyalty->awardForOrder($order);
 
             return true;
         }

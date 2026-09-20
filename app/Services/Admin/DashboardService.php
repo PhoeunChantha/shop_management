@@ -113,7 +113,6 @@ final class DashboardService
             'chart' => $this->chart($buckets, $revSeries),
             'statusBreakdown' => $this->statusBreakdown(),
             'operations' => $this->operationsQueue(),
-            'fulfillment' => $this->fulfillmentPulse($curStart, $curEnd),
             'topProducts' => $this->topProducts($curStart, $curEnd),
             'recentOrders' => $this->recentOrders(),
             'lowStock' => $this->lowStock(),
@@ -348,32 +347,6 @@ final class DashboardService
                 'tone' => 'danger',
                 'url' => route('admin.notifications.index', ['state' => 'unread']),
             ],
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function fulfillmentPulse(Carbon $start, Carbon $end): array
-    {
-        $open = Order::whereIn('status', [
-            OrderStatus::Pending->value,
-            OrderStatus::Paid->value,
-            OrderStatus::Processing->value,
-            OrderStatus::Shipped->value,
-        ])->count();
-
-        $shipped = Order::whereIn('fulfillment_status', [FulfillmentStatus::Partial->value, FulfillmentStatus::Fulfilled->value])->count();
-        $delivered = Order::where('fulfillment_status', FulfillmentStatus::Fulfilled->value)->whereBetween('updated_at', [$start, $end])->count();
-        $cancelled = Order::where('status', OrderStatus::Cancelled->value)->whereBetween('updated_at', [$start, $end])->count();
-        $total = max(1, $open + $delivered + $cancelled);
-
-        return [
-            'open' => $open,
-            'shipped' => $shipped,
-            'delivered' => $delivered,
-            'cancelled' => $cancelled,
-            'health' => (int) max(0, min(100, round((($delivered + $shipped) / $total) * 100))),
         ];
     }
 

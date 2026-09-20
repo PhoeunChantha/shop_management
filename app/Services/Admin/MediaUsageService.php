@@ -7,6 +7,13 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Answers "is this media file still referenced anywhere?".
+ *
+ * Reference lookups are BATCHED: one query per reference table for a whole
+ * page of assets, instead of one query per table per asset (which was 11
+ * queries × 24 cards = 264 queries for a single grid render).
+ */
 class MediaUsageService
 {
     /**
@@ -31,34 +38,58 @@ class MediaUsageService
      */
     public function usages(MediaAsset $asset): array
     {
-        return collect($this->references)
-            ->map(function (array $reference) use ($asset): array {
-                return [
-                    'label' => $reference['label'],
-                    'count' => $this->countReference($asset, $reference['table'], $reference['column']),
-                ];
-            })
-            ->filter(fn (array $usage): bool => $usage['count'] > 0)
-            ->values()
-            ->all();
+        return $this->summaryMap(collect([$asset]))[$asset->id]['items'] ?? [];
     }
 
     /**
+     * Usage summary for a page of assets, keyed by asset id.
+     *
      * @param  Collection<int, MediaAsset>  $assets
      * @return array<int, array{items: array<int, array{label: string, count: int}>, count: int, label: string}>
      */
     public function summaryMap(Collection $assets): array
     {
+        if ($assets->isEmpty()) {
+            return [];
+        }
+
+        // Every string an asset could be stored as, mapped back to its id.
+        $lookup = [];
+
+        foreach ($assets as $asset) {
+            foreach ($this->candidateValues($asset) as $value) {
+                $lookup[$value] = $asset->id;
+            }
+        }
+
+        $counts = [];
+
+        foreach ($this->references as $reference) {
+            foreach ($this->countReferences($reference, array_keys($lookup)) as $value => $count) {
+                $id = $lookup[$value] ?? null;
+
+                if ($id === null) {
+                    continue;
+                }
+
+                $counts[$id][$reference['label']] = ($counts[$id][$reference['label']] ?? 0) + $count;
+            }
+        }
+
         return $assets
-            ->mapWithKeys(function (MediaAsset $asset): array {
-                $items = $this->usages($asset);
-                $count = array_sum(array_column($items, 'count'));
+            ->mapWithKeys(function (MediaAsset $asset) use ($counts): array {
+                $items = collect($counts[$asset->id] ?? [])
+                    ->map(fn (int $count, string $label): array => ['label' => $label, 'count' => $count])
+                    ->values()
+                    ->all();
+
+                $total = array_sum(array_column($items, 'count'));
 
                 return [
                     $asset->id => [
                         'items' => $items,
-                        'count' => $count,
-                        'label' => $this->label($items, $count),
+                        'count' => $total,
+                        'label' => $this->label($items, $total),
                     ],
                 ];
             })
@@ -67,24 +98,69 @@ class MediaUsageService
 
     public function isUsed(MediaAsset $asset): bool
     {
-        return count($this->usages($asset)) > 0;
+        return $this->usages($asset) !== [];
     }
 
-    private function countReference(MediaAsset $asset, string $table, string $column): int
+    /**
+     * Refresh the cached usage_count on a set of assets so the grid can filter
+     * and sort on "unused" without re-scanning every reference table.
+     *
+     * @param  Collection<int, MediaAsset>  $assets
+     */
+    public function syncCounts(Collection $assets): void
     {
-        if (! Schema::hasTable($table) || ! Schema::hasColumn($table, $column)) {
-            return 0;
+        if ($assets->isEmpty()) {
+            return;
         }
 
-        $values = array_values(array_filter([
+        $map = $this->summaryMap($assets);
+        $now = now();
+
+        foreach ($assets as $asset) {
+            $count = $map[$asset->id]['count'] ?? 0;
+
+            if ($asset->usage_count === $count && $asset->usage_synced_at !== null) {
+                continue;
+            }
+
+            $asset->forceFill(['usage_count' => $count, 'usage_synced_at' => $now])->saveQuietly();
+        }
+    }
+
+    /**
+     * Every stored form of an asset: bare filename, public-relative path and
+     * absolute URL. Remote assets store the URL as their filename, so the
+     * first value already covers them.
+     *
+     * @return array<int, string>
+     */
+    private function candidateValues(MediaAsset $asset): array
+    {
+        return array_values(array_unique(array_filter([
             $asset->filename,
             $asset->path,
             $asset->url,
-        ]));
+        ])));
+    }
 
-        return DB::table($table)
-            ->whereIn($column, $values)
-            ->count();
+    /**
+     * @param  array{label: string, table: string, column: string}  $reference
+     * @param  array<int, string>  $values
+     * @return array<string, int>
+     */
+    private function countReferences(array $reference, array $values): array
+    {
+        if ($values === [] || ! Schema::hasTable($reference['table']) || ! Schema::hasColumn($reference['table'], $reference['column'])) {
+            return [];
+        }
+
+        return DB::table($reference['table'])
+            ->select($reference['column'].' as value', DB::raw('COUNT(*) as total'))
+            ->whereIn($reference['column'], $values)
+            ->groupBy($reference['column'])
+            ->pluck('total', 'value')
+            ->map(fn ($total): int => (int) $total)
+            ->all();
     }
 
     /**

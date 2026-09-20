@@ -454,6 +454,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/picker', [MediaAssetController::class, 'picker'])->name('picker');
         Route::post('/', [MediaAssetController::class, 'store'])->name('store');
         Route::post('/optimize-pending', [MediaAssetController::class, 'optimizePending'])->name('optimize-pending');
+        Route::post('/bulk', [MediaAssetController::class, 'bulk'])->name('bulk');
+        Route::patch('/{media}', [MediaAssetController::class, 'update'])->name('update');
         Route::delete('/{media}', [MediaAssetController::class, 'destroy'])->name('destroy');
     });
 
