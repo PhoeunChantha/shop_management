@@ -63,7 +63,11 @@ final class ImageManager
             return;
         }
 
-        if (self::isExternalUrl($name)) {
+        // Absolute URLs and library-rooted paths ("uploads/media/foo.jpg") are
+        // SHARED media-library assets: the same file may be referenced by a
+        // product, a banner and a category at once, so a consumer clearing its
+        // own field must never remove the file. The media library owns them.
+        if (self::isExternalUrl($name) || self::isRooted($name)) {
             return;
         }
 
@@ -92,7 +96,7 @@ final class ImageManager
             return null;
         }
 
-        if (self::isExternalUrl($name)) {
+        if (self::isExternalUrl($name) || self::isRooted($name)) {
             return $name;
         }
 
@@ -196,7 +200,11 @@ final class ImageManager
             return null;
         }
 
-        $path = self::path(self::thumbnailName($filename), $folder);
+        // A rooted path already carries its own folder, so the thumbnail sits
+        // next to it under thumbs/ rather than under the caller's folder.
+        $path = self::isRooted($filename)
+            ? dirname($filename).'/'.self::thumbnailName($filename)
+            : self::path(self::thumbnailName($filename), $folder);
 
         return $path && File::exists(public_path($path)) ? asset($path) : null;
     }
@@ -209,6 +217,17 @@ final class ImageManager
     private static function isExternalUrl(string $name): bool
     {
         return Str::startsWith($name, ['http://', 'https://']);
+    }
+
+    /**
+     * True when a stored value is already a public-relative path under
+     * uploads/ (e.g. "uploads/media/ab12cd.jpg"). Media-library picks are
+     * stored this way so ONE image can be referenced from any feature —
+     * products, banners, brands — without being re-filed per folder.
+     */
+    private static function isRooted(string $name): bool
+    {
+        return Str::startsWith($name, self::ROOT.'/');
     }
 
     /**

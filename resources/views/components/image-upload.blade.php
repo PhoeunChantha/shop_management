@@ -12,8 +12,11 @@
 @php
     $inputId = $id ?? $name;
     $mediaInput = $name . '_media';
-    $mediaEnabled = $mediaPicker && filled($folder);
-    $pickerUrl = $mediaEnabled ? route('admin.media.picker', ['folder' => $folder]) : null;
+    // The library is shared across features, so a field does not need its own
+    // folder to browse it — the folder is only a sort/upload preference.
+    $mediaEnabled = (bool) $mediaPicker;
+    $uploadFolder = $folder ?: 'media';
+    $pickerUrl = $mediaEnabled ? route('admin.media.picker', array_filter(['folder' => $folder])) : null;
     $storeUrl = $mediaEnabled ? route('admin.media.store') : null;
     $existingPath = $value;
 
@@ -89,7 +92,9 @@
             return this.assets.filter((asset) => (asset.name || '').toLowerCase().includes(q) || (asset.filename || '').toLowerCase().includes(q));
         },
         selectMedia(asset) {
-            this.selectedMedia = asset.filename;
+            // Store the portable reference, not the bare filename, so the same
+            // library image resolves from any feature's folder.
+            this.selectedMedia = asset.value || asset.filename;
             this.preview = asset.url;
             this.filename = '';
             this.unsupported = false;
@@ -148,7 +153,7 @@
             this.uploadError = '';
 
             const fd = new FormData();
-            fd.append('folder', @js($folder));
+            fd.append('folder', @js($uploadFolder));
             fd.append('alt_text', this.uploadAlt || '');
             this.uploadFiles.forEach((file) => fd.append('files[]', file));
 
@@ -169,8 +174,8 @@
                 }
                 const uploadedAssets = json.data || [];
                 if (uploadedAssets.length) {
-                    const uploadedNames = uploadedAssets.map((asset) => asset.filename);
-                    this.assets = [...uploadedAssets, ...this.assets.filter((asset) => !uploadedNames.includes(asset.filename))];
+                    const uploadedNames = uploadedAssets.map((asset) => asset.value || asset.filename);
+                    this.assets = [...uploadedAssets, ...this.assets.filter((asset) => !uploadedNames.includes(asset.value || asset.filename))];
                     this.recentlyUploaded = uploadedNames;
                     this.mediaLoaded = true;
                     this.uploadFiles = [];
@@ -301,10 +306,10 @@
                                 </template>
                                 <template x-for="asset in filteredAssets" :key="asset.id">
                                     <button type="button" class="media-field-option"
-                                        :class="{ 'is-selected': selectedMedia === asset.filename, 'is-new': recentlyUploaded.includes(asset.filename) }"
+                                        :class="{ 'is-selected': selectedMedia === (asset.value || asset.filename), 'is-new': recentlyUploaded.includes(asset.value || asset.filename) }"
                                         @click="selectMedia(asset)">
                                         <img :src="asset.url" :alt="asset.name">
-                                        <em x-show="recentlyUploaded.includes(asset.filename)" x-cloak>New</em>
+                                        <em x-show="recentlyUploaded.includes(asset.value || asset.filename)" x-cloak>New</em>
                                         <span>
                                             <strong x-text="asset.name"></strong>
                                             <small x-text="[asset.size, asset.dimensions].filter(Boolean).join(' - ')"></small>

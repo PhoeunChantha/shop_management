@@ -12,7 +12,8 @@
 
 @php($existing = $existing ?? collect())
 @php($currentPrimary = optional($existing->firstWhere('is_primary', true))->id ?? optional($existing->first())->id)
-@php($pickerUrl = $mediaPicker ? route('admin.media.picker', ['folder' => $folder]) : null)
+{{-- The folder only floats matching assets first; the whole library is offered. --}}
+@php($pickerUrl = $mediaPicker ? route('admin.media.picker', array_filter(['folder' => $folder])) : null)
 
 <div class="gallery-upload" :class="{ 'is-dragging': dragging }"
     @dragover.prevent="dragging = true" @dragleave.prevent="dragging = false"
@@ -66,10 +67,10 @@
             return this.assets.filter((asset) => (asset.name || '').toLowerCase().includes(q) || (asset.filename || '').toLowerCase().includes(q));
         },
         addMedia(asset) {
-            if (!this.media.some((item) => item.filename === asset.filename)) this.media.push(asset);
+            if (!this.media.some((item) => (item.value || item.filename) === (asset.value || asset.filename))) this.media.push(asset);
         },
         removeMedia(filename) {
-            this.media = this.media.filter((asset) => asset.filename !== filename);
+            this.media = this.media.filter((asset) => (asset.value || asset.filename) !== filename);
         },
     }">
 
@@ -120,8 +121,8 @@
         <template x-for="asset in media" :key="asset.filename">
             <div class="gallery-item">
                 <img :src="asset.url" :alt="asset.name">
-                <input type="hidden" name="{{ $mediaName }}[]" :value="asset.filename">
-                <button type="button" class="gallery-item__x" @click.stop="removeMedia(asset.filename)" title="{{ __('Remove') }}">
+                <input type="hidden" name="{{ $mediaName }}[]" :value="asset.value || asset.filename">
+                <button type="button" class="gallery-item__x" @click.stop="removeMedia(asset.value || asset.filename)" title="{{ __('Remove') }}">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -139,11 +140,11 @@
                     <div class="media-picker-panel__empty">Loading media...</div>
                 </template>
                 <template x-if="!mediaLoading && filteredAssets.length === 0">
-                    <div class="media-picker-panel__empty">No product media found.</div>
+                    <div class="media-picker-panel__empty">{{ __('No media found.') }}</div>
                 </template>
                 <template x-for="asset in filteredAssets" :key="asset.id">
                     <button type="button" class="media-picker-option"
-                        :class="{ 'is-selected': media.some((item) => item.filename === asset.filename) }"
+                        :class="{ 'is-selected': media.some((item) => (item.value || item.filename) === (asset.value || asset.filename)) }"
                         @click="addMedia(asset)">
                         <img :src="asset.url" :alt="asset.name">
                         <span>

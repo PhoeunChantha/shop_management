@@ -10,7 +10,6 @@ use App\Http\Requests\Product\BaseProductRequest;
 use App\Models\Attribute;
 use App\Models\Brand;
 use App\Models\Category;
-use App\Models\MediaAsset;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductTag;
@@ -628,18 +627,16 @@ class ProductService
         return ($value === null || $value === '') ? null : (string) $value;
     }
 
-    private function selectedMediaFilename(?string $filename, string $folder): ?string
+    /**
+     * Resolve a media-library pick into the value to store. The library is
+     * shared, so the lookup spans every folder — see MediaReferenceResolver.
+     *
+     * @param  string  $folder  The field's own folder — no longer a filter,
+     *                          kept so call sites stay unchanged.
+     */
+    private function selectedMediaFilename(?string $value, string $folder): ?string
     {
-        $filename = trim((string) $filename);
-
-        if ($filename === '') {
-            return null;
-        }
-
-        return MediaAsset::query()
-            ->where('folder', $folder)
-            ->where('filename', $filename)
-            ->value('filename');
+        return app(MediaReferenceResolver::class)->resolve($value);
     }
 
     private function uniqueSlug(string $name, ?int $ignoreId = null): string
