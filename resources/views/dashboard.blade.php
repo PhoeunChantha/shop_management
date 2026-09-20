@@ -235,22 +235,6 @@
                 </table>
             </div>
         </section>
-
-        <section class="dash-fulfillment">
-            <div class="dash-fulfillment__meter" style="--pct: {{ $fulfillment['health'] }};">
-                <span>{{ $fulfillment['health'] }}%</span>
-            </div>
-            <div class="dash-fulfillment__copy">
-                <p class="section-kicker mb-1">{{ __('Fulfillment pulse') }}</p>
-                <h3>{{ __('Shipping workload is') }} {{ $fulfillment['open'] > 0 ? __('active') : __('clear') }}</h3>
-                <p>{{ number_format($fulfillment['open']) }} {{ __('open orders') }}, {{ number_format($fulfillment['shipped']) }} {{ __('shipped') }}, {{ number_format($fulfillment['delivered']) }} {{ __('delivered in this range.') }}</p>
-            </div>
-            <div class="dash-fulfillment__stats">
-                <span><strong>{{ number_format($fulfillment['open']) }}</strong>{{ __('Open') }}</span>
-                <span><strong>{{ number_format($fulfillment['shipped']) }}</strong>{{ __('Shipped') }}</span>
-                <span><strong>{{ number_format($fulfillment['cancelled']) }}</strong>{{ __('Cancelled') }}</span>
-            </div>
-        </section>
     </div>
 
     <script type="application/json" id="dash-data">@json($dashData)</script>

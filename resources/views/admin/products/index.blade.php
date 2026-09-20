@@ -11,19 +11,16 @@
     @php($importPreview = session('product_import_preview'))
 
     <div class="admin-page products-index-page" x-data="{ importOpen: false, importPreviewOpen: @js((bool) $importPreview) }">
-        {{-- Page head: flat tool header — title, live catalog facts, and a grouped
-             action toolbar. Deliberately no card / gradient / blurb. --}}
+        {{-- Page head: flat tool header — title and a grouped action toolbar.
+             Deliberately no card / gradient / blurb. --}}
         <header class="products-head">
             <div class="products-head__title">
                 <h3>{{ __('All Products') }} <span class="products-head__count">{{ number_format($products->total()) }}</span></h3>
-                <p class="products-head__facts">
-                    <span><b>{{ number_format($categories->count()) }}</b> {{ __('categories') }}</span>
-                    <span><b>{{ number_format($brands->count()) }}</b> {{ __('brands') }}</span>
-                    <span>{{ __('showing') }} <b>{{ number_format($products->count()) }}</b> {{ __('of') }} <b>{{ number_format($products->total()) }}</b></span>
-                    @if (request()->hasAny(['search', 'category_id', 'brand_id', 'status', 'stock', 'flag']))
+                @if (request()->hasAny(['search', 'category_id', 'brand_id', 'status', 'stock', 'flag']))
+                    <p class="products-head__facts">
                         <a href="{{ route('admin.products.index') }}" class="products-head__clear" data-ajax-link><i class="fa-solid fa-xmark"></i>{{ __('Clear filters') }}</a>
-                    @endif
-                </p>
+                    </p>
+                @endif
             </div>
             <div class="products-head__actions">
                 <div class="btn-group-flat" role="group" aria-label="{{ __('Catalog tools') }}">

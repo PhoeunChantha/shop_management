@@ -169,13 +169,13 @@ it('renders a responsive srcset on the PDP main image once a thumbnail exists', 
 });
 
 it('still generates a MediaAsset thumbnail after the optimizer was refactored to share ImageManager', function () {
-    $created = app(MediaAssetService::class)->store(
+    $result = app(MediaAssetService::class)->store(
         [UploadedFile::fake()->image('media-thumb.jpg', 1000, 1000)],
         'media',
-        null,
+        ['alt_text' => null],
         null,
     );
-    $asset = $created->first();
+    $asset = $result['created']->first();
 
     expect($asset->thumbnail_filename)->not->toBeNull();
 

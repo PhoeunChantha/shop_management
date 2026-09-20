@@ -6,7 +6,6 @@ namespace App\Services\Admin;
 
 use App\Enums\SettingGroup;
 use App\Helpers\ImageManager;
-use App\Models\MediaAsset;
 use App\Models\Setting;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -1073,18 +1072,13 @@ final class SettingService
         ]);
     }
 
-    private function selectedMediaFilename(?string $filename, string $folder): ?string
+    /**
+     * @param  string  $folder  The field's own folder — no longer a filter,
+     *                          kept so call sites stay unchanged.
+     */
+    private function selectedMediaFilename(?string $value, string $folder): ?string
     {
-        $filename = trim((string) $filename);
-
-        if ($filename === '') {
-            return null;
-        }
-
-        return MediaAsset::query()
-            ->where('folder', $folder)
-            ->where('filename', $filename)
-            ->value('filename');
+        return app(MediaReferenceResolver::class)->resolve($value);
     }
 
     /**

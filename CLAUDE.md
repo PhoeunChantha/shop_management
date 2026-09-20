@@ -166,7 +166,7 @@ middleware from `session('locale')` (supported: `en`, `km`), switched via
   WalletService, PaymentService, FinanceReportService, SeoManagerService, ChatService,
   PermissionService, RoleService, UserService, ActivityLogService,
   AbandonedCartService, AdminNotificationService, DealCampaignService,
-  MediaAssetService, ProductImportService, SetupHealthService
+  MediaAssetService, MediaStorageService, ProductImportService, SetupHealthService
   MediaOptimizationService, MediaUsageService, AttributeService, BulkActionService}`.
 - `CustomerController` delegates customer list/profile queries, stats, order
   history, top products, selected export, profile sync, bulk enable/disable, and
