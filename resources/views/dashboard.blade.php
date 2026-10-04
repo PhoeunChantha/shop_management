@@ -54,8 +54,8 @@
                 <div class="dash-kpi" style="--acc: {{ $kpi['color'] }};">
                     <div class="dash-kpi__top">
                         <span class="dash-kpi__icon"><i class="fa-solid {{ $kpi['icon'] }}"></i></span>
-                        <span class="dash-trend {{ $kpi['up'] ? 'is-up' : 'is-down' }}">
-                            <i class="fa-solid {{ $kpi['up'] ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }}"></i>
+                        <span class="dash-trend is-{{ $kpi['direction'] }}" title="{{ __('vs previous period') }}">
+                            <i class="fa-solid {{ ['up' => 'fa-arrow-trend-up', 'down' => 'fa-arrow-trend-down'][$kpi['direction']] ?? 'fa-minus' }}"></i>
                             {{ $kpi['trend'] }}
                         </span>
                     </div>

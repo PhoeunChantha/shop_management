@@ -34,7 +34,7 @@ class ReportFilterRequest extends FormRequest
             'sort' => ['nullable', 'string', 'max:40'],
             'direction' => ['nullable', 'string', 'in:asc,desc'],
             'per_page' => ['nullable', 'integer', 'in:5,10,25,50,100'],
-            'format' => ['nullable', 'string', 'in:csv,xlsx,pdf'],
+            'format' => ['nullable', 'string', 'in:csv,pdf'],
             ...$this->reportRules(),
         ];
     }
@@ -57,7 +57,7 @@ class ReportFilterRequest extends FormRequest
         );
     }
 
-    public function format(): string
+    public function exportFormat(): string
     {
         return (string) ($this->validated()['format'] ?? 'csv');
     }

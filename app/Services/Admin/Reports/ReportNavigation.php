@@ -22,6 +22,7 @@ final class ReportNavigation
         return [
             ['label' => __('Overview'), 'icon' => 'fa-gauge-high', 'route' => 'admin.reports.index', 'active' => ['admin.reports.index', 'admin.reports.export'], 'permission' => 'view reports'],
             ['label' => __('Sales'), 'icon' => 'fa-chart-line', 'route' => 'admin.reports.sales', 'active' => ['admin.reports.sales', 'admin.reports.sales.*'], 'permission' => 'view sales reports'],
+            ['label' => __('Orders & Fulfillment'), 'icon' => 'fa-truck-fast', 'route' => 'admin.reports.orders', 'active' => ['admin.reports.orders', 'admin.reports.orders.*'], 'permission' => 'view order reports'],
             ['label' => __('Products'), 'icon' => 'fa-box-open', 'route' => 'admin.reports.products', 'active' => ['admin.reports.products', 'admin.reports.products.*'], 'permission' => 'view product reports'],
             ['label' => __('Inventory'), 'icon' => 'fa-warehouse', 'route' => 'admin.reports.stock', 'active' => ['admin.reports.stock', 'admin.reports.stock.*'], 'permission' => 'view stock reports'],
             ['label' => __('Customers'), 'icon' => 'fa-user-group', 'route' => 'admin.reports.customers', 'active' => ['admin.reports.customers', 'admin.reports.customers.*', 'admin.reports.register', 'admin.reports.register.*'], 'permission' => 'view customer reports'],
@@ -38,7 +39,24 @@ final class ReportNavigation
      */
     public static function tabs(string $domain): array
     {
+        $view = fn (string $route, string $value, string $label, string $icon, string $permission) => [
+            'label' => $label, 'icon' => $icon, 'route' => $route, 'permission' => $permission,
+            'params' => ['view' => $value], 'default' => ['view' => 'summary'],
+        ];
+
         return match ($domain) {
+            'sales' => [
+                $view('admin.reports.sales', 'summary', __('Sales overview'), 'fa-chart-line', 'view sales reports'),
+                $view('admin.reports.sales', 'products', __('By product'), 'fa-shirt', 'view sales reports'),
+                $view('admin.reports.sales', 'categories', __('By category'), 'fa-folder-tree', 'view sales reports'),
+                $view('admin.reports.sales', 'customers', __('By customer'), 'fa-user', 'view sales reports'),
+                $view('admin.reports.sales', 'methods', __('By payment method'), 'fa-credit-card', 'view sales reports'),
+                $view('admin.reports.sales', 'orders', __('Transactions'), 'fa-receipt', 'view sales reports'),
+            ],
+            'orders' => [
+                $view('admin.reports.orders', 'summary', __('Status & fulfillment'), 'fa-truck-fast', 'view order reports'),
+                $view('admin.reports.orders', 'orders', __('Order list'), 'fa-list-check', 'view order reports'),
+            ],
             'customers' => [
                 ['label' => __('Customer overview'), 'icon' => 'fa-user-group', 'route' => 'admin.reports.customers', 'permission' => 'view customer reports'],
                 ['label' => __('Registrations'), 'icon' => 'fa-user-plus', 'route' => 'admin.reports.register', 'permission' => 'view register reports'],
