@@ -626,7 +626,7 @@ final class SettingService
         foreach ($links as $link) {
             $column = trim((string) ($link['column'] ?? ''));
             $label = trim((string) ($link['label'] ?? ''));
-            $url = trim((string) ($link['url'] ?? ''));
+            $url = $this->sitePath(trim((string) ($link['url'] ?? '')));
 
             if ($column === '' || $label === '') {
                 continue;
@@ -639,6 +639,36 @@ final class SettingService
     }
 
     /**
+     * Turn a link to this site into a host-less path ("/contact"), so footer
+     * links keep working on every domain the shop is served from (localhost,
+     * the tunnel, production). Links to other sites are returned unchanged.
+     */
+    private function sitePath(string $url): string
+    {
+        $host = parse_url($url, PHP_URL_HOST);
+
+        if (! $host || ! preg_match('#^https?://#i', $url)) {
+            return $url;
+        }
+
+        $ownHosts = array_filter([
+            'localhost', '127.0.0.1', '[::1]',
+            parse_url((string) config('app.url'), PHP_URL_HOST),
+            request()->getHost(),
+        ]);
+
+        if (! in_array(strtolower($host), array_map('strtolower', $ownHosts), true)) {
+            return $url;
+        }
+
+        $path = (string) (parse_url($url, PHP_URL_PATH) ?: '/');
+        $query = parse_url($url, PHP_URL_QUERY);
+        $fragment = parse_url($url, PHP_URL_FRAGMENT);
+
+        return $path.($query ? '?'.$query : '').($fragment ? '#'.$fragment : '');
+    }
+
+    /**
      * Starter footer columns (Help + Brand). The storefront "Shop" column is
      * generated from live categories, so it is intentionally not listed here.
      *
@@ -647,16 +677,16 @@ final class SettingService
     public function defaultFooterLinks(): array
     {
         return [
-            ['column' => 'Help', 'label' => 'Shipping', 'url' => route('frontend.pages.faq')],
-            ['column' => 'Help', 'label' => 'Returns', 'url' => route('frontend.pages.faq')],
-            ['column' => 'Help', 'label' => 'Size Guide', 'url' => route('frontend.pages.faq')],
-            ['column' => 'Help', 'label' => 'Track Order', 'url' => route('frontend.account.orders')],
-            ['column' => 'Help', 'label' => 'Contact', 'url' => route('frontend.pages.contact')],
-            ['column' => 'Brand', 'label' => 'Our Story', 'url' => route('frontend.pages.about')],
-            ['column' => 'Brand', 'label' => 'FAQ', 'url' => route('frontend.pages.faq')],
-            ['column' => 'Brand', 'label' => 'Contact', 'url' => route('frontend.pages.contact')],
-            ['column' => 'Brand', 'label' => 'Privacy', 'url' => route('frontend.pages.privacy')],
-            ['column' => 'Brand', 'label' => 'Terms', 'url' => route('frontend.pages.terms')],
+            ['column' => 'Help', 'label' => 'Shipping', 'url' => route('frontend.pages.faq', absolute: false)],
+            ['column' => 'Help', 'label' => 'Returns', 'url' => route('frontend.pages.faq', absolute: false)],
+            ['column' => 'Help', 'label' => 'Size Guide', 'url' => route('frontend.pages.faq', absolute: false)],
+            ['column' => 'Help', 'label' => 'Track Order', 'url' => route('frontend.account.orders', absolute: false)],
+            ['column' => 'Help', 'label' => 'Contact', 'url' => route('frontend.pages.contact', absolute: false)],
+            ['column' => 'Brand', 'label' => 'Our Story', 'url' => route('frontend.pages.about', absolute: false)],
+            ['column' => 'Brand', 'label' => 'FAQ', 'url' => route('frontend.pages.faq', absolute: false)],
+            ['column' => 'Brand', 'label' => 'Contact', 'url' => route('frontend.pages.contact', absolute: false)],
+            ['column' => 'Brand', 'label' => 'Privacy', 'url' => route('frontend.pages.privacy', absolute: false)],
+            ['column' => 'Brand', 'label' => 'Terms', 'url' => route('frontend.pages.terms', absolute: false)],
         ];
     }
 
@@ -1046,7 +1076,7 @@ final class SettingService
             ->map(fn (array $row): array => [
                 'column' => trim((string) ($row['column'] ?? '')),
                 'label' => trim((string) ($row['label'] ?? '')),
-                'url' => trim((string) ($row['url'] ?? '')),
+                'url' => $this->sitePath(trim((string) ($row['url'] ?? ''))),
             ])
             ->filter(fn (array $row): bool => filled($row['column']) && filled($row['label']))
             ->values()

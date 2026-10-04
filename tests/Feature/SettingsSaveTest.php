@@ -100,3 +100,39 @@ it('saves the Facebook page token and keeps it when the field is left blank', fu
 
     @unlink($envPath);
 });
+
+it('serves footer links to this site as host-less paths', function () {
+    // Links saved while browsing on localhost must not pin the old host.
+    Setting::set('footer_links', json_encode([
+        ['column' => 'Brand', 'label' => 'Contact', 'url' => 'http://127.0.0.1:8000/contact'],
+        ['column' => 'Brand', 'label' => 'FAQ', 'url' => 'http://localhost/faq?tab=shipping#returns'],
+        ['column' => 'Brand', 'label' => 'Blog', 'url' => 'https://blog.example.com/post'],
+    ]), 'footer');
+
+    expect(app(SettingService::class)->footerColumns()['Brand'])->toBe([
+        ['label' => 'Contact', 'url' => '/contact'],
+        ['label' => 'FAQ', 'url' => '/faq?tab=shipping#returns'],
+        ['label' => 'Blog', 'url' => 'https://blog.example.com/post'],
+    ]);
+});
+
+it('stores footer links to this site as host-less paths', function () {
+    $this->actingAs($this->admin)
+        ->put(route('admin.settings.update'), [
+            'footer_links' => [
+                ['column' => 'Brand', 'label' => 'Terms', 'url' => 'http://127.0.0.1:8000/terms'],
+                ['column' => 'Brand', 'label' => 'Out', 'url' => 'https://example.org/x'],
+            ],
+        ])
+        ->assertRedirect(route('admin.settings.index'));
+
+    expect(json_decode(Setting::get('footer_links'), true))->toBe([
+        ['column' => 'Brand', 'label' => 'Terms', 'url' => '/terms'],
+        ['column' => 'Brand', 'label' => 'Out', 'url' => 'https://example.org/x'],
+    ]);
+});
+
+it('uses relative URLs for the default footer links', function () {
+    expect(collect(app(SettingService::class)->defaultFooterLinks())->pluck('url')->all())
+        ->each->toStartWith('/');
+});

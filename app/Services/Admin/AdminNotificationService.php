@@ -324,11 +324,21 @@ final class AdminNotificationService
                 'priority' => $priority,
                 'title' => $title,
                 'body' => $body,
-                'url' => $url,
+                // Store the path only, so the link works on whichever domain
+                // the admin is using (localhost, tunnel, production).
+                'url' => $url ? $this->pathOnly($url) : null,
                 'source_type' => $sourceType,
                 'source_id' => $sourceId,
                 'expires_at' => $expiresAt,
             ],
         );
+    }
+
+    private function pathOnly(string $url): string
+    {
+        $path = (string) (parse_url($url, PHP_URL_PATH) ?: '/');
+        $query = parse_url($url, PHP_URL_QUERY);
+
+        return $path.($query ? '?'.$query : '');
     }
 }
