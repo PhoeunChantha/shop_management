@@ -8,10 +8,11 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Backend\Concerns\StreamsReportCsv;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Report\SalesReportRequest;
+use App\Services\Admin\Reports\PaymentMethodNames;
 use App\Services\Admin\SalesReportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -23,24 +24,25 @@ final class SalesReportController extends Controller
         private readonly SalesReportService $reports,
     ) {}
 
-    public function index(Request $request): View
+    public function index(SalesReportRequest $request, PaymentMethodNames $methods): View
     {
-        $filters = $this->validatedFilters($request);
-
-        return view('admin.reports.sales', array_merge($this->reports->report($filters), [
+        return view('admin.reports.sales', [
+            ...$this->reports->report($request->filters(), $request->view(), $request->user()->can('view finance reports')),
             'orderStatuses' => OrderStatus::options(),
             'paymentStatuses' => PaymentStatus::options(),
-            'perPage' => (int) ($filters['per_page'] ?? 25),
-        ]));
+            'paymentMethods' => $methods->options(),
+        ]);
     }
 
-    public function export(Request $request): Response
+    public function export(SalesReportRequest $request): Response
     {
+        $view = $request->view();
+
         return $this->streamExport(
-            $this->reports->exportRows($this->validatedFilters($request)),
-            'Sales Report',
-            'sales-report',
-            (string) $request->query('format', 'csv'),
+            $this->reports->exportRows($request->filters(), $view, $request->user()->can('view finance reports')),
+            'Sales — '.str_replace('_', ' ', ucfirst($view)),
+            'sales-'.$view,
+            $request->exportFormat(),
         );
     }
 
@@ -51,24 +53,6 @@ final class SalesReportController extends Controller
 
         return response()->json([
             'results' => $this->reports->customerOptions($term),
-        ]);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function validatedFilters(Request $request): array
-    {
-        return $request->validate([
-            'start_date' => ['nullable', 'date'],
-            'end_date' => ['nullable', 'date'],
-            'status' => ['nullable', Rule::enum(OrderStatus::class)],
-            'payment_status' => ['nullable', Rule::enum(PaymentStatus::class)],
-            'customer' => ['nullable', 'string', 'max:255'],
-            'search' => ['nullable', 'string', 'max:255'],
-            'sort' => ['nullable', 'string', 'in:date,net,total'],
-            'direction' => ['nullable', 'string', 'in:asc,desc'],
-            'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
         ]);
     }
 }

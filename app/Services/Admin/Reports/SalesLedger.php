@@ -97,7 +97,7 @@ final class SalesLedger
             ->whereIn('o.payment_status', self::capturedStatuses())
             ->whereBetween('o.placed_at', [$filters->start, $filters->end])
             ->select([
-                'o.id', 'o.placed_at', 'o.user_id', 'o.customer_name', 'o.customer_email',
+                'o.id', 'o.order_number', 'o.placed_at', 'o.user_id', 'o.customer_name', 'o.customer_email',
                 'o.status', 'o.payment_status', 'o.payment_method', 'o.coupon_id',
                 'o.subtotal', 'o.discount_total', 'o.tax_total', 'o.shipping_total', 'o.grand_total',
             ])
@@ -139,7 +139,43 @@ final class SalesLedger
     }
 
     /**
-     * Same totals bucketed per day (Y-m-d keys, only days with sales).
+     * Gap-filled waterfall per time bucket (day, or month for long windows),
+     * plus units sold per bucket.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function series(ReportFilters $filters, ?string $unit = null): array
+    {
+        $unit ??= ReportSeries::unit($filters);
+        $sums = [];
+
+        foreach ($this->daily($filters) as $day => $row) {
+            $key = ReportSeries::keyFor($day, $unit);
+            foreach ($row as $column => $value) {
+                $sums[$key][$column] = ($sums[$key][$column] ?? 0) + $value;
+            }
+        }
+
+        $units = DB::query()->fromSub($this->lines($filters), 'x')
+            ->selectRaw('DATE(placed_at) as day, SUM(quantity) as units')
+            ->groupBy('day')
+            ->pluck('units', 'day');
+        $unitsByKey = [];
+        foreach ($units as $day => $count) {
+            $key = ReportSeries::keyFor((string) $day, $unit);
+            $unitsByKey[$key] = ($unitsByKey[$key] ?? 0) + (int) $count;
+        }
+
+        return array_map(fn (array $bucket) => [
+            ...$bucket,
+            ...self::waterfall($sums[$bucket['key']] ?? []),
+            'units' => $unitsByKey[$bucket['key']] ?? 0,
+        ], ReportSeries::buckets($filters, $unit));
+    }
+
+    /**
+     * Raw column sums per day (Y-m-d keys, only days with sales). Feed
+     * through {@see self::waterfall()} after any re-bucketing.
      *
      * @return array<string, array<string, float|int>>
      */
@@ -162,8 +198,39 @@ final class SalesLedger
             ->groupBy('day')
             ->orderBy('day')
             ->get()
-            ->mapWithKeys(fn (object $row) => [(string) $row->day => self::waterfall((array) $row)])
+            ->mapWithKeys(fn (object $row) => [
+                (string) $row->day => collect((array) $row)->except('day')->map(fn ($v) => (float) $v)->all(),
+            ])
             ->all();
+    }
+
+    /**
+     * Export rows for a list of waterfall rows (series buckets). Columns are
+     * chosen so every row reconciles: Gross − Discounts − Product refunds =
+     * Net; Net + Tax + Shipping − Tax/shipping refunded = Total.
+     *
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return array<int, array<int, string|int|float>>
+     */
+    public static function exportWaterfall(array $rows, string $keyLabel): array
+    {
+        $money = fn ($v): string => number_format((float) $v, 2, '.', '');
+        $out = [[
+            $keyLabel, 'Orders', 'Units', 'Gross Sales', 'Discounts', 'Product Refunds', 'Net Sales',
+            'Tax', 'Shipping', 'Tax/Shipping Refunded', 'Total Sales', 'Recorded Refunds', 'Implied Refunds', 'Total Refunds',
+        ]];
+
+        foreach ($rows as $row) {
+            $out[] = [
+                $row['key'], $row['orders'], $row['units'] ?? 0,
+                $money($row['gross_sales']), $money($row['discounts']), $money($row['merchandise_refunds']),
+                $money($row['net_sales']), $money($row['tax']), $money($row['shipping']),
+                $money($row['tax_shipping_refunds']), $money($row['total_sales']),
+                $money($row['recorded_refunds']), $money($row['implied_refunds']), $money($row['refunds']),
+            ];
+        }
+
+        return $out;
     }
 
     /**
@@ -201,6 +268,107 @@ final class SalesLedger
             // worth at checkout, before tax/shipping and before any refund.
             'average_order_value' => $orders > 0 ? round(($gross - $discounts) / $orders, 2) : 0.0,
         ];
+    }
+
+    /**
+     * One row per order line of an eligible order, with the order's discount
+     * and merchandise refund allocated to the line in proportion to its share
+     * of the order subtotal (Σ line_total = subtotal, so allocations reconcile
+     * exactly with {@see self::summary()}). Item-level return attribution
+     * lives in the Returns report, which reads return_request_items directly.
+     *
+     * Columns: id, order_id, product_id, product_variant_id, name, sku,
+     * variant_label, quantity, line_total, unit_cost, cost (NULL when the
+     * line has no cost snapshot), placed_at, discount_alloc, refund_alloc.
+     */
+    public function lines(ReportFilters $filters): Builder
+    {
+        // "* 1.0" forces real division: SQLite stores whole-number decimals as
+        // integers, where 40 / 80 would truncate to 0.
+        $share = 'CASE WHEN l.subtotal > 0 THEN (d.line_total * 1.0) / l.subtotal ELSE 0 END';
+
+        return DB::table('order_details as d')
+            ->joinSub($this->orders($filters), 'l', 'l.id', '=', 'd.order_id')
+            ->select([
+                'd.id', 'd.order_id', 'd.product_id', 'd.product_variant_id', 'd.name', 'd.sku',
+                'd.variant_label', 'd.quantity', 'd.line_total', 'd.unit_cost', 'l.placed_at',
+            ])
+            ->selectRaw('d.unit_cost * d.quantity as cost')
+            ->selectRaw("l.discount_total * ({$share}) as discount_alloc")
+            ->selectRaw("l.merchandise_refund * ({$share}) as refund_alloc");
+    }
+
+    /** Units on eligible orders in the window (gross of returns). */
+    public function units(ReportFilters $filters): int
+    {
+        return (int) DB::query()->fromSub($this->lines($filters), 'x')->sum('quantity');
+    }
+
+    /**
+     * Cost of goods for eligible orders, from the per-line unit_cost snapshot.
+     * Lines without a cost are reported, never silently treated as free.
+     *
+     * @return array{cogs: float, uncosted_units: int, units: int}
+     */
+    public function cost(ReportFilters $filters): array
+    {
+        $row = DB::query()->fromSub($this->lines($filters), 'x')
+            ->selectRaw('COALESCE(SUM(cost), 0) as cogs')
+            ->selectRaw('COALESCE(SUM(CASE WHEN unit_cost IS NULL THEN quantity ELSE 0 END), 0) as uncosted_units')
+            ->selectRaw('COALESCE(SUM(quantity), 0) as units')
+            ->first();
+
+        return [
+            'cogs' => round((float) $row->cogs, 2),
+            'uncosted_units' => (int) $row->uncosted_units,
+            'units' => (int) $row->units,
+        ];
+    }
+
+    /**
+     * Line aggregates grouped by a lines-subquery column (x.*) or expression.
+     * Deleted products (product_id NULL) collapse into one group.
+     */
+    public function groupedLines(ReportFilters $filters, string $groupExpression, ?callable $join = null): Builder
+    {
+        $query = DB::query()->fromSub($this->lines($filters), 'x');
+
+        if ($join) {
+            $join($query);
+        }
+
+        return $query
+            ->selectRaw("{$groupExpression} as group_key")
+            ->selectRaw('MAX(x.name) as name')
+            ->selectRaw('MAX(x.sku) as sku')
+            ->selectRaw('COUNT(DISTINCT x.order_id) as orders')
+            ->selectRaw('SUM(x.quantity) as quantity')
+            ->selectRaw('SUM(x.line_total) as gross_sales')
+            ->selectRaw('SUM(x.discount_alloc) as discounts')
+            ->selectRaw('SUM(x.refund_alloc) as refunds')
+            ->selectRaw('SUM(x.line_total) - SUM(x.discount_alloc) - SUM(x.refund_alloc) as net_sales')
+            ->selectRaw('SUM(x.cost) as cogs')
+            ->selectRaw('SUM(CASE WHEN x.unit_cost IS NULL THEN x.quantity ELSE 0 END) as uncosted_units')
+            ->groupByRaw($groupExpression);
+    }
+
+    /**
+     * Order aggregates grouped by an orders column (customer, method, …).
+     */
+    public function groupedOrders(ReportFilters $filters, string $groupExpression): Builder
+    {
+        return DB::query()
+            ->fromSub($this->orders($filters), 'l')
+            ->selectRaw("{$groupExpression} as group_key")
+            ->selectRaw('COUNT(*) as orders')
+            ->selectRaw('SUM(subtotal) as gross_sales')
+            ->selectRaw('SUM(discount_total) as discounts')
+            ->selectRaw('SUM(total_refund) as refunds')
+            ->selectRaw('SUM(subtotal) - SUM(discount_total) - SUM(merchandise_refund) as net_sales')
+            ->selectRaw('SUM(grand_total) - SUM(total_refund) as total_sales')
+            ->selectRaw('MIN(placed_at) as first_order_at')
+            ->selectRaw('MAX(placed_at) as last_order_at')
+            ->groupByRaw($groupExpression);
     }
 
     /**

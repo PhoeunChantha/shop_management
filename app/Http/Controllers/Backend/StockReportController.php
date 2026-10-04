@@ -33,8 +33,15 @@ final class StockReportController extends Controller
 
     public function export(Request $request): Response
     {
+        $rows = $this->reports->exportRows();
+
+        // Unit cost and value (columns 4–5) need the finance permission.
+        if (! $request->user()->can('view finance reports')) {
+            $rows = array_map(fn (array $row) => array_values(array_diff_key($row, array_flip([4, 5]))), $rows);
+        }
+
         return $this->streamExport(
-            $this->reports->exportRows(),
+            $rows,
             'Inventory Report',
             'inventory-report',
             (string) $request->query('format', 'csv'),

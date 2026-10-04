@@ -7,34 +7,37 @@ namespace App\Services\Admin;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
+use App\Enums\ReportPreset;
 use App\Enums\ReviewStatus;
 use App\Models\AbandonedCart;
 use App\Models\AdminNotification;
 use App\Models\Order;
-use App\Models\OrderDetail;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\ReturnRequest;
 use App\Models\Review;
 use App\Models\User;
-use Illuminate\Support\Carbon;
+use App\Services\Admin\Reports\Comparison;
+use App\Services\Admin\Reports\ReportFilters;
+use App\Services\Admin\Reports\ReportSeries;
+use App\Services\Admin\Reports\SalesLedger;
+use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
  * Aggregates the admin dashboard for an arbitrary date range (start–end):
- * windowed KPI cards with trend + sparkline, a smooth SVG revenue area chart,
- * an orders-by-status breakdown, recent orders and low-stock items.
+ * windowed KPI cards with trend, a revenue area chart, an orders-by-status
+ * breakdown, recent orders and low-stock items.
  *
- * Series are bucketed in PHP — daily for spans up to ~3 months, monthly beyond —
- * so queries stay portable and the chart stays readable at any range.
+ * Revenue, paid orders and top products come from the shared SalesLedger
+ * (same definition as the Overview and Sales reports); buckets are daily for
+ * spans up to ~3 months, monthly beyond.
  */
 final class DashboardService
 {
-    private const PAID = ['paid', 'partially_refunded'];
-
-    /** Spans up to this many days bucket by day; longer spans bucket by month. */
-    private const DAILY_MAX_DAYS = 92;
+    public function __construct(private readonly SalesLedger $ledger) {}
 
     /** KPI accent colour per tone. */
     private const TONE_COLOR = [
@@ -50,70 +53,37 @@ final class DashboardService
     public function overview(?string $from = null, ?string $to = null): array
     {
         [$start, $end] = $this->resolveRange($from, $to);
+        $filters = new ReportFilters($start, $end, ReportPreset::Custom);
+        $previous = $filters->previous();
+        $unit = ReportSeries::unit($filters);
+        $count = count(ReportSeries::buckets($filters, $unit));
 
-        // Spans up to ~3 months read best as daily buckets; wider spans go monthly.
-        $unit = $start->diffInDays($end) + 1 <= self::DAILY_MAX_DAYS ? 'day' : 'month';
+        $rangeShort = $count.' '.Str::plural($unit, $count);
 
-        $buckets = $this->buckets($unit, $start, $end);
-        $count = $buckets->count();
-        $keys = $buckets->pluck('key')->all();
-        $curStart = $buckets->first()['date'];
-        $curEnd = $end;
+        // Revenue and paid orders come from the shared sales ledger, so the
+        // dashboard matches the Overview and Sales reports to the cent.
+        $sales = $this->ledger->summary($filters);
+        $prior = $this->ledger->summary($previous);
+        $series = $this->ledger->series($filters, $unit);
 
-        $rangeLabel = $this->rangeLabel($start, $end);
-        $rangeShort = $count.' '.($unit === 'day'
-            ? Str::plural('day', $count)
-            : Str::plural('month', $count));
-
-        // Fetch once from the start of the *previous* window so trends are cheap.
-        $windowStart = $unit === 'day'
-            ? $curStart->copy()->subDays($count)
-            : $curStart->copy()->subMonths($count);
-
-        [$revSeries, $revPrev] = $this->split(
-            Order::whereIn('payment_status', self::PAID)->where('created_at', '>=', $windowStart)
-                ->get(['grand_total', 'placed_at', 'created_at']),
-            fn (Order $o) => $o->placed_at ?? $o->created_at,
-            fn (Order $o) => (float) $o->grand_total,
-            $keys, $unit, $curStart,
-        );
-
-        [$ordSeries, $ordPrev] = $this->split(
-            Order::where('created_at', '>=', $windowStart)->get(['placed_at', 'created_at']),
-            fn (Order $o) => $o->placed_at ?? $o->created_at,
-            fn () => 1,
-            $keys, $unit, $curStart,
-        );
-
-        [$custSeries, $custPrev] = $this->split(
-            User::whereHas('roles', fn ($q) => $q->where('name', 'customer'))
-                ->where('created_at', '>=', $windowStart)->get(['created_at']),
-            fn (User $u) => $u->created_at,
-            fn () => 1,
-            $keys, $unit, $curStart,
-        );
-
-        [$prodSeries, $prodPrev] = $this->split(
-            Product::where('created_at', '>=', $windowStart)->get(['created_at']),
-            fn (Product $p) => $p->created_at,
-            fn () => 1,
-            $keys, $unit, $curStart,
-        );
+        $newCustomers = fn (ReportFilters $f) => $this->customerQuery()->whereBetween('created_at', [$f->start, $f->end])->count();
+        $newProducts = fn (ReportFilters $f) => Product::query()->whereBetween('created_at', [$f->start, $f->end])->count();
 
         return [
             'dateFrom' => $start->format('Y-m-d'),
             'dateTo' => $end->format('Y-m-d'),
-            'rangeLabel' => $rangeLabel,
+            'rangeLabel' => $this->rangeLabel($start, $end),
+            'sales' => $sales,
             'kpis' => [
-                $this->kpi('Revenue', array_sum($revSeries), true, $revSeries, array_sum($revSeries), $revPrev, 'fa-sack-dollar', 'blue', $rangeShort),
-                $this->kpi('Orders', array_sum($ordSeries), false, $ordSeries, array_sum($ordSeries), $ordPrev, 'fa-bag-shopping', 'orange', $rangeShort),
-                $this->kpi('Customers', $this->customerCount(), false, $custSeries, array_sum($custSeries), $custPrev, 'fa-users', 'green', 'total'),
-                $this->kpi('Products', Product::count(), false, $prodSeries, array_sum($prodSeries), $prodPrev, 'fa-shirt', 'violet', 'total'),
+                $this->kpi('Revenue', $sales['total_sales'], true, $prior['total_sales'], 'fa-sack-dollar', 'blue', $rangeShort),
+                $this->kpi('Orders', $sales['orders'], false, $prior['orders'], 'fa-bag-shopping', 'orange', __('paid').' · '.$rangeShort),
+                $this->kpi('Customers', $this->customerQuery()->count(), false, null, 'fa-users', 'green', 'total', $newCustomers($filters), $newCustomers($previous)),
+                $this->kpi('Products', Product::count(), false, null, 'fa-shirt', 'violet', 'total', $newProducts($filters), $newProducts($previous)),
             ],
-            'chart' => $this->chart($buckets, $revSeries),
+            'chart' => $this->chart($series),
             'statusBreakdown' => $this->statusBreakdown(),
             'operations' => $this->operationsQueue(),
-            'topProducts' => $this->topProducts($curStart, $curEnd),
+            'topProducts' => $this->topProducts($filters),
             'recentOrders' => $this->recentOrders(),
             'lowStock' => $this->lowStock(),
         ];
@@ -123,22 +93,22 @@ final class DashboardService
      * Parse the requested from/to into an ordered [start-of-day, end-of-day] pair,
      * defaulting to the last 30 days when either bound is missing.
      *
-     * @return array{0: Carbon, 1: Carbon}
+     * @return array{0: CarbonImmutable, 1: CarbonImmutable}
      */
     private function resolveRange(?string $from, ?string $to): array
     {
-        $end = $to ? Carbon::parse($to)->endOfDay() : Carbon::now()->endOfDay();
-        $start = $from ? Carbon::parse($from)->startOfDay() : $end->copy()->subDays(29)->startOfDay();
+        $end = $to ? CarbonImmutable::parse($to)->endOfDay() : CarbonImmutable::now()->endOfDay();
+        $start = $from ? CarbonImmutable::parse($from)->startOfDay() : $end->subDays(29)->startOfDay();
 
         if ($start->gt($end)) {
-            [$start, $end] = [$end->copy()->startOfDay(), $start->copy()->endOfDay()];
+            [$start, $end] = [$end->startOfDay(), $start->endOfDay()];
         }
 
         return [$start, $end];
     }
 
     /** Human-readable label for the selected range, e.g. "Jun 25 – Jul 24, 2026". */
-    private function rangeLabel(Carbon $start, Carbon $end): string
+    private function rangeLabel(CarbonImmutable $start, CarbonImmutable $end): string
     {
         if ($start->isSameDay($end)) {
             return $start->format('M j, Y');
@@ -150,108 +120,49 @@ final class DashboardService
     }
 
     /**
-     * Ordered buckets (oldest → newest) spanning [$start, $end], aligned to the
-     * bucket unit (start-of-day or start-of-month).
+     * A KPI card. The trend compares the window with the previous one: the
+     * value itself for windowed metrics, or new additions ($current/$previous)
+     * for all-time totals (customers, products).
      *
-     * @return Collection<int, array{key: string, label: string, date: Carbon}>
-     */
-    private function buckets(string $unit, Carbon $start, Carbon $end): Collection
-    {
-        $cursor = $unit === 'day' ? $start->copy()->startOfDay() : $start->copy()->startOfMonth();
-        $last = $unit === 'day' ? $end->copy()->startOfDay() : $end->copy()->startOfMonth();
-
-        $out = collect();
-        while ($cursor <= $last) {
-            $out->push([
-                'key' => $unit === 'day' ? $cursor->format('Y-m-d') : $cursor->format('Y-m'),
-                'label' => $unit === 'day' ? $cursor->format('M j') : $cursor->format('M Y'),
-                'date' => $cursor->copy(),
-            ]);
-
-            $unit === 'day' ? $cursor->addDay() : $cursor->addMonth();
-        }
-
-        return $out->values();
-    }
-
-    /**
-     * Split rows into the current window's per-bucket series and the previous
-     * window's total (everything before $curStart).
-     *
-     * @param  Collection<int, object>  $rows
-     * @param  array<int, string>  $keys
-     * @return array{0: array<int, float>, 1: float}
-     */
-    private function split(Collection $rows, callable $dateOf, callable $valueOf, array $keys, string $unit, Carbon $curStart): array
-    {
-        $series = array_fill_keys($keys, 0.0);
-        $previous = 0.0;
-
-        foreach ($rows as $row) {
-            $date = $dateOf($row);
-            $value = (float) $valueOf($row);
-
-            if ($date >= $curStart) {
-                $key = $unit === 'day' ? $date->format('Y-m-d') : $date->format('Y-m');
-                if (isset($series[$key])) {
-                    $series[$key] += $value;
-                }
-            } else {
-                $previous += $value;
-            }
-        }
-
-        return [array_values($series), $previous];
-    }
-
-    /**
-     * @param  array<int, float>  $series
      * @return array<string, mixed>
      */
-    private function kpi(string $label, float $raw, bool $isMoney, array $series, float $current, float $previous, string $icon, string $tone, string $sub): array
+    private function kpi(string $label, float|int $raw, bool $isMoney, float|int|null $previousValue, string $icon, string $tone, string $sub, ?int $current = null, ?int $previous = null): array
     {
+        $trend = $previousValue !== null
+            ? Comparison::of($raw, $previousValue)
+            : Comparison::of($current ?? 0, $previous ?? 0);
+
         return [
             'label' => $label,
-            'value' => $isMoney ? $this->money($raw) : number_format($raw),
-            'raw' => $isMoney ? round($raw) : (int) $raw,
+            'value' => $isMoney ? $this->money((float) $raw) : number_format($raw),
+            'raw' => $isMoney ? round((float) $raw, 2) : (int) $raw,
             'prefix' => $isMoney ? '$' : '',
             'sub' => $sub,
             'icon' => $icon,
             'tone' => $tone,
             'color' => self::TONE_COLOR[$tone] ?? '#2563eb',
-            'series' => array_map(fn ($v) => round($v, 2), $series),
-            ...$this->trend($current, $previous),
+            // null change = no prior base: shown as "—", never a fabricated +100%.
+            'trend' => $trend['change'] === null ? '—' : sprintf('%+.1f%%', $trend['change']),
+            'direction' => $trend['direction'],
+            'up' => $trend['direction'] === 'up',
         ];
     }
 
     /**
-     * @return array{trend: string, up: bool}
-     */
-    private function trend(float $current, float $previous): array
-    {
-        if ($previous <= 0.0) {
-            $pct = $current > 0 ? 100.0 : 0.0;
-        } else {
-            $pct = (($current - $previous) / $previous) * 100;
-        }
-
-        return ['trend' => sprintf('%+.1f%%', $pct), 'up' => $pct >= 0];
-    }
-
-    /**
-     * Raw revenue series for the ApexCharts area chart.
+     * Total sales per bucket for the ApexCharts area chart.
      *
-     * @param  Collection<int, array{key: string, label: string, date: Carbon}>  $buckets
-     * @param  array<int, float>  $series
+     * @param  array<int, array<string, mixed>>  $series
      * @return array<string, mixed>
      */
-    private function chart(Collection $buckets, array $series): array
+    private function chart(array $series): array
     {
+        $values = array_map(fn (array $row) => round((float) $row['total_sales'], 2), $series);
+
         return [
-            'labels' => $buckets->pluck('label')->all(),
-            'values' => array_map(fn ($v) => round($v, 2), array_values($series)),
-            'total' => $this->money(array_sum($series)),
-            'peak' => $this->money(max($series) ?: 0),
+            'labels' => array_column($series, 'label'),
+            'values' => $values,
+            'total' => $this->money(array_sum($values)),
+            'peak' => $this->money($values ? max($values) : 0),
         ];
     }
 
@@ -351,22 +262,21 @@ final class DashboardService
     }
 
     /**
+     * Best sellers by units on paid orders in the window (shared ledger).
+     *
      * @return Collection<int, array<string, mixed>>
      */
-    private function topProducts(Carbon $start, Carbon $end, int $limit = 5): Collection
+    private function topProducts(ReportFilters $filters, int $limit = 5): Collection
     {
-        return OrderDetail::query()
-            ->join('orders', 'orders.id', '=', 'order_details.order_id')
-            ->whereBetween('orders.created_at', [$start, $end])
-            ->selectRaw('order_details.product_id, order_details.name, SUM(order_details.quantity) as sold, SUM(order_details.line_total) as revenue')
-            ->groupBy('order_details.product_id', 'order_details.name')
-            ->orderByDesc('sold')
+        return $this->ledger->groupedLines($filters, 'x.product_id')
+            ->orderByDesc('quantity')
+            ->orderByDesc('net_sales')
             ->limit($limit)
             ->get()
-            ->map(fn ($row) => [
-                'name' => $row->name,
-                'sold' => (int) $row->sold,
-                'revenue' => $this->money((float) $row->revenue),
+            ->map(fn (object $row) => [
+                'name' => $row->group_key === null ? __('Deleted products') : (string) $row->name,
+                'sold' => (int) $row->quantity,
+                'revenue' => $this->money((float) $row->net_sales),
             ]);
     }
 
@@ -423,9 +333,10 @@ final class DashboardService
         return (int) min(100, max(4, round(($stock / $alert) * 100)));
     }
 
-    private function customerCount(): int
+    /** Registered customer accounts. */
+    private function customerQuery(): Builder
     {
-        return User::whereHas('roles', fn ($q) => $q->where('name', 'customer'))->count();
+        return User::query()->whereHas('roles', fn ($q) => $q->where('name', 'customer'));
     }
 
     private function money(float $amount): string

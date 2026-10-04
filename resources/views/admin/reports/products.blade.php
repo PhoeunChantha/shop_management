@@ -72,6 +72,7 @@
                     <strong class="kpi-value">{{ $money($summary['revenue']) }}</strong>
                     <footer>{!! $delta($comparison['revenue'] ?? null) !!}<span class="kpi-vs">{{ __('vs prev.') }}</span></footer>
                 </article>
+                @can('view finance reports')
                 <article class="kpi-card">
                     <header><span>{{ __('COGS') }}</span><i class="fa-solid fa-receipt"></i></header>
                     <strong class="kpi-value">{{ $money($summary['cogs']) }}</strong>
@@ -87,6 +88,7 @@
                     <strong class="kpi-value">{{ number_format($summary['margin'], 1) }}%</strong>
                     <footer>{!! $delta($comparison['margin'] ?? null) !!}<span class="kpi-vs">{{ __('vs prev.') }}</span></footer>
                 </article>
+                @endcan
             </div>
 
             @if (! empty($chart))
@@ -119,12 +121,14 @@
                             <th class="ta-r"><a href="{{ $qtyLink }}" class="th-sort {{ $qtyDir ? 'is-'.$qtyDir : '' }}">{{ __('Units') }}<i class="fa-solid fa-sort"></i></a></th>
                             @php [$revLink, $revDir] = $sortLink('revenue'); @endphp
                             <th class="ta-r"><a href="{{ $revLink }}" class="th-sort {{ $revDir ? 'is-'.$revDir : '' }}">{{ __('Revenue') }}<i class="fa-solid fa-sort"></i></a></th>
+                            @can('view finance reports')
                             @php [$cogsLink, $cogsDir] = $sortLink('cogs'); @endphp
                             <th class="ta-r"><a href="{{ $cogsLink }}" class="th-sort {{ $cogsDir ? 'is-'.$cogsDir : '' }}">{{ __('COGS') }}<i class="fa-solid fa-sort"></i></a></th>
                             @php [$profitLink, $profitDir] = $sortLink('profit'); @endphp
                             <th class="ta-r"><a href="{{ $profitLink }}" class="th-sort {{ $profitDir ? 'is-'.$profitDir : '' }}">{{ __('Profit') }}<i class="fa-solid fa-sort"></i></a></th>
                             @php [$marginLink, $marginDir] = $sortLink('margin'); @endphp
                             <th class="ta-r"><a href="{{ $marginLink }}" class="th-sort {{ $marginDir ? 'is-'.$marginDir : '' }}">{{ __('Margin') }}<i class="fa-solid fa-sort"></i></a></th>
+                            @endcan
                         </tr>
                     </thead>
                     <tbody>
@@ -162,9 +166,11 @@
                                 </td>
                                 <td class="ta-r">{{ number_format($product['quantity']) }}</td>
                                 <td class="ta-r">${{ number_format($product['revenue'], 2) }}</td>
+                                @can('view finance reports')
                                 <td class="ta-r">${{ number_format($product['cogs'], 2) }}</td>
                                 <td class="ta-r">${{ number_format($product['profit'], 2) }}</td>
                                 <td class="ta-r"><span class="pr-margin {{ $marginClass($product['margin']) }}">{{ number_format($product['margin'], 1) }}%</span></td>
+                                @endcan
                             </tr>
                         @empty
                             <tr>
@@ -180,9 +186,11 @@
                                 <td colspan="3">{{ __('Total (filtered)') }}</td>
                                 <td class="ta-r">{{ number_format($tableTotals['units']) }}</td>
                                 <td class="ta-r">${{ number_format($tableTotals['revenue'], 2) }}</td>
+                                @can('view finance reports')
                                 <td class="ta-r">${{ number_format($tableTotals['cogs'], 2) }}</td>
                                 <td class="ta-r">${{ number_format($tableTotals['profit'], 2) }}</td>
                                 <td class="ta-r">{{ number_format($tableTotals['margin'], 1) }}%</td>
+                                @endcan
                             </tr>
                         </tfoot>
                     @endif

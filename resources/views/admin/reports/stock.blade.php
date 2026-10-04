@@ -17,7 +17,9 @@
         <div class="finance-report-metrics">
             <div><span>{{ __('SKUs') }}</span><strong>{{ number_format($summary['skus']) }}</strong></div>
             <div><span>{{ __('Units on hand') }}</span><strong>{{ number_format($summary['units']) }}</strong></div>
-            <div><span>{{ __('Stock value') }}</span><strong>${{ number_format($summary['value'], 2) }}</strong></div>
+            @can('view finance reports')
+                <div><span>{{ __('Stock value') }}</span><strong>${{ number_format($summary['value'], 2) }}</strong></div>
+            @endcan
             <div><span>{{ __('Low stock') }}</span><strong>{{ number_format($summary['low']) }}</strong></div>
             <div><span>{{ __('Out of stock') }}</span><strong>{{ number_format($summary['out']) }}</strong></div>
         </div>
@@ -37,8 +39,10 @@
                         <th>{{ __('SKU') }}</th>
                         <th>{{ __('Stock') }}</th>
                         <th>{{ __('Threshold') }}</th>
-                        <th>{{ __('Unit cost') }}</th>
-                        <th>{{ __('Value') }}</th>
+                        @can('view finance reports')
+                            <th>{{ __('Unit cost') }}</th>
+                            <th>{{ __('Value') }}</th>
+                        @endcan
                         <th>{{ __('Status') }}</th>
                     </tr>
                 </thead>
@@ -49,8 +53,10 @@
                             <td>{{ $item['sku'] ?: '—' }}</td>
                             <td>{{ number_format($item['stock']) }}</td>
                             <td>{{ number_format($item['threshold']) }}</td>
-                            <td>${{ number_format($item['unit_cost'], 2) }}</td>
-                            <td>${{ number_format($item['value'], 2) }}</td>
+                            @can('view finance reports')
+                                <td>${{ number_format($item['unit_cost'], 2) }}</td>
+                                <td>${{ number_format($item['value'], 2) }}</td>
+                            @endcan
                             <td>
                                 <span class="status-pill {{ $item['severity'] === 'Out of stock' ? 'status-pill--danger' : 'status-pill--warning' }}">
                                     {{ $item['severity'] }}

@@ -35,8 +35,15 @@ final class ProductReportController extends Controller
 
     public function export(Request $request): Response
     {
+        $rows = $this->reports->exportRows($this->validatedFilters($request));
+
+        // Cost, profit and margin (columns 4–6) need the finance permission.
+        if (! $request->user()->can('view finance reports')) {
+            $rows = array_map(fn (array $row) => array_values(array_diff_key($row, array_flip([4, 5, 6]))), $rows);
+        }
+
         return $this->streamExport(
-            $this->reports->exportRows($this->validatedFilters($request)),
+            $rows,
             'Product Report',
             'product-report',
             (string) $request->query('format', 'csv'),
@@ -48,7 +55,7 @@ final class ProductReportController extends Controller
      */
     private function validatedFilters(Request $request): array
     {
-        return $request->validate([
+        $filters = $request->validate([
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date'],
             'status' => ['nullable', Rule::enum(OrderStatus::class)],
@@ -59,5 +66,12 @@ final class ProductReportController extends Controller
             'direction' => ['nullable', 'string', 'in:asc,desc'],
             'per_page' => ['nullable', 'integer', 'in:5,10,25,50'],
         ]);
+
+        // Sorting by a cost metric would leak its ranking.
+        if (in_array($filters['sort'] ?? null, ['cogs', 'profit', 'margin'], true) && ! $request->user()->can('view finance reports')) {
+            unset($filters['sort']);
+        }
+
+        return $filters;
     }
 }

@@ -1,51 +1,56 @@
 @php
     $money = fn ($v) => '$'.number_format((float) $v, 2);
-    $hasData = ($summary['orders'] ?? 0) > 0;
-    $exportQuery = request()->query();
-    $rangeStart = \Carbon\Carbon::parse($filters['start_date']);
-    $rangeEnd = \Carbon\Carbon::parse($filters['end_date']);
-    $days = $rangeStart->diffInDays($rangeEnd) + 1;
-    $unpaid = max(0, ($summary['all_orders'] ?? 0) - ($summary['orders'] ?? 0));
+    $hasData = $summary['orders'] > 0;
+    $query = $filters->toQuery();
+    $finance = auth()->user()->can('view finance reports');
+    $prev = $filters->previous();
 
     $sortLink = function (string $key) {
         $asc = request('sort') === $key && request('direction') === 'asc';
         return [
-            request()->fullUrlWithQuery(['sort' => $key, 'direction' => $asc ? 'desc' : 'asc']),
+            request()->fullUrlWithQuery(['sort' => $key, 'direction' => $asc ? 'desc' : 'asc', 'page' => null]),
             request('sort') === $key ? (request('direction') === 'asc' ? 'up' : 'down') : null,
         ];
     };
-    [$dLink, $dDir] = $sortLink('date');
-    [$nLink, $nDir] = $sortLink('net');
-    [$tLink, $tDir] = $sortLink('total');
+    $th = function (string $key, string $label, bool $right = true) use ($sortLink) {
+        [$link, $dir] = $sortLink($key);
+        return '<th'.($right ? ' class="ta-r"' : '').'><a href="'.e($link).'" class="th-sort '.($dir ? 'is-'.$dir : '').'">'.e($label).'<i class="fa-solid fa-sort"></i></a></th>';
+    };
+    $titles = [
+        'summary' => __('Sales overview'),
+        'products' => __('Sales by product'),
+        'categories' => __('Sales by category'),
+        'customers' => __('Sales by customer'),
+        'methods' => __('Sales by payment method'),
+        'orders' => __('Sales transactions'),
+    ];
 @endphp
 
 <x-app-layout>
     <x-slot name="header">
         <div>
             <p class="header-kicker mb-1">{{ __('Analytics') }}</p>
-            <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('Sales Report') }}</h2>
+            <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('Sales') }}</h2>
         </div>
     </x-slot>
 
     <div class="admin-page sales-report" data-sales-report>
+        <x-admin.report-tabs :tabs="\App\Services\Admin\Reports\ReportNavigation::tabs('sales')" />
 
         {{-- ===================== INTRO / ACTIONS ===================== --}}
         <div class="sr-intro">
-            <p class="sr-intro__sub">{{ __('What was sold in the period — totals, a day-by-day breakdown, and the orders behind them.') }}</p>
+            <p class="sr-intro__sub">{{ __('Paid orders placed in the period. Refunds use the shared sales definition: recorded refunds first, implied only for orders marked refunded.') }}</p>
             <div class="sr-intro__actions">
-                <a href="{{ route('admin.reports.sales', $exportQuery) }}" class="ghost-button" title="{{ __('Refresh') }}">
-                    <i class="fa-solid fa-rotate"></i><span>{{ __('Refresh') }}</span>
-                </a>
                 <div class="export-menu" x-data="{ open: false }" @keydown.escape="open = false">
                     <button type="button" class="premium-button premium-button--dark" @click="open = !open" :aria-expanded="open">
                         <i class="fa-solid fa-file-export"></i><span>{{ __('Export') }}</span>
                         <i class="fa-solid fa-chevron-down export-menu__caret"></i>
                     </button>
                     <div class="export-menu__panel" x-show="open" x-transition.origin.top.right @click.outside="open = false" x-cloak>
-                        <a href="{{ route('admin.reports.sales.export', ['format' => 'csv'] + $exportQuery) }}">
+                        <a href="{{ route('admin.reports.sales.export', ['format' => 'csv'] + request()->except('page')) }}">
                             <i class="fa-solid fa-file-csv"></i>{{ __('Export CSV') }}
                         </a>
-                        <a href="{{ route('admin.reports.sales.export', ['format' => 'pdf'] + $exportQuery) }}">
+                        <a href="{{ route('admin.reports.sales.export', ['format' => 'pdf'] + request()->except('page')) }}">
                             <i class="fa-solid fa-file-pdf"></i>{{ __('Export PDF') }}
                         </a>
                     </div>
@@ -55,19 +60,20 @@
 
         {{-- ===================== FILTERS ===================== --}}
         <form method="GET" action="{{ route('admin.reports.sales') }}" class="sr-filters" data-ajax-filter>
+            <input type="hidden" name="view" value="{{ $view }}">
             <div class="sr-filters__field sr-filters__field--range">
                 <span>{{ __('Date range') }}</span>
                 <div class="daterange-control">
                     <i class="fa-solid fa-calendar-days"></i>
                     <input type="text" class="form-input" data-daterange data-daterange-from="start_date" data-daterange-to="end_date" placeholder="{{ __('Select report range') }}" readonly>
-                    <input type="hidden" name="start_date" value="{{ $filters['start_date'] ?? '' }}">
-                    <input type="hidden" name="end_date" value="{{ $filters['end_date'] ?? '' }}">
+                    <input type="hidden" name="start_date" value="{{ $filters->start->toDateString() }}">
+                    <input type="hidden" name="end_date" value="{{ $filters->end->toDateString() }}">
                 </div>
             </div>
 
             {{-- Server-side customer autocomplete (never loads the full base). --}}
             <div class="sr-filters__field sr-filters__field--customer"
-                 x-data="salesCustomerFilter('{{ route('admin.reports.sales.customers') }}', @js($filters['customer'] ?? ''))">
+                 x-data="salesCustomerFilter('{{ route('admin.reports.sales.customers') }}', @js($filters->get('customer', '')))">
                 <span>{{ __('Customer') }}</span>
                 <div class="customer-select" @click.outside="close()">
                     <div class="customer-select__control" :class="{ 'is-open': open }">
@@ -100,17 +106,22 @@
             </div>
 
             <div class="sr-filters__field">
+                <span>{{ __('Payment method') }}</span>
+                <x-select name="payment_method" size="sm" :value="$filters->get('payment_method')" placeholder="{{ __('All methods') }}" :options="$paymentMethods" />
+            </div>
+
+            <div class="sr-filters__field">
                 <span>{{ __('Order status') }}</span>
-                <x-select name="status" size="sm" :value="$filters['status'] ?? null" placeholder="{{ __('All statuses') }}" :options="$orderStatuses" />
+                <x-select name="status" size="sm" :value="$filters->get('status')" placeholder="{{ __('All statuses') }}" :options="$orderStatuses" />
             </div>
 
             <div class="sr-filters__field">
                 <span>{{ __('Payment status') }}</span>
-                <x-select name="payment_status" size="sm" :value="$filters['payment_status'] ?? null" placeholder="{{ __('All payments') }}" :options="$paymentStatuses" />
+                <x-select name="payment_status" size="sm" :value="$filters->get('payment_status')" placeholder="{{ __('All captured') }}" :options="$paymentStatuses" />
             </div>
 
             <div class="sr-filters__actions">
-                <a href="{{ route('admin.reports.sales') }}" class="ghost-button" data-ajax-link>
+                <a href="{{ route('admin.reports.sales', ['view' => $view]) }}" class="ghost-button" data-ajax-link>
                     <i class="fa-solid fa-rotate-left"></i><span>{{ __('Reset') }}</span>
                 </a>
                 <button type="submit" class="filter-button">
@@ -119,243 +130,347 @@
             </div>
         </form>
 
+        <p class="rpt-period mb-3">
+            <i class="fa-regular fa-calendar"></i>
+            <strong>{{ $filters->start->format('M d, Y') }} – {{ $filters->end->format('M d, Y') }}</strong>
+            <span class="rpt-period__prev">{{ __('compared with') }} {{ $prev->start->format('M d') }} – {{ $prev->end->format('M d, Y') }}</span>
+            @if ($unpaidOrders > 0)
+                · <span>{{ trans_choice('{1} :count unpaid order excluded|[2,*] :count unpaid orders excluded', $unpaidOrders, ['count' => $unpaidOrders]) }}</span>
+            @endif
+        </p>
+
         @if (! $hasData)
-            {{-- ===================== EMPTY STATE ===================== --}}
-            <div class="premium-card sr-empty">
+            <div class="rpt-empty">
                 <i class="fa-solid fa-receipt"></i>
-                <h3>{{ __('No sales data for this period') }}</h3>
-                <p>{{ __('Try changing your date range or filters to see performance.') }}</p>
-                <a href="{{ route('admin.reports.sales') }}" class="premium-button premium-button--dark" data-ajax-link>
-                    <i class="fa-solid fa-sliders"></i>{{ __('Adjust filters') }}
-                </a>
+                <h3>{{ __('No paid sales for this period') }}</h3>
+                <p>{{ __('Try changing your date range or filters.') }}</p>
             </div>
         @else
 
-        {{-- ===================== SUMMARY LEDGER ===================== --}}
-        <section class="premium-card sr-summary">
-            <header class="sr-summary__head">
-                <div>
-                    <p class="sr-eyebrow">{{ __('Sales summary') }}</p>
-                    <h3 class="sr-summary__period">
-                        {{ $rangeStart->format('M d, Y') }} <span>—</span> {{ $rangeEnd->format('M d, Y') }}
-                    </h3>
-                    <p class="sr-summary__meta">
-                        {{ trans_choice('{1} :count day|[2,*] :count days', $days, ['count' => $days]) }}
-                        @if (! empty($filters['customer']))
-                            · <span class="sr-chip"><i class="fa-solid fa-user"></i>{{ $filters['customer'] }}</span>
-                        @endif
-                        @if (! empty($filters['status']))
-                            · <span class="sr-chip">{{ \App\Enums\OrderStatus::from($filters['status'])->label() }}</span>
-                        @endif
-                        @if (! empty($filters['payment_status']))
-                            · <span class="sr-chip">{{ \App\Enums\PaymentStatus::from($filters['payment_status'])->label() }}</span>
-                        @endif
-                    </p>
-                </div>
-                <div class="sr-summary__total">
-                    <span>{{ __('Total sales') }}</span>
-                    <strong>{{ $money($summary['total_sales']) }}</strong>
-                    <small>{{ __('Paid orders, incl. tax & shipping') }}</small>
-                </div>
-            </header>
-
-            <div class="sr-summary__body">
-                <div class="sr-stats">
-                    <div class="sr-stat">
-                        <span>{{ __('Orders') }}</span>
-                        <strong>{{ number_format($summary['orders']) }}</strong>
-                        @if ($unpaid > 0)
-                            <small>{{ trans_choice('{1} :count unpaid excluded|[2,*] :count unpaid excluded', $unpaid, ['count' => $unpaid]) }}</small>
-                        @else
-                            <small>{{ __('All paid') }}</small>
-                        @endif
-                    </div>
-                    <div class="sr-stat">
-                        <span>{{ __('Items sold') }}</span>
-                        <strong>{{ number_format($summary['items']) }}</strong>
-                        <small>{{ $summary['orders'] > 0 ? number_format($summary['items'] / $summary['orders'], 1) : '0' }} {{ __('per order') }}</small>
-                    </div>
-                    <div class="sr-stat">
-                        <span>{{ __('Average order') }}</span>
-                        <strong>{{ $money($summary['average_order']) }}</strong>
-                        <small>{{ __('Total sales ÷ orders') }}</small>
-                    </div>
-                    <div class="sr-stat">
-                        <span>{{ __('Refunds') }}</span>
-                        <strong class="{{ $summary['refunds'] > 0 ? 'is-neg' : '' }}">{{ $money($summary['refunds']) }}</strong>
-                        <small>{{ __('Refunded in period') }}</small>
-                    </div>
-                </div>
-
-                <dl class="sr-ledger">
-                    <div class="sr-ledger__row">
-                        <dt>{{ __('Gross sales') }}</dt>
-                        <dd>{{ $money($summary['gross_sales']) }}</dd>
-                    </div>
-                    <div class="sr-ledger__row is-minus">
-                        <dt>{{ __('Discounts') }}</dt>
-                        <dd>− {{ $money($summary['discounts']) }}</dd>
-                    </div>
-                    <div class="sr-ledger__row is-subtotal">
-                        <dt>{{ __('Net sales') }}</dt>
-                        <dd>{{ $money($summary['net_sales']) }}</dd>
-                    </div>
-                    <div class="sr-ledger__row is-plus">
-                        <dt>{{ __('Tax') }}</dt>
-                        <dd>+ {{ $money($summary['tax']) }}</dd>
-                    </div>
-                    <div class="sr-ledger__row is-plus">
-                        <dt>{{ __('Shipping') }}</dt>
-                        <dd>+ {{ $money($summary['shipping']) }}</dd>
-                    </div>
-                    <div class="sr-ledger__row is-total">
-                        <dt>{{ __('Total sales') }}</dt>
-                        <dd>{{ $money($summary['total_sales']) }}</dd>
-                    </div>
-                </dl>
+        {{-- ===================== HEADLINE KPIs (every tab) ===================== --}}
+        <div class="rpt">
+            <div class="kpi-grid">
+                <article class="kpi-card kpi-card--primary">
+                    <header><span>{{ __('Total sales') }}</span><i class="fa-solid fa-sack-dollar"></i></header>
+                    <strong class="kpi-value">{{ $money($summary['total_sales']) }}</strong>
+                    <footer><x-admin.report-delta :data="$comparison['total_sales']" /><span class="kpi-vs">{{ __('incl. tax & shipping') }}</span></footer>
+                </article>
+                <article class="kpi-card">
+                    <header><span>{{ __('Net sales') }}</span><i class="fa-solid fa-scale-balanced"></i></header>
+                    <strong class="kpi-value">{{ $money($summary['net_sales']) }}</strong>
+                    <footer><x-admin.report-delta :data="$comparison['net_sales']" /><span class="kpi-vs">{{ __('gross − discounts − refunds') }}</span></footer>
+                </article>
+                <article class="kpi-card">
+                    <header><span>{{ __('Paid orders') }}</span><i class="fa-solid fa-bag-shopping"></i></header>
+                    <strong class="kpi-value">{{ number_format($summary['orders']) }}</strong>
+                    <footer><x-admin.report-delta :data="$comparison['orders']" /><span class="kpi-vs">{{ number_format($summary['units']) }} {{ __('units sold') }}</span></footer>
+                </article>
+                <article class="kpi-card">
+                    <header><span>{{ __('Average order value') }}</span><i class="fa-solid fa-receipt"></i></header>
+                    <strong class="kpi-value">{{ $money($summary['average_order_value']) }}</strong>
+                    <footer><x-admin.report-delta :data="$comparison['average_order_value']" /><span class="kpi-vs">{{ __('(gross − discounts) ÷ orders') }}</span></footer>
+                </article>
             </div>
-        </section>
 
-        {{-- ===================== DAILY TREND ===================== --}}
-        <section class="premium-card sr-chart">
-            <header class="sr-chart__head">
-                <div>
-                    <h3>{{ __('Sales by day') }}</h3>
-                    <p>{{ __('Net sales per day for the selected period') }}</p>
+            <div class="rpt-metrics">
+                <div class="rpt-metric"><span>{{ __('Gross sales') }}</span><strong>{{ $money($summary['gross_sales']) }}</strong><small><x-admin.report-delta :data="$comparison['gross_sales']" /></small></div>
+                <div class="rpt-metric"><span>{{ __('Discounts') }}</span><strong>{{ $money($summary['discounts']) }}</strong><small><x-admin.report-delta :data="$comparison['discounts']" inverse /></small></div>
+                <div class="rpt-metric">
+                    <span>{{ __('Refunds') }}</span>
+                    <strong class="{{ $summary['refunds'] > 0 ? 'rpt-neg' : '' }}">{{ $money($summary['refunds']) }}</strong>
+                    <small><x-admin.report-delta :data="$comparison['refunds']" inverse />{{ __('recorded') }} {{ $money($summary['recorded_refunds']) }} · {{ __('implied') }} {{ $money($summary['implied_refunds']) }}</small>
                 </div>
-                <div class="sr-legend">
-                    <span><i class="sr-legend__swatch"></i>{{ __('Net sales') }}</span>
+                <div class="rpt-metric"><span>{{ __('Units sold') }}</span><strong>{{ number_format($summary['units']) }}</strong><small><x-admin.report-delta :data="$comparison['units']" />{{ __('before returns') }}</small></div>
+            </div>
+        </div>
+
+        @if ($view === 'summary')
+            <div class="rpt-grid mt-3">
+                <section class="rpt-panel">
+                    <header class="rpt-panel__head">
+                        <div>
+                            <h3>{{ __('Net sales over time') }}</h3>
+                            <p>{{ count($series) > 0 && strlen($series[0]['key']) === 7 ? __('Per month') : __('Per day') }}</p>
+                        </div>
+                    </header>
+                    @php($chartRows = collect($series)->map(fn ($r) => ['x' => $r['label'], 'y' => $r['net_sales'], 'orders' => $r['orders']])->values())
+                    <div class="sr-chart__canvas" data-sales-chart data-rows='@json($chartRows)' role="img" aria-label="{{ __('Net sales over time') }}"></div>
+                </section>
+
+                <section class="rpt-panel">
+                    <header class="rpt-panel__head"><div><h3>{{ __('Sales waterfall') }}</h3><p>{{ __('How gross becomes total') }}</p></div></header>
+                    <dl class="rpt-ledger">
+                        <div><dt>{{ __('Gross sales') }}</dt><dd>{{ $money($summary['gross_sales']) }}</dd></div>
+                        <div class="is-minus"><dt>{{ __('Discounts') }}</dt><dd>− {{ $money($summary['discounts']) }}</dd></div>
+                        <div class="is-minus"><dt>{{ __('Product refunds') }}<small>{{ __('recorded') }} {{ $money($summary['recorded_refunds']) }} · {{ __('implied') }} {{ $money($summary['implied_refunds']) }}</small></dt><dd>− {{ $money($summary['merchandise_refunds']) }}</dd></div>
+                        <div class="is-subtotal"><dt>{{ __('Net sales') }}</dt><dd>{{ $money($summary['net_sales']) }}</dd></div>
+                        <div><dt>{{ __('Tax') }}</dt><dd>+ {{ $money($summary['tax']) }}</dd></div>
+                        <div><dt>{{ __('Shipping') }}</dt><dd>+ {{ $money($summary['shipping']) }}</dd></div>
+                        @if ($summary['tax_shipping_refunds'] > 0)
+                            <div class="is-minus"><dt>{{ __('Tax & shipping refunded') }}</dt><dd>− {{ $money($summary['tax_shipping_refunds']) }}</dd></div>
+                        @endif
+                        <div class="is-total"><dt>{{ __('Total sales') }}</dt><dd>{{ $money($summary['total_sales']) }}</dd></div>
+                    </dl>
+                </section>
+            </div>
+
+            <section class="premium-card admin-table-card sr-daily mt-3">
+                <div class="panel-head">
+                    <h3>{{ __('Sales by date') }}</h3>
+                    <span>{{ __('Paid orders only') }}</span>
                 </div>
-            </header>
-            @php
-                $chartRows = $daily->map(fn (array $d) => ['x' => $d['date'], 'y' => round($d['net_sales'], 2), 'orders' => $d['orders']])->values();
-            @endphp
-            <div class="sr-chart__canvas" data-sales-chart data-rows="{{ json_encode($chartRows) }}"></div>
-        </section>
-
-        {{-- ===================== SALES BY DAY TABLE ===================== --}}
-        <section class="premium-card admin-table-card sr-daily">
-            <div class="panel-head">
-                <h3>{{ __('Daily breakdown') }}</h3>
-                <span>{{ __('Paid orders only') }}</span>
-            </div>
-            <div class="premium-table-wrap admin-table-card__scroll sr-daily__scroll">
-                <table class="premium-table sr-table">
-                    <thead>
-                        <tr>
-                            <th>{{ __('Date') }}</th>
-                            <th class="ta-r">{{ __('Orders') }}</th>
-                            <th class="ta-r">{{ __('Items') }}</th>
-                            <th class="ta-r">{{ __('Gross sales') }}</th>
-                            <th class="ta-r">{{ __('Discounts') }}</th>
-                            <th class="ta-r">{{ __('Net sales') }}</th>
-                            <th class="ta-r">{{ __('Tax') }}</th>
-                            <th class="ta-r">{{ __('Shipping') }}</th>
-                            <th class="ta-r">{{ __('Total') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($daily as $day)
-                            <tr class="{{ $day['orders'] === 0 ? 'is-quiet' : '' }}">
-                                <td class="sr-date">{{ $day['label'] }}</td>
-                                <td class="ta-r">{{ number_format($day['orders']) }}</td>
-                                <td class="ta-r">{{ number_format($day['items']) }}</td>
-                                <td class="ta-r">{{ $money($day['gross_sales']) }}</td>
-                                <td class="ta-r {{ $day['discounts'] > 0 ? 'is-neg' : '' }}">{{ $day['discounts'] > 0 ? '− '.$money($day['discounts']) : '—' }}</td>
-                                <td class="ta-r"><strong>{{ $money($day['net_sales']) }}</strong></td>
-                                <td class="ta-r">{{ $money($day['tax']) }}</td>
-                                <td class="ta-r">{{ $money($day['shipping']) }}</td>
-                                <td class="ta-r"><strong>{{ $money($day['total_sales']) }}</strong></td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <td>{{ __('Total') }}</td>
-                            <td class="ta-r">{{ number_format($dailyTotals['orders']) }}</td>
-                            <td class="ta-r">{{ number_format($dailyTotals['items']) }}</td>
-                            <td class="ta-r">{{ $money($dailyTotals['gross_sales']) }}</td>
-                            <td class="ta-r">{{ $dailyTotals['discounts'] > 0 ? '− '.$money($dailyTotals['discounts']) : '—' }}</td>
-                            <td class="ta-r">{{ $money($dailyTotals['net_sales']) }}</td>
-                            <td class="ta-r">{{ $money($dailyTotals['tax']) }}</td>
-                            <td class="ta-r">{{ $money($dailyTotals['shipping']) }}</td>
-                            <td class="ta-r">{{ $money($dailyTotals['total_sales']) }}</td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </section>
-
-        {{-- ===================== ORDERS ===================== --}}
-        <section class="premium-card admin-table-card sr-orders" data-ajax-table>
-            <x-table-toolbar>
-                <x-slot:left>
-                    <div class="panel-head panel-head--flush">
-                        <h3>{{ __('Orders') }}</h3>
-                        <span>{{ __('Every order placed in the period, including unpaid') }}</span>
-                    </div>
-                    <x-per-page-selector :current="$perPage" />
-                </x-slot:left>
-                <x-slot:right>
-                    <x-search-input name="search" placeholder="{{ __('Search order or customer…') }}" />
-                </x-slot:right>
-            </x-table-toolbar>
-
-            <div data-ajax-region>
-                <div class="premium-table-wrap admin-table-card__scroll">
-                    <table class="premium-table sr-table sr-orders-table">
+                <div class="premium-table-wrap admin-table-card__scroll sr-daily__scroll">
+                    <table class="premium-table sr-table">
                         <thead>
                             <tr>
-                                <th><a href="{{ $dLink }}" class="th-sort {{ $dDir ? 'is-'.$dDir : '' }}">{{ __('Date') }}<i class="fa-solid fa-sort"></i></a></th>
-                                <th>{{ __('Order') }}</th>
-                                <th>{{ __('Customer') }}</th>
-                                <th>{{ __('Status') }}</th>
-                                <th>{{ __('Payment') }}</th>
-                                <th class="ta-r">{{ __('Items') }}</th>
-                                <th class="ta-r">{{ __('Discount') }}</th>
-                                <th class="ta-r"><a href="{{ $nLink }}" class="th-sort {{ $nDir ? 'is-'.$nDir : '' }}">{{ __('Net sales') }}<i class="fa-solid fa-sort"></i></a></th>
-                                <th class="ta-r"><a href="{{ $tLink }}" class="th-sort {{ $tDir ? 'is-'.$tDir : '' }}">{{ __('Total') }}<i class="fa-solid fa-sort"></i></a></th>
+                                <th>{{ __('Period') }}</th>
+                                <th class="ta-r">{{ __('Orders') }}</th>
+                                <th class="ta-r">{{ __('Units') }}</th>
+                                <th class="ta-r">{{ __('Gross sales') }}</th>
+                                <th class="ta-r">{{ __('Discounts') }}</th>
+                                <th class="ta-r">{{ __('Refunds') }}</th>
+                                <th class="ta-r">{{ __('Net sales') }}</th>
+                                <th class="ta-r">{{ __('Tax') }}</th>
+                                <th class="ta-r">{{ __('Shipping') }}</th>
+                                <th class="ta-r">{{ __('Total') }}</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($orders as $tx)
-                                <tr>
-                                    <td class="sr-date">{{ $tx['date'] }}<small>{{ $tx['time'] }}</small></td>
-                                    <td>
-                                        @if (\Illuminate\Support\Facades\Route::has('admin.orders.show'))
-                                            <a href="{{ route('admin.orders.show', $tx['order_id']) }}" class="tx-order">#{{ $tx['order_number'] }}</a>
-                                        @else
-                                            <span class="tx-order">#{{ $tx['order_number'] }}</span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <div class="cust-cell">
-                                            <strong>{{ $tx['customer_name'] }}
-                                                @if ($tx['is_guest'])<span class="guest-tag">{{ __('Guest') }}</span>@endif
-                                            </strong>
-                                            @if ($tx['customer_email'])<small>{{ $tx['customer_email'] }}</small>@endif
-                                        </div>
-                                    </td>
-                                    <td><span class="status-chip {{ $tx['status']->badge() }}">{{ $tx['status']->label() }}</span></td>
-                                    <td><span class="status-chip {{ $tx['payment_status']->badge() }}">{{ $tx['payment_status']->label() }}</span></td>
-                                    <td class="ta-r">{{ number_format($tx['items']) }}</td>
-                                    <td class="ta-r {{ $tx['discount'] > 0 ? 'is-neg' : 'is-muted' }}">{{ $tx['discount'] > 0 ? '− '.$money($tx['discount']) : '—' }}</td>
-                                    <td class="ta-r">{{ $money($tx['net_sales']) }}</td>
-                                    <td class="ta-r"><strong>{{ $money($tx['total']) }}</strong></td>
+                            @foreach ($series as $row)
+                                <tr class="{{ $row['orders'] === 0 ? 'is-quiet' : '' }}">
+                                    <td class="sr-date">{{ $row['long_label'] }}</td>
+                                    <td class="ta-r">{{ number_format($row['orders']) }}</td>
+                                    <td class="ta-r">{{ number_format($row['units']) }}</td>
+                                    <td class="ta-r">{{ $money($row['gross_sales']) }}</td>
+                                    <td class="ta-r {{ $row['discounts'] > 0 ? 'is-neg' : '' }}">{{ $row['discounts'] > 0 ? '− '.$money($row['discounts']) : '—' }}</td>
+                                    <td class="ta-r {{ $row['refunds'] > 0 ? 'is-neg' : '' }}">{{ $row['refunds'] > 0 ? '− '.$money($row['refunds']) : '—' }}</td>
+                                    <td class="ta-r"><strong>{{ $money($row['net_sales']) }}</strong></td>
+                                    <td class="ta-r">{{ $money($row['tax']) }}</td>
+                                    <td class="ta-r">{{ $money($row['shipping']) }}</td>
+                                    <td class="ta-r"><strong>{{ $money($row['total_sales']) }}</strong></td>
                                 </tr>
-                            @empty
+                            @endforeach
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td>{{ __('Total') }}</td>
+                                <td class="ta-r">{{ number_format($summary['orders']) }}</td>
+                                <td class="ta-r">{{ number_format($summary['units']) }}</td>
+                                <td class="ta-r">{{ $money($summary['gross_sales']) }}</td>
+                                <td class="ta-r">{{ $summary['discounts'] > 0 ? '− '.$money($summary['discounts']) : '—' }}</td>
+                                <td class="ta-r">{{ $summary['refunds'] > 0 ? '− '.$money($summary['refunds']) : '—' }}</td>
+                                <td class="ta-r">{{ $money($summary['net_sales']) }}</td>
+                                <td class="ta-r">{{ $money($summary['tax']) }}</td>
+                                <td class="ta-r">{{ $money($summary['shipping']) }}</td>
+                                <td class="ta-r">{{ $money($summary['total_sales']) }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+        @elseif ($view === 'methods')
+            @php($methodTotal = max(0.01, collect($rows)->sum('total_sales')))
+            <section class="premium-card admin-table-card mt-3">
+                <div class="panel-head">
+                    <h3>{{ $titles[$view] }}</h3>
+                    <span>{{ __('Method recorded on the order') }}</span>
+                </div>
+                <div class="premium-table-wrap admin-table-card__scroll">
+                    <table class="premium-table sr-table">
+                        <thead>
+                            <tr>
+                                <th>{{ __('Payment method') }}</th>
+                                <th class="ta-r">{{ __('Orders') }}</th>
+                                <th class="ta-r">{{ __('Gross sales') }}</th>
+                                <th class="ta-r">{{ __('Discounts') }}</th>
+                                <th class="ta-r">{{ __('Refunds') }}</th>
+                                <th class="ta-r">{{ __('Net sales') }}</th>
+                                <th class="ta-r">{{ __('Total sales') }}</th>
+                                <th class="ta-r">{{ __('Share') }}</th>
+                                <th class="ta-r">{{ __('Avg. order') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($rows as $row)
                                 <tr>
-                                    <td colspan="9">
-                                        <x-admin.empty-state icon="fa-solid fa-receipt" title="{{ __('No orders found') }}" message="{{ __('Try a different date range, customer, or status filter.') }}" />
-                                    </td>
+                                    <td><strong>{{ $row['method'] }}</strong>@if ($row['code'])<small class="d-block rpt-muted">{{ $row['code'] }}</small>@endif</td>
+                                    <td class="ta-r">{{ number_format($row['orders']) }}</td>
+                                    <td class="ta-r">{{ $money($row['gross']) }}</td>
+                                    <td class="ta-r {{ $row['discounts'] > 0 ? 'is-neg' : 'is-muted' }}">{{ $row['discounts'] > 0 ? '− '.$money($row['discounts']) : '—' }}</td>
+                                    <td class="ta-r {{ $row['refunds'] > 0 ? 'is-neg' : 'is-muted' }}">{{ $row['refunds'] > 0 ? '− '.$money($row['refunds']) : '—' }}</td>
+                                    <td class="ta-r">{{ $money($row['net_sales']) }}</td>
+                                    <td class="ta-r"><strong>{{ $money($row['total_sales']) }}</strong></td>
+                                    <td class="ta-r">{{ number_format($row['total_sales'] / $methodTotal * 100, 1) }}%</td>
+                                    <td class="ta-r">{{ $money($row['average_order_value']) }}</td>
                                 </tr>
-                            @endforelse
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
-                <x-table-footer :paginator="$orders" label="{{ __('orders') }}" />
-            </div>
-        </section>
+            </section>
+        @else
+            {{-- Paginated breakdown tables --}}
+            <section class="premium-card admin-table-card sr-orders mt-3" data-ajax-table>
+                <x-table-toolbar>
+                    <x-slot:left>
+                        <div class="panel-head panel-head--flush">
+                            <h3>{{ $titles[$view] }}</h3>
+                            <span>
+                                @if (in_array($view, ['products', 'categories'], true))
+                                    {{ __('Discounts and refunds are allocated to lines by their share of the order.') }}
+                                @elseif ($view === 'customers')
+                                    {{ __('Grouped by email, so guest checkouts are included.') }}
+                                @else
+                                    {{ __('Paid orders with their refund breakdown.') }}
+                                @endif
+                            </span>
+                        </div>
+                        <x-per-page-selector :current="$filters->perPage()" />
+                    </x-slot:left>
+                    @if ($view !== 'categories')
+                        <x-slot:right>
+                            <x-search-input name="search" placeholder="{{ $view === 'products' ? __('Search product or SKU…') : __('Search order or customer…') }}" />
+                        </x-slot:right>
+                    @endif
+                </x-table-toolbar>
+
+                <div data-ajax-region>
+                    <div class="premium-table-wrap admin-table-card__scroll">
+                        <table class="premium-table sr-table sr-orders-table">
+                            @if (in_array($view, ['products', 'categories'], true))
+                                <thead>
+                                    <tr>
+                                        @if ($view === 'products')
+                                            {!! $th('name', __('Product'), false) !!}
+                                        @else
+                                            <th>{{ __('Category') }}</th>
+                                        @endif
+                                        {!! $th('orders', __('Orders')) !!}
+                                        {!! $th('quantity', __('Units')) !!}
+                                        {!! $th('gross', __('Gross sales')) !!}
+                                        <th class="ta-r">{{ __('Discounts') }}</th>
+                                        {!! $th('refunds', __('Refunds')) !!}
+                                        {!! $th('net', __('Net sales')) !!}
+                                        @if ($finance)
+                                            <th class="ta-r">{{ __('Cost') }}</th>
+                                            {!! $th('profit', __('Profit')) !!}
+                                            <th class="ta-r">{{ __('Margin') }}</th>
+                                        @endif
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($rows as $row)
+                                        <tr>
+                                            <td>
+                                                <strong>{{ $row['name'] }}</strong>
+                                                @if (! empty($row['sku']))<small class="d-block rpt-muted">{{ $row['sku'] }}</small>@endif
+                                            </td>
+                                            <td class="ta-r">{{ number_format($row['orders']) }}</td>
+                                            <td class="ta-r">{{ number_format($row['quantity']) }}</td>
+                                            <td class="ta-r">{{ $money($row['gross']) }}</td>
+                                            <td class="ta-r {{ $row['discounts'] > 0 ? 'is-neg' : 'is-muted' }}">{{ $row['discounts'] > 0 ? '− '.$money($row['discounts']) : '—' }}</td>
+                                            <td class="ta-r {{ $row['refunds'] > 0 ? 'is-neg' : 'is-muted' }}">{{ $row['refunds'] > 0 ? '− '.$money($row['refunds']) : '—' }}</td>
+                                            <td class="ta-r"><strong>{{ $money($row['net_sales']) }}</strong></td>
+                                            @if ($finance)
+                                                <td class="ta-r" @if ($row['uncosted_units'] > 0) title="{{ trans_choice('{1} :count unit has no cost recorded|[2,*] :count units have no cost recorded', $row['uncosted_units'], ['count' => $row['uncosted_units']]) }}" @endif>
+                                                    {{ $money($row['cogs']) }}@if ($row['uncosted_units'] > 0) <i class="fa-solid fa-circle-exclamation rpt-muted"></i>@endif
+                                                </td>
+                                                <td class="ta-r">{{ $money($row['profit']) }}</td>
+                                                <td class="ta-r">{{ $row['margin'] !== null ? number_format($row['margin'], 1).'%' : '—' }}</td>
+                                            @endif
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="{{ $finance ? 10 : 7 }}"><x-admin.empty-state icon="fa-solid fa-shirt" title="{{ __('No sales found') }}" message="{{ __('Try a different date range or search.') }}" /></td></tr>
+                                    @endforelse
+                                </tbody>
+                            @elseif ($view === 'customers')
+                                <thead>
+                                    <tr>
+                                        {!! $th('name', __('Customer'), false) !!}
+                                        {!! $th('orders', __('Orders')) !!}
+                                        {!! $th('gross', __('Gross sales')) !!}
+                                        <th class="ta-r">{{ __('Discounts') }}</th>
+                                        {!! $th('refunds', __('Refunds')) !!}
+                                        {!! $th('net', __('Net sales')) !!}
+                                        {!! $th('total', __('Total sales')) !!}
+                                        <th class="ta-r">{{ __('Avg. order') }}</th>
+                                        {!! $th('last', __('Last order')) !!}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($rows as $row)
+                                        <tr>
+                                            <td>
+                                                <div class="cust-cell">
+                                                    <strong>{{ $row['customer_name'] }}@if ($row['is_guest'])<span class="guest-tag">{{ __('Guest') }}</span>@endif</strong>
+                                                    <small>{{ $row['customer_email'] }}</small>
+                                                </div>
+                                            </td>
+                                            <td class="ta-r">{{ number_format($row['orders']) }}</td>
+                                            <td class="ta-r">{{ $money($row['gross']) }}</td>
+                                            <td class="ta-r {{ $row['discounts'] > 0 ? 'is-neg' : 'is-muted' }}">{{ $row['discounts'] > 0 ? '− '.$money($row['discounts']) : '—' }}</td>
+                                            <td class="ta-r {{ $row['refunds'] > 0 ? 'is-neg' : 'is-muted' }}">{{ $row['refunds'] > 0 ? '− '.$money($row['refunds']) : '—' }}</td>
+                                            <td class="ta-r">{{ $money($row['net_sales']) }}</td>
+                                            <td class="ta-r"><strong>{{ $money($row['total_sales']) }}</strong></td>
+                                            <td class="ta-r">{{ $money($row['average_order_value']) }}</td>
+                                            <td class="ta-r">{{ $row['last_order_at'] }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="9"><x-admin.empty-state icon="fa-solid fa-user" title="{{ __('No customers found') }}" message="{{ __('Try a different date range or search.') }}" /></td></tr>
+                                    @endforelse
+                                </tbody>
+                            @else
+                                <thead>
+                                    <tr>
+                                        {!! $th('date', __('Date'), false) !!}
+                                        <th>{{ __('Order') }}</th>
+                                        <th>{{ __('Customer') }}</th>
+                                        <th>{{ __('Status') }}</th>
+                                        <th>{{ __('Method') }}</th>
+                                        <th class="ta-r">{{ __('Units') }}</th>
+                                        <th class="ta-r">{{ __('Discount') }}</th>
+                                        {!! $th('refunds', __('Refund')) !!}
+                                        {!! $th('net', __('Net sales')) !!}
+                                        {!! $th('total', __('Total')) !!}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse ($rows as $tx)
+                                        <tr>
+                                            <td class="sr-date">{{ $tx['date'] }}<small>{{ $tx['time'] }}</small></td>
+                                            <td><a href="{{ route('admin.orders.show', $tx['order_id']) }}" class="tx-order">#{{ $tx['order_number'] }}</a></td>
+                                            <td>
+                                                <div class="cust-cell">
+                                                    <strong>{{ $tx['customer_name'] }}@if ($tx['is_guest'])<span class="guest-tag">{{ __('Guest') }}</span>@endif</strong>
+                                                    @if ($tx['customer_email'])<small>{{ $tx['customer_email'] }}</small>@endif
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @if ($tx['status'])<span class="status-chip {{ $tx['status']->badge() }}">{{ $tx['status']->label() }}</span>@endif
+                                                @if ($tx['payment_status'])<span class="status-chip {{ $tx['payment_status']->badge() }}">{{ $tx['payment_status']->label() }}</span>@endif
+                                            </td>
+                                            <td>{{ $tx['method'] }}</td>
+                                            <td class="ta-r">{{ number_format($tx['units']) }}</td>
+                                            <td class="ta-r {{ $tx['discount'] > 0 ? 'is-neg' : 'is-muted' }}">{{ $tx['discount'] > 0 ? '− '.$money($tx['discount']) : '—' }}</td>
+                                            <td class="ta-r {{ $tx['refund'] > 0 ? 'is-neg' : 'is-muted' }}"
+                                                @if ($tx['refund'] > 0) title="{{ __('Recorded') }} {{ $money($tx['recorded_refund']) }} · {{ __('Implied') }} {{ $money($tx['implied_refund']) }}" @endif>
+                                                {{ $tx['refund'] > 0 ? '− '.$money($tx['refund']) : '—' }}
+                                                @if ($tx['implied_refund'] > 0)<small class="d-block rpt-muted">{{ __('implied') }}</small>@endif
+                                            </td>
+                                            <td class="ta-r">{{ $money($tx['net_sales']) }}</td>
+                                            <td class="ta-r"><strong>{{ $money($tx['total']) }}</strong></td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="10"><x-admin.empty-state icon="fa-solid fa-receipt" title="{{ __('No sales found') }}" message="{{ __('Try a different date range, customer, or status filter.') }}" /></td></tr>
+                                    @endforelse
+                                </tbody>
+                            @endif
+                        </table>
+                    </div>
+                    <x-table-footer :paginator="$rows" label="{{ __('rows') }}" />
+                </div>
+            </section>
+        @endif
         @endif
     </div>
 
@@ -387,10 +502,7 @@
 
         (function () {
             let chart = null;
-
-            const destroy = () => {
-                if (chart) { try { chart.destroy(); } catch (e) {} chart = null; }
-            };
+            const destroy = () => { if (chart) { try { chart.destroy(); } catch (e) {} chart = null; } };
 
             const boot = () => {
                 destroy();
@@ -401,40 +513,32 @@
                 let ROWS = [];
                 try { ROWS = JSON.parse(el.dataset.rows || '[]'); } catch (e) { ROWS = []; }
 
-                const css = getComputedStyle(root);
-                const MUTED = (css.getPropertyValue('--sr-muted') || '#667085').trim();
-                const GRID = (css.getPropertyValue('--sr-line') || '#e4e7ec').trim();
-                const BAR = (css.getPropertyValue('--sr-accent') || '#0f766e').trim();
+                const css = getComputedStyle(document.documentElement);
+                const v = (name, fallback) => (css.getPropertyValue(name) || fallback).trim();
                 const DARK = document.documentElement.classList.contains('dark');
-                const fmtDate = (d) => new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-                const money0 = (v) => '$' + Number(v).toLocaleString('en-US', { maximumFractionDigits: 0 });
-                const money2 = (v) => '$' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const money0 = (n) => '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
+                const money2 = (n) => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
                 chart = new ApexCharts(el, {
                     chart: { type: 'bar', height: 260, fontFamily: 'inherit', toolbar: { show: false }, zoom: { enabled: false },
-                        animations: { enabled: true, easing: 'easeinout', speed: 450 } },
-                    series: [{ name: '{{ __('Net sales') }}', data: ROWS.map(r => r.y) }],
-                    colors: [BAR],
-                    plotOptions: { bar: { columnWidth: ROWS.length > 60 ? '90%' : '55%', borderRadius: 3, borderRadiusApplication: 'end' } },
+                        animations: { enabled: false }, background: 'transparent' },
+                    series: [{ name: @json(__('Net sales')), data: ROWS.map(r => r.y) }],
+                    colors: [v('--viz-1', '#2a78d6')],
+                    plotOptions: { bar: { columnWidth: ROWS.length > 60 ? '90%' : '60%', borderRadius: 4, borderRadiusApplication: 'end' } },
                     dataLabels: { enabled: false },
-                    states: { hover: { filter: { type: 'lighten', value: 0.08 } } },
-                    grid: { borderColor: GRID, strokeDashArray: 4, padding: { left: 6, right: 6 } },
+                    states: { hover: { filter: { type: 'darken', value: 0.9 } } },
+                    grid: { borderColor: v('--sx-line', '#ebedf1'), strokeDashArray: 4, padding: { left: 6, right: 6 } },
                     xaxis: { categories: ROWS.map(r => r.x), tickAmount: Math.min(12, ROWS.length),
-                        labels: { style: { colors: MUTED, fontSize: '11px' }, formatter: (v) => v ? fmtDate(v) : '' , rotate: 0, hideOverlappingLabels: true },
+                        labels: { style: { colors: v('--sx-muted', '#79838f'), fontSize: '11px' }, rotate: 0, hideOverlappingLabels: true },
                         axisBorder: { show: false }, axisTicks: { show: false } },
-                    yaxis: { labels: { style: { colors: MUTED, fontSize: '11px' }, formatter: (v) => money0(v) } },
+                    yaxis: { labels: { style: { colors: v('--sx-muted', '#79838f'), fontSize: '11px' }, formatter: money0 } },
                     tooltip: { theme: DARK ? 'dark' : 'light',
-                        x: { formatter: (v) => new Date(v + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) },
-                        y: { formatter: (v, { dataPointIndex }) => money2(v) + ' · ' + (ROWS[dataPointIndex]?.orders ?? 0) + ' {{ __('orders') }}' },
-                    },
+                        y: { formatter: (n, { dataPointIndex }) => money2(n) + ' · ' + (ROWS[dataPointIndex]?.orders ?? 0) + ' ' + @json(__('orders')) } },
                 });
                 chart.render();
             };
 
-            // ApexCharts is loaded with `defer`; deferred scripts finish before DOMContentLoaded.
             if (typeof ApexCharts !== 'undefined') boot(); else document.addEventListener('DOMContentLoaded', boot);
-
-            // AJAX filtering swaps the page body in place — tear down and rebuild the chart.
             document.addEventListener('ajax:page-unload', destroy);
             document.addEventListener('ajax:page-loaded', boot);
         })();

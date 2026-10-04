@@ -20,11 +20,12 @@ use App\Http\Controllers\Backend\CustomerReportController;
 use App\Http\Controllers\Backend\DashboardController;
 use App\Http\Controllers\Backend\DealCampaignController;
 use App\Http\Controllers\Backend\FaqController;
-use App\Http\Controllers\Backend\FinanceReportController;
 use App\Http\Controllers\Backend\InventoryController;
 use App\Http\Controllers\Backend\MediaAssetController;
 use App\Http\Controllers\Backend\NewsletterSubscriberController;
 use App\Http\Controllers\Backend\OrderController;
+use App\Http\Controllers\Backend\OrderReportController;
+use App\Http\Controllers\Backend\OverviewReportController;
 use App\Http\Controllers\Backend\PageController as AdminPageController;
 use App\Http\Controllers\Backend\PaymentController as AdminPaymentController;
 use App\Http\Controllers\Backend\PaymentReportController;
@@ -203,8 +204,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::middleware('permission:view reports')->group(function () {
-            Route::get('/', [FinanceReportController::class, 'index'])->name('index');
-            Route::get('/export/{type}', [FinanceReportController::class, 'export'])->name('export');
+            Route::get('/', [OverviewReportController::class, 'index'])->name('index');
+            Route::get('/export', [OverviewReportController::class, 'export'])->name('export');
+        });
+
+        Route::middleware('permission:view order reports')->group(function () {
+            Route::get('/orders', [OrderReportController::class, 'index'])->name('orders');
+            Route::get('/orders/export', [OrderReportController::class, 'export'])->name('orders.export');
         });
 
         Route::middleware('permission:view sales reports')->group(function () {
