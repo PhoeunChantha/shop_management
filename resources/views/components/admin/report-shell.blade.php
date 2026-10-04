@@ -12,6 +12,7 @@
     'showRange' => true,
     'orderStatuses' => [],
     'paymentStatuses' => [],
+    'tabs' => [],
 ])
 
 @php
@@ -19,6 +20,8 @@
 @endphp
 
 <div class="admin-page finance-report-page">
+    <x-admin.report-tabs :tabs="$tabs" />
+
     {{-- One control bar: filters on the left, exports on the right. The page
          title already lives in the layout header, so it is not repeated here. --}}
     @if ($hasFilters || $exportUrl || $pdfUrl)

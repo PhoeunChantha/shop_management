@@ -26,6 +26,10 @@ final class Order extends Model
             if (blank($order->order_number)) {
                 $order->order_number = self::generateNumber();
             }
+
+            // Reports date every sale by placed_at (index-backed range scans),
+            // so it must never be null.
+            $order->placed_at ??= now();
         });
     }
 

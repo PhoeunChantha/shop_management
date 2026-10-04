@@ -13,17 +13,7 @@
             'caption' => __('Analytics and exports'),
             'icon' => 'fa-chart-column',
             'routes' => ['admin.reports.*'],
-            'items' => [
-                ['label' => __('Overview'), 'icon' => 'fa-gauge-high', 'route' => 'admin.reports.index', 'active' => ['admin.reports.index', 'admin.reports.export'], 'permission' => 'view reports'],
-                ['label' => __('Sales'), 'icon' => 'fa-chart-line', 'route' => 'admin.reports.sales', 'active' => ['admin.reports.sales', 'admin.reports.sales.*'], 'permission' => 'view sales reports'],
-                ['label' => __('Products'), 'icon' => 'fa-box-open', 'route' => 'admin.reports.products', 'active' => ['admin.reports.products', 'admin.reports.products.*'], 'permission' => 'view product reports'],
-                ['label' => __('Inventory'), 'icon' => 'fa-warehouse', 'route' => 'admin.reports.stock', 'active' => ['admin.reports.stock', 'admin.reports.stock.*'], 'permission' => 'view stock reports'],
-                ['label' => __('Payments'), 'icon' => 'fa-credit-card', 'route' => 'admin.reports.payments', 'active' => ['admin.reports.payments', 'admin.reports.payments.*'], 'permission' => 'view payment reports'],
-                ['label' => __('Customers'), 'icon' => 'fa-user-group', 'route' => 'admin.reports.customers', 'active' => ['admin.reports.customers', 'admin.reports.customers.*'], 'permission' => 'view customer reports'],
-                ['label' => __('Purchasing'), 'icon' => 'fa-clipboard-list', 'route' => 'admin.reports.purchasing', 'active' => ['admin.reports.purchasing', 'admin.reports.purchasing.*'], 'permission' => 'view purchasing reports'],
-                ['label' => __('Customer Registrations'), 'icon' => 'fa-user-plus', 'route' => 'admin.reports.register', 'active' => ['admin.reports.register', 'admin.reports.register.*'], 'permission' => 'view register reports'],
-                ['label' => __('Returns'), 'icon' => 'fa-rotate-left', 'route' => 'admin.reports.returns', 'active' => ['admin.reports.returns', 'admin.reports.returns.*'], 'permission' => 'view return reports'],
-            ],
+            'items' => \App\Services\Admin\Reports\ReportNavigation::domains(),
         ],
         [
             'label' => __('Sales'),
@@ -150,7 +140,9 @@
                     </span>
                 </a>
             @else
-                <section class="admin-module" x-data="{ open: {{ $moduleActive ? 'true' : 'false' }} }" :class="{ 'is-open': open }">
+                {{-- Skip a group whose every item the user lacks permission for. --}}
+                @continue(collect($module['items'])->every(fn ($item) => ! empty($item['permission']) && ! auth()->user()?->can($item['permission'])))
+                <section class="admin-module"x-data="{ open: {{ $moduleActive ? 'true' : 'false' }} }" :class="{ 'is-open': open }">
                     <button type="button" class="admin-module__toggle {{ $moduleActive ? 'has-active' : '' }}"
                         @click="open = !open" :aria-expanded="open ? 'true' : 'false'">
                         <span class="admin-module__icon"><i class="fa-solid {{ $module['icon'] }}"></i></span>
