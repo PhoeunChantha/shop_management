@@ -30,6 +30,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // Baseline security response headers on every web response.
         $middleware->appendToGroup('web', SecurityHeaders::class);
 
+        // Served behind Cloudflare Tunnel: trust X-Forwarded-* so the app sees
+        // the public https host instead of http://localhost.
+        $middleware->trustProxies(at: '*');
+
         // PayWay posts its result server-to-server (no session/CSRF token).
         $middleware->validateCsrfTokens(except: ['payment/callback']);
 

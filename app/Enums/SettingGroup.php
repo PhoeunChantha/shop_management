@@ -21,6 +21,7 @@ enum SettingGroup: string
     case Loyalty = 'loyalty';
     case Recaptcha = 'recaptcha';
     case Facebook = 'facebook';
+    case Storage = 'storage';
 
     /**
      * Human-readable tab label.
@@ -43,6 +44,7 @@ enum SettingGroup: string
             self::Loyalty => 'Loyalty Points',
             self::Recaptcha => 'reCAPTCHA',
             self::Facebook => 'Facebook Page',
+            self::Storage => 'Media Storage',
         };
     }
 
@@ -67,6 +69,7 @@ enum SettingGroup: string
             self::Loyalty => 'fa-gift',
             self::Recaptcha => 'fa-shield-halved',
             self::Facebook => 'fa-share-from-square',
+            self::Storage => 'fa-cloud',
         };
     }
 

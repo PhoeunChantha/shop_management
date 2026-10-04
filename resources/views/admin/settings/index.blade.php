@@ -115,6 +115,35 @@
                                     </p>
                                 </div>
                             @endif
+                            @if ($groupKey === 'storage')
+                                <div class="sm:col-span-2" style="margin-bottom:16px;padding:12px 14px;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb"
+                                    x-data="{
+                                        busy: false, result: null,
+                                        async test() {
+                                            this.busy = true; this.result = null;
+                                            try {
+                                                const res = await fetch(@js(route('admin.settings.storage-test')), {
+                                                    method: 'POST',
+                                                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': @js(csrf_token()) },
+                                                });
+                                                this.result = await res.json();
+                                            } catch (e) {
+                                                this.result = { ok: false, message: @js(__('Request failed — try again.')) };
+                                            }
+                                            this.busy = false;
+                                        }
+                                    }">
+                                    <label style="display:block;font-weight:600;font-size:13px;margin-bottom:6px;color:#111827">{{ __('Cloudflare R2 connection') }}</label>
+                                    <p style="font-size:12px;color:#6b7280;margin:0 0 8px">
+                                        {{ __('Save your changes first, then test. The test uploads a tiny file, loads it from the public URL and deletes it.') }}
+                                    </p>
+                                    <button type="button" class="form-cancel-button" @click="test()" :disabled="busy">
+                                        <i class="fa-solid" :class="busy ? 'fa-spinner fa-spin' : 'fa-plug'"></i> {{ __('Test connection') }}
+                                    </button>
+                                    <p x-show="result" x-cloak style="font-size:13px;margin:8px 0 0"
+                                        :style="{ color: result?.ok ? '#16a34a' : '#dc2626' }" x-text="result?.message"></p>
+                                </div>
+                            @endif
                             @if (($group['type'] ?? 'fields') === 'fields')
                                 @foreach ($group['fields'] as $fieldKey => $field)
                                     {{-- Image fields are grouped into their own row below. --}}
