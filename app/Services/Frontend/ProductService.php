@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Color;
 use App\Models\OrderDetail;
 use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Size;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -475,11 +476,16 @@ class ProductService
         // Lookup so the client can resolve the exact variant id from the chosen
         // size code + colour key (keys match the `sizes`/`colors` used in the UI).
         $variantIndex = $product->variants
-            ->filter(fn ($variant) => $variant->size && $variant->color)
-            ->mapWithKeys(fn ($variant): array => [
-                mb_strtolower((string) $variant->size->code).'|'.$this->colorKey($variant->color) => $variant->id,
-            ])
+            ->filter(fn ($variant) => $this->variantKey($variant) !== null)
+            ->mapWithKeys(fn ($variant): array => [$this->variantKey($variant) => $variant->id])
             ->all();
+
+        // What a one-click "Quick add" puts in the bag: the first in-stock
+        // variant (else the first variant), so it is always a real option.
+        $defaultVariant = $product->variants
+            ->filter(fn ($variant) => $variant->size && $variant->color)
+            ->sortByDesc(fn ($variant) => (int) $variant->stock > 0)
+            ->first();
 
         return [
             'id' => $product->id,
@@ -507,6 +513,11 @@ class ProductService
             'image_url' => $product->thumbnail_url,
             'image_thumb_url' => $product->thumbnail_preview_url,
             'variant_index' => $variantIndex,
+            'quick_add' => [
+                'size' => $defaultVariant ? (string) $defaultVariant->size->code : ($sizes[0] ?? 'One Size'),
+                'color' => $defaultVariant ? $this->colorKey($defaultVariant->color) : ($colorKeys[0] ?? array_key_first($this->colors())),
+                'variant_id' => $defaultVariant?->id,
+            ],
         ];
     }
 
@@ -593,6 +604,19 @@ class ProductService
 
             return $seen[$entry['url']] = true;
         })->values()->all();
+    }
+
+    /**
+     * "{size code}|{colour key}" — the key the storefront uses for a chosen
+     * option (product page pickers, quick add, cart lines, checkout).
+     */
+    public function variantKey(ProductVariant $variant): ?string
+    {
+        if (! $variant->size || ! $variant->color) {
+            return null;
+        }
+
+        return mb_strtolower((string) $variant->size->code).'|'.$this->colorKey($variant->color);
     }
 
     private function colorKey(Color $color): string

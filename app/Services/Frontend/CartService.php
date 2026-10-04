@@ -70,6 +70,27 @@ final class CartService
             ->pluck('id')
             ->all();
 
+        // Lines without a (valid) variant id get it from their size + colour, so
+        // checkout always charges and decrements the exact option chosen.
+        $variantKeys = ProductVariant::query()
+            ->with(['size:id,code', 'color:id,name,code'])
+            ->whereIn('product_id', $activeIds)
+            ->where('status', true)
+            ->get()
+            ->mapWithKeys(fn (ProductVariant $variant): array => [
+                $variant->product_id.'#'.$this->products->variantKey($variant) => $variant->id,
+            ]);
+
+        $normalized = $normalized->map(function (array $line) use ($validVariantIds, $variantKeys): array {
+            if (! in_array($line['variant_id'], $validVariantIds, true)) {
+                $key = $line['product_id'].'#'.mb_strtolower($line['size']).'|'.mb_strtolower($line['color']);
+                $line['variant_id'] = (int) ($variantKeys[$key] ?? 0);
+            }
+
+            return $line;
+        });
+        $validVariantIds = array_merge($validVariantIds, $variantKeys->values()->all());
+
         DB::transaction(function () use ($cart, $normalized, $activeIds, $validVariantIds): void {
             $cart->items()->delete();
 
@@ -123,8 +144,8 @@ final class CartService
                 }
 
                 $mapped = $this->products->map($product);
-                $size = $item->size ?: 'M';
-                $color = $item->color ?: ($mapped['colors'][0] ?? 'black');
+                $size = $item->size ?: $mapped['quick_add']['size'];
+                $color = $item->color ?: $mapped['quick_add']['color'];
 
                 return [
                     'id' => $product->id,
