@@ -84,7 +84,10 @@
     $mainImage = $productImages[0]['url'] ?? $product['image_url'] ?? null;
     $mainThumb = $productImages[0]['thumb'] ?? $product['image_thumb_url'] ?? null;
 @endphp
-<div class="anim-up" data-product-scope data-variant-index='@json($product['variant_index'] ?? [])' style="padding-bottom:90px">
+@php($inStock = $product['in_stock'] ?? true)
+<div class="anim-up" data-product-scope data-variant-index='@json($product['variant_index'] ?? [])'
+    data-variant-stock='@json((object) ($product['variant_stock'] ?? []))' data-stock="{{ $product['stock'] ?? '' }}"
+    data-variable="{{ ! empty($product['variant_index']) ? '1' : '0' }}" style="padding-bottom:90px">
     <div class="ut-wrap" style="padding-top:28px">
         <div class="ut-pdp">
             {{-- GALLERY --}}
@@ -136,7 +139,12 @@
                 </div>
                 <div class="ut-row" style="gap:10px;margin:12px 0 16px">
                     <x-frontend.stars :value="$product['rating']" /><span class="muted" style="font-size:14px">{{ $product['rating'] }} · {{ $product['reviews'] }} {{ __('reviews') }}</span>
-                    <span class="ut-tag ut-tag-success"><span style="width:6px;height:6px;border-radius:6px;background:var(--success);display:inline-block"></span> {{ __('In stock') }}</span>
+                    {{-- Real stock for the selected option (kept up to date by main.js). --}}
+                    <span data-stock-tag class="ut-tag {{ $inStock ? 'ut-tag-success' : 'ut-tag-soldout' }}"
+                        data-label-in="{{ __('In stock') }}" data-label-low="{{ __('Only :n left') }}" data-label-out="{{ __('Sold out') }}">
+                        <span style="width:6px;height:6px;border-radius:6px;background:currentColor;display:inline-block"></span>
+                        <span data-stock-text>{{ $inStock ? __('In stock') : __('Sold out') }}</span>
+                    </span>
                 </div>
                 <div class="ut-row" style="gap:12px;margin-bottom:24px">
                     <span style="font-family:var(--font-head);font-weight:700;font-size:32px">{{ dprice($product['price']) }}</span>
@@ -174,16 +182,17 @@
                         <span data-qty-value>1</span>
                         <button type="button" data-qty-step="1" aria-label="Increase quantity"><x-frontend.icon n="plus" :size="16" /></button>
                     </div>
-                    <button type="button" class="ut-btn ut-btn-accent ut-purchase-add"
+                    <button type="button" class="ut-btn ut-btn-accent ut-purchase-add" @disabled(! $inStock)
                             data-add-to-cart data-require-size data-id="{{ $product['id'] }}" data-name="{{ $product['name'] }}" data-price="{{ $product['price'] }}" data-tint="{{ $product['tint'] }}" data-image="{{ $product['image_url'] ?? '' }}">
                         <x-frontend.icon n="bag" :size="18" /> {{ __('Add to bag') }}
                     </button>
                 </div>
+                <p class="ut-stock-msg" data-stock-msg role="status" @if($inStock) hidden @endif>{{ $inStock ? '' : __('This product is sold out.') }}</p>
                 <div class="ut-purchase-total">
                     <span>{{ __('Total for') }} <span data-pdp-qty-label>1</span> <span data-pdp-item-label>{{ __('item') }}</span></span>
                     <strong data-pdp-total data-unit-price="{{ (float) $product['price'] }}">{{ money((float) $product['price']) }}</strong>
                 </div>
-                <button type="button" class="ut-btn ut-btn-ink ut-btn-block ut-purchase-buy"
+                <button type="button" class="ut-btn ut-btn-ink ut-btn-block ut-purchase-buy" @disabled(! $inStock)
                         data-buy-now data-require-size
                         data-id="{{ $product['id'] }}" data-name="{{ $product['name'] }}" data-price="{{ $product['price'] }}"
                         data-tint="{{ $product['tint'] ?? '' }}" data-image="{{ $product['image_url'] ?? '' }}"
@@ -291,7 +300,7 @@
             </div>
             <div class="ut-row" style="gap:14px">
                 <span class="ut-hide-mobile" style="font-family:var(--font-head);font-weight:700;font-size:20px">{{ dprice($product['price']) }}</span>
-                <button type="button" class="ut-btn ut-btn-accent ut-btn-lg" data-add-to-cart data-require-size
+                <button type="button" class="ut-btn ut-btn-accent ut-btn-lg" data-add-to-cart data-require-size @disabled(! $inStock)
                         data-id="{{ $product['id'] }}" data-name="{{ $product['name'] }}" data-price="{{ $product['price'] }}" data-tint="{{ $product['tint'] }}" data-image="{{ $product['image_url'] ?? '' }}">
                     <x-frontend.icon n="bag" :size="17" /> {{ __('Add to bag') }}
                 </button>

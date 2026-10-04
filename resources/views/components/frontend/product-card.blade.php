@@ -5,6 +5,8 @@
     $colors = $p['color_map'] ?? app(\App\Services\Frontend\ProductService::class)->colors();
     $slug = $p['slug'] ?? \Illuminate\Support\Str::slug($p['name'] ?? (string) $p['id']);
     $url = $p['url'] ?? route('frontend.shop.show', $slug);
+    $inStock = $p['in_stock'] ?? true;
+    $quickStock = $p['quick_add']['stock'] ?? null;
 @endphp
 <article class="ut-card ut-pcard" style="position:relative">
     <a href="{{ $url }}" style="display:block">
@@ -23,14 +25,19 @@
             <div style="position:absolute;top:14px;left:14px;display:flex;gap:8px">
                 @if($p['tag'] === 'sale')<span class="ut-tag ut-tag-sale">{{ __('Sale') }}</span>@elseif($p['tag'] === 'new')<span class="ut-tag ut-tag-new">{{ __('New') }}</span>@endif
                 @if($p['was'])<span class="ut-tag ut-tag-hot">-{{ $off }}%</span>@endif
+                @unless($inStock)<span class="ut-tag ut-tag-soldout">{{ __('Sold out') }}</span>@endunless
             </div>
             {{-- quick add (reveals on hover) --}}
             <div class="ut-pcard-add">
+                @if($inStock)
                 <button type="button" class="ut-btn ut-btn-ink ut-btn-block ut-btn-sm"
                         data-add-to-cart data-no-open data-id="{{ $p['id'] }}" data-name="{{ $p['name'] }}"
-                        data-price="{{ $p['price'] }}" data-tint="{{ $p['tint'] }}" data-image="{{ $p['image_url'] ?? '' }}" data-color="{{ $p['quick_add']['color'] }}" data-size="{{ $p['quick_add']['size'] }}" data-variant-id="{{ $p['quick_add']['variant_id'] }}">
+                        data-price="{{ $p['price'] }}" data-tint="{{ $p['tint'] }}" data-image="{{ $p['image_url'] ?? '' }}" data-color="{{ $p['quick_add']['color'] }}" data-size="{{ $p['quick_add']['size'] }}" data-variant-id="{{ $p['quick_add']['variant_id'] }}" data-stock="{{ $quickStock }}">
                     <x-frontend.icon n="bag" :size="16" /> {{ __('Quick add') }}
                 </button>
+                @else
+                <button type="button" class="ut-btn ut-btn-ink ut-btn-block ut-btn-sm" disabled aria-disabled="true">{{ __('Sold out') }}</button>
+                @endif
             </div>
         </div>
     </a>

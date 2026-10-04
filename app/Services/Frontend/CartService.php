@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Frontend;
 
-use App\Enums\ProductType;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
@@ -76,27 +75,36 @@ final class CartService
      * gone/inactive, or an option (size + colour) the product doesn't sell.
      *
      * @param  array<int, array<string, mixed>>  $clientLines
-     * @return array<int, array{key: string, variant_id: int|null, available: bool}>
+     *                                                         `stock` is how many units of that exact option can be bought right now
+     *                                                         (the variant's stock, or the product's for single products).
+     * @return array<int, array{key: string, variant_id: int|null, available: bool, stock: int}>
      */
     public function check(array $clientLines): array
     {
-        ['lines' => $lines, 'activeIds' => $activeIds, 'validVariantIds' => $validVariantIds] = $this->resolve($clientLines);
+        ['lines' => $lines, 'activeIds' => $activeIds, 'validVariantIds' => $validVariantIds, 'variantStock' => $variantStock] = $this->resolve($clientLines);
 
-        $variable = Product::query()
+        $products = Product::query()
             ->whereIn('id', $activeIds)
-            ->where('product_type', ProductType::Variable->value)
-            ->pluck('id')
-            ->all();
+            ->get(['id', 'product_type', 'stock'])
+            ->keyBy('id');
 
         return $lines
-            ->map(function (array $line) use ($activeIds, $validVariantIds, $variable): array {
+            ->map(function (array $line) use ($products, $validVariantIds, $variantStock): array {
                 $variantId = in_array($line['variant_id'], $validVariantIds, true) ? $line['variant_id'] : null;
-                $active = in_array($line['product_id'], $activeIds, true);
+                $product = $products->get($line['product_id']);
+                $sellable = $product && ($variantId !== null || ! $product->isVariable());
+
+                $stock = match (true) {
+                    ! $sellable => 0,
+                    $variantId !== null => (int) ($variantStock[$variantId] ?? 0),
+                    default => max(0, (int) $product->stock),
+                };
 
                 return [
                     'key' => $line['key'],
                     'variant_id' => $variantId,
-                    'available' => $active && ($variantId !== null || ! in_array($line['product_id'], $variable, true)),
+                    'available' => $sellable,
+                    'stock' => max(0, $stock),
                 ];
             })
             ->values()
@@ -108,7 +116,7 @@ final class CartService
      * kept, otherwise it is looked up from the size code + colour key.
      *
      * @param  array<int, array<string, mixed>>  $clientLines
-     * @return array{lines: Collection<int, array<string, mixed>>, activeIds: array<int, int>, validVariantIds: array<int, int>}
+     * @return array{lines: Collection<int, array<string, mixed>>, activeIds: array<int, int>, validVariantIds: array<int, int>, variantStock: array<int, int>}
      */
     private function resolve(array $clientLines): array
     {
@@ -141,6 +149,7 @@ final class CartService
             $variant->product_id.'#'.$this->products->variantKey($variant) => $variant->id,
         ]);
         $variantProduct = $variants->pluck('product_id', 'id');
+        $variantStock = $variants->pluck('stock', 'id')->map(fn ($stock): int => max(0, (int) $stock))->all();
 
         $lines = $normalized->map(function (array $line) use ($variantKeys, $variantProduct): array {
             // Keep a sent id only if it is an active variant of this very product.
@@ -152,7 +161,7 @@ final class CartService
             return $line;
         });
 
-        return ['lines' => $lines, 'activeIds' => $activeIds, 'validVariantIds' => $validVariantIds];
+        return ['lines' => $lines, 'activeIds' => $activeIds, 'validVariantIds' => $validVariantIds, 'variantStock' => $variantStock];
     }
 
     public function clear(User $user): void

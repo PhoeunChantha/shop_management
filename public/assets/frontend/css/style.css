@@ -424,6 +424,34 @@ img {
   color: #46603f;
 }
 
+.ut-tag-warning {
+  background: #fdf0d8;
+  color: #8a5a12;
+}
+
+.ut-tag-soldout {
+  background: #f3e1df;
+  color: #9b2c22;
+}
+
+/* Option (size/colour) with no stock for the current selection. */
+.ut-chip.is-soldout,
+.swatch.is-soldout {
+  opacity: .45;
+  text-decoration: line-through;
+}
+
+.ut-stock-msg {
+  color: #b42318;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 10px 0 0;
+}
+
+.ut-stock-msg[hidden] {
+  display: none;
+}
+
 /* ---- Cards ---- */
 .ut-card {
   background: var(--card);

@@ -475,15 +475,27 @@ class ProductService
 
         // Lookup so the client can resolve the exact variant id from the chosen
         // size code + colour key (keys match the `sizes`/`colors` used in the UI).
-        $variantIndex = $product->variants
-            ->filter(fn ($variant) => $this->variantKey($variant) !== null)
+        // Only active variants can be sold (checkout rejects inactive ones).
+        $sellable = $product->variants
+            ->filter(fn ($variant) => (bool) $variant->status && $this->variantKey($variant) !== null);
+
+        $variantIndex = $sellable
             ->mapWithKeys(fn ($variant): array => [$this->variantKey($variant) => $variant->id])
             ->all();
 
+        // Units available per option, same keys as the index — checkout sells
+        // a line only when its exact option has enough stock.
+        $variantStock = $sellable
+            ->mapWithKeys(fn ($variant): array => [$this->variantKey($variant) => max(0, (int) $variant->stock)])
+            ->all();
+
+        $stock = $product->isVariable()
+            ? array_sum($variantStock)
+            : max(0, (int) $product->stock);
+
         // What a one-click "Quick add" puts in the bag: the first in-stock
         // variant (else the first variant), so it is always a real option.
-        $defaultVariant = $product->variants
-            ->filter(fn ($variant) => $variant->size && $variant->color)
+        $defaultVariant = $sellable
             ->sortByDesc(fn ($variant) => (int) $variant->stock > 0)
             ->first();
 
@@ -513,10 +525,14 @@ class ProductService
             'image_url' => $product->thumbnail_url,
             'image_thumb_url' => $product->thumbnail_preview_url,
             'variant_index' => $variantIndex,
+            'variant_stock' => $variantStock,
+            'stock' => $stock,
+            'in_stock' => $stock > 0,
             'quick_add' => [
                 'size' => $defaultVariant ? (string) $defaultVariant->size->code : ($sizes[0] ?? 'One Size'),
                 'color' => $defaultVariant ? $this->colorKey($defaultVariant->color) : ($colorKeys[0] ?? array_key_first($this->colors())),
                 'variant_id' => $defaultVariant?->id,
+                'stock' => $defaultVariant ? max(0, (int) $defaultVariant->stock) : $stock,
             ],
         ];
     }
