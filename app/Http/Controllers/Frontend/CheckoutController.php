@@ -6,6 +6,7 @@ use App\Exceptions\CheckoutException;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Services\Frontend\CheckoutService;
+use App\Services\Frontend\OrderTrackingService;
 use App\Services\Frontend\PaywayService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -35,25 +36,25 @@ class CheckoutController extends Controller
         // Always offer wallet to signed-in customers as the first option.
         if (Auth::check()) {
             array_unshift($methods, [
-                'code'           => 'wallet',
-                'name'           => __('Pay by Wallet'),
-                'type'           => 'wallet',
-                'description'    => __('Pay instantly from your store wallet balance.'),
-                'instructions'   => '',
-                'image'          => null,
-                'qr_image'       => null,
-                'bank_name'      => '',
-                'account_name'   => '',
+                'code' => 'wallet',
+                'name' => __('Pay by Wallet'),
+                'type' => 'wallet',
+                'description' => __('Pay instantly from your store wallet balance.'),
+                'instructions' => '',
+                'image' => null,
+                'qr_image' => null,
+                'bank_name' => '',
+                'account_name' => '',
                 'account_number' => '',
             ]);
         }
 
         return view('frontend.checkout.index', [
             'shippingMethods' => $this->checkout->shippingMethods(),
-            'paymentMethods'  => $methods,
-            'taxRate'         => $this->checkout->taxRate(),
-            'prefill'         => $this->prefill(),
-            'walletBalance'   => (float) (Auth::user()?->wallet_balance ?? 0),
+            'paymentMethods' => $methods,
+            'taxRate' => $this->checkout->taxRate(),
+            'prefill' => $this->prefill(),
+            'walletBalance' => (float) (Auth::user()?->wallet_balance ?? 0),
         ]);
     }
 
@@ -175,6 +176,16 @@ class CheckoutController extends Controller
         // Keep it available on refresh within the session.
         $request->session()->keep('order_id');
 
-        return view('frontend.checkout.confirmation', ['order' => $order]);
+        $tracking = app(OrderTrackingService::class);
+
+        return view('frontend.checkout.confirmation', [
+            'order' => $order,
+            'steps' => $tracking->steps($order),
+            'statusLabel' => $tracking->statusLabel($order),
+            'isPaid' => $order->isPaid(),
+            'eta' => $tracking->estimatedDelivery($order),
+            'ownsViaAccount' => $order->user_id !== null && $order->user_id === Auth::id(),
+            'trackUrl' => $tracking->guestUrl($order),
+        ]);
     }
 }

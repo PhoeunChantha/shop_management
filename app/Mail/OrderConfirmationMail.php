@@ -7,6 +7,7 @@ namespace App\Mail;
 use App\Models\Order;
 use App\Services\Admin\SettingService;
 use App\Services\Frontend\InvoiceService;
+use App\Services\Frontend\OrderTrackingService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -42,7 +43,7 @@ class OrderConfirmationMail extends Mailable implements ShouldQueue
             with: [
                 'order' => $this->order->loadMissing('details'),
                 'storeName' => app(SettingService::class)->siteName(),
-                'url' => route('frontend.account.orders.show', $this->order->id),
+                'url' => app(OrderTrackingService::class)->customerUrl($this->order),
             ],
         );
     }

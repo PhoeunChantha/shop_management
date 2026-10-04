@@ -16,20 +16,26 @@
     </div>
 
     <div class="ut-card" style="padding:28px;margin-top:30px">
-        <div class="ut-row" style="justify-content:space-between;margin-bottom:24px"><h3 style="font-size:18px">{{ __('Order tracking') }}</h3><span class="ut-tag ut-tag-success">{{ __('Confirmed') }}</span></div>
+        <div class="ut-row" style="justify-content:space-between;margin-bottom:24px"><h3 style="font-size:18px">{{ __('Order tracking') }}</h3><span class="ut-tag {{ $isPaid ? 'ut-tag-success' : 'ut-tag-warning' }}">{{ $statusLabel }}</span></div>
         <div class="ut-row" style="position:relative">
             <div style="position:absolute;top:16px;left:12%;right:12%;height:3px;background:var(--border)"></div>
-            @foreach(['Confirmed', 'Processing', 'Shipped', 'Delivered'] as $i => $s)
+            @foreach($steps as $step)
                 <div style="flex:1;text-align:center;position:relative">
-                    <span style="width:34px;height:34px;border-radius:50%;display:grid;place-items:center;margin:0 auto 10px;background:{{ $i === 0 ? 'var(--success)' : '#fff' }};color:{{ $i === 0 ? '#fff' : 'var(--text-3)' }};border:{{ $i === 0 ? 'none' : '2px solid var(--border)' }};font-family:var(--font-head);font-weight:700;font-size:13px;position:relative;z-index:1">@if($i === 0)<x-frontend.icon n="check" :size="17" />@else{{ $i + 1 }}@endif</span>
-                    <div style="font-family:var(--font-head);font-weight:600;font-size:13px;color:{{ $i === 0 ? 'var(--ink)' : 'var(--text-2)' }}">{{ __($s) }}</div>
+                    <span style="width:34px;height:34px;border-radius:50%;display:grid;place-items:center;margin:0 auto 10px;background:{{ $step['done'] ? 'var(--success)' : '#fff' }};color:{{ $step['done'] ? '#fff' : 'var(--text-3)' }};border:{{ $step['done'] ? 'none' : '2px solid var(--border)' }};{{ $step['current'] ? 'box-shadow:0 0 0 5px #dcfce7;' : '' }}font-family:var(--font-head);font-weight:700;font-size:13px;position:relative;z-index:1">@if($step['done'])<x-frontend.icon n="check" :size="17" />@else{{ $loop->iteration }}@endif</span>
+                    <div style="font-family:var(--font-head);font-weight:600;font-size:13px;color:{{ $step['done'] ? 'var(--ink)' : 'var(--text-2)' }}">{{ $step['label'] }}</div>
                 </div>
             @endforeach
         </div>
-        <div style="background:var(--bg);border-radius:var(--r-md);padding:16px;margin-top:24px" class="ut-row">
-            <span style="color:var(--blue)"><x-frontend.icon n="truck" :size="20" /></span>
-            <span style="margin-left:12px;font-size:14px">{{ __('Estimated delivery') }} <b>Jun 8 – Jun 10, 2026</b></span>
-        </div>
+        @php($currentStep = collect($steps)->firstWhere('current', true))
+        @if($currentStep)
+            <p class="muted" style="font-size:13.5px;text-align:center;margin:18px 0 0">{{ $currentStep['desc'] }}</p>
+        @endif
+        @if($eta)
+            <div style="background:var(--bg);border-radius:var(--r-md);padding:16px;margin-top:18px" class="ut-row">
+                <span style="color:var(--blue)"><x-frontend.icon n="truck" :size="20" /></span>
+                <span style="margin-left:12px;font-size:14px">{{ __('Estimated delivery') }} <b>{{ $eta }}</b></span>
+            </div>
+        @endif
     </div>
 
     <div class="ut-card" style="padding:28px;margin-top:20px">
@@ -55,10 +61,23 @@
         </div>
     </div>
 
-    <div class="ut-row" style="gap:12px;margin-top:24px;justify-content:center">
-        <a href="{{ route('frontend.account.orders') }}" class="ut-btn ut-btn-ink ut-btn-lg">{{ __('View orders') }}</a>
+    {{-- Signed-in owner: their account order page. Guest: a private tracking
+         link (also in the confirmation email) — no account needed. --}}
+    <div class="ut-row" style="gap:12px;margin-top:24px;justify-content:center;flex-wrap:wrap">
+        @if($ownsViaAccount)
+            <a href="{{ route('frontend.account.orders.show', $order->id) }}" class="ut-btn ut-btn-ink ut-btn-lg">{{ __('View order') }}</a>
+        @else
+            <a href="{{ $trackUrl }}" class="ut-btn ut-btn-ink ut-btn-lg">{{ __('Track this order') }}</a>
+        @endif
         <a href="{{ route('frontend.home') }}" class="ut-btn ut-btn-ghost ut-btn-lg">{{ __('Continue shopping') }}</a>
     </div>
+    @unless($ownsViaAccount)
+        <p class="muted" style="text-align:center;font-size:13.5px;margin-top:16px;line-height:1.6">
+            {{ __('You checked out as a guest. Track this order any time from the link in your confirmation email, or at') }}
+            <a href="{{ route('frontend.orders.track') }}" style="color:var(--blue);font-weight:600">{{ __('Track order') }}</a>
+            {{ __('with your order number and email.') }}
+        </p>
+    @endunless
 </div>
 
 @push('scripts')

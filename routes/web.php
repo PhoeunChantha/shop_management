@@ -58,6 +58,7 @@ use App\Http\Controllers\Frontend\AuthController;
 use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\Frontend\ChatController;
 use App\Http\Controllers\Frontend\CheckoutController;
+use App\Http\Controllers\Frontend\OrderTrackingController;
 use App\Http\Controllers\Frontend\CustomerUnsubscribeController;
 use App\Http\Controllers\Frontend\HomeController;
 use App\Http\Controllers\Frontend\NewsletterController;
@@ -116,6 +117,12 @@ Route::name('frontend.')->group(function () {
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:12,1')->name('checkout.store');
     Route::get('/checkout/confirmation', [CheckoutController::class, 'confirmation'])->name('checkout.confirmation');
+
+    // ---- Guest order tracking (no account): order number + email, or the
+    // private signed link from the confirmation page / email ----
+    Route::get('/track-order', [OrderTrackingController::class, 'index'])->name('orders.track');
+    Route::post('/track-order', [OrderTrackingController::class, 'lookup'])->middleware('throttle:10,1')->name('orders.track.lookup');
+    Route::get('/track-order/{order}', [OrderTrackingController::class, 'show'])->middleware('signed')->name('orders.track.show');
 
     // ---- Payment (ABA PayWay) — guarded per-order by session/account ownership ----
     Route::get('/payment/{order}/pay', [PaymentController::class, 'pay'])->name('payment.pay');
