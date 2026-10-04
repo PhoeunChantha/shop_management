@@ -63,7 +63,7 @@ it('resolves a missing variant id from the size code and colour key', function (
 it('quick add uses a real option of the product, not a hard-coded size', function () {
     $mapped = app(ProductService::class)->map($this->product->fresh(app(ProductService::class)->relations()));
 
-    expect($mapped['quick_add'])->toBe(['size' => 'S', 'color' => 'nvy', 'variant_id' => $this->variant->id]);
+    expect($mapped['quick_add'])->toBe(['size' => 'S', 'color' => 'nvy', 'variant_id' => $this->variant->id, 'stock' => 5]);
 });
 
 it('places an order for a line identified by size code and colour key only', function () {
@@ -91,9 +91,9 @@ it('lets a guest check the bag: fills the variant id and flags unsold options', 
     ]])
         ->assertOk()
         ->assertExactJson(['items' => [
-            ['key' => 'ok', 'variant_id' => $this->variant->id, 'available' => true],
-            ['key' => 'stale', 'variant_id' => null, 'available' => false],
-            ['key' => 'gone', 'variant_id' => null, 'available' => false],
+            ['key' => 'ok', 'variant_id' => $this->variant->id, 'available' => true, 'stock' => 5],
+            ['key' => 'stale', 'variant_id' => null, 'available' => false, 'stock' => 0],
+            ['key' => 'gone', 'variant_id' => null, 'available' => false, 'stock' => 0],
         ]]);
 });
 
@@ -104,7 +104,7 @@ it('ignores a variant id that belongs to another product', function () {
         ['key' => 'k', 'id' => $other->id, 'variant_id' => $this->variant->id, 'size' => 'S', 'color' => 'nvy'],
     ]);
 
-    expect($result[0])->toBe(['key' => 'k', 'variant_id' => null, 'available' => false]);
+    expect($result[0])->toBe(['key' => 'k', 'variant_id' => null, 'available' => false, 'stock' => 0]);
 });
 
 it('treats a single product line without a variant as available', function () {

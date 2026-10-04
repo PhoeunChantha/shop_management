@@ -287,11 +287,11 @@ final class CheckoutService
                         ->first(fn (array $l): bool => $l['stockable_class'] === $class && (string) $l['stockable_id'] === (string) $id)['product']
                         ->name;
 
-                    throw new CheckoutException(sprintf(
-                        '"%s" only has %d left in stock. Please adjust the quantity.',
-                        $productName,
-                        max(0, (int) $model->stock),
-                    ));
+                    $left = max(0, (int) $model->stock);
+
+                    throw new CheckoutException($left === 0
+                        ? sprintf('"%s" is sold out. Please remove it from your bag.', $productName)
+                        : sprintf('"%s" only has %d left in stock. Please lower the quantity to %d or less.', $productName, $left, $left));
                 }
 
                 $lockedStockables[$key] = $model;

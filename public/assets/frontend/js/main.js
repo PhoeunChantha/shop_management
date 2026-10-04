@@ -60,18 +60,30 @@
   function cartCount() { return store.cart.reduce((n, i) => n + i.qty, 0); }
   function cartSubtotal() { return store.cart.reduce((s, i) => s + i.price * i.qty, 0); }
 
-  function addToCart(item) {
+  // Adds up to `max` units in total for this line (max = stock of the exact
+  // option; omit/Infinity when unknown). Returns how many units were added.
+  function addToCart(item, max) {
     const cart = store.cart;
     const key = item.id + '-' + item.size + '-' + item.color;
     const ex = cart.find(i => i.key === key);
-    if (ex) ex.qty += item.qty; else cart.push(Object.assign({ key: key }, item));
+    const limit = (typeof max === 'number' && isFinite(max)) ? max : Infinity;
+    const already = ex ? ex.qty : 0;
+    const add = Math.min(item.qty, Math.max(0, limit - already));
+    if (add <= 0) return 0;
+    if (ex) { ex.qty += add; if (isFinite(limit)) ex.max = limit; }
+    else cart.push(Object.assign({ key: key }, item, { qty: add }, isFinite(limit) ? { max: limit } : {}));
     store.cart = cart;
     syncBadges();
     renderCartDrawer();
     syncCart();
-
+    return add;
   }
   function updateQty(key, qty) {
+    const line = store.cart.find(i => i.key === key);
+    if (line && typeof line.max === 'number' && qty > line.max) {
+      toast('Only ' + line.max + ' left in stock');
+      qty = line.max;
+    }
     const cart = store.cart.map(i => i.key === key ? Object.assign({}, i, { qty: Math.max(1, qty) }) : i);
     store.cart = cart; syncBadges(); renderCartDrawer(); renderCartPage(); syncCart();
   }
@@ -111,24 +123,29 @@
       .then(function (res) {
         var byKey = {};
         ((res && res.items) || []).forEach(function (r) { byKey[r.key] = r; });
-        var removed = [];
+        var removed = [], soldOut = [], lowered = [];
         var kept = store.cart.filter(function (l) {
           var r = byKey[l.key];
           if (!r) return true;
           if (!r.available) { removed.push(l); return false; }
+          if (r.stock <= 0) { soldOut.push(l); return false; }
           l.variant_id = r.variant_id;
+          l.max = r.stock;
+          if (l.qty > r.stock) { l.qty = r.stock; lowered.push(l); }
           return true;
         });
         store.cart = kept;
-        if (!removed.length) return;
+        if (!removed.length && !soldOut.length && !lowered.length) return;
         syncBadges(); renderCartDrawer(); renderCartPage();
         if (window.__coRecalc) window.__coRecalc();
-        var names = removed.map(function (l) {
-          return l.name + ' (' + l.size + ' · ' + colorName(l.color) + ')';
-        }).join(', ');
-        var msg = names + ' ' + (removed.length > 1 ? 'are' : 'is') + ' no longer sold in that option and was removed from your bag. Please choose an available option.';
+        var label = function (l) { return l.name + ' (' + l.size + ' · ' + colorName(l.color) + ')'; };
+        var parts = [];
+        if (removed.length) parts.push(removed.map(label).join(', ') + ' — no longer sold in that option, removed from your bag.');
+        if (soldOut.length) parts.push(soldOut.map(label).join(', ') + ' — sold out, removed from your bag.');
+        if (lowered.length) parts.push(lowered.map(function (l) { return label(l) + ' — only ' + l.max + ' left, quantity changed to ' + l.qty; }).join('; ') + '.');
+        var msg = parts.join(' ');
         // On checkout, say it in the form (plain text); elsewhere, a toast (HTML).
-        if (!(window.utFormAlert && window.utFormAlert(msg))) toast(escapeHtml(msg), 7000);
+        if (!(window.utFormAlert && window.utFormAlert(msg))) toast(escapeHtml(msg), 8000);
       })
       .catch(function () {});
   }
@@ -334,72 +351,122 @@
   /* ============================================================
      EVENT WIRING
      ============================================================ */
+  /* ---------- stock-aware selection ---------- */
+  function parseData(el, name) { try { return JSON.parse((el && el.dataset && el.dataset[name]) || '{}'); } catch (err) { return {}; } }
+  // The option a button would add, with how many units of it can be bought.
+  // Product page: from the selected size/colour + the page's stock data.
+  // Product cards: from the button's own data-* attributes.
+  function selectionFor(btn) {
+    const ds = btn.dataset || {};
+    const scope = btn.closest('[data-product-scope]')
+      || (btn.hasAttribute('data-require-size') ? document.querySelector('[data-product-scope]') : null);
+    const sizeEl = scope ? (scope.querySelector('[data-size].is-active') || scope.querySelector('[data-size]')) : null;
+    const colorEl = scope ? scope.querySelector('[data-color].is-active') : null;
+    const qtyEl = scope ? scope.querySelector('[data-qty-value]') : null;
+    if (btn.hasAttribute('data-require-size') && !sizeEl && !ds.size) return null;
+    const size = sizeEl ? sizeEl.getAttribute('data-size') : (ds.size || 'One Size');
+    const color = colorEl ? colorEl.getAttribute('data-color') : (ds.color || '');
+    const key = String(size).toLowerCase() + '|' + String(color).toLowerCase();
+    let variantId = ds.variantId ? Number(ds.variantId) : null;
+    let stock = Infinity;
+    let variantMissing = false;
+    if (scope) {
+      const index = parseData(scope, 'variantIndex');
+      if (!variantId && index[key]) variantId = Number(index[key]);
+      if (scope.dataset.variable === '1') {
+        const stocks = parseData(scope, 'variantStock');
+        variantMissing = !(key in stocks);
+        stock = variantMissing ? 0 : Number(stocks[key]);
+      } else if (scope.dataset.stock !== undefined && scope.dataset.stock !== '') {
+        stock = Number(scope.dataset.stock);
+      }
+    } else if (ds.stock !== undefined && ds.stock !== '') {
+      stock = Number(ds.stock);
+    }
+    return {
+      scope: scope, size: size, color: color, key: key, variantId: variantId, stock: stock, variantMissing: variantMissing,
+      qty: qtyEl ? Math.max(1, Number(qtyEl.textContent) || 1) : 1,
+    };
+  }
+  // A stock message under the product page buttons; a toast elsewhere.
+  function stockNotice(scope, msg) {
+    const el = scope ? scope.querySelector('[data-stock-msg]') : null;
+    if (el) { el.textContent = msg; el.hidden = !msg; return; }
+    if (msg) toast(escapeHtml(msg));
+  }
+  // Keep the product page honest: stock badge, disabled buttons, sold-out
+  // options and quantity limit always match the selected size + colour.
+  function refreshPdpStock(scope) {
+    if (!scope || !scope.matches('[data-product-scope]')) return;
+    const btn = scope.querySelector('[data-add-to-cart]');
+    const sel = btn ? selectionFor(btn) : null;
+    if (!sel) return;
+    const stock = sel.stock;
+    const out = stock <= 0;
+
+    const tag = scope.querySelector('[data-stock-tag]');
+    if (tag) {
+      const low = !out && isFinite(stock) && stock <= 5;
+      tag.classList.toggle('ut-tag-success', !out && !low);
+      tag.classList.toggle('ut-tag-warning', low);
+      tag.classList.toggle('ut-tag-soldout', out);
+      const text = tag.querySelector('[data-stock-text]');
+      if (text) text.textContent = out ? tag.dataset.labelOut : (low ? tag.dataset.labelLow.replace(':n', stock) : tag.dataset.labelIn);
+    }
+    document.querySelectorAll('[data-add-to-cart][data-require-size], [data-buy-now][data-require-size]').forEach(function (b) {
+      b.disabled = out;
+    });
+    stockNotice(scope, out
+      ? (sel.variantMissing ? 'This size and colour combination is not available.' : 'This option is sold out. Please choose another size or colour.')
+      : '');
+
+    const qtyEl = scope.querySelector('[data-qty-value]');
+    if (qtyEl && !out && isFinite(stock) && Number(qtyEl.textContent) > stock) qtyEl.textContent = stock;
+
+    if (scope.dataset.variable === '1') {
+      const stocks = parseData(scope, 'variantStock');
+      const has = function (k) { return Number(stocks[k] || 0) > 0; };
+      scope.querySelectorAll('[data-size-group] [data-size]').forEach(function (c) {
+        c.classList.toggle('is-soldout', !has(String(c.getAttribute('data-size')).toLowerCase() + '|' + String(sel.color).toLowerCase()));
+      });
+      scope.querySelectorAll('[data-color-group] [data-color]').forEach(function (c) {
+        c.classList.toggle('is-soldout', !has(String(sel.size).toLowerCase() + '|' + String(c.getAttribute('data-color')).toLowerCase()));
+      });
+    }
+  }
+  document.querySelectorAll('[data-product-scope]').forEach(refreshPdpStock);
+
   document.addEventListener('click', function (e) {
     const add = e.target.closest('[data-add-to-cart]');
-    if (add) {
+    const buy = add ? null : e.target.closest('[data-buy-now]');
+    if (add || buy) {
       e.preventDefault(); e.stopPropagation();
-      const ds = add.dataset;
-      // size/color may come from selected controls on PDP, else defaults
-      // Quick-add buttons (cards) carry their own size/colour/variant; only the
-      // product page scope has pickers. Never fall back to `document`, or a
-      // stray [data-size] elsewhere (filters, other cards) gets picked up.
-      const scope = add.closest('[data-product-scope]')
-        || (add.hasAttribute('data-require-size') ? document.querySelector('[data-product-scope]') : null);
-      const sizeEl = scope ? (scope.querySelector('[data-size].is-active') || scope.querySelector('[data-size]')) : null;
-      const colorEl = scope ? scope.querySelector('[data-color].is-active') : null;
-      const qtyEl = scope ? scope.querySelector('[data-qty-value]') : null;
-      if (add.hasAttribute('data-require-size') && !sizeEl && !ds.size) { toast('Please select a size'); return; }
-      var size = sizeEl ? sizeEl.getAttribute('data-size') : (ds.size || 'M');
-      var color = colorEl ? colorEl.getAttribute('data-color') : (ds.color || 'black');
-      // Resolve the exact variant id (chosen size + colour) so checkout prices and
-      // decrements the precise variant instead of fuzzy-matching labels.
-      var variantId = ds.variantId ? Number(ds.variantId) : null;
-      if (!variantId && scope && scope.dataset && scope.dataset.variantIndex) {
-        try {
-          var vmap = JSON.parse(scope.dataset.variantIndex);
-          var vk = String(size).toLowerCase() + '|' + String(color).toLowerCase();
-          if (vmap && vmap[vk]) variantId = Number(vmap[vk]);
-        } catch (err) {}
-      }
-      addToCart({
-        id: Number(ds.id), variant_id: variantId, name: ds.name, price: Number(ds.price), tint: ds.tint || 'linear-gradient(150deg,#eef2f7,#e2e8f0)',
-        image: ds.image || '',
-        size: size,
-        color: color,
-        qty: qtyEl ? Number(qtyEl.textContent) : 1,
-      });
-      toast(ds.name + ' added to bag');
-      if (!add.hasAttribute('data-no-open')) openOffcanvas('cartDrawer');
-      return;
-    }
+      const btn = add || buy;
+      if (btn.disabled) return;
+      const sel = selectionFor(btn);
+      if (!sel) { toast('Please select a size'); return; }
+      const ds = btn.dataset;
+      if (sel.stock <= 0) { stockNotice(sel.scope, sel.variantMissing ? 'This option is not available.' : 'This option is sold out.'); return; }
 
-    const buy = e.target.closest('[data-buy-now]');
-    if (buy) {
-      e.preventDefault(); e.stopPropagation();
-      const ds = buy.dataset;
-      const scope = buy.closest('[data-product-scope]')
-        || (buy.hasAttribute('data-require-size') ? document.querySelector('[data-product-scope]') : null);
-      const sizeEl = scope ? (scope.querySelector('[data-size].is-active') || scope.querySelector('[data-size]')) : null;
-      const colorEl = scope ? scope.querySelector('[data-color].is-active') : null;
-      const qtyEl = scope ? scope.querySelector('[data-qty-value]') : null;
-      if (buy.hasAttribute('data-require-size') && !sizeEl && !ds.size) { toast('Please select a size'); return; }
-      var bSize = sizeEl ? sizeEl.getAttribute('data-size') : (ds.size || 'M');
-      var bColor = colorEl ? colorEl.getAttribute('data-color') : (ds.color || '');
-      var bVariantId = ds.variantId ? Number(ds.variantId) : null;
-      if (!bVariantId && scope && scope.dataset && scope.dataset.variantIndex) {
-        try {
-          var bMap = JSON.parse(scope.dataset.variantIndex);
-          var bKey = String(bSize).toLowerCase() + '|' + String(bColor).toLowerCase();
-          if (bMap && bMap[bKey]) bVariantId = Number(bMap[bKey]);
-        } catch (err) {}
+      const line = {
+        id: Number(ds.id), variant_id: sel.variantId, name: ds.name, price: Number(ds.price),
+        tint: ds.tint || 'linear-gradient(150deg,#eef2f7,#e2e8f0)', image: ds.image || '',
+        size: sel.size, color: sel.color, qty: sel.qty,
+      };
+      const added = addToCart(line, sel.stock);
+      const inBag = (store.cart.find(i => i.key === line.id + '-' + line.size + '-' + line.color) || {}).qty || 0;
+
+      if (buy) {
+        // Go to checkout as long as the bag holds this option (even if it was already at the limit).
+        if (inBag > 0) { window.location.href = ds.checkoutUrl || '/checkout'; return; }
+        stockNotice(sel.scope, 'This option is sold out.');
+        return;
       }
-      addToCart({
-        id: Number(ds.id), variant_id: bVariantId, name: ds.name, price: Number(ds.price),
-        tint: ds.tint || 'linear-gradient(150deg,#eef2f7,#e2e8f0)',
-        image: ds.image || '', size: bSize, color: bColor,
-        qty: qtyEl ? Number(qtyEl.textContent) : 1,
-      });
-      window.location.href = ds.checkoutUrl || '/checkout';
+      if (added === 0) { stockNotice(sel.scope, 'Only ' + sel.stock + ' left, and all of them are already in your bag.'); return; }
+      if (added < sel.qty) stockNotice(sel.scope, 'Only ' + sel.stock + ' left, so ' + added + ' was added.');
+      else stockNotice(sel.scope, '');
+      toast(ds.name + ' added to bag');
+      if (!btn.hasAttribute('data-no-open')) openOffcanvas('cartDrawer');
       return;
     }
 
@@ -423,6 +490,7 @@
     if (sz && sz.closest('[data-size-group]')) {
       sz.closest('[data-size-group]').querySelectorAll('[data-size]').forEach(b => b.classList.remove('is-active'));
       sz.classList.add('is-active');
+      refreshPdpStock(sz.closest('[data-product-scope]'));
       return;
     }
     const col = e.target.closest('[data-color]');
@@ -431,6 +499,7 @@
       col.classList.add('is-active');
       const lbl = document.querySelector('[data-color-label]');
       if (lbl) lbl.textContent = colorName(col.getAttribute('data-color'));
+      refreshPdpStock(col.closest('[data-product-scope]'));
       return;
     }
 
@@ -440,7 +509,14 @@
       e.preventDefault();
       const box = lq.closest('[data-product-scope]') || document;
       const val = box.querySelector('[data-qty-value]');
-      if (val) val.textContent = Math.max(1, Number(val.textContent) + Number(lq.getAttribute('data-qty-step')));
+      if (val) {
+        const next = Math.max(1, Number(val.textContent) + Number(lq.getAttribute('data-qty-step')));
+        const pdpBtn = box.matches && box.matches('[data-product-scope]') ? box.querySelector('[data-add-to-cart]') : null;
+        const st = pdpBtn ? selectionFor(pdpBtn) : null;
+        const limit = st && isFinite(st.stock) && st.stock > 0 ? st.stock : Infinity;
+        val.textContent = Math.min(next, limit);
+        if (next > limit) stockNotice(box, 'Only ' + limit + ' left in stock.');
+      }
       return;
     }
   });
