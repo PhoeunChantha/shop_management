@@ -8,6 +8,7 @@ use App\Helpers\ImageManager;
 use App\Models\MediaAsset;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -169,6 +170,58 @@ final class MediaStorageService
         $url = rtrim(Storage::disk($disk)->url($key), '/');
 
         return Str::startsWith($url, ['http://', 'https://']) ? $url : url($url);
+    }
+
+    /**
+     * Round-trip a tiny probe object through R2 with the given credentials:
+     * write it, fetch it from the public URL, then delete it. Uses a disk built
+     * on the fly so freshly saved .env values are tested, not the booted config.
+     *
+     * @param  array{bucket: string, endpoint: string, url: string, key: string, secret: string}  $r2
+     * @return array{ok: bool, message: string}
+     */
+    public function testR2(array $r2): array
+    {
+        $missing = array_keys(array_filter($r2, fn (string $value): bool => $value === ''));
+
+        if ($missing !== []) {
+            return ['ok' => false, 'message' => __('Save all R2 fields first (missing: :fields).', ['fields' => implode(', ', $missing)])];
+        }
+
+        $disk = Storage::build([
+            'driver' => 's3',
+            'key' => $r2['key'],
+            'secret' => $r2['secret'],
+            'region' => 'auto',
+            'bucket' => $r2['bucket'],
+            'endpoint' => $r2['endpoint'],
+            'url' => $r2['url'],
+            'use_path_style_endpoint' => true,
+            'throw' => true,
+        ]);
+
+        $prefix = trim((string) config('media.prefix', ''), '/');
+        $key = ltrim($prefix.'/.connection-test-'.Str::random(8).'.txt', '/');
+
+        try {
+            $disk->put($key, 'ok');
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'message' => __('Could not write to the bucket — check the endpoint, bucket name and API token. (:error)', ['error' => Str::limit($e->getMessage(), 160)])];
+        }
+
+        try {
+            $public = Http::timeout(10)->get($r2['url'].'/'.$key);
+        } catch (\Throwable) {
+            $public = null;
+        } finally {
+            rescue(fn () => $disk->delete($key), report: false);
+        }
+
+        if (! $public?->successful()) {
+            return ['ok' => false, 'message' => __('Upload works, but files are not reachable at the public URL. Enable a custom domain or r2.dev URL under bucket → Settings → Public access.')];
+        }
+
+        return ['ok' => true, 'message' => __('R2 connected — upload, public read and delete all work.')];
     }
 
     private function key(string $folder, string $name): string

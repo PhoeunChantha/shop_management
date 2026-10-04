@@ -626,6 +626,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
     Route::prefix('settings')->name('settings.')->group(function () {
         Route::get('/', [SettingController::class, 'index'])->name('index');
         Route::put('/', [SettingController::class, 'update'])->name('update');
+        Route::post('storage-test', [SettingController::class, 'testStorage'])->name('storage-test');
     });
 });
 

@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Backend;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateSettingsRequest;
 use App\Models\Setting;
+use App\Services\Admin\MediaStorageService;
 use App\Services\Admin\SettingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -64,5 +65,17 @@ final class SettingController extends Controller
         return redirect()
             ->route('admin.settings.index')
             ->with('success', $message);
+    }
+
+    /**
+     * Check the saved Cloudflare R2 credentials with a write/read/delete probe.
+     */
+    public function testStorage(MediaStorageService $storage): JsonResponse
+    {
+        $this->authorize('update', Setting::class);
+
+        $result = $storage->testR2($this->settings->r2());
+
+        return response()->json($result, $result['ok'] ? 200 : 422);
     }
 }

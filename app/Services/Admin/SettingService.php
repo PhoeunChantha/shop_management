@@ -221,6 +221,14 @@ final class SettingService
                 'facebook_page_id' => ['label' => 'Facebook Page ID', 'type' => 'text', 'placeholder' => '123456789012345', 'help' => 'Found under your Page’s About → Page transparency, or in Meta Business Settings.', 'rules' => 'nullable|string|max:60'],
                 'facebook_page_access_token' => ['label' => 'Page access token', 'type' => 'password', 'env' => 'FACEBOOK_PAGE_ACCESS_TOKEN', 'placeholder' => 'EAAG...', 'help' => 'A long-lived Page access token (Meta Business Settings → System Users is recommended so it never expires). Saved to .env, never shown in page source.', 'rules' => 'nullable|string|max:1000'],
             ],
+            SettingGroup::Storage->value => [
+                'media_disk' => ['label' => 'Media library storage', 'type' => 'select', 'env' => 'MEDIA_DISK', 'options' => ['local' => 'This server (public/uploads)', 'r2' => 'Cloudflare R2'], 'default' => 'local', 'help' => 'Where NEW media-library uploads go. Existing files keep loading from where they were saved.', 'rules' => 'nullable|in:local,r2'],
+                'r2_bucket' => ['label' => 'R2 bucket name', 'type' => 'text', 'env' => 'R2_BUCKET', 'placeholder' => 't-shirt-shop', 'rules' => 'nullable|required_if:media_disk,r2|string|max:63'],
+                'r2_endpoint' => ['label' => 'S3 API endpoint', 'type' => 'text', 'env' => 'R2_ENDPOINT', 'placeholder' => 'https://<account-id>.r2.cloudflarestorage.com', 'help' => 'R2 → bucket → Settings → S3 API. Without the bucket name on the end.', 'rules' => 'nullable|required_if:media_disk,r2|url|max:255'],
+                'r2_url' => ['label' => 'Public bucket URL', 'type' => 'text', 'env' => 'R2_URL', 'placeholder' => 'media.example.com', 'help' => 'Custom domain or r2.dev URL from bucket → Settings → Public access — domain only, no folder. Images are served from here.', 'rules' => 'nullable|required_if:media_disk,r2|url|max:255'],
+                'r2_access_key_id' => ['label' => 'Access key ID', 'type' => 'text', 'env' => 'R2_ACCESS_KEY_ID', 'help' => 'R2 → Manage API tokens → Create token (Object Read & Write, this bucket only).', 'rules' => 'nullable|required_if:media_disk,r2|string|max:128'],
+                'r2_secret_access_key' => ['label' => 'Secret access key', 'type' => 'password', 'env' => 'R2_SECRET_ACCESS_KEY', 'help' => 'Saved to .env, never shown in page source. Leave blank to keep the saved one.', 'rules' => 'nullable|string|max:255'],
+            ],
             SettingGroup::Chat->value => [
                 'chat_enabled' => ['label' => 'Live chat', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '1', 'help' => 'Show the chat launcher on the storefront. Admin inbox keeps working either way.', 'rules' => 'nullable|in:0,1'],
                 'chat_guest_launcher' => ['label' => 'Launcher for guests', 'type' => 'select', 'options' => ['1' => 'Shown (asks to sign in)', '0' => 'Hidden'], 'default' => '1', 'help' => 'Signed-out visitors see a launcher that sends them to sign in.', 'rules' => 'nullable|in:0,1'],
@@ -560,6 +568,26 @@ final class SettingService
         $facebook = $this->facebook();
 
         return $facebook['enabled'] && filled($facebook['page_id']) && filled($facebook['access_token']);
+    }
+
+    /**
+     * Cloudflare R2 credentials as currently saved in .env. Read through
+     * EnvService (not config) so values saved a moment ago are used even when
+     * the running process booted with the old ones.
+     *
+     * @return array{bucket: string, endpoint: string, url: string, key: string, secret: string}
+     */
+    public function r2(): array
+    {
+        $env = app(EnvService::class);
+
+        return [
+            'bucket' => trim($env->get('R2_BUCKET')),
+            'endpoint' => rtrim(trim($env->get('R2_ENDPOINT')), '/'),
+            'url' => rtrim(trim($env->get('R2_URL')), '/'),
+            'key' => trim($env->get('R2_ACCESS_KEY_ID')),
+            'secret' => trim($env->get('R2_SECRET_ACCESS_KEY')),
+        ];
     }
 
     /**
@@ -953,6 +981,12 @@ final class SettingService
                 // .env-backed fields (e.g. OAuth credentials) are written to the
                 // .env file instead of the settings table.
                 if (! empty($field['env'])) {
+                    // Only touch keys that were submitted, so a partial save
+                    // never blanks credentials it did not include.
+                    if (! array_key_exists($key, $validated)) {
+                        continue;
+                    }
+
                     $value = (string) ($validated[$key] ?? '');
 
                     // A blank password field means "keep the stored secret".
