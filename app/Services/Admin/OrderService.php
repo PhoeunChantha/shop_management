@@ -202,6 +202,48 @@ final class OrderService
     }
 
     /**
+     * Cancel pending orders still unpaid after $hours and give their stock
+     * back, so fake/abandoned orders can't hold inventory. Each order is
+     * re-checked under a row lock, so one paid meanwhile is left alone.
+     * Returns how many orders were cancelled.
+     */
+    public function cancelExpiredUnpaid(int $hours): int
+    {
+        if ($hours <= 0) {
+            return 0;
+        }
+
+        $cutoff = now()->subHours($hours);
+        $cancelled = 0;
+
+        Order::query()
+            ->where('status', OrderStatus::Pending->value)
+            ->where('payment_status', PaymentStatus::Unpaid->value)
+            ->where(function ($query) use ($cutoff): void {
+                $query->where('placed_at', '<', $cutoff)
+                    ->orWhere(fn ($q) => $q->whereNull('placed_at')->where('created_at', '<', $cutoff));
+            })
+            ->orderBy('id')
+            ->each(function (Order $order) use ($hours, &$cancelled): void {
+                DB::transaction(function () use ($order, $hours, &$cancelled): void {
+                    $fresh = Order::query()->with('details')->lockForUpdate()->find($order->id);
+
+                    if (! $fresh || $fresh->status !== OrderStatus::Pending || $fresh->payment_status !== PaymentStatus::Unpaid) {
+                        return;
+                    }
+
+                    $fresh->status = OrderStatus::Cancelled;
+                    $fresh->save();
+                    $this->restock($fresh);
+                    $fresh->logEvent('status', 'Status → Cancelled', "Unpaid for {$hours} hours — cancelled automatically and stock returned.");
+                    $cancelled++;
+                });
+            });
+
+        return $cancelled;
+    }
+
+    /**
      * Give back the stock decremented at checkout for every line on this
      * order. Skips a line whose product/variant has since been deleted —
      * there is nothing left to restock.

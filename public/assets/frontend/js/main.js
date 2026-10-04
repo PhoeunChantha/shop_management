@@ -712,7 +712,9 @@
           if (coForm) {
             var itemsInput = document.getElementById('coItems');
             if (itemsInput) itemsInput.value = JSON.stringify(store.cart);
-            coForm.submit();
+            // e.g. reCAPTCHA on checkout fills its token first.
+            if (typeof window.utBeforeCheckoutSubmit === 'function') window.utBeforeCheckoutSubmit(function () { coForm.submit(); });
+            else coForm.submit();
           } else {
             window.location.href = window.UT_URLS.confirm;
           }

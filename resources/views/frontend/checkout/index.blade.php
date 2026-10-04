@@ -26,6 +26,13 @@
         <input type="hidden" name="items" id="coItems">
         <input type="hidden" name="payment" id="coPayment" value="{{ $paymentMethods[0]['code'] ?? 'card' }}">
         <input type="hidden" name="coupon" id="coCoupon">
+        {{-- Bot trap: hidden from people (and screen readers); bots fill it. --}}
+        <div aria-hidden="true" style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden">
+            <label>{{ __('Company website') }} <input type="text" name="{{ \App\Services\Frontend\CheckoutGuardService::HONEYPOT }}" tabindex="-1" autocomplete="off"></label>
+        </div>
+        @if($recaptchaSiteKey ?? null)
+            <input type="hidden" name="g-recaptcha-response" id="coRecaptcha">
+        @endif
         <div>
             <h1 style="font-size:clamp(28px,3.4vw,40px);margin-bottom:22px">{{ __('Checkout') }}</h1>
 
@@ -225,6 +232,21 @@
 
 @push('scripts')
     <script>window.UT_CHECKOUT = { shipping: @json($shippingMethods ?? []), taxRate: {{ $taxRate ?? 0 }} };</script>
+    @if($recaptchaSiteKey ?? null)
+        {{-- reCAPTCHA v3: fetch a fresh token right before the order is submitted (main.js calls this hook). --}}
+        <script src="https://www.google.com/recaptcha/api.js?render={{ $recaptchaSiteKey }}"></script>
+        <script>
+            window.utBeforeCheckoutSubmit = function (submit) {
+                if (!window.grecaptcha) { submit(); return; }
+                grecaptcha.ready(function () {
+                    grecaptcha.execute(@js($recaptchaSiteKey), { action: 'checkout' }).then(function (token) {
+                        document.getElementById('coRecaptcha').value = token;
+                        submit();
+                    }, submit);
+                });
+            };
+        </script>
+    @endif
     <script>
         // Show an order-level message in the form (also used by main.js).
         window.utFormAlert = function (text) {

@@ -22,6 +22,7 @@ enum SettingGroup: string
     case Recaptcha = 'recaptcha';
     case Facebook = 'facebook';
     case Storage = 'storage';
+    case Checkout = 'checkout';
 
     /**
      * Human-readable tab label.
@@ -45,6 +46,7 @@ enum SettingGroup: string
             self::Recaptcha => 'reCAPTCHA',
             self::Facebook => 'Facebook Page',
             self::Storage => 'Media Storage',
+            self::Checkout => 'Checkout & Security',
         };
     }
 
@@ -70,6 +72,7 @@ enum SettingGroup: string
             self::Recaptcha => 'fa-shield-halved',
             self::Facebook => 'fa-share-from-square',
             self::Storage => 'fa-cloud',
+            self::Checkout => 'fa-user-shield',
         };
     }
 

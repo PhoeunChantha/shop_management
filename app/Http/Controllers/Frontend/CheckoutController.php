@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Frontend;
 use App\Exceptions\CheckoutException;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Services\Frontend\CheckoutGuardService;
 use App\Services\Frontend\CheckoutService;
 use App\Services\Frontend\OrderTrackingService;
 use App\Services\Frontend\PaywayService;
@@ -21,10 +22,17 @@ class CheckoutController extends Controller
 {
     public function __construct(
         private readonly CheckoutService $checkout,
+        private readonly CheckoutGuardService $guard,
     ) {}
 
-    public function index(): View
+    public function index(): View|RedirectResponse
     {
+        // Admin â†’ Settings â†’ Checkout & Security can require an account.
+        if ($this->guard->requiresLogin()) {
+            return redirect()->guest(route('frontend.login'))
+                ->with('info', __('Please sign in or create an account to check out.'));
+        }
+
         // Strip any wallet entries from the configurable methods — wallet is a
         // platform feature and is injected separately below so it can never be
         // accidentally removed by editing Settings → Payment Methods.
@@ -55,6 +63,7 @@ class CheckoutController extends Controller
             'taxRate' => $this->checkout->taxRate(),
             'prefill' => $this->prefill(),
             'walletBalance' => (float) (Auth::user()?->wallet_balance ?? 0),
+            'recaptchaSiteKey' => $this->guard->recaptchaSiteKey(),
         ]);
     }
 
@@ -91,6 +100,11 @@ class CheckoutController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        if ($this->guard->requiresLogin()) {
+            return redirect()->guest(route('frontend.login'))
+                ->with('info', __('Please sign in or create an account to check out.'));
+        }
+
         $validator = Validator::make($request->all(), [
             'email' => ['required', 'email', 'max:255'],
             'first_name' => ['required', 'string', 'max:100'],
@@ -116,6 +130,11 @@ class CheckoutController extends Controller
         $items = json_decode($data['items'], true);
         if (! is_array($items) || $items === []) {
             return back()->with('error', __('Your cart is empty.'));
+        }
+
+        // Anti-fraud: honeypot, reCAPTCHA, open-unpaid-order cap.
+        if ($blocked = $this->guard->check($request, $data['email'])) {
+            return back()->withInput()->with('error', $blocked);
         }
 
         try {

@@ -79,6 +79,7 @@ final class Order extends Model
         'customer_note',
         'admin_note',
         'placed_at',
+        'ip_address',
     ];
 
     protected function casts(): array

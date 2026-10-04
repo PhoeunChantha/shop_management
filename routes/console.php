@@ -13,3 +13,10 @@ Artisan::command('inspire', function () {
 Schedule::command('shop:send-abandoned-cart-reminders')
     ->hourly()
     ->withoutOverlapping();
+
+// Hourly: cancel orders left unpaid past Settings → Checkout & Security →
+// "Cancel unpaid orders after", returning their stock (stops fake orders
+// from holding inventory). Requires the scheduler in cron.
+Schedule::command('shop:cancel-unpaid-orders')
+    ->hourly()
+    ->withoutOverlapping();
