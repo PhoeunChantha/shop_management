@@ -124,9 +124,11 @@
         syncBadges(); renderCartDrawer(); renderCartPage();
         if (window.__coRecalc) window.__coRecalc();
         var names = removed.map(function (l) {
-          return escapeHtml(l.name) + ' (' + escapeHtml(l.size) + ' · ' + escapeHtml(colorName(l.color)) + ')';
+          return l.name + ' (' + l.size + ' · ' + colorName(l.color) + ')';
         }).join(', ');
-        toast(names + ' ' + (removed.length > 1 ? 'are' : 'is') + ' no longer sold in that option and was removed from your bag. Please choose an available option.', 7000);
+        var msg = names + ' ' + (removed.length > 1 ? 'are' : 'is') + ' no longer sold in that option and was removed from your bag. Please choose an available option.';
+        // On checkout, say it in the form (plain text); elsewhere, a toast (HTML).
+        if (!(window.utFormAlert && window.utFormAlert(msg))) toast(escapeHtml(msg), 7000);
       })
       .catch(function () {});
   }
@@ -586,8 +588,45 @@
       set('payment', payBtn ? payBtn.textContent.trim().replace(/\s+/g, ' ') : code);
     };
 
+    // Validate the current step's fields and show messages under each field
+    // (not as a toast). Returns true when the step can be left.
+    const fieldMessage = (input) => {
+      const label = ((input.closest('.field') || {}).querySelector ? (input.closest('.field').querySelector('label') || {}).textContent : '') || 'This field';
+      if (input.validity.valueMissing) return label.trim() + ' is required.';
+      if (input.validity.typeMismatch && input.type === 'email') return 'Please enter a valid email address.';
+      return input.validationMessage;
+    };
+    const setFieldError = (input, text) => {
+      const holder = input.closest('.field') || input.parentNode;
+      let err = holder.querySelector('.ut-field-error');
+      if (text) {
+        if (!err) { err = document.createElement('span'); err.className = 'ut-field-error'; input.insertAdjacentElement('afterend', err); }
+        err.textContent = text;
+      } else if (err) {
+        err.remove();
+      }
+      input.classList.toggle('is-invalid', !!text);
+    };
+    const validateStep = () => {
+      const fields = [].slice.call(panels[step].querySelectorAll('input, select, textarea'))
+        .filter((el) => el.willValidate && el.type !== 'hidden');
+      let first = null;
+      fields.forEach((el) => {
+        const bad = !el.checkValidity();
+        setFieldError(el, bad ? fieldMessage(el) : '');
+        if (bad && !first) first = el;
+      });
+      if (first) { first.scrollIntoView({ behavior: 'smooth', block: 'center' }); first.focus({ preventScroll: true }); }
+      return !first;
+    };
+    checkout.addEventListener('input', (e) => {
+      const el = e.target;
+      if (el.classList && el.classList.contains('is-invalid') && el.checkValidity()) setFieldError(el, '');
+    });
+
     document.addEventListener('click', (e) => {
       if (e.target.closest('#coNext')) {
+        if (!validateStep()) return;
         if (step < panels.length - 1) {
           step++; show();
           if (panels[step] && panels[step].hasAttribute('data-review-step')) fillReview();

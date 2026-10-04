@@ -9,6 +9,12 @@
     .ut-radio-card.sel{ border-color:var(--ink);background:var(--accent-soft); }
     @media (max-width:1024px){ .ut-checkout-grid{ grid-template-columns:1fr; } .ut-checkout-grid .summary{ position:static !important; } }
     @media (max-width:600px){ .ut-step-label{ display:none; } }
+    .ut-form-alert{ display:flex;gap:10px;align-items:flex-start;padding:14px 16px;margin-bottom:18px;border:1px solid #fecaca;border-radius:var(--r-md);background:#fef2f2;color:#991b1b;font-size:14px;line-height:1.5; }
+    .ut-form-alert[hidden]{ display:none; }
+    .ut-form-alert svg{ flex-shrink:0;margin-top:1px; }
+    .ut-coupon-msg{ font-size:12.5px;margin:-4px 0 12px; }
+    .ut-coupon-msg.is-error{ color:#dc2626; }
+    .ut-coupon-msg.is-success{ color:#15803d; }
 </style>
 @endpush
 
@@ -32,6 +38,15 @@
                     </div>
                     @if($i < 3)<div style="flex:1;height:2px;background:var(--border);min-width:14px"></div>@endif
                 @endforeach
+            </div>
+
+            {{-- Order-level errors (e.g. an item's option is no longer sold) show
+                 here in the form. Pulled from the session so the layout's flash
+                 toast does not repeat them. --}}
+            @php($checkoutError = session()->pull('error'))
+            <div class="ut-form-alert" id="coAlert" role="alert" aria-live="polite" @if(! $checkoutError) hidden @endif>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.01"/></svg>
+                <span data-alert-text>{{ $checkoutError }}</span>
             </div>
 
             <div class="ut-card" style="padding:28px" id="checkoutSteps">
@@ -187,6 +202,7 @@
                 <input id="couponCode" class="ut-input" placeholder="{{ __('Discount code') }}" style="flex:1;padding:11px 13px" autocomplete="off">
                 <button type="button" class="ut-btn ut-btn-ink" onclick="applyCoupon()" style="padding:11px 18px">{{ __('Apply') }}</button>
             </div>
+            <p class="ut-coupon-msg" id="couponMsg" role="status" hidden></p>
 
             <hr class="divider" style="margin:6px 0 14px">
             <div class="ut-col" style="gap:11px">
@@ -209,6 +225,21 @@
 
 @push('scripts')
     <script>window.UT_CHECKOUT = { shipping: @json($shippingMethods ?? []), taxRate: {{ $taxRate ?? 0 }} };</script>
+    <script>
+        // Show an order-level message in the form (also used by main.js).
+        window.utFormAlert = function (text) {
+            var box = document.getElementById('coAlert');
+            if (!box) return false;
+            box.querySelector('[data-alert-text]').textContent = text || '';
+            box.hidden = !text;
+            if (text) box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return true;
+        };
+        (function () {
+            var box = document.getElementById('coAlert');
+            if (box && !box.hidden) setTimeout(function () { box.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 80);
+        })();
+    </script>
     {{-- After main.js wires the step navigator, restore the correct step when
          server-side validation failed and sent the user back with errors. --}}
     @if($errors->any())
@@ -278,6 +309,17 @@
                 }).join('');
             }
 
+            // Discount messages show under the code field, not as a toast.
+            function couponMsg(text, isError){
+                var el = document.getElementById('couponMsg');
+                if(!el) return;
+                el.textContent = text || '';
+                el.hidden = !text;
+                el.className = 'ut-coupon-msg ' + (isError ? 'is-error' : 'is-success');
+                var input = document.getElementById('couponCode');
+                if(input) input.classList.toggle('is-invalid', !!(text && isError));
+            }
+
             window.UT_DISCOUNT = window.UT_DISCOUNT || { code: '', amount: 0 };
             var COUPON_URL = "{{ route('frontend.checkout.coupon') }}";
             var CSRF = (document.querySelector('meta[name=csrf-token]') || {}).content || '';
@@ -316,7 +358,7 @@
             window.applyCoupon = function(silent){
                 var input = document.getElementById('couponCode');
                 var code = (input ? input.value : '').trim();
-                if(!code){ if(silent !== true && window.utToast) utToast('{{ __('Enter a discount code') }}'); return; }
+                if(!code){ if(silent !== true) couponMsg('{{ __('Enter a discount code') }}', true); return; }
                 var sub = cart().reduce(function(s,i){ return s + i.price*i.qty; }, 0);
                 fetch(COUPON_URL, {
                     method:'POST',
@@ -328,18 +370,19 @@
                         var h = document.getElementById('coCoupon'); if(h) h.value = res.code;
                         try { localStorage.setItem('ut_coupon', JSON.stringify({ code: res.code, amount: res.discount })); } catch(e){}
                         window.__coRecalc();
-                        if(silent !== true && window.utToast) utToast(res.message || '{{ __('Coupon applied') }}');
+                        couponMsg(res.message || '{{ __('Coupon applied') }}', false);
                     } else {
                         try { localStorage.removeItem('ut_coupon'); } catch(e){}
-                        if(silent !== true && window.utToast) utToast((res && res.message) || '{{ __('Invalid code') }}');
+                        if(silent !== true) couponMsg((res && res.message) || '{{ __('Invalid code') }}', true);
                     }
-                }).catch(function(){ if(silent !== true && window.utToast) utToast('{{ __('Could not apply the code') }}'); });
+                }).catch(function(){ if(silent !== true) couponMsg('{{ __('Could not apply the code') }}', true); });
             };
 
             window.removeCoupon = function(){
                 window.UT_DISCOUNT = { code: '', amount: 0 };
                 var h = document.getElementById('coCoupon'); if(h) h.value='';
                 var input = document.getElementById('couponCode'); if(input) input.value='';
+                couponMsg('', false);
                 try { localStorage.removeItem('ut_coupon'); } catch(e){}
                 window.__coRecalc();
             };
