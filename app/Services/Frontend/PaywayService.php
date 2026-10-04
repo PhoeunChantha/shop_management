@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Frontend;
 
+use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Models\Payment;
@@ -200,6 +201,12 @@ final class PaywayService
             ])->save();
 
             $payment?->update(['status' => 'completed', 'meta' => $result['raw']]);
+
+            // Paid after the unpaid-order expiry cancelled it (stock already
+            // returned): flag it so an admin re-opens or refunds it.
+            if ($order->status === OrderStatus::Cancelled) {
+                $order->logEvent('payment', 'Payment received after the order was cancelled', 'Review this order: re-open it (check stock) or refund the customer.');
+            }
 
             $this->loyalty->awardForOrder($order);
 

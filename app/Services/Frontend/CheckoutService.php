@@ -339,6 +339,7 @@ final class CheckoutService
                 'payment_method' => $data['payment'] ?? 'card',
                 'payment_status' => 'unpaid',
                 'placed_at' => now(),
+                'ip_address' => request()->ip(),
             ]);
 
             // Count the redemption once the order exists.

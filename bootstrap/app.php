@@ -31,8 +31,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->appendToGroup('web', SecurityHeaders::class);
 
         // Served behind Cloudflare Tunnel: trust X-Forwarded-* so the app sees
-        // the public https host instead of http://localhost.
-        $middleware->trustProxies(at: '*');
+        // the public https host instead of http://localhost. Only the local
+        // cloudflared connector is trusted, so request()->ip() is the visitor
+        // IP Cloudflare appended — a client can't spoof it with its own
+        // X-Forwarded-For header (that would bypass per-IP limits).
+        $middleware->trustProxies(at: ['127.0.0.1', '::1']);
 
         // PayWay posts its result server-to-server (no session/CSRF token).
         $middleware->validateCsrfTokens(except: ['payment/callback']);

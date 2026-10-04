@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Frontend;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Models\ShippingMethod;
 use Illuminate\Support\Carbon;
@@ -63,7 +64,7 @@ final class OrderTrackingService
     {
         $status = $order->status instanceof OrderStatus ? $order->status : OrderStatus::tryFrom((string) $order->status);
         $placed = $order->placed_at ?? $order->created_at;
-        $paid = $order->payment_status === 'paid' || in_array($status, [OrderStatus::Paid, OrderStatus::Processing, OrderStatus::Shipped, OrderStatus::Delivered], true);
+        $paid = $order->payment_status === PaymentStatus::Paid || in_array($status, [OrderStatus::Paid, OrderStatus::Processing, OrderStatus::Shipped, OrderStatus::Delivered], true);
         $reached = match ($status) {
             OrderStatus::Delivered => 4,
             OrderStatus::Shipped => 3,
@@ -106,7 +107,7 @@ final class OrderTrackingService
         $status = $order->status instanceof OrderStatus ? $order->status : OrderStatus::tryFrom((string) $order->status);
 
         if ($status === OrderStatus::Pending) {
-            return $order->payment_status === 'paid' ? __('Confirmed') : __('Awaiting payment');
+            return $order->payment_status === PaymentStatus::Paid ? __('Confirmed') : __('Awaiting payment');
         }
 
         return $status?->label() ?? ucfirst((string) $order->status);

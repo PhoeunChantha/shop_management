@@ -113,8 +113,9 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
+        // Back to where they were headed (e.g. checkout when guest checkout is off).
         return redirect()
-            ->route('frontend.account.dashboard')
+            ->intended(route('frontend.account.dashboard'))
             ->with('success', __('Your account is ready.'));
     }
 

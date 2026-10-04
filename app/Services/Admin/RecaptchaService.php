@@ -48,7 +48,7 @@ final class RecaptchaService
 
         try {
             $response = Http::asForm()->post(self::VERIFY_URL, [
-                'secret'   => $cfg['secret_key'],
+                'secret' => $cfg['secret_key'],
                 'response' => $token,
                 'remoteip' => request()->ip(),
             ]);
@@ -77,6 +77,14 @@ final class RecaptchaService
     public function protectsRegister(): bool
     {
         return $this->active() && $this->settings->recaptcha()['protect_register'];
+    }
+
+    /**
+     * Whether placing an order should be protected.
+     */
+    public function protectsCheckout(): bool
+    {
+        return $this->active() && $this->settings->recaptcha()['protect_checkout'];
     }
 
     /**

@@ -214,12 +214,18 @@ final class SettingService
                 'recaptcha_secret_key' => ['label' => 'Secret key', 'type' => 'password', 'env' => 'RECAPTCHA_SECRET_KEY', 'placeholder' => '6Lc...', 'help' => 'Private key — used server-side only, never exposed to the browser. Saved to .env.', 'rules' => 'nullable|string|max:255'],
                 'recaptcha_min_score' => ['label' => 'Minimum score', 'type' => 'select', 'options' => ['0.3' => '0.3 — Permissive', '0.5' => '0.5 — Balanced (recommended)', '0.7' => '0.7 — Strict', '0.9' => '0.9 — Very strict'], 'default' => '0.5', 'help' => 'Google returns 1.0 (likely human) to 0.0 (likely bot). Requests below this score are blocked.', 'rules' => 'nullable|in:0.3,0.5,0.7,0.9'],
                 'recaptcha_protect_register' => ['label' => 'Protect registration', 'type' => 'select', 'options' => ['1' => 'Yes', '0' => 'No'], 'default' => '1', 'help' => 'Run the reCAPTCHA check on the Create Account form.', 'rules' => 'nullable|in:0,1'],
+                'recaptcha_protect_checkout' => ['label' => 'Protect checkout', 'type' => 'select', 'options' => ['1' => 'Yes', '0' => 'No'], 'default' => '1', 'help' => 'Run the reCAPTCHA check when an order is placed — stops bots from spamming fake orders.', 'rules' => 'nullable|in:0,1'],
                 'recaptcha_protect_login' => ['label' => 'Protect login', 'type' => 'select', 'options' => ['1' => 'Yes', '0' => 'No'], 'default' => '0', 'help' => 'Run the reCAPTCHA check on the Sign In form.', 'rules' => 'nullable|in:0,1'],
             ],
             SettingGroup::Facebook->value => [
                 'facebook_publish_enabled' => ['label' => 'Publish to Facebook', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '0', 'help' => 'Show the “Publish to Facebook” action on products.', 'rules' => 'nullable|in:0,1'],
                 'facebook_page_id' => ['label' => 'Facebook Page ID', 'type' => 'text', 'placeholder' => '123456789012345', 'help' => 'Found under your Page’s About → Page transparency, or in Meta Business Settings.', 'rules' => 'nullable|string|max:60'],
                 'facebook_page_access_token' => ['label' => 'Page access token', 'type' => 'password', 'env' => 'FACEBOOK_PAGE_ACCESS_TOKEN', 'placeholder' => 'EAAG...', 'help' => 'A long-lived Page access token (Meta Business Settings → System Users is recommended so it never expires). Saved to .env, never shown in page source.', 'rules' => 'nullable|string|max:1000'],
+            ],
+            SettingGroup::Checkout->value => [
+                'guest_checkout' => ['label' => 'Guest checkout', 'type' => 'select', 'options' => ['1' => 'Allowed — customers can order without an account', '0' => 'Not allowed — customers must sign in to order'], 'default' => '1', 'help' => 'Turn off to require an account for every order (fewer fake orders, but some shoppers leave instead of signing up).', 'rules' => 'nullable|in:0,1'],
+                'checkout_max_unpaid_orders' => ['label' => 'Max open unpaid orders per customer', 'type' => 'number', 'placeholder' => '3', 'default' => '3', 'help' => 'Blocks a new order while this many unpaid orders are open for the same email or the same network (IP). 0 = no limit.', 'rules' => 'nullable|integer|min:0|max:50'],
+                'checkout_unpaid_expiry_hours' => ['label' => 'Cancel unpaid orders after (hours)', 'type' => 'number', 'placeholder' => '24', 'default' => '24', 'help' => 'Unpaid orders still pending after this many hours are cancelled automatically and their stock is returned, so fake orders cannot hold your stock. 0 = never. Set 0 if you offer cash on delivery.', 'rules' => 'nullable|integer|min:0|max:720'],
             ],
             SettingGroup::Storage->value => [
                 'media_disk' => ['label' => 'Media library storage', 'type' => 'select', 'env' => 'MEDIA_DISK', 'options' => ['local' => 'This server (public/uploads)', 'r2' => 'Cloudflare R2'], 'default' => 'local', 'help' => 'Where NEW media-library uploads go. Existing files keep loading from where they were saved.', 'rules' => 'nullable|in:local,r2'],
@@ -517,7 +523,7 @@ final class SettingService
     /**
      * reCAPTCHA v3 configuration, with defaults applied.
      *
-     * @return array{enabled: bool, site_key: string, secret_key: string, min_score: float, protect_register: bool, protect_login: bool}
+     * @return array{enabled: bool, site_key: string, secret_key: string, min_score: float, protect_register: bool, protect_login: bool, protect_checkout: bool}
      */
     public function recaptcha(): array
     {
@@ -530,6 +536,28 @@ final class SettingService
             'min_score' => (float) (Setting::get('recaptcha_min_score') ?: '0.5'),
             'protect_register' => (string) Setting::get('recaptcha_protect_register', '1') !== '0',
             'protect_login' => (string) Setting::get('recaptcha_protect_login', '0') !== '0',
+            'protect_checkout' => (string) Setting::get('recaptcha_protect_checkout', '1') !== '0',
+        ];
+    }
+
+    /**
+     * Checkout anti-fraud settings, with defaults applied.
+     *
+     * @return array{guest_checkout: bool, max_unpaid_orders: int, unpaid_expiry_hours: int}
+     */
+    public function checkoutSecurity(): array
+    {
+        // Blank (never set, or saved empty) means the default — only an explicit 0 turns a limit off.
+        $int = function (string $key, int $default): int {
+            $value = Setting::get($key);
+
+            return $value === null || trim((string) $value) === '' ? $default : max(0, (int) $value);
+        };
+
+        return [
+            'guest_checkout' => (string) Setting::get('guest_checkout', '1') !== '0',
+            'max_unpaid_orders' => $int('checkout_max_unpaid_orders', 3),
+            'unpaid_expiry_hours' => $int('checkout_unpaid_expiry_hours', 24),
         ];
     }
 
