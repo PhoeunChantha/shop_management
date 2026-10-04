@@ -2,12 +2,13 @@
     <x-slot name="header">
         <div>
             <p class="header-kicker mb-1">{{ __('Analytics') }}</p>
-            <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('Customer Registrations') }}</h2>
+            <h2 class="font-semibold text-xl text-gray-900 leading-tight mb-0">{{ __('Customers') }}</h2>
         </div>
     </x-slot>
 
     <x-admin.report-shell
         active="register"
+        :tabs="\App\Services\Admin\Reports\ReportNavigation::tabs('customers')"
         :title="__('Registration Report')"
         :filters="$filters"
         :action="route('admin.reports.register')"
