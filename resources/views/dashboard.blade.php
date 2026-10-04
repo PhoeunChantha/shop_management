@@ -13,7 +13,6 @@
 
         // Compact payload consumed by ApexCharts (rendered client-side).
         $dashData = [
-            'kpis' => collect($kpis)->map(fn ($k) => ['color' => $k['color'], 'series' => $k['series']])->all(),
             'revenue' => ['labels' => $chart['labels'], 'values' => $chart['values']],
             'status' => [
                 'labels' => collect($statusBreakdown)->pluck('label')->all(),
@@ -62,7 +61,6 @@
                     </div>
                     <div class="dash-kpi__value" data-count="{{ $kpi['raw'] }}" data-prefix="{{ $kpi['prefix'] }}">{{ $kpi['value'] }}</div>
                     <div class="dash-kpi__label">{{ $kpi['label'] }} <span>· {{ $kpi['sub'] }}</span></div>
-                    <div class="dash-kpi__spark" id="kpiSpark{{ $loop->index }}"></div>
                 </div>
             @endforeach
         </div>
@@ -282,21 +280,6 @@
                     const muted = dark ? '#94a3b8' : '#667085';
                     const grid = dark ? 'rgba(255,255,255,0.06)' : '#eef1f5';
                     const font = 'Manrope, ui-sans-serif, sans-serif';
-
-                    // KPI sparklines
-                    data.kpis.forEach((kpi, i) => {
-                        const el = document.getElementById('kpiSpark' + i);
-                        if (!el) return;
-                        charts.push(new ApexCharts(el, {
-                            chart: { type: 'area', height: 42, sparkline: { enabled: true }, fontFamily: font },
-                            series: [{ name: '', data: kpi.series }],
-                            stroke: { width: 2, curve: 'smooth' },
-                            fill: { type: 'gradient', gradient: { opacityFrom: 0.35, opacityTo: 0 } },
-                            colors: [kpi.color],
-                            tooltip: { enabled: false },
-                        }));
-                        charts[charts.length - 1].render();
-                    });
 
                     // Revenue area chart
                     const rev = document.getElementById('revChart');

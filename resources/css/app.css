@@ -9942,7 +9942,7 @@ html.dark .dash-daterange .form-input {
     position: relative;
     display: flex;
     flex-direction: column;
-    padding: 18px 18px 0;
+    padding: 18px;
     background: var(--admin-panel);
     border: 1px solid var(--admin-line);
     border-radius: 16px;
@@ -10008,11 +10008,6 @@ html.dark .dash-daterange .form-input {
 .dash-kpi__label span {
     font-weight: 600;
     color: var(--admin-muted);
-}
-
-.dash-kpi__spark {
-    margin: 10px -10px 0;
-    min-height: 42px;
 }
 
 /* ---- Operations queue ---- */
@@ -17601,7 +17596,7 @@ body.admin-shell {
 .dash-kpis { gap: 14px; }
 
 .dash-kpi {
-    padding: 18px 18px 0;
+    padding: 18px;
     border: 1px solid var(--sx-line);
     border-radius: var(--sx-radius);
     background: var(--sx-card);
