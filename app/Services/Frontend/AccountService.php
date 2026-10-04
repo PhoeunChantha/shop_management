@@ -17,6 +17,7 @@ class AccountService
 {
     public function __construct(
         private readonly ProductService $products,
+        private readonly OrderTrackingService $tracking,
     ) {}
 
     /**
@@ -300,8 +301,9 @@ class AccountService
             'courier' => $order->carrier ?: $order->shipping_method ?: 'Standard shipping',
             'tracking' => $order->tracking_number ?: 'Pending',
             'eta' => $order->fulfilled_at?->format('M j, Y')
-                ?: $order->shipped_at?->addDays(3)->format('M j, Y')
+                ?: $this->tracking->estimatedDelivery($order)
                 ?: 'Pending',
+            'steps' => $this->tracking->steps($order),
             'items' => $order->details->map(fn ($detail): array => [
                 'pid' => $detail->product_id,
                 'name' => $detail->name,

@@ -680,7 +680,7 @@ final class SettingService
             ['column' => 'Help', 'label' => 'Shipping', 'url' => route('frontend.pages.faq', absolute: false)],
             ['column' => 'Help', 'label' => 'Returns', 'url' => route('frontend.pages.faq', absolute: false)],
             ['column' => 'Help', 'label' => 'Size Guide', 'url' => route('frontend.pages.faq', absolute: false)],
-            ['column' => 'Help', 'label' => 'Track Order', 'url' => route('frontend.account.orders', absolute: false)],
+            ['column' => 'Help', 'label' => 'Track Order', 'url' => route('frontend.orders.track', absolute: false)],
             ['column' => 'Help', 'label' => 'Contact', 'url' => route('frontend.pages.contact', absolute: false)],
             ['column' => 'Brand', 'label' => 'Our Story', 'url' => route('frontend.pages.about', absolute: false)],
             ['column' => 'Brand', 'label' => 'FAQ', 'url' => route('frontend.pages.faq', absolute: false)],
