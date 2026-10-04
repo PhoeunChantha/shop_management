@@ -298,10 +298,14 @@
       e.preventDefault(); e.stopPropagation();
       const ds = add.dataset;
       // size/color may come from selected controls on PDP, else defaults
-      const scope = add.closest('[data-product-scope]') || document;
-      const sizeEl = scope.querySelector('[data-size].is-active') || scope.querySelector('[data-size]');
-      const colorEl = scope.querySelector('[data-color].is-active');
-      const qtyEl = scope.querySelector('[data-qty-value]');
+      // Quick-add buttons (cards) carry their own size/colour/variant; only the
+      // product page scope has pickers. Never fall back to `document`, or a
+      // stray [data-size] elsewhere (filters, other cards) gets picked up.
+      const scope = add.closest('[data-product-scope]')
+        || (add.hasAttribute('data-require-size') ? document.querySelector('[data-product-scope]') : null);
+      const sizeEl = scope ? (scope.querySelector('[data-size].is-active') || scope.querySelector('[data-size]')) : null;
+      const colorEl = scope ? scope.querySelector('[data-color].is-active') : null;
+      const qtyEl = scope ? scope.querySelector('[data-qty-value]') : null;
       if (add.hasAttribute('data-require-size') && !sizeEl && !ds.size) { toast('Please select a size'); return; }
       var size = sizeEl ? sizeEl.getAttribute('data-size') : (ds.size || 'M');
       var color = colorEl ? colorEl.getAttribute('data-color') : (ds.color || 'black');
@@ -331,10 +335,11 @@
     if (buy) {
       e.preventDefault(); e.stopPropagation();
       const ds = buy.dataset;
-      const scope = buy.closest('[data-product-scope]') || document;
-      const sizeEl = scope.querySelector('[data-size].is-active') || scope.querySelector('[data-size]');
-      const colorEl = scope.querySelector('[data-color].is-active');
-      const qtyEl = scope.querySelector('[data-qty-value]');
+      const scope = buy.closest('[data-product-scope]')
+        || (buy.hasAttribute('data-require-size') ? document.querySelector('[data-product-scope]') : null);
+      const sizeEl = scope ? (scope.querySelector('[data-size].is-active') || scope.querySelector('[data-size]')) : null;
+      const colorEl = scope ? scope.querySelector('[data-color].is-active') : null;
+      const qtyEl = scope ? scope.querySelector('[data-qty-value]') : null;
       if (buy.hasAttribute('data-require-size') && !sizeEl && !ds.size) { toast('Please select a size'); return; }
       var bSize = sizeEl ? sizeEl.getAttribute('data-size') : (ds.size || 'M');
       var bColor = colorEl ? colorEl.getAttribute('data-color') : (ds.color || '');

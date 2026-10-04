@@ -34,6 +34,7 @@ final class CheckoutService
         private readonly StockService $stock,
         private readonly WalletService $wallet,
         private readonly LoyaltyService $loyalty,
+        private readonly ProductService $products,
     ) {}
 
     /**
@@ -201,7 +202,7 @@ final class CheckoutService
         $products = Product::query()
             // Only active variants are sellable — a variant an admin has
             // deactivated must never be matched or charged for.
-            ->with(['variants' => fn ($q) => $q->where('status', true)->with('values')])
+            ->with(['variants' => fn ($q) => $q->where('status', true)->with(['values', 'size:id,code', 'color:id,name,code'])])
             ->where('status', 'active')
             ->whereKey($items->pluck('id')->map(fn ($v) => (int) $v)->unique()->all())
             ->get()
@@ -438,6 +439,18 @@ final class CheckoutService
         // an arbitrary variant.
         if ($size === null && $color === null) {
             return null;
+        }
+
+        // Same "{size code}|{colour key}" key the storefront uses for the
+        // chosen option (e.g. "s|nvy") — exact, so try it first.
+        if ($size !== null && $color !== null) {
+            $exact = $product->variants->first(
+                fn (ProductVariant $variant): bool => $this->products->variantKey($variant) === $size.'|'.$color,
+            );
+
+            if ($exact) {
+                return $exact;
+            }
         }
 
         return $product->variants->first(function (ProductVariant $variant) use ($size, $color): bool {
