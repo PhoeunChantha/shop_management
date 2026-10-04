@@ -54,7 +54,7 @@
         ],
         "tunnel": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#86efac\" \"php artisan serve --port=8001\" \"php artisan queue:listen --tries=1 --timeout=0\" \"php artisan schedule:work\" --names=server,queue,schedule --kill-others"
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#86efac\" \"php artisan serve --port=2000\" \"php artisan queue:listen --tries=1 --timeout=0\" \"php artisan schedule:work\" --names=server,queue,schedule --kill-others"
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
