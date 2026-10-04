@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Frontend;
 
+use App\Enums\ProductType;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
@@ -46,50 +47,7 @@ final class CartService
     {
         $cart = Cart::firstOrCreate(['user_id' => $user->id]);
 
-        $normalized = collect($clientLines)
-            ->map(fn (array $line): array => [
-                'product_id' => (int) ($line['id'] ?? 0),
-                'variant_id' => (int) ($line['variant_id'] ?? 0),
-                'size' => trim((string) ($line['size'] ?? '')),
-                'color' => trim((string) ($line['color'] ?? '')),
-                'quantity' => max(1, (int) ($line['qty'] ?? 1)),
-            ])
-            ->filter(fn (array $line): bool => $line['product_id'] > 0);
-
-        $activeIds = Product::query()
-            ->whereIn('id', $normalized->pluck('product_id')->unique()->all())
-            ->where('status', 'active')
-            ->pluck('id')
-            ->all();
-
-        // Only persist variant ids that actually belong to one of these products
-        // (guards against stale/forged ids so the FK insert never fails).
-        $validVariantIds = ProductVariant::query()
-            ->whereIn('id', $normalized->pluck('variant_id')->filter()->unique()->all())
-            ->whereIn('product_id', $activeIds)
-            ->pluck('id')
-            ->all();
-
-        // Lines without a (valid) variant id get it from their size + colour, so
-        // checkout always charges and decrements the exact option chosen.
-        $variantKeys = ProductVariant::query()
-            ->with(['size:id,code', 'color:id,name,code'])
-            ->whereIn('product_id', $activeIds)
-            ->where('status', true)
-            ->get()
-            ->mapWithKeys(fn (ProductVariant $variant): array => [
-                $variant->product_id.'#'.$this->products->variantKey($variant) => $variant->id,
-            ]);
-
-        $normalized = $normalized->map(function (array $line) use ($validVariantIds, $variantKeys): array {
-            if (! in_array($line['variant_id'], $validVariantIds, true)) {
-                $key = $line['product_id'].'#'.mb_strtolower($line['size']).'|'.mb_strtolower($line['color']);
-                $line['variant_id'] = (int) ($variantKeys[$key] ?? 0);
-            }
-
-            return $line;
-        });
-        $validVariantIds = array_merge($validVariantIds, $variantKeys->values()->all());
+        ['lines' => $normalized, 'activeIds' => $activeIds, 'validVariantIds' => $validVariantIds] = $this->resolve($clientLines);
 
         DB::transaction(function () use ($cart, $normalized, $activeIds, $validVariantIds): void {
             $cart->items()->delete();
@@ -110,6 +68,91 @@ final class CartService
         });
 
         return $this->mapItems($cart->items()->get());
+    }
+
+    /**
+     * Check a bag (guest or signed-in) without saving it: fill in each line's
+     * exact variant id, and flag lines that can no longer be bought — product
+     * gone/inactive, or an option (size + colour) the product doesn't sell.
+     *
+     * @param  array<int, array<string, mixed>>  $clientLines
+     * @return array<int, array{key: string, variant_id: int|null, available: bool}>
+     */
+    public function check(array $clientLines): array
+    {
+        ['lines' => $lines, 'activeIds' => $activeIds, 'validVariantIds' => $validVariantIds] = $this->resolve($clientLines);
+
+        $variable = Product::query()
+            ->whereIn('id', $activeIds)
+            ->where('product_type', ProductType::Variable->value)
+            ->pluck('id')
+            ->all();
+
+        return $lines
+            ->map(function (array $line) use ($activeIds, $validVariantIds, $variable): array {
+                $variantId = in_array($line['variant_id'], $validVariantIds, true) ? $line['variant_id'] : null;
+                $active = in_array($line['product_id'], $activeIds, true);
+
+                return [
+                    'key' => $line['key'],
+                    'variant_id' => $variantId,
+                    'available' => $active && ($variantId !== null || ! in_array($line['product_id'], $variable, true)),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Normalize client lines and resolve each one's variant: a valid id is
+     * kept, otherwise it is looked up from the size code + colour key.
+     *
+     * @param  array<int, array<string, mixed>>  $clientLines
+     * @return array{lines: Collection<int, array<string, mixed>>, activeIds: array<int, int>, validVariantIds: array<int, int>}
+     */
+    private function resolve(array $clientLines): array
+    {
+        $normalized = collect($clientLines)
+            ->map(fn (array $line): array => [
+                'key' => (string) ($line['key'] ?? ''),
+                'product_id' => (int) ($line['id'] ?? 0),
+                'variant_id' => (int) ($line['variant_id'] ?? 0),
+                'size' => trim((string) ($line['size'] ?? '')),
+                'color' => trim((string) ($line['color'] ?? '')),
+                'quantity' => max(1, (int) ($line['qty'] ?? 1)),
+            ])
+            ->filter(fn (array $line): bool => $line['product_id'] > 0);
+
+        $activeIds = Product::query()
+            ->whereIn('id', $normalized->pluck('product_id')->unique()->all())
+            ->where('status', 'active')
+            ->pluck('id')
+            ->all();
+
+        // Active variants of these products, keyed "{product}#{size code}|{colour key}".
+        $variants = ProductVariant::query()
+            ->with(['size:id,code', 'color:id,name,code'])
+            ->whereIn('product_id', $activeIds)
+            ->where('status', true)
+            ->get();
+
+        $validVariantIds = $variants->pluck('id')->all();
+        $variantKeys = $variants->mapWithKeys(fn (ProductVariant $variant): array => [
+            $variant->product_id.'#'.$this->products->variantKey($variant) => $variant->id,
+        ]);
+        $variantProduct = $variants->pluck('product_id', 'id');
+
+        $lines = $normalized->map(function (array $line) use ($variantKeys, $variantProduct): array {
+            // Keep a sent id only if it is an active variant of this very product.
+            if (($variantProduct[$line['variant_id']] ?? null) !== $line['product_id']) {
+                $key = $line['product_id'].'#'.mb_strtolower($line['size']).'|'.mb_strtolower($line['color']);
+                $line['variant_id'] = (int) ($variantKeys[$key] ?? 0);
+            }
+
+            return $line;
+        });
+
+        return ['lines' => $lines, 'activeIds' => $activeIds, 'validVariantIds' => $validVariantIds];
     }
 
     public function clear(User $user): void

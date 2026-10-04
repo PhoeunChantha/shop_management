@@ -123,6 +123,7 @@
             wishToggle: "{{ route('frontend.account.wishlist.toggle') }}",
             wishSync: "{{ route('frontend.account.wishlist.sync') }}",
             cartSync: "{{ route('frontend.cart.sync') }}",
+            cartCheck: "{{ route('frontend.cart.check') }}",
             coupon: "{{ route('frontend.checkout.coupon') }}"
         };
         @auth

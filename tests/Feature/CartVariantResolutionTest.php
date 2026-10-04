@@ -82,3 +82,37 @@ it('still rejects an option the product does not sell', function () {
 
     expect($this->variant->fresh()->stock)->toBe(5);
 });
+
+it('lets a guest check the bag: fills the variant id and flags unsold options', function () {
+    $this->postJson(route('frontend.cart.check'), ['items' => [
+        ['key' => 'ok', 'id' => $this->product->id, 'size' => 'S', 'color' => 'nvy', 'qty' => 1],
+        ['key' => 'stale', 'id' => $this->product->id, 'size' => 'M', 'color' => 'nvy', 'qty' => 1],
+        ['key' => 'gone', 'id' => 999999, 'size' => 'S', 'color' => 'nvy', 'qty' => 1],
+    ]])
+        ->assertOk()
+        ->assertExactJson(['items' => [
+            ['key' => 'ok', 'variant_id' => $this->variant->id, 'available' => true],
+            ['key' => 'stale', 'variant_id' => null, 'available' => false],
+            ['key' => 'gone', 'variant_id' => null, 'available' => false],
+        ]]);
+});
+
+it('ignores a variant id that belongs to another product', function () {
+    $other = Product::factory()->create(['category_id' => $this->product->category_id, 'status' => 'active', 'product_type' => 'variable']);
+
+    $result = app(CartService::class)->check([
+        ['key' => 'k', 'id' => $other->id, 'variant_id' => $this->variant->id, 'size' => 'S', 'color' => 'nvy'],
+    ]);
+
+    expect($result[0])->toBe(['key' => 'k', 'variant_id' => null, 'available' => false]);
+});
+
+it('treats a single product line without a variant as available', function () {
+    $single = Product::factory()->create(['category_id' => $this->product->category_id, 'status' => 'active', 'product_type' => 'single']);
+
+    $result = app(CartService::class)->check([
+        ['key' => 'k', 'id' => $single->id, 'size' => 'One Size', 'color' => 'black'],
+    ]);
+
+    expect($result[0]['available'])->toBeTrue();
+});

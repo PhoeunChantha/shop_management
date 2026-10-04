@@ -45,14 +45,14 @@
 
   /* ---------- toast ---------- */
   let toastTimer;
-  function toast(msg) {
+  function toast(msg, ms) {
     document.querySelectorAll('.ut-toast').forEach(t => t.remove());
     const el = document.createElement('div');
     el.className = 'ut-toast';
     el.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5L16 9"/></svg>' + msg;
     document.body.appendChild(el);
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.remove(), 2400);
+    toastTimer = setTimeout(() => el.remove(), ms || 2400);
   }
   window.utToast = toast;
 
@@ -95,21 +95,61 @@
     });
     return Object.keys(byKey).map(function (k) { return byKey[k]; });
   }
-  // On load: merge this device's localStorage cart with the account's saved
-  // cart, then adopt the server's reconciled (re-priced) result.
-  function initCart() {
-    if (!AUTH.authed) return;
-    var merged = mergeCartLines(store.cart, AUTH.cart || []);
-    store.cart = merged;
-    syncBadges(); renderCartDrawer(); renderCartPage();
-    if (!merged.length && !(AUTH.cart || []).length) return;
-    postJSON(URLS.cartSync, { items: merged })
+  // Ask the server which bag lines can still be bought (works for guests).
+  // Fills in each line's exact variant id and drops lines whose option the
+  // product no longer sells, so checkout never fails on them at the last step.
+  function escapeHtml(v) {
+    return String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  function checkCart() {
+    var lines = store.cart;
+    if (!lines.length || !URLS.cartCheck) return Promise.resolve();
+    var payload = lines.map(function (l) {
+      return { key: l.key, id: l.id, variant_id: l.variant_id || null, size: l.size, color: l.color, qty: l.qty };
+    });
+    return postJSON(URLS.cartCheck, { items: payload })
       .then(function (res) {
-        if (res && res.items) { store.cart = res.items; syncBadges(); renderCartDrawer(); renderCartPage(); }
+        var byKey = {};
+        ((res && res.items) || []).forEach(function (r) { byKey[r.key] = r; });
+        var removed = [];
+        var kept = store.cart.filter(function (l) {
+          var r = byKey[l.key];
+          if (!r) return true;
+          if (!r.available) { removed.push(l); return false; }
+          l.variant_id = r.variant_id;
+          return true;
+        });
+        store.cart = kept;
+        if (!removed.length) return;
+        syncBadges(); renderCartDrawer(); renderCartPage();
+        if (window.__coRecalc) window.__coRecalc();
+        var names = removed.map(function (l) {
+          return escapeHtml(l.name) + ' (' + escapeHtml(l.size) + ' · ' + escapeHtml(colorName(l.color)) + ')';
+        }).join(', ');
+        toast(names + ' ' + (removed.length > 1 ? 'are' : 'is') + ' no longer sold in that option and was removed from your bag. Please choose an available option.', 7000);
       })
       .catch(function () {});
-      
   }
+
+  // On load: check the bag; for signed-in customers also merge this device's
+  // cart with the account's saved cart and adopt the server's reconciled result.
+  function initCart() {
+    if (AUTH.authed) {
+      store.cart = mergeCartLines(store.cart, AUTH.cart || []);
+      syncBadges(); renderCartDrawer(); renderCartPage();
+    }
+    checkCart().then(function () {
+      if (!AUTH.authed) return;
+      var merged = store.cart;
+      if (!merged.length && !(AUTH.cart || []).length) return;
+      postJSON(URLS.cartSync, { items: merged })
+        .then(function (res) {
+          if (res && res.items) { store.cart = res.items; syncBadges(); renderCartDrawer(); renderCartPage(); }
+        })
+        .catch(function () {});
+    });
+  }
+
 
 
   function syncBadges() {
