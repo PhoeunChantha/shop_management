@@ -31,17 +31,41 @@ class CartController extends Controller
      */
     public function sync(Request $request): JsonResponse
     {
-        $data = $request->validate([
-            'items' => ['array'],
+        $data = $request->validate($this->lineRules());
+
+        return response()->json([
+            'items' => $this->cart->sync($request->user(), $data['items'] ?? []),
+        ]);
+    }
+
+    /**
+     * Check a bag (guests too) before checkout: returns each line's exact
+     * variant id and whether it can still be bought, so stale lines are fixed
+     * or removed up front instead of failing at the last checkout step.
+     */
+    public function check(Request $request): JsonResponse
+    {
+        $data = $request->validate($this->lineRules() + [
+            'items.*.key' => ['nullable', 'string', 'max:200'],
+        ]);
+
+        return response()->json([
+            'items' => $this->cart->check($data['items'] ?? []),
+        ]);
+    }
+
+    /**
+     * @return array<string, array<int, string>>
+     */
+    private function lineRules(): array
+    {
+        return [
+            'items' => ['array', 'max:100'],
             'items.*.id' => ['required', 'integer'],
             'items.*.variant_id' => ['nullable', 'integer'],
             'items.*.size' => ['nullable', 'string', 'max:60'],
             'items.*.color' => ['nullable', 'string', 'max:60'],
             'items.*.qty' => ['nullable', 'integer', 'min:1'],
-        ]);
-
-        return response()->json([
-            'items' => $this->cart->sync($request->user(), $data['items'] ?? []),
-        ]);
+        ];
     }
 }

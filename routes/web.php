@@ -106,6 +106,7 @@ Route::name('frontend.')->group(function () {
     // ---- Cart & Checkout ----
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::post('/cart/sync', [CartController::class, 'sync'])->middleware('auth')->name('cart.sync');
+    Route::post('/cart/check', [CartController::class, 'check'])->middleware('throttle:60,1')->name('cart.check');
     // Coupon validation stays public so guests can preview a code in the cart.
     Route::post('/checkout/coupon', [CheckoutController::class, 'coupon'])->middleware('throttle:20,1')->name('checkout.coupon');
     // Guest checkout is allowed — orders capture the customer's contact details
