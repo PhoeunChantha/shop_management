@@ -222,6 +222,9 @@ final class OrderService
         Order::query()
             ->where('status', OrderStatus::Pending->value)
             ->where('payment_status', PaymentStatus::Unpaid->value)
+            // A customer who sent payment proof is waiting on us to verify it,
+            // not ignoring the order — never cancel those automatically.
+            ->whereNull('payment_proof')
             ->where(function ($query) use ($cutoff): void {
                 $query->where('placed_at', '<', $cutoff)
                     ->orWhere(fn ($q) => $q->whereNull('placed_at')->where('created_at', '<', $cutoff));
@@ -231,7 +234,7 @@ final class OrderService
                 DB::transaction(function () use ($order, $hours, &$cancelled): void {
                     $fresh = Order::query()->with('details')->lockForUpdate()->find($order->id);
 
-                    if (! $fresh || $fresh->status !== OrderStatus::Pending || $fresh->payment_status !== PaymentStatus::Unpaid) {
+                    if (! $fresh || $fresh->status !== OrderStatus::Pending || $fresh->payment_status !== PaymentStatus::Unpaid || $fresh->payment_proof) {
                         return;
                     }
 

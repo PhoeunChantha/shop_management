@@ -75,7 +75,7 @@ final class OrderTrackingService
 
         $steps = [
             [__('Order placed'), __('We received your order :number.', ['number' => $order->order_number]), $this->date($placed), 'checkC'],
-            [__('Confirmed'), $paid ? __('Payment received and order accepted.') : __('Waiting for your payment to be confirmed.'), $this->date($order->paid_at), 'check'],
+            [__('Confirmed'), $paid ? __('Payment received and order accepted.') : ($order->payment_proof ? __('We received your payment proof and are checking it.') : __('Waiting for your payment to be confirmed.')), $this->date($order->paid_at), 'check'],
             [__('Processing'), __('Your items are being picked and packed.'), null, 'box'],
             [__('Shipped'), $order->tracking_number
                 ? __('Handed to :carrier · tracking :number', ['carrier' => $order->carrier ?: $order->shipping_method ?: __('the courier'), 'number' => $order->tracking_number])
@@ -107,7 +107,11 @@ final class OrderTrackingService
         $status = $order->status instanceof OrderStatus ? $order->status : OrderStatus::tryFrom((string) $order->status);
 
         if ($status === OrderStatus::Pending) {
-            return $order->payment_status === PaymentStatus::Paid ? __('Confirmed') : __('Awaiting payment');
+            return match (true) {
+                $order->payment_status === PaymentStatus::Paid => __('Confirmed'),
+                filled($order->payment_proof) => __('Verifying payment'),
+                default => __('Awaiting payment'),
+            };
         }
 
         return $status?->label() ?? ucfirst((string) $order->status);
