@@ -115,6 +115,7 @@ Route::name('frontend.')->group(function () {
     // is tracked in the session so guests can drive payment/confirmation; the
     // gateway result is always re-verified server-side before an order is paid.
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::get('/checkout/sign-in', [CheckoutController::class, 'signIn'])->name('checkout.sign-in');
     Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:12,1')->name('checkout.store');
     Route::get('/checkout/confirmation', [CheckoutController::class, 'confirmation'])->name('checkout.confirmation');
 

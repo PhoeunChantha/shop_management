@@ -144,3 +144,21 @@ it('reads the visitor IP from the tunnel but ignores spoofed forwarding headers'
         // Direct connection: forwarding header ignored.
         ->and($ipFor('198.51.100.9', '6.6.6.6'))->toBe('198.51.100.9');
 });
+
+it('tells guests the wallet option exists and brings them back to checkout after sign-in', function () {
+    $this->get(route('frontend.checkout.index'))
+        ->assertOk()
+        ->assertSee('Pay by Wallet')
+        ->assertSee('Sign in to use')
+        ->assertSee(route('frontend.checkout.sign-in'), false);
+
+    $this->get(route('frontend.checkout.sign-in'))
+        ->assertRedirect(route('frontend.login'))
+        ->assertSessionHas('url.intended', route('frontend.checkout.index'));
+
+    // Signed-in customers get the real wallet option instead of the hint.
+    $this->actingAs(User::factory()->create())
+        ->get(route('frontend.checkout.index'))
+        ->assertSee('data-type="wallet"', false)
+        ->assertDontSee('Sign in to use');
+});
