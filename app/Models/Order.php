@@ -80,6 +80,7 @@ final class Order extends Model
         'admin_note',
         'placed_at',
         'ip_address',
+        'email_updates',
     ];
 
     protected function casts(): array
@@ -88,6 +89,7 @@ final class Order extends Model
             'status' => OrderStatus::class,
             'fulfillment_status' => FulfillmentStatus::class,
             'payment_status' => PaymentStatus::class,
+            'email_updates' => 'boolean',
             'subtotal' => 'decimal:2',
             'discount_total' => 'decimal:2',
             'shipping_total' => 'decimal:2',

@@ -116,6 +116,7 @@ class CheckoutController extends Controller
             'country' => ['nullable', 'string', 'max:120'],
             'del' => ['nullable', 'integer'],
             'payment' => ['nullable', 'string', 'max:80'],
+            'email_updates' => ['nullable', 'boolean'],
             'items' => ['required', 'string'],
         ], [], [
             'del' => 'delivery method',
@@ -152,6 +153,8 @@ class CheckoutController extends Controller
                 'items' => $items,
                 'shipping_id' => $data['del'] ?? null,
                 'payment' => $data['payment'] ?? 'card',
+                // Unticked checkboxes are not submitted at all.
+                'email_updates' => (bool) ($data['email_updates'] ?? false),
             ]);
         } catch (CheckoutException $e) {
             // Safe, customer-facing message (e.g. an item ran out of stock).

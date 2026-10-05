@@ -10,6 +10,7 @@ use App\Helpers\ImageManager;
 use App\Mail\OrderConfirmationMail;
 use App\Models\Cart;
 use App\Models\Coupon;
+use App\Models\NewsletterSubscriber;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -340,6 +341,7 @@ final class CheckoutService
                 'payment_status' => 'unpaid',
                 'placed_at' => now(),
                 'ip_address' => request()->ip(),
+                'email_updates' => (bool) ($data['email_updates'] ?? true),
             ]);
 
             // Count the redemption once the order exists.
@@ -403,6 +405,15 @@ final class CheckoutService
         // Honours the admin "order confirmation email" toggle in Settings.
         if (filled($order->customer_email) && $this->settings->orderEmailEnabled()) {
             Mail::to($order->customer_email)->send(new OrderConfirmationMail($order));
+        }
+
+        // "Email me order updates & early drop access" ticked: add them to the
+        // newsletter list too (deduped by email).
+        if ($order->email_updates && filled($order->customer_email)) {
+            NewsletterSubscriber::firstOrCreate(
+                ['email' => strtolower((string) $order->customer_email)],
+                ['subscribed_at' => now()],
+            );
         }
 
         // Optional: copy the order (with invoice) to the admin alert address.

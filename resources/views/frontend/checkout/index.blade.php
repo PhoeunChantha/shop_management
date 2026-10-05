@@ -187,7 +187,7 @@
                         @foreach([[__('Contact'), 'contact'], [__('Ship to'), 'ship'], [__('Delivery'), 'delivery'], [__('Payment'), 'payment']] as [$k, $key])
                             <div class="ut-row" style="justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border-2);gap:16px"><span class="muted" style="font-size:14px">{{ $k }}</span><span data-review="{{ $key }}" style="font-family:var(--font-head);font-weight:600;font-size:14px;text-align:right">—</span></div>
                         @endforeach
-                        <label class="ut-row" style="gap:10px;font-size:14px;margin-top:16px"><input type="checkbox" checked style="accent-color:var(--blue);width:17px;height:17px"> {{ __('Email me order updates & early drop access') }}</label>
+                        <label class="ut-row" style="gap:10px;font-size:14px;margin-top:16px"><input type="checkbox" name="email_updates" value="1" @checked(old('email_updates', '1')) style="accent-color:var(--blue);width:17px;height:17px"> {{ __('Email me order updates & early drop access') }}</label>
                     </div>
                 </div>
 
