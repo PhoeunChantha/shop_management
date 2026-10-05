@@ -81,6 +81,8 @@ final class Order extends Model
         'placed_at',
         'ip_address',
         'email_updates',
+        'payment_reference',
+        'payment_proof',
     ];
 
     protected function casts(): array

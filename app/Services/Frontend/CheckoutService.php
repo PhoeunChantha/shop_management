@@ -117,6 +117,21 @@ final class CheckoutService
     }
 
     /**
+     * True when the code is a configured manual (bank transfer / QR) method —
+     * the customer pays outside the site and must supply proof.
+     */
+    public function isManualMethod(?string $code): bool
+    {
+        if ($code === null || $this->isWalletMethod($code)) {
+            return false;
+        }
+
+        $method = collect($this->settings->paymentMethods())->firstWhere('code', $code);
+
+        return ($method['type'] ?? '') === 'manual' && ! empty($method['status']);
+    }
+
+    /**
      * True when the given payment-method code is the in-house wallet.
      * paymentMethods() excludes wallet entries intentionally, so we check
      * the code directly instead of looking it up in that list.

@@ -195,6 +195,41 @@
 
             {{-- Right: fulfilment + customer + shipping + payment --}}
             <aside class="d-flex flex-column gap-4 order-side-rail">
+                @if ($order->payment_proof || $order->payment_reference)
+                    {{-- Customer-supplied proof of a manual (bank/QR) payment. --}}
+                    <section class="premium-card form-panel">
+                        <div class="form-panel-header">
+                            <div class="form-panel-icon"><i class="fa-solid fa-receipt"></i></div>
+                            <div>
+                                <h3>{{ __('Payment proof') }}</h3>
+                                <p>{{ $order->isPaid() ? __('Payment confirmed.') : __('Check it against your bank statement, then set Payment status to Paid.') }}</p>
+                            </div>
+                        </div>
+                        <div class="form-panel-body d-flex flex-column gap-3">
+                            <div class="d-flex justify-content-between gap-3" style="font-size:13.5px">
+                                <span class="text-secondary">{{ __('Method') }}</span>
+                                <strong>{{ $order->payment_method }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between gap-3" style="font-size:13.5px">
+                                <span class="text-secondary">{{ __('Amount due') }}</span>
+                                <strong>{{ money($order->grand_total) }}</strong>
+                            </div>
+                            @if ($order->payment_reference)
+                                <div class="d-flex justify-content-between gap-3" style="font-size:13.5px">
+                                    <span class="text-secondary">{{ __('Transaction reference') }}</span>
+                                    <strong style="word-break:break-all;text-align:right">{{ $order->payment_reference }}</strong>
+                                </div>
+                            @endif
+                            @if ($order->payment_proof)
+                                <a href="{{ Imageurl($order->payment_proof, 'payment-proofs') }}" target="_blank" rel="noopener" title="{{ __('Open full size') }}">
+                                    <img src="{{ Imageurl($order->payment_proof, 'payment-proofs') }}" alt="{{ __('Payment screenshot') }}"
+                                        style="width:100%;max-height:420px;object-fit:contain;border:1px solid #e5e7eb;border-radius:12px;background:#f9fafb">
+                                </a>
+                                <small class="text-secondary">{{ __('Click the image to open it full size.') }}</small>
+                            @endif
+                        </div>
+                    </section>
+                @endif
                 <section class="premium-card form-panel order-fulfilment-card">
                     <div class="form-panel-header">
                         <div class="form-panel-icon"><i class="fa-solid fa-truck-fast"></i></div>

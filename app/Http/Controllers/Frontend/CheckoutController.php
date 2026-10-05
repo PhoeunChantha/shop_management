@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Exceptions\CheckoutException;
+use App\Helpers\ImageManager;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Services\Frontend\CheckoutGuardService;
@@ -117,6 +118,8 @@ class CheckoutController extends Controller
             'del' => ['nullable', 'integer'],
             'payment' => ['nullable', 'string', 'max:80'],
             'email_updates' => ['nullable', 'boolean'],
+            'payment_reference' => ['nullable', 'string', 'max:100'],
+            'payment_proof' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'items' => ['required', 'string'],
         ], [], [
             'del' => 'delivery method',
@@ -131,6 +134,16 @@ class CheckoutController extends Controller
         $items = json_decode($data['items'], true);
         if (! is_array($items) || $items === []) {
             return back()->with('error', __('Your cart is empty.'));
+        }
+
+        // Manual (bank/QR) payments need proof before the order is accepted —
+        // same rule as wallet top-ups. Shown under the field on the Payment step.
+        $manual = $this->checkout->isManualMethod($data['payment'] ?? null);
+
+        if ($manual && ! $request->hasFile('payment_proof')) {
+            return back()->withInput()->withErrors([
+                'payment_proof' => __('Please upload your payment screenshot so we can confirm your payment.'),
+            ]);
         }
 
         // Anti-fraud: honeypot, reCAPTCHA, open-unpaid-order cap.
@@ -163,6 +176,22 @@ class CheckoutController extends Controller
             Log::error('Checkout order failed: '.$e->getMessage(), ['exception' => $e]);
 
             return back()->with('error', __('We could not place your order. Please try again.'));
+        }
+
+        // The order exists now — attach the customer's payment proof. A failed
+        // upload must not lose the order (stock is already reserved): it is
+        // logged on the order so an admin can ask the customer for the proof.
+        if ($manual) {
+            try {
+                $order->forceFill([
+                    'payment_reference' => filled($data['payment_reference'] ?? null) ? trim((string) $data['payment_reference']) : null,
+                    'payment_proof' => ImageManager::upload($request->file('payment_proof'), 'payment-proofs'),
+                ])->save();
+                $order->logEvent('payment', 'Payment proof uploaded by customer', $order->payment_reference ? 'Reference: '.$order->payment_reference : null);
+            } catch (\Throwable $e) {
+                Log::error('Payment proof upload failed: '.$e->getMessage(), ['order' => $order->order_number]);
+                $order->logEvent('payment', 'Payment proof could not be saved', 'Ask the customer to send their payment screenshot.');
+            }
         }
 
         $request->session()->put('pending_order_id', $order->id);

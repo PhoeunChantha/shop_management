@@ -21,7 +21,7 @@
 @section('content')
 <div class="ut-wrap anim-up" style="padding-top:28px">
     <a href="{{ route('frontend.cart.index') }}" class="ut-link" style="margin-bottom:18px;display:inline-flex"><x-frontend.icon n="arrowL" :size="16" /> {{ __('Back to bag') }}</a>
-    <form class="ut-checkout-grid" id="checkoutForm" method="POST" action="{{ route('frontend.checkout.store') }}">
+    <form class="ut-checkout-grid" id="checkoutForm" method="POST" action="{{ route('frontend.checkout.store') }}" enctype="multipart/form-data">
         @csrf
         <input type="hidden" name="items" id="coItems">
         <input type="hidden" name="payment" id="coPayment" value="{{ $paymentMethods[0]['code'] ?? 'card' }}">
@@ -177,6 +177,34 @@
                                 </div>
                             @endif
                         @endforeach
+
+                        {{-- Manual (bank/QR) payments: the customer pays first, then proves it
+                             here — required, so an admin can verify before the order ships. --}}
+                        @php($proofActive = ($firstPay['type'] ?? '') === 'manual')
+                        <div data-pay-proof style="{{ $proofActive ? '' : 'display:none' }}">
+                            <div style="background:var(--accent-soft);border-radius:var(--r-md);padding:14px 16px;margin-bottom:16px">
+                                <div class="ut-row" style="justify-content:space-between;gap:12px">
+                                    <span style="font-size:14px">{{ __('Amount to pay') }}</span>
+                                    <b data-pay-amount style="font-family:var(--font-head);font-size:20px">—</b>
+                                </div>
+                                <p class="muted" style="font-size:13px;margin:6px 0 0;line-height:1.6">{{ __('Scan the QR and pay this exact amount in your banking app, then upload the payment screenshot below. We confirm your order after checking it.') }}</p>
+                            </div>
+                            <div class="ut-col" style="gap:16px">
+                                <div class="field">
+                                    <label for="payment_proof">{{ __('Payment screenshot') }}</label>
+                                    <input id="payment_proof" class="ut-input @error('payment_proof') is-invalid @enderror" type="file" name="payment_proof"
+                                        accept="image/png,image/jpeg,image/webp" @required($proofActive) @disabled(! $proofActive) style="padding:10px 12px">
+                                    <small class="muted" style="display:block;font-size:12.5px;margin-top:6px">{{ __('JPG, PNG or WebP — up to 4MB. It must show the amount, date and transaction ID.') }}</small>
+                                    @error('payment_proof')<span class="ut-field-error">{{ $message }}</span>@enderror
+                                </div>
+                                <div class="field">
+                                    <label for="payment_reference">{{ __('Transaction reference') }} <span class="muted" style="font-weight:400">({{ __('optional') }})</span></label>
+                                    <input id="payment_reference" class="ut-input @error('payment_reference') is-invalid @enderror" name="payment_reference"
+                                        value="{{ old('payment_reference') }}" placeholder="{{ __('e.g. the Trx. ID / Ref. number on your receipt') }}" maxlength="100" autocomplete="off" @disabled(! $proofActive)>
+                                    @error('payment_reference')<span class="ut-field-error">{{ $message }}</span>@enderror
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -268,7 +296,7 @@
     <script>
     (function () {
         // Map each field name to the step index (0-based) it lives on.
-        var stepMap = { email:0, phone:0, first_name:0, last_name:0, address:0, city:0, zip:0, del:1, payment:2 };
+        var stepMap = { email:0, phone:0, first_name:0, last_name:0, address:0, city:0, zip:0, del:1, payment:2, payment_proof:2, payment_reference:2 };
         var errFields = @json(array_keys($errors->toArray()));
         var targetStep = 0;
         errFields.forEach(function (f) { if (stepMap[f] !== undefined && stepMap[f] > targetStep) targetStep = stepMap[f]; });
@@ -296,6 +324,17 @@
             if (online) online.style.display = 'none';
             if (wallet) wallet.style.display = 'none';
             document.querySelectorAll('[data-pay-panel]').forEach(function (p) { p.style.display = 'none'; });
+
+            // Proof-of-payment fields belong to manual methods only; disabled
+            // fields are neither validated nor submitted.
+            var proof = document.querySelector('[data-pay-proof]');
+            if (proof) {
+                var manual = type === 'manual';
+                proof.style.display = manual ? '' : 'none';
+                proof.querySelectorAll('input').forEach(function (el) { el.disabled = !manual; });
+                var file = proof.querySelector('[name="payment_proof"]');
+                if (file) file.required = manual;
+            }
 
             if (type === 'manual') {
                 var panel = document.querySelector('[data-pay-panel="' + code + '"]');
@@ -375,6 +414,8 @@
                 if(g('sumShipping')) g('sumShipping').textContent = shipping===0 ? '{{ __('Free') }}' : money(shipping);
                 if(g('sumTax')) g('sumTax').textContent = money(tax);
                 if(g('sumTotal')) g('sumTotal').textContent = money(total);
+                var payAmount = document.querySelector('[data-pay-amount]');
+                if(payAmount) payAmount.textContent = money(total);
             };
 
             window.applyCoupon = function(silent){
