@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -30,6 +31,15 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(191);
+
+        // The Vite dev server only exists on this machine. A page opened through
+        // the public domain (Cloudflare Tunnel) must use the built assets even
+        // while `npm run dev` is running, or visitors get no CSS/JS. Pointing
+        // the hot file at a path that never exists makes Vite use public/build.
+        if (! $this->app->runningInConsole()
+            && ! in_array(request()->getHost(), ['localhost', '127.0.0.1', '::1', '[::1]'], true)) {
+            Vite::useHotFile(storage_path('framework/vite.hot.off'));
+        }
 
         // Password-reset emails link to the storefront reset page (not Breeze's).
         ResetPassword::createUrlUsing(fn ($notifiable, string $token): string => route('frontend.password.reset', [
