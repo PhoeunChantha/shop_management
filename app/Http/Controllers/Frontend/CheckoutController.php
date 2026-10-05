@@ -69,6 +69,22 @@ class CheckoutController extends Controller
     }
 
     /**
+     * Send a guest to sign in and bring them back to checkout afterwards
+     * (used by the "Pay by Wallet · Sign in to use" option).
+     */
+    public function signIn(Request $request): RedirectResponse
+    {
+        if (Auth::check()) {
+            return redirect()->route('frontend.checkout.index');
+        }
+
+        $request->session()->put('url.intended', route('frontend.checkout.index'));
+
+        return redirect()->route('frontend.login')
+            ->with('info', __('Sign in to pay with your wallet balance.'));
+    }
+
+    /**
      * Prefill the shipping form from the signed-in customer's default address.
      *
      * @return array<string, string>

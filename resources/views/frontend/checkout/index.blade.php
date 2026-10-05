@@ -135,6 +135,16 @@
                                     <x-frontend.icon n="card" :size="22" />{{ __('Card') }}
                                 </button>
                             @endforelse
+                            {{-- Wallet needs an account balance, so guests can't pick it — but
+                                 show that it exists and send them to sign in (and back here). --}}
+                            @guest
+                                <a href="{{ route('frontend.checkout.sign-in') }}" data-wallet-sign-in
+                                   style="flex:1;min-width:96px;padding:14px;border-radius:var(--r-md);border:1.5px dashed var(--border);background:transparent;display:flex;flex-direction:column;align-items:center;gap:7px;font-family:var(--font-head);font-weight:600;font-size:13px;color:var(--text-2);text-align:center">
+                                    <x-frontend.icon n="lock" :size="22" />
+                                    {{ __('Pay by Wallet') }}
+                                    <span style="font-weight:500;font-size:12px;color:var(--blue)">{{ __('Sign in to use') }}</span>
+                                </a>
+                            @endguest
                         </div>
                         @php($firstPay = $paymentMethods[0] ?? ['code' => 'card', 'type' => 'online'])
                         {{-- Online payment panel — hidden when first method is manual or wallet --}}
