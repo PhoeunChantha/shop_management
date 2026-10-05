@@ -8,12 +8,14 @@ use App\Enums\FulfillmentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\StockMovementType;
+use App\Mail\OrderStatusMail;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Notifications\OrderStatusUpdated;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 final class OrderService
 {
@@ -183,6 +185,7 @@ final class OrderService
                 $order->logEvent('status', 'Status → '.$newStatus->label(), 'Was '.$oldStatus->label());
                 // Notify the customer (DB now, real-time broadcast once enabled).
                 $order->user?->notify(new OrderStatusUpdated($order, $newStatus));
+                $this->emailStatusUpdate($order);
             }
             if ($oldPayment !== $newPayment) {
                 $order->logEvent('payment', 'Payment marked '.$newPayment->label());
@@ -236,11 +239,24 @@ final class OrderService
                     $fresh->save();
                     $this->restock($fresh);
                     $fresh->logEvent('status', 'Status → Cancelled', "Unpaid for {$hours} hours — cancelled automatically and stock returned.");
+                    $this->emailStatusUpdate($fresh);
                     $cancelled++;
                 });
             });
 
         return $cancelled;
+    }
+
+    /**
+     * Email the customer about the order's new status — only when they
+     * ticked "Email me order updates" at checkout. Works for guests too
+     * (it goes to the order's email, not an account). Queued.
+     */
+    private function emailStatusUpdate(Order $order): void
+    {
+        if ($order->email_updates && filled($order->customer_email)) {
+            Mail::to($order->customer_email)->send(new OrderStatusMail($order));
+        }
     }
 
     /**
