@@ -141,6 +141,24 @@
             };
         @endauth
     </script>
+    <script>
+        // The bag + favourites live in this browser's storage. Tag them with the
+        // account they belong to and wipe them when that changes (logout,
+        // expired session, another account) — otherwise a signed-out visitor
+        // keeps seeing the last account's items, and they'd be merged into the
+        // next account that signs in here. A guest's own items (no owner) still
+        // carry over when the guest signs in. Runs before main.js reads them.
+        (function () {
+            try {
+                var uid = window.UT_AUTH && window.UT_AUTH.authed ? String(window.UT_AUTH.id) : '';
+                var owner = localStorage.getItem('ut_owner') || '';
+                if (owner && owner !== uid) {
+                    ['ut_wish', 'ut_cart', 'ut_coupon'].forEach(function (k) { localStorage.removeItem(k); });
+                }
+                if (uid) localStorage.setItem('ut_owner', uid); else localStorage.removeItem('ut_owner');
+            } catch (e) {}
+        })();
+    </script>
     <script src="{{ asset('assets/frontend/js/main.js') }}?v={{ filemtime(public_path('assets/frontend/js/main.js')) }}">
     </script>
 
