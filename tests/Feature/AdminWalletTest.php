@@ -46,3 +46,40 @@ it('forbids a customer from the admin wallets page', function () {
         ->get(route('admin.wallets.index'))
         ->assertForbidden();
 });
+
+it('lists wallet transactions, including wallet payments for orders', function () {
+    $wallet = app(\App\Services\Admin\WalletService::class);
+    $order = \App\Models\Order::create([
+        'customer_name' => 'A B', 'customer_email' => $this->customer->email, 'shipping_address' => 'x',
+        'subtotal' => 25, 'discount_total' => 0, 'shipping_total' => 0, 'tax_total' => 0, 'grand_total' => 25,
+        'status' => 'paid', 'payment_status' => 'paid', 'payment_method' => 'wallet', 'placed_at' => now(),
+    ]);
+    $wallet->debit($this->customer, 25, 'payment', 'Order '.$order->order_number, $order->id);
+    $wallet->credit($this->customer, 5, 'adjustment', 'Goodwill credit');
+
+    $html = $this->actingAs($this->admin)->get(route('admin.wallets.index'))->assertOk()->getContent();
+
+    expect($html)->toContain('Wallet Transactions')
+        ->toContain('Order payment')
+        ->toContain('−$25.00')
+        ->toContain('+$5.00')
+        ->toContain($order->order_number)
+        ->toContain('Goodwill credit')
+        ->toContain(route('admin.orders.show', $order->id));
+});
+
+it('filters wallet transactions by type and by customer', function () {
+    $other = User::factory()->create(['email' => 'other@example.com']);
+    $other->assignRole('customer');
+    $wallet = app(\App\Services\Admin\WalletService::class);
+    $wallet->credit($this->customer, 10, 'topup', 'note-topup-7f3');
+    $wallet->credit($other, 7, 'adjustment', 'note-adjust-9k2');
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.wallets.index', ['tx_type' => 'topup']))
+        ->assertSee('note-topup-7f3')->assertDontSee('note-adjust-9k2');
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.wallets.index', ['tx_search' => 'other@example.com']))
+        ->assertSee('note-adjust-9k2')->assertDontSee('note-topup-7f3');
+});

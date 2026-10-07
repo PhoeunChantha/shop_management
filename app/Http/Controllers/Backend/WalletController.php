@@ -25,6 +25,8 @@ class WalletController extends Controller
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
             'per_page' => ['nullable', 'integer', 'in:10,25,50,100'],
+            'tx_search' => ['nullable', 'string', 'max:255'],
+            'tx_type' => ['nullable', 'string', 'in:'.implode(',', array_keys(WalletService::TYPES))],
         ]);
         $perPage = (int) ($filters['per_page'] ?? 25);
 
@@ -50,6 +52,8 @@ class WalletController extends Controller
                 ->where('method_type', 'manual')
                 ->latest()
                 ->get(),
+            'transactions' => $this->wallet->transactions($filters),
+            'txTypes' => WalletService::TYPES,
         ]);
     }
 
