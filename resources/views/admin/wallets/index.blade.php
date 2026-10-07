@@ -184,6 +184,10 @@
                                 <button type="submit" name="direction" value="debit" class="wallet-adjust__debit">
                                     <i class="fa-solid fa-minus"></i> {{ __('Debit') }}
                                 </button>
+                                <a href="{{ request()->fullUrlWithQuery(['tx_search' => $customer->email, 'tx_type' => null, 'tx_page' => null]) }}#wallet-transactions"
+                                   class="wallet-adjust__debit" style="text-decoration:none" title="{{ __('Show this customer\'s transactions') }}">
+                                    <i class="fa-solid fa-clock-rotate-left"></i> {{ __('History') }}
+                                </a>
                             </form>
                         </td>
                     </tr>
@@ -199,6 +203,87 @@
             </table>
 
             <x-slot:footer><x-table-footer :paginator="$customers" label="{{ __('customers') }}" /></x-slot:footer>
+        </x-admin.table-card>
+
+        {{-- ── Wallet transactions ───────────────────────────────────── --}}
+        <div class="wallet-section-head" id="wallet-transactions" style="margin-top:28px">
+            <div class="wallet-section-head__icon">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+            <div>
+                <p class="section-kicker">{{ __('Activity') }}</p>
+                <h3>{{ __('Wallet Transactions') }}</h3>
+                <p class="text-gray-500 mb-0">{{ __('Every top-up, order payment, refund and admin adjustment, newest first.') }}</p>
+            </div>
+        </div>
+
+        <x-admin.table-card>
+            <x-slot:toolbar>
+                <form method="GET" action="{{ route('admin.wallets.index') }}#wallet-transactions" class="d-flex flex-wrap gap-2 align-items-center w-100">
+                    {{-- keep the customer-list filters --}}
+                    @foreach (['search', 'per_page'] as $keep)
+                        @if (request()->filled($keep))<input type="hidden" name="{{ $keep }}" value="{{ request($keep) }}">@endif
+                    @endforeach
+                    <select name="tx_type" class="form-input" style="max-width:220px" onchange="this.form.requestSubmit()">
+                        <option value="">{{ __('All types') }}</option>
+                        @foreach ($txTypes as $val => $label)
+                            <option value="{{ $val }}" @selected(request('tx_type') === $val)>{{ __($label) }}</option>
+                        @endforeach
+                    </select>
+                    <input type="search" name="tx_search" value="{{ request('tx_search') }}" class="form-input" style="flex:1;min-width:220px"
+                        placeholder="{{ __('Search customer, email, order number or note...') }}" data-auto-search>
+                    @if (request()->filled('tx_search') || request()->filled('tx_type'))
+                        <a href="{{ request()->fullUrlWithQuery(['tx_search' => null, 'tx_type' => null, 'tx_page' => null]) }}#wallet-transactions" class="ghost-button ghost-button--panel">{{ __('Clear') }}</a>
+                    @endif
+                </form>
+            </x-slot:toolbar>
+
+            <table class="premium-table wallet-table">
+                <thead>
+                    <tr>
+                        <th style="width:150px">{{ __('Date') }}</th>
+                        <th>{{ __('Customer') }}</th>
+                        <th>{{ __('Type') }}</th>
+                        <th style="text-align:right">{{ __('Amount') }}</th>
+                        <th style="text-align:right">{{ __('Balance after') }}</th>
+                        <th>{{ __('Order / note') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($transactions as $tx)
+                        @php($in = (float) $tx->amount >= 0)
+                        <tr>
+                            <td>{{ $tx->created_at?->format('M j, Y') }}<small class="d-block text-gray-400">{{ $tx->created_at?->format('g:i A') }}</small></td>
+                            <td>
+                                <strong>{{ $tx->user?->name ?? __('Deleted customer') }}</strong>
+                                <small class="d-block text-gray-400">{{ $tx->user?->email }}</small>
+                            </td>
+                            <td>{{ __(app(\App\Services\Admin\WalletService::class)->typeLabel($tx->type)) }}</td>
+                            <td style="text-align:right;font-weight:700;color:{{ $in ? '#047857' : '#b91c1c' }}">
+                                {{ $in ? '+' : '−' }}${{ number_format(abs((float) $tx->amount), 2) }}
+                            </td>
+                            <td style="text-align:right">${{ number_format((float) $tx->balance_after, 2) }}</td>
+                            <td>
+                                @if ($tx->order)
+                                    <a href="{{ route('admin.orders.show', $tx->order->id) }}" style="font-weight:600">{{ $tx->order->order_number }}</a>
+                                @endif
+                                @if ($tx->description && (! $tx->order || $tx->description !== 'Order '.$tx->order->order_number))
+                                    <small class="d-block text-gray-500">{{ $tx->description }}</small>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6">
+                                <x-admin.empty-state icon="fa-solid fa-clock-rotate-left" title="{{ __('No wallet transactions') }}"
+                                    message="{{ __('Top-ups, wallet payments and adjustments will appear here.') }}" />
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+
+            <x-slot:footer><x-table-footer :paginator="$transactions" label="{{ __('transactions') }}" /></x-slot:footer>
         </x-admin.table-card>
 
     </div>

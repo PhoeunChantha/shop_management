@@ -141,6 +141,11 @@ final class OrderService
                 ? PaymentStatus::from($data['payment_status'])
                 : $this->derivePaymentStatus($order->payment_status, $newStatus);
 
+            // Skipping straight to Delivered still means it was shipped and fulfilled.
+            if ($newStatus === OrderStatus::Delivered && $newFulfillment !== FulfillmentStatus::Fulfilled) {
+                $newFulfillment = FulfillmentStatus::Fulfilled;
+            }
+
             $order->status = $newStatus;
             $order->fulfillment_status = $newFulfillment;
             $order->payment_status = $newPayment;

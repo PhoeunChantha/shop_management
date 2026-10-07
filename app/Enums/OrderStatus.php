@@ -53,17 +53,31 @@ enum OrderStatus: string
         };
     }
 
-    /** Statuses this one may transition to (admin workflow). */
+    /**
+     * Statuses this one may transition to (admin workflow): any LATER stage
+     * of the flow (an admin may skip steps, e.g. Pending → Delivered once the
+     * customer has the goods), plus cancel/refund where they make sense.
+     * Never backwards, and Cancelled/Refunded are final.
+     *
+     * @return array<int, self>
+     */
     public function transitionsTo(): array
     {
-        return match ($this) {
-            self::Pending => [self::Paid, self::Cancelled],
-            self::Paid => [self::Processing, self::Refunded, self::Cancelled],
-            self::Processing => [self::Shipped, self::Cancelled],
-            self::Shipped => [self::Delivered, self::Refunded],
-            self::Delivered => [self::Refunded],
-            self::Cancelled, self::Refunded => [],
+        if ($this->isTerminal()) {
+            return [];
+        }
+
+        $later = $this->flowIndex() >= 0 ? array_slice(self::flow(), $this->flowIndex() + 1) : [];
+
+        $exits = match ($this) {
+            self::Pending => [self::Cancelled],
+            self::Paid => [self::Refunded, self::Cancelled],
+            self::Processing => [self::Cancelled],
+            self::Shipped, self::Delivered => [self::Refunded],
+            default => [],
         };
+
+        return array_values(array_merge($later, $exits));
     }
 
     public function isOpen(): bool
