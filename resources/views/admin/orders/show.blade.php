@@ -241,8 +241,9 @@
                         <div class="form-field">
                             <label for="status">{{ __('Order status') }}</label>
                             <select name="status" id="status" class="form-input">
-                                @foreach (\App\Enums\OrderStatus::options() as $val => $label)
-                                    <option value="{{ $val }}" @selected(old('status', $order->status->value) === $val)>{{ $label }}</option>
+                                {{-- Only the current status and the ones it may move to. --}}
+                                @foreach (array_merge([$order->status], $order->status->transitionsTo()) as $st)
+                                    <option value="{{ $st->value }}" @selected(old('status', $order->status->value) === $st->value)>{{ $st->label() }}</option>
                                 @endforeach
                             </select>
                             @error('status')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror

@@ -137,3 +137,39 @@ it('restores stock when a return is marked received', function () {
 
     expect($product->fresh()->stock)->toBe(2);
 });
+
+it('lets an admin skip forward from Pending straight to Delivered', function () {
+    [$order] = lifecycleOrder('pending');
+    $order->forceFill(['fulfillment_status' => 'unfulfilled', 'payment_status' => 'paid'])->save();
+
+    $this->patch(route('admin.orders.update', $order->id), [
+        'status' => 'delivered',
+        'payment_status' => 'paid',
+        'fulfillment_status' => 'unfulfilled',
+    ])->assertSessionHasNoErrors();
+
+    $order->refresh();
+    expect($order->status)->toBe(OrderStatus::Delivered)
+        ->and($order->fulfillment_status->value)->toBe('fulfilled')
+        ->and($order->fulfilled_at)->not->toBeNull()
+        ->and($order->shipped_at)->not->toBeNull();
+});
+
+it('still refuses cancelling an order that has shipped', function () {
+    [$order] = lifecycleOrder('shipped');
+
+    $this->patch(route('admin.orders.update', $order->id), [
+        'status' => 'cancelled',
+        'fulfillment_status' => 'fulfilled',
+    ])->assertSessionHasErrors('status');
+});
+
+it('only offers allowed statuses in the admin dropdown', function () {
+    [$order] = lifecycleOrder('shipped');
+
+    $html = $this->get(route('admin.orders.show', $order->id))->assertOk()->getContent();
+    preg_match('/<select name="status"[\s\S]*?<\/select>/', $html, $m);
+
+    expect($m[0])->toContain('value="delivered"')->toContain('value="refunded"')->toContain('value="shipped"')
+        ->not->toContain('value="pending"')->not->toContain('value="cancelled"');
+});
