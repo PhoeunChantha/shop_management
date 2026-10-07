@@ -134,7 +134,6 @@ class CheckoutController extends Controller
             'del' => ['nullable', 'integer'],
             'payment' => ['nullable', 'string', 'max:80'],
             'email_updates' => ['nullable', 'boolean'],
-            'payment_reference' => ['nullable', 'string', 'max:100'],
             'payment_proof' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'items' => ['required', 'string'],
         ], [], [
@@ -200,10 +199,9 @@ class CheckoutController extends Controller
         if ($manual) {
             try {
                 $order->forceFill([
-                    'payment_reference' => filled($data['payment_reference'] ?? null) ? trim((string) $data['payment_reference']) : null,
                     'payment_proof' => ImageManager::upload($request->file('payment_proof'), 'payment-proofs'),
                 ])->save();
-                $order->logEvent('payment', 'Payment proof uploaded by customer', $order->payment_reference ? 'Reference: '.$order->payment_reference : null);
+                $order->logEvent('payment', 'Payment proof uploaded by customer');
             } catch (\Throwable $e) {
                 Log::error('Payment proof upload failed: '.$e->getMessage(), ['order' => $order->order_number]);
                 $order->logEvent('payment', 'Payment proof could not be saved', 'Ask the customer to send their payment screenshot.');

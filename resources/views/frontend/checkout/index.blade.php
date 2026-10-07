@@ -207,12 +207,6 @@
                                     <small class="muted" style="display:block;font-size:12.5px;margin-top:6px">{{ __('JPG, PNG or WebP — up to 4MB. It must show the amount, date and transaction ID.') }}</small>
                                     @error('payment_proof')<span class="ut-field-error">{{ $message }}</span>@enderror
                                 </div>
-                                <div class="field">
-                                    <label for="payment_reference">{{ __('Transaction reference') }} <span class="muted" style="font-weight:400">({{ __('optional') }})</span></label>
-                                    <input id="payment_reference" class="ut-input @error('payment_reference') is-invalid @enderror" name="payment_reference"
-                                        value="{{ old('payment_reference') }}" placeholder="{{ __('e.g. the Trx. ID / Ref. number on your receipt') }}" maxlength="100" autocomplete="off" @disabled(! $proofActive)>
-                                    @error('payment_reference')<span class="ut-field-error">{{ $message }}</span>@enderror
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -306,7 +300,7 @@
     <script>
     (function () {
         // Map each field name to the step index (0-based) it lives on.
-        var stepMap = { email:0, phone:0, first_name:0, last_name:0, address:0, city:0, zip:0, del:1, payment:2, payment_proof:2, payment_reference:2 };
+        var stepMap = { email:0, phone:0, first_name:0, last_name:0, address:0, city:0, zip:0, del:1, payment:2, payment_proof:2 };
         var errFields = @json(array_keys($errors->toArray()));
         var targetStep = 0;
         errFields.forEach(function (f) { if (stepMap[f] !== undefined && stepMap[f] > targetStep) targetStep = stepMap[f]; });
