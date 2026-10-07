@@ -48,7 +48,7 @@ it('shows the payment proof fields on checkout', function () {
     $this->get(route('frontend.checkout.index'))
         ->assertOk()
         ->assertSee('name="payment_proof"', false)
-        ->assertSee('name="payment_reference"', false)
+        ->assertDontSee('name="payment_reference"', false)
         ->assertSee('enctype="multipart/form-data"', false);
 });
 
@@ -71,16 +71,14 @@ it('rejects a proof that is not an image', function () {
     expect(Order::count())->toBe(0);
 });
 
-it('stores the screenshot and reference with the order', function () {
+it('stores the screenshot with the order', function () {
     $this->post(route('frontend.checkout.store'), proofForm($this->product, [
         'payment_proof' => UploadedFile::fake()->image('receipt.jpg', 400, 800),
-        'payment_reference' => '  TRX-99887766  ',
     ]))->assertRedirect();
 
     $order = Order::sole();
 
-    expect($order->payment_reference)->toBe('TRX-99887766')
-        ->and($order->payment_proof)->not->toBeNull()
+    expect($order->payment_proof)->not->toBeNull()
         ->and(file_exists(public_path(ImageManager::path($order->payment_proof, 'payment-proofs'))))->toBeTrue()
         ->and($order->events()->where('title', 'Payment proof uploaded by customer')->exists())->toBeTrue()
         ->and(app(OrderTrackingService::class)->statusLabel($order))->toBe('Verifying payment');
@@ -96,7 +94,6 @@ it('does not ask for proof on online payment methods', function () {
 it('shows the proof to the admin on the order page', function () {
     $this->post(route('frontend.checkout.store'), proofForm($this->product, [
         'payment_proof' => UploadedFile::fake()->image('receipt.png'),
-        'payment_reference' => 'TRX-1',
     ]));
     $order = Order::sole();
 
@@ -108,7 +105,6 @@ it('shows the proof to the admin on the order page', function () {
         ->get(route('admin.orders.show', $order->id))
         ->assertOk()
         ->assertSee('Payment proof')
-        ->assertSee('TRX-1')
         ->assertSee($order->payment_proof, false);
 });
 
