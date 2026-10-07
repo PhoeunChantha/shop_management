@@ -219,23 +219,22 @@
 
         <x-admin.table-card>
             <x-slot:toolbar>
-                <form method="GET" action="{{ route('admin.wallets.index') }}#wallet-transactions" class="d-flex flex-wrap gap-2 align-items-center w-100">
-                    {{-- keep the customer-list filters --}}
-                    @foreach (['search', 'per_page'] as $keep)
-                        @if (request()->filled($keep))<input type="hidden" name="{{ $keep }}" value="{{ request($keep) }}">@endif
-                    @endforeach
-                    <select name="tx_type" class="form-input" style="max-width:220px" onchange="this.form.requestSubmit()">
-                        <option value="">{{ __('All types') }}</option>
-                        @foreach ($txTypes as $val => $label)
-                            <option value="{{ $val }}" @selected(request('tx_type') === $val)>{{ __($label) }}</option>
-                        @endforeach
-                    </select>
-                    <input type="search" name="tx_search" value="{{ request('tx_search') }}" class="form-input" style="flex:1;min-width:220px"
-                        placeholder="{{ __('Search customer, email, order number or note...') }}" data-auto-search>
-                    @if (request()->filled('tx_search') || request()->filled('tx_type'))
-                        <a href="{{ request()->fullUrlWithQuery(['tx_search' => null, 'tx_type' => null, 'tx_page' => null]) }}#wallet-transactions" class="ghost-button ghost-button--panel">{{ __('Clear') }}</a>
-                    @endif
-                </form>
+                <x-table-toolbar>
+                    <x-slot:left>
+                        <x-per-page-selector name="tx_per_page" page-name="tx_page" :current="$txPerPage" />
+                        {{-- Type filter: same toolbar-form pattern, so the AJAX table refreshes in place. --}}
+                        <form method="GET" action="{{ url()->current() }}" class="toolbar-form">
+                            @foreach (request()->except(['tx_type', 'tx_page']) as $key => $val)
+                                @unless (is_array($val))<input type="hidden" name="{{ $key }}" value="{{ $val }}">@endunless
+                            @endforeach
+                            <x-select name="tx_type" size="sm" :value="request('tx_type')" placeholder="{{ __('All types') }}"
+                                :options="collect($txTypes)->map(fn ($label) => __($label))->all()" submit-on-change />
+                        </form>
+                    </x-slot:left>
+                    <x-slot:right>
+                        <x-search-input name="tx_search" page-name="tx_page" placeholder="{{ __('Search customer, email, order or note...') }}" />
+                    </x-slot:right>
+                </x-table-toolbar>
             </x-slot:toolbar>
 
             <table class="premium-table wallet-table">

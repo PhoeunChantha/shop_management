@@ -83,3 +83,19 @@ it('filters wallet transactions by type and by customer', function () {
         ->get(route('admin.wallets.index', ['tx_search' => 'other@example.com']))
         ->assertSee('note-adjust-9k2')->assertDontSee('note-topup-7f3');
 });
+
+it('uses the shared table toolbar for the transactions list', function () {
+    $html = $this->actingAs($this->admin)
+        ->get(route('admin.wallets.index', ['tx_page' => 2, 'tx_search' => 'x']))
+        ->assertOk()->getContent();
+
+    $section = substr($html, strpos($html, 'id="wallet-transactions"'));
+
+    expect($section)->toContain('table-toolbar')
+        ->toContain('name="tx_per_page"')
+        ->toContain('name="tx_type"')
+        ->toContain('name="tx_search"')
+        ->toContain('data-ajax-table')
+        // Searching / changing page size starts again from page 1.
+        ->not->toContain('name="tx_page"');
+});
