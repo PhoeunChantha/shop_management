@@ -1,4 +1,5 @@
 @props([
+    'pageName' => 'page', // paginator page parameter to reset on change
     'action' => null,
     'name' => 'search',
     'value' => null,
@@ -10,7 +11,7 @@
 @php
     $current = $value ?? request($name);
     // Preserve every other active query parameter (filters, per page, etc.) but reset paging.
-    $preserved = collect(request()->except([$name, 'page']));
+    $preserved = collect(request()->except([$name, $pageName]));
 @endphp
 
 <form

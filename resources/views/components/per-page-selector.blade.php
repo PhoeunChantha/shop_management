@@ -1,4 +1,5 @@
 @props([
+    'pageName' => 'page', // paginator page parameter to reset on change
     'action' => null,
     'name' => 'per_page',
     'current' => null,
@@ -9,7 +10,7 @@
 @php
     $selected = $current ?? request($name);
     // Preserve every other active query parameter (filters, etc.) but reset paging.
-    $preserved = collect(request()->except([$name, 'page']));
+    $preserved = collect(request()->except([$name, $pageName]));
 @endphp
 
 <form method="GET" action="{{ $action ?? url()->current() }}" class="toolbar-form">
