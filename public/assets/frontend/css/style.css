@@ -2259,6 +2259,79 @@ input[type=number]::-webkit-inner-spin-button {
   border: 3px solid var(--paper);
 }
 
+/* Bottom nav motion (look unchanged at rest): colour fade, press squeeze,
+   tap ripple. The bounce itself is a WAAPI animation in the component. */
+.ut-bottomnav a {
+  -webkit-tap-highlight-color: transparent;
+  transition: color var(--dur) var(--ease-out);
+}
+
+.ut-bn-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.ut-bn-icon svg,
+.ut-bottomnav .fab {
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.ut-bottomnav a:active .ut-bn-icon svg,
+.ut-bottomnav a:active .fab {
+  transform: scale(.88);
+  transition-duration: 60ms;
+}
+
+/* Soft ripple behind the tapped icon. */
+.ut-bn-icon::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  opacity: 0;
+  transform: scale(.4);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.ut-bn-icon--fab::after {
+  width: 64px;
+  height: 64px;
+  margin: -42px 0 0 -32px;
+}
+
+.ut-bn-icon.is-tapped::after {
+  animation: ut-bn-ripple .5s var(--ease-out);
+}
+
+@keyframes ut-bn-ripple {
+  0% { opacity: .9; transform: scale(.4); }
+  100% { opacity: 0; transform: scale(1.25); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ut-bottomnav a,
+  .ut-bn-icon svg,
+  .ut-bottomnav .fab {
+    transition: none;
+  }
+
+  .ut-bottomnav a:active .ut-bn-icon svg,
+  .ut-bottomnav a:active .fab {
+    transform: none;
+  }
+
+  .ut-bn-icon.is-tapped::after {
+    animation: none;
+  }
+}
+
 /* Offcanvas (cart + profile) */
 .offcanvas {
   background: var(--paper);
@@ -2454,22 +2527,88 @@ input[type=number]::-webkit-inner-spin-button {
   gap: 16px;
   padding: 20px 16px;
   border: 0;
+  border-radius: var(--r-lg);
   background: none;
   text-align: left;
   font-family: var(--font-head);
   font-weight: 500;
   font-size: 18px;
   color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--dur) var(--ease-out);
+}
+
+.ut-acc-q:active {
+  background: var(--accent-soft);
+  transition-duration: 60ms;
+}
+
+.ut-acc-q:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 .ut-acc-q .chev {
-  transition: transform var(--dur) var(--ease-out);
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
   color: var(--text-2);
   flex-shrink: 0;
+  transition: transform .42s cubic-bezier(.34, 1.4, .64, 1), background-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
 }
 
 .ut-acc-q[aria-expanded="true"] .chev {
   transform: rotate(180deg);
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ut-acc-q:hover .chev {
+    background: var(--accent-soft);
+    color: var(--ink);
+  }
+}
+
+/* Answer panel: height via grid rows so open/close is smooth and
+   interruptible; the text fades and settles as it opens. */
+.ut-acc-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows .32s var(--ease-move);
+}
+
+.ut-acc-q[aria-expanded="true"] + .ut-acc-panel {
+  grid-template-rows: 1fr;
+}
+
+.ut-acc-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ut-acc-panel .ut-acc-a {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity .18s var(--ease-out), transform .18s var(--ease-out);
+}
+
+.ut-acc-q[aria-expanded="true"] + .ut-acc-panel .ut-acc-a {
+  opacity: 1;
+  transform: none;
+  transition-duration: .3s;
+  transition-delay: .06s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ut-acc-q,
+  .ut-acc-q .chev,
+  .ut-acc-panel,
+  .ut-acc-panel .ut-acc-a {
+    transition: none;
+  }
 }
 
 .ut-acc-a {

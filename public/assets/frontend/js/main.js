@@ -174,8 +174,18 @@
   function syncBadges() {
     const c = cartCount();
     document.querySelectorAll('[data-cart-count]').forEach(el => {
+      const changed = el.textContent !== String(c);
       el.textContent = c;
       el.style.display = c > 0 ? '' : 'none';
+      // Pop the badge when the count actually changes (not on first paint).
+      if (changed && c > 0 && el.dataset.synced && el.animate
+        && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        el.animate(
+          [{ transform: 'scale(1)' }, { transform: 'scale(1.35)' }, { transform: 'scale(1)' }],
+          { duration: 320, easing: 'cubic-bezier(.22, 1, .36, 1)' }
+        );
+      }
+      el.dataset.synced = '1';
     });
     const w = store.wish.length;
     document.querySelectorAll('[data-wish-count]').forEach(el => {
@@ -605,12 +615,14 @@
   });
 
   /* ---------- FAQ accordion ---------- */
+  // Height animates in CSS (grid rows 0fr -> 1fr), so toggling only flips
+  // aria-expanded; a closed panel is inert so its text is skipped by AT.
   document.querySelectorAll('.ut-acc-q').forEach(q => {
     q.addEventListener('click', () => {
       const open = q.getAttribute('aria-expanded') === 'true';
-      const ans = q.nextElementSibling;
+      const panel = q.nextElementSibling;
       q.setAttribute('aria-expanded', String(!open));
-      if (ans) ans.style.display = open ? 'none' : 'block';
+      if (panel) panel.inert = open;
     });
   });
 
