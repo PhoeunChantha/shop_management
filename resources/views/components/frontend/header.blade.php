@@ -127,7 +127,24 @@
 
 <div class="offcanvas offcanvas-start ut-mobile-menu" tabindex="-1" id="utMobileMenu" aria-labelledby="utMobileMenuLabel">
     <div class="offcanvas-header"><a href="{{ route('frontend.home') }}" class="ut-brand" id="utMobileMenuLabel">@if($logo)<img src="{{ $logo }}" alt="{{ $siteName }}" style="height:30px;width:auto;max-width:150px;object-fit:contain">@else<span class="ut-logo-mark">{{ mb_substr($siteName, 0, 1) }}</span><span class="ut-logo-text">{{ mb_strtoupper($siteName) }}</span>@endif</a><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button></div>
-    <div class="offcanvas-body"><button type="button" class="ut-mobile-search" data-bs-dismiss="offcanvas" data-bs-toggle="modal" data-bs-target="#utSearchOverlay"><x-frontend.icon n="search" :size="18" /> {{ __('Search the collection') }}</button><nav>@foreach($nav['mobile'] ?? [] as $item)<a href="{{ $item['url'] }}">{{ $item['label'] }} <x-frontend.icon n="arrowR" :size="18" /></a>@endforeach</nav><div class="ut-mobile-menu-foot"><span>{{ __('FIRST ORDER') }}</span><strong>{{ __('10% OFF') }}</strong><p>{{ __('Sign up for early drops and exclusive editions.') }}</p></div></div>
+    <div class="offcanvas-body"><button type="button" class="ut-mobile-search" data-bs-dismiss="offcanvas" data-bs-toggle="modal" data-bs-target="#utSearchOverlay"><x-frontend.icon n="search" :size="18" /> {{ __('Search the collection') }}</button><nav aria-label="{{ __('Shop categories') }}">
+        @foreach($nav['mobile'] ?? [] as $item)
+            @if(! empty($item['children']))
+                {{-- Tap a category to reveal its sub-categories (native <details>: no JS, keyboard + screen-reader friendly). --}}
+                <details class="ut-mnav-group">
+                    <summary>{{ $item['label'] }} <x-frontend.icon n="chevD" :size="18" cls="ut-mnav-chev" /></summary>
+                    <div class="ut-mnav-sub">
+                        <a href="{{ $item['url'] }}" class="ut-mnav-all">{{ __('Shop all :name', ['name' => $item['label']]) }} <x-frontend.icon n="arrowR" :size="15" /></a>
+                        @foreach($item['children'] as $child)
+                            <a href="{{ $child['url'] }}">{{ $child['label'] }}</a>
+                        @endforeach
+                    </div>
+                </details>
+            @else
+                <a href="{{ $item['url'] }}">{{ $item['label'] }} <x-frontend.icon n="arrowR" :size="18" /></a>
+            @endif
+        @endforeach
+    </nav><div class="ut-mobile-menu-foot"><span>{{ __('FIRST ORDER') }}</span><strong>{{ __('10% OFF') }}</strong><p>{{ __('Sign up for early drops and exclusive editions.') }}</p></div></div>
 </div>
 
 <div class="modal fade ut-search-modal" id="utSearchOverlay" tabindex="-1" aria-labelledby="utSearchOverlayLabel" aria-hidden="true">
