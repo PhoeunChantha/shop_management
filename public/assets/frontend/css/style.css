@@ -2209,171 +2209,168 @@ input[type=number]::-webkit-inner-spin-button {
   gap: 40px;
 }
 
-/* Bottom nav (mobile)
-   The active tab lifts into the same floating ink circle as the bag button.
-   Motion stays on transform/opacity; press feedback is instant-in, eased-out. */
+/* Bottom nav (mobile) — floating glass dock.
+   A frosted capsule with a single lens that glides to the active tab, and a
+   separate ink bag button. Motion is transform/opacity only. */
 .ut-bottomnav {
-  --bn-lift: -20px;
-  --bn-spring: cubic-bezier(.34, 1.36, .64, 1);
+  --dock-h: 60px;
+  --dock-pad: 5px;
+  --dock-glass: rgba(251, 248, 241, .74);
+  --dock-edge: rgba(255, 255, 255, .7);
+  --dock-shadow: 0 14px 34px -14px rgba(16, 14, 11, .38), 0 3px 10px -2px rgba(16, 14, 11, .10);
+  --dock-spring: cubic-bezier(.32, 1.24, .58, 1);
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 12px;
+  right: 12px;
+  bottom: max(12px, calc(env(safe-area-inset-bottom) + 6px));
   z-index: 1040;
-  background: rgba(251, 248, 241, .92);
-  backdrop-filter: saturate(1.4) blur(18px);
-  -webkit-backdrop-filter: saturate(1.4) blur(18px);
-  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  box-shadow: 0 -10px 30px -18px rgba(16, 14, 11, .28);
   display: none;
-  align-items: flex-end;
-  justify-content: space-around;
-  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
 }
 
-.ut-bottomnav a {
-  border: 0;
-  background: none;
+.ut-bottomnav > * {
+  pointer-events: auto;
+}
+
+/* Glass capsule */
+.ut-dock {
+  position: relative;
+  flex: 1;
+  display: flex;
+  height: var(--dock-h);
+  padding: var(--dock-pad);
+  border-radius: var(--r-pill);
+  background: var(--dock-glass);
+  backdrop-filter: blur(22px) saturate(1.8);
+  -webkit-backdrop-filter: blur(22px) saturate(1.8);
+  border: 1px solid var(--dock-edge);
+  box-shadow: var(--dock-shadow), inset 0 1px 0 rgba(255, 255, 255, .65);
+}
+
+/* The lens: one element that slides between tabs. */
+.ut-dock__lens {
+  position: absolute;
+  top: var(--dock-pad);
+  bottom: var(--dock-pad);
+  left: var(--dock-pad);
+  width: calc((100% - var(--dock-pad) * 2) / var(--n));
+  border-radius: var(--r-pill);
+  background: #fff;
+  box-shadow: 0 6px 16px -8px rgba(16, 14, 11, .35), 0 1px 2px rgba(16, 14, 11, .06), inset 0 0 0 1px rgba(16, 14, 11, .04);
+  transform: translateX(calc(var(--i) * 100%));
+  transition: transform .5s var(--dock-spring), opacity var(--dur) var(--ease-out);
+}
+
+.ut-dock.is-idle .ut-dock__lens {
+  opacity: 0;
+  transform: translateX(0) scale(.8);
+}
+
+.ut-dock__tab {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  flex: 1;
-  position: relative;
-  padding: 4px 0 2px;
+  justify-content: center;
+  gap: 2px;
+  border-radius: var(--r-pill);
   color: var(--text-2);
   font-family: var(--font-body);
+  font-size: 10.5px;
   font-weight: 600;
-  font-size: 10px;
-  letter-spacing: .06em;
-  text-transform: uppercase;
+  letter-spacing: .01em;
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
   transition: color var(--dur) var(--ease-out);
 }
 
-/* Icon slot. 46px circle, negative margins keep the bar height compact. */
-.ut-bottomnav__icon {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  margin: -8px 0;
-  isolation: isolate;
-  transition: transform .42s var(--bn-spring), color var(--dur) var(--ease-out);
-}
-
-/* The floating disc: ink fill + paper ring + shadow, matching the bag. */
-.ut-bottomnav__icon::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: 50%;
-  background: var(--ink);
-  box-shadow: 0 0 0 4px var(--paper), 0 10px 22px -10px rgba(16, 14, 11, .55), 0 2px 6px rgba(16, 14, 11, .18);
-  opacity: 0;
-  transform: scale(.4);
-  transition: opacity var(--dur) var(--ease-out), transform .42s var(--bn-spring);
-}
-
-.ut-bottomnav__label {
-  transition: transform .42s var(--bn-spring);
-}
-
-.ut-bottomnav a.active {
+.ut-dock__tab.active {
   color: var(--ink);
   font-weight: 700;
 }
 
-.ut-bottomnav a.active .ut-bottomnav__icon {
-  color: var(--bg);
-  transform: translateY(var(--bn-lift));
-}
-
-.ut-bottomnav a.active .ut-bottomnav__icon::before {
-  opacity: 1;
-  transform: scale(1);
-}
-
-/* Press feedback: instant squeeze, eased release (keeps the lift). */
-.ut-bottomnav a:active .ut-bottomnav__icon {
-  transform: scale(.88);
-  transition-duration: 60ms;
-}
-
-.ut-bottomnav a.active:active .ut-bottomnav__icon {
-  transform: translateY(var(--bn-lift)) scale(.9);
-}
-
-/* Floating bag button (always lifted) */
-.ut-bottomnav__fab {
+.ut-dock__icon {
   position: relative;
-  width: 50px;
-  height: 50px;
-  margin-top: -26px;
-  border-radius: 50%;
   display: grid;
   place-items: center;
-  background: var(--ink);
-  color: var(--bg);
-  border: 4px solid var(--paper);
-  box-shadow: 0 10px 22px -10px rgba(16, 14, 11, .55), 0 2px 6px rgba(16, 14, 11, .18);
-  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur) var(--ease-out);
+  transition: transform var(--dur-fast) var(--ease-out);
 }
 
-.ut-bottomnav__bag:active .ut-bottomnav__fab {
-  transform: scale(.9);
-  box-shadow: 0 4px 10px -6px rgba(16, 14, 11, .55);
+.ut-dock__tab:active .ut-dock__icon {
+  transform: scale(.86);
   transition-duration: 60ms;
 }
 
-.ut-bottomnav .ut-bottomnav__badge {
-  top: 2px;
-  right: 0;
-  min-width: 18px;
-  height: 18px;
+.ut-dock__label {
+  white-space: nowrap;
 }
 
-.ut-bottomnav__fab .ut-bottomnav__badge {
-  top: -6px;
-  right: -6px;
-}
-
-.ut-bottomnav a:focus-visible {
-  outline: none;
-}
-
-.ut-bottomnav a:focus-visible .ut-bottomnav__icon,
-.ut-bottomnav a:focus-visible .ut-bottomnav__fab {
+/* Bag: separate ink button, same height as the dock. */
+.ut-dock__bag {
+  position: relative;
+  flex: 0 0 var(--dock-h);
+  width: var(--dock-h);
+  height: var(--dock-h);
+  display: grid;
+  place-items: center;
   border-radius: 50%;
-  box-shadow: 0 0 0 3px var(--ring);
+  background: var(--ink);
+  color: var(--bg);
+  box-shadow: var(--dock-shadow), inset 0 1px 0 rgba(255, 255, 255, .14);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.ut-dock__bag:active {
+  transform: scale(.92);
+  transition-duration: 60ms;
+}
+
+.ut-bottomnav .ut-dock__badge {
+  top: -5px;
+  right: -9px;
+}
+
+.ut-dock__bag .ut-dock__badge {
+  top: 4px;
+  right: 4px;
+  border-color: var(--ink);
+}
+
+.ut-dock__tab:focus-visible,
+.ut-dock__bag:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .ut-bottomnav a:not(.active):hover {
+  .ut-dock__tab:not(.active):hover {
     color: var(--ink);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ut-bottomnav a,
-  .ut-bottomnav__icon,
-  .ut-bottomnav__icon::before,
-  .ut-bottomnav__label,
-  .ut-bottomnav__fab {
+  .ut-dock__lens,
+  .ut-dock__tab,
+  .ut-dock__icon,
+  .ut-dock__bag {
     transition: none;
   }
 
-  .ut-bottomnav a:active .ut-bottomnav__icon,
-  .ut-bottomnav__bag:active .ut-bottomnav__fab {
+  .ut-dock__tab:active .ut-dock__icon,
+  .ut-dock__bag:active {
     transform: none;
   }
+}
 
-  .ut-bottomnav a.active .ut-bottomnav__icon,
-  .ut-bottomnav a.active:active .ut-bottomnav__icon {
-    transform: translateY(var(--bn-lift));
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .ut-bottomnav {
+    --dock-glass: rgba(251, 248, 241, .97);
   }
 }
 
@@ -2684,6 +2681,19 @@ input[type=number]::-webkit-inner-spin-button {
     display: flex;
   }
 
+  /* Sit the product sticky bar just above the floating dock. */
+  .ut-stickybar {
+    bottom: calc(max(12px, calc(env(safe-area-inset-bottom) + 6px)) + 68px);
+    left: 12px;
+    right: 12px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+  }
+
+  .ut-stickybar:not(.show) {
+    transform: translateY(calc(100% + 120px));
+  }
+
   .ut-rail,
   .ut-results-grid {
     grid-template-columns: 1fr 1fr;
@@ -2725,7 +2735,7 @@ input[type=number]::-webkit-inner-spin-button {
   }
 
   .ut-page-pad-bottom {
-    padding-bottom: 80px;
+    padding-bottom: 96px;
   }
 
   .ut-header-main {
@@ -3650,7 +3660,7 @@ input[type=number]::-webkit-inner-spin-button {
 
 /* ---- mobile: launcher above the bottom nav, panel full-screen ---- */
 @media (max-width: 767px) {
-  .ut-chat-launcher { right: 14px; bottom: calc(78px + env(safe-area-inset-bottom)); height: 52px; min-width: 52px; max-width: 52px; padding: 0 14px; }
+  .ut-chat-launcher { right: 14px; bottom: calc(86px + env(safe-area-inset-bottom)); height: 52px; min-width: 52px; max-width: 52px; padding: 0 14px; }
   .ut-chat-launcher:hover { max-width: 52px; }
   .ut-chat-launcher-label { display: none; }
   .ut-chat-open .ut-chat-launcher { display: none; }
