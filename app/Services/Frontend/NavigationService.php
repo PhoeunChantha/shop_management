@@ -312,7 +312,10 @@ class NavigationService
     }
 
     /**
-     * @return array<int, array{label: string, url: string}>
+     * The mobile menu: the same categories as the desktop header, with their
+     * sub-categories (shown as an expandable list on small screens).
+     *
+     * @return array<int, array{label: string, url: string, children: array<int, array{label: string, url: string}>}>
      */
     private function mobileLinks(array $categoryMenus): array
     {
@@ -320,6 +323,7 @@ class NavigationService
             ->map(fn (array $menu): array => [
                 'label' => $menu['label'],
                 'url' => $menu['url'],
+                'children' => array_values($menu['children'] ?? []),
             ])
             ->values()
             ->all();

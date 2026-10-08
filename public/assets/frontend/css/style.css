@@ -1392,6 +1392,91 @@ input[type=number]::-webkit-inner-spin-button {
   align-items: center
 }
 
+/* Expandable category (sub-categories) in the mobile menu */
+.ut-mnav-group {
+  border-bottom: 1px solid var(--border-2, rgba(0, 0, 0, .06))
+}
+
+.ut-mnav-group summary {
+  list-style: none;
+  cursor: pointer;
+  font-family: var(--font-head);
+  font-weight: 500;
+  font-size: 24px;
+  letter-spacing: -.01em;
+  padding: 13px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  -webkit-tap-highlight-color: transparent
+}
+
+.ut-mnav-group summary::-webkit-details-marker {
+  display: none
+}
+
+.ut-mnav-group summary:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+  border-radius: 6px
+}
+
+.ut-mnav-chev {
+  transition: transform .28s cubic-bezier(.22, 1, .36, 1)
+}
+
+.ut-mnav-group[open] .ut-mnav-chev {
+  transform: rotate(180deg)
+}
+
+.ut-mnav-group[open] summary {
+  color: var(--ink)
+}
+
+.ut-mobile-menu nav .ut-mnav-sub {
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 14px 14px;
+  margin-left: 2px;
+  border-left: 2px solid var(--accent, var(--border));
+  animation: utMnavIn .3s cubic-bezier(.22, 1, .36, 1)
+}
+
+.ut-mobile-menu nav .ut-mnav-sub a {
+  font-family: var(--font-body, inherit);
+  font-weight: 500;
+  font-size: 16px;
+  letter-spacing: 0;
+  padding: 9px 0;
+  color: var(--text-2);
+  justify-content: flex-start
+}
+
+.ut-mobile-menu nav .ut-mnav-sub a:hover,
+.ut-mobile-menu nav .ut-mnav-sub a:active {
+  color: var(--ink)
+}
+
+.ut-mobile-menu nav .ut-mnav-sub a.ut-mnav-all {
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  padding: 4px 0 10px
+}
+
+@keyframes utMnavIn {
+  from { opacity: 0; transform: translateY(-4px) }
+  to { opacity: 1; transform: none }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ut-mnav-chev,
+  .ut-mobile-menu nav .ut-mnav-sub { transition: none; animation: none }
+}
+
 .ut-mobile-menu-foot {
   margin-top: auto;
   background: var(--ink);
