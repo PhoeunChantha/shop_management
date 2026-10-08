@@ -25,10 +25,14 @@
                 <div class="ut-card" style="padding:4px">
                     @foreach($items as $f)
                         <div class="faq-item" data-text="{{ strtolower($f['q'].' '.$f['a']) }}" style="border-bottom:1px solid var(--border-2)">
-                            <button type="button" class="ut-acc-q" aria-expanded="false">
+                            <button type="button" class="ut-acc-q" aria-expanded="false" aria-controls="faq-{{ $loop->parent->index }}-{{ $loop->index }}">
                                 {{ $f['q'] }}<span class="chev"><x-frontend.icon n="chevD" :size="20" /></span>
                             </button>
-                            <p class="ut-acc-a muted" style="display:none">{{ $f['a'] }}</p>
+                            <div class="ut-acc-panel" id="faq-{{ $loop->parent->index }}-{{ $loop->index }}" inert>
+                                <div class="ut-acc-inner">
+                                    <p class="ut-acc-a muted">{{ $f['a'] }}</p>
+                                </div>
+                            </div>
                         </div>
                     @endforeach
                 </div>
@@ -52,7 +56,13 @@
             var groupShown = false;
             g.querySelectorAll('.faq-item').forEach(function(it){
                 var ok = !q || it.dataset.text.indexOf(q) > -1;
+                var wasHidden = it.style.display === 'none';
                 it.style.display = ok ? '' : 'none';
+                // Fade back in when a search brings an answer into view.
+                if (ok && wasHidden && it.animate && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                    it.animate([{ opacity: 0, transform: 'translateY(-4px)' }, { opacity: 1, transform: 'none' }],
+                        { duration: 220, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+                }
                 if(ok){ groupShown = true; anyShown = true; }
             });
             g.style.display = groupShown ? '' : 'none';

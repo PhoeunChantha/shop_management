@@ -615,12 +615,14 @@
   });
 
   /* ---------- FAQ accordion ---------- */
+  // Height animates in CSS (grid rows 0fr -> 1fr), so toggling only flips
+  // aria-expanded; a closed panel is inert so its text is skipped by AT.
   document.querySelectorAll('.ut-acc-q').forEach(q => {
     q.addEventListener('click', () => {
       const open = q.getAttribute('aria-expanded') === 'true';
-      const ans = q.nextElementSibling;
+      const panel = q.nextElementSibling;
       q.setAttribute('aria-expanded', String(!open));
-      if (ans) ans.style.display = open ? 'none' : 'block';
+      if (panel) panel.inert = open;
     });
   });
 
