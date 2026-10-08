@@ -2209,168 +2209,126 @@ input[type=number]::-webkit-inner-spin-button {
   gap: 40px;
 }
 
-/* Bottom nav (mobile) — floating glass dock.
-   A frosted capsule with a single lens that glides to the active tab, and a
-   separate ink bag button. Motion is transform/opacity only. */
+/* Bottom nav (mobile) */
 .ut-bottomnav {
-  --dock-h: 60px;
-  --dock-pad: 5px;
-  --dock-glass: rgba(251, 248, 241, .74);
-  --dock-edge: rgba(255, 255, 255, .7);
-  --dock-shadow: 0 14px 34px -14px rgba(16, 14, 11, .38), 0 3px 10px -2px rgba(16, 14, 11, .10);
-  --dock-spring: cubic-bezier(.32, 1.24, .58, 1);
   position: fixed;
-  left: 12px;
-  right: 12px;
-  bottom: max(12px, calc(env(safe-area-inset-bottom) + 6px));
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 1040;
+  background: rgba(251, 248, 241, .94);
+  backdrop-filter: saturate(1.3) blur(16px);
+  border-top: 1px solid var(--border);
   display: none;
-  align-items: center;
-  gap: 10px;
-  pointer-events: none;
+  justify-content: space-around;
+  padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
 }
 
-.ut-bottomnav > * {
-  pointer-events: auto;
-}
-
-/* Glass capsule */
-.ut-dock {
-  position: relative;
-  flex: 1;
-  display: flex;
-  height: var(--dock-h);
-  padding: var(--dock-pad);
-  border-radius: var(--r-pill);
-  background: var(--dock-glass);
-  backdrop-filter: blur(22px) saturate(1.8);
-  -webkit-backdrop-filter: blur(22px) saturate(1.8);
-  border: 1px solid var(--dock-edge);
-  box-shadow: var(--dock-shadow), inset 0 1px 0 rgba(255, 255, 255, .65);
-}
-
-/* The lens: one element that slides between tabs. */
-.ut-dock__lens {
-  position: absolute;
-  top: var(--dock-pad);
-  bottom: var(--dock-pad);
-  left: var(--dock-pad);
-  width: calc((100% - var(--dock-pad) * 2) / var(--n));
-  border-radius: var(--r-pill);
-  background: #fff;
-  box-shadow: 0 6px 16px -8px rgba(16, 14, 11, .35), 0 1px 2px rgba(16, 14, 11, .06), inset 0 0 0 1px rgba(16, 14, 11, .04);
-  transform: translateX(calc(var(--i) * 100%));
-  transition: transform .5s var(--dock-spring), opacity var(--dur) var(--ease-out);
-}
-
-.ut-dock.is-idle .ut-dock__lens {
-  opacity: 0;
-  transform: translateX(0) scale(.8);
-}
-
-.ut-dock__tab {
-  position: relative;
-  z-index: 1;
-  flex: 1;
-  min-width: 0;
+.ut-bottomnav a {
+  border: 0;
+  background: none;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 2px;
-  border-radius: var(--r-pill);
+  gap: 3px;
   color: var(--text-2);
+  flex: 1;
+  position: relative;
+  padding: 4px 0;
   font-family: var(--font-body);
-  font-size: 10.5px;
   font-weight: 600;
-  letter-spacing: .01em;
-  text-decoration: none;
+  font-size: 10px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.ut-bottomnav a.active {
+  color: var(--ink);
+}
+
+.ut-bottomnav .fab {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--bg);
+  display: grid;
+  place-items: center;
+  margin-top: -22px;
+  box-shadow: var(--sh-3);
+  border: 3px solid var(--paper);
+}
+
+/* Bottom nav motion (look unchanged at rest): colour fade, press squeeze,
+   tap ripple. The bounce itself is a WAAPI animation in the component. */
+.ut-bottomnav a {
   -webkit-tap-highlight-color: transparent;
   transition: color var(--dur) var(--ease-out);
 }
 
-.ut-dock__tab.active {
-  color: var(--ink);
-  font-weight: 700;
-}
-
-.ut-dock__icon {
+.ut-bn-icon {
   position: relative;
   display: grid;
   place-items: center;
+}
+
+.ut-bn-icon svg,
+.ut-bottomnav .fab {
   transition: transform var(--dur-fast) var(--ease-out);
 }
 
-.ut-dock__tab:active .ut-dock__icon {
-  transform: scale(.86);
+.ut-bottomnav a:active .ut-bn-icon svg,
+.ut-bottomnav a:active .fab {
+  transform: scale(.88);
   transition-duration: 60ms;
 }
 
-.ut-dock__label {
-  white-space: nowrap;
-}
-
-/* Bag: separate ink button, same height as the dock. */
-.ut-dock__bag {
-  position: relative;
-  flex: 0 0 var(--dock-h);
-  width: var(--dock-h);
-  height: var(--dock-h);
-  display: grid;
-  place-items: center;
+/* Soft ripple behind the tapped icon. */
+.ut-bn-icon::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
   border-radius: 50%;
-  background: var(--ink);
-  color: var(--bg);
-  box-shadow: var(--dock-shadow), inset 0 1px 0 rgba(255, 255, 255, .14);
-  -webkit-tap-highlight-color: transparent;
-  transition: transform var(--dur-fast) var(--ease-out);
+  background: var(--accent-soft);
+  opacity: 0;
+  transform: scale(.4);
+  pointer-events: none;
+  z-index: -1;
 }
 
-.ut-dock__bag:active {
-  transform: scale(.92);
-  transition-duration: 60ms;
+.ut-bn-icon--fab::after {
+  width: 64px;
+  height: 64px;
+  margin: -42px 0 0 -32px;
 }
 
-.ut-bottomnav .ut-dock__badge {
-  top: -5px;
-  right: -9px;
+.ut-bn-icon.is-tapped::after {
+  animation: ut-bn-ripple .5s var(--ease-out);
 }
 
-.ut-dock__bag .ut-dock__badge {
-  top: 4px;
-  right: 4px;
-  border-color: var(--ink);
-}
-
-.ut-dock__tab:focus-visible,
-.ut-dock__bag:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .ut-dock__tab:not(.active):hover {
-    color: var(--ink);
-  }
+@keyframes ut-bn-ripple {
+  0% { opacity: .9; transform: scale(.4); }
+  100% { opacity: 0; transform: scale(1.25); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ut-dock__lens,
-  .ut-dock__tab,
-  .ut-dock__icon,
-  .ut-dock__bag {
+  .ut-bottomnav a,
+  .ut-bn-icon svg,
+  .ut-bottomnav .fab {
     transition: none;
   }
 
-  .ut-dock__tab:active .ut-dock__icon,
-  .ut-dock__bag:active {
+  .ut-bottomnav a:active .ut-bn-icon svg,
+  .ut-bottomnav a:active .fab {
     transform: none;
   }
-}
 
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .ut-bottomnav {
-    --dock-glass: rgba(251, 248, 241, .97);
+  .ut-bn-icon.is-tapped::after {
+    animation: none;
   }
 }
 
@@ -2681,19 +2639,6 @@ input[type=number]::-webkit-inner-spin-button {
     display: flex;
   }
 
-  /* Sit the product sticky bar just above the floating dock. */
-  .ut-stickybar {
-    bottom: calc(max(12px, calc(env(safe-area-inset-bottom) + 6px)) + 68px);
-    left: 12px;
-    right: 12px;
-    border: 1px solid var(--border);
-    border-radius: 20px;
-  }
-
-  .ut-stickybar:not(.show) {
-    transform: translateY(calc(100% + 120px));
-  }
-
   .ut-rail,
   .ut-results-grid {
     grid-template-columns: 1fr 1fr;
@@ -2735,7 +2680,7 @@ input[type=number]::-webkit-inner-spin-button {
   }
 
   .ut-page-pad-bottom {
-    padding-bottom: 96px;
+    padding-bottom: 80px;
   }
 
   .ut-header-main {
@@ -3660,7 +3605,7 @@ input[type=number]::-webkit-inner-spin-button {
 
 /* ---- mobile: launcher above the bottom nav, panel full-screen ---- */
 @media (max-width: 767px) {
-  .ut-chat-launcher { right: 14px; bottom: calc(86px + env(safe-area-inset-bottom)); height: 52px; min-width: 52px; max-width: 52px; padding: 0 14px; }
+  .ut-chat-launcher { right: 14px; bottom: calc(78px + env(safe-area-inset-bottom)); height: 52px; min-width: 52px; max-width: 52px; padding: 0 14px; }
   .ut-chat-launcher:hover { max-width: 52px; }
   .ut-chat-launcher-label { display: none; }
   .ut-chat-open .ut-chat-launcher { display: none; }
