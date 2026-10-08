@@ -130,16 +130,23 @@
     <div class="offcanvas-body"><button type="button" class="ut-mobile-search" data-bs-dismiss="offcanvas" data-bs-toggle="modal" data-bs-target="#utSearchOverlay"><x-frontend.icon n="search" :size="18" /> {{ __('Search the collection') }}</button><nav aria-label="{{ __('Shop categories') }}">
         @foreach($nav['mobile'] ?? [] as $item)
             @if(! empty($item['children']))
-                {{-- Tap a category to reveal its sub-categories (native <details>: no JS, keyboard + screen-reader friendly). --}}
-                <details class="ut-mnav-group">
-                    <summary>{{ $item['label'] }} <x-frontend.icon n="chevD" :size="18" cls="ut-mnav-chev" /></summary>
-                    <div class="ut-mnav-sub">
-                        <a href="{{ $item['url'] }}" class="ut-mnav-all">{{ __('Shop all :name', ['name' => $item['label']]) }} <x-frontend.icon n="arrowR" :size="15" /></a>
-                        @foreach($item['children'] as $child)
-                            <a href="{{ $child['url'] }}">{{ $child['label'] }}</a>
-                        @endforeach
+                {{-- Tap a category to reveal its sub-categories. The panel's height
+                     animates with a grid-rows transition (main.js toggles is-open). --}}
+                <div class="ut-mnav-group" data-mnav-group>
+                    <button type="button" class="ut-mnav-toggle" aria-expanded="false" aria-controls="utMnav{{ $loop->index }}">
+                        {{ $item['label'] }} <x-frontend.icon n="chevD" :size="18" cls="ut-mnav-chev" />
+                    </button>
+                    <div class="ut-mnav-panel" id="utMnav{{ $loop->index }}" inert>
+                        <div class="ut-mnav-clip">
+                            <div class="ut-mnav-sub">
+                                <a href="{{ $item['url'] }}" class="ut-mnav-all" style="--i:0">{{ __('Shop all :name', ['name' => $item['label']]) }} <x-frontend.icon n="arrowR" :size="15" /></a>
+                                @foreach($item['children'] as $child)
+                                    <a href="{{ $child['url'] }}" style="--i:{{ $loop->iteration }}">{{ $child['label'] }}</a>
+                                @endforeach
+                            </div>
+                        </div>
                     </div>
-                </details>
+                </div>
             @else
                 <a href="{{ $item['url'] }}">{{ $item['label'] }} <x-frontend.icon n="arrowR" :size="18" /></a>
             @endif

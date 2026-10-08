@@ -11,7 +11,7 @@ it('shows sub-categories in the mobile menu', function () {
     $html = $this->get(route('frontend.home'))->assertOk()->getContent();
     $mobile = substr($html, strpos($html, 'id="utMobileMenu"'));
 
-    expect($mobile)->toContain('<details class="ut-mnav-group">')
+    expect($mobile)->toContain('data-mnav-group')->toContain('aria-expanded="false"')
         ->toContain('T-Shirts')
         ->toContain('Shop all T-Shirts')
         ->toContain('Oversized Tees');

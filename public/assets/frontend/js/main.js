@@ -485,6 +485,23 @@
       return;
     }
 
+    // Mobile menu: expand a category's sub-categories (one open at a time).
+    const mnavToggle = e.target.closest('.ut-mnav-toggle');
+    if (mnavToggle) {
+      const group = mnavToggle.closest('[data-mnav-group]');
+      const open = !group.classList.contains('is-open');
+      const setOpen = (g, on) => {
+        g.classList.toggle('is-open', on);
+        const btn = g.querySelector('.ut-mnav-toggle');
+        const panel = g.querySelector('.ut-mnav-panel');
+        if (btn) btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+        if (panel) panel.inert = !on; // closed links can't be tabbed to
+      };
+      if (open) document.querySelectorAll('[data-mnav-group].is-open').forEach(g => { if (g !== group) setOpen(g, false); });
+      setOpen(group, open);
+      return;
+    }
+
     // size / color selectors (PDP, quick view)
     const sz = e.target.closest('[data-size]');
     if (sz && sz.closest('[data-size-group]')) {
