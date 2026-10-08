@@ -2209,19 +2209,24 @@ input[type=number]::-webkit-inner-spin-button {
   gap: 40px;
 }
 
-/* Bottom nav (mobile) */
+/* Bottom nav (mobile)
+   Active tab: soft pill scales in behind the icon + ink dot under the label.
+   Motion stays on transform/opacity; press feedback is instant-in, eased-out. */
 .ut-bottomnav {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 1040;
-  background: rgba(251, 248, 241, .94);
-  backdrop-filter: saturate(1.3) blur(16px);
-  border-top: 1px solid var(--border);
+  background: rgba(251, 248, 241, .92);
+  backdrop-filter: saturate(1.4) blur(18px);
+  -webkit-backdrop-filter: saturate(1.4) blur(18px);
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  box-shadow: 0 -10px 30px -18px rgba(16, 14, 11, .28);
   display: none;
+  align-items: flex-end;
   justify-content: space-around;
-  padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
 }
 
 .ut-bottomnav a {
@@ -2230,33 +2235,148 @@ input[type=number]::-webkit-inner-spin-button {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
-  color: var(--text-2);
+  gap: 4px;
   flex: 1;
   position: relative;
-  padding: 4px 0;
+  padding: 4px 0 6px;
+  color: var(--text-2);
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 10px;
-  letter-spacing: .05em;
+  letter-spacing: .06em;
   text-transform: uppercase;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color var(--dur) var(--ease-out);
+}
+
+/* Icon slot with the pill behind it. */
+.ut-bottomnav__icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 30px;
+  isolation: isolate;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.ut-bottomnav__icon::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: var(--r-pill);
+  background: var(--accent-soft);
+  opacity: 0;
+  transform: scale(.6);
+  transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
+}
+
+/* Small dot under the label marks the current tab. */
+.ut-bottomnav__label {
+  position: relative;
+}
+
+.ut-bottomnav__label::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 4px;
+  height: 4px;
+  margin-left: -2px;
+  border-radius: 50%;
+  background: var(--ink);
+  opacity: 0;
+  transform: scale(0);
+  transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
 }
 
 .ut-bottomnav a.active {
   color: var(--ink);
+  font-weight: 700;
 }
 
-.ut-bottomnav .fab {
-  width: 46px;
-  height: 46px;
+.ut-bottomnav a.active .ut-bottomnav__icon::before {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.ut-bottomnav a.active .ut-bottomnav__label::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Press feedback: instant squeeze, eased release. */
+.ut-bottomnav a:active .ut-bottomnav__icon {
+  transform: scale(.88);
+  transition-duration: 60ms;
+}
+
+/* Floating bag button */
+.ut-bottomnav__fab {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  margin-top: -26px;
   border-radius: 50%;
-  background: var(--ink);
-  color: var(--bg);
   display: grid;
   place-items: center;
-  margin-top: -22px;
-  box-shadow: var(--sh-3);
-  border: 3px solid var(--paper);
+  background: var(--ink);
+  color: var(--bg);
+  border: 4px solid var(--paper);
+  box-shadow: 0 10px 22px -10px rgba(16, 14, 11, .55), 0 2px 6px rgba(16, 14, 11, .18);
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur) var(--ease-out);
+}
+
+.ut-bottomnav__bag:active .ut-bottomnav__fab {
+  transform: scale(.9);
+  box-shadow: 0 4px 10px -6px rgba(16, 14, 11, .55);
+  transition-duration: 60ms;
+}
+
+.ut-bottomnav .ut-bottomnav__badge {
+  top: -4px;
+  right: -8px;
+  min-width: 18px;
+  height: 18px;
+}
+
+.ut-bottomnav__fab .ut-bottomnav__badge {
+  top: -6px;
+  right: -6px;
+}
+
+.ut-bottomnav a:focus-visible {
+  outline: none;
+}
+
+.ut-bottomnav a:focus-visible .ut-bottomnav__icon,
+.ut-bottomnav a:focus-visible .ut-bottomnav__fab {
+  border-radius: var(--r-pill);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ut-bottomnav a:not(.active):hover {
+    color: var(--ink);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ut-bottomnav a,
+  .ut-bottomnav__icon,
+  .ut-bottomnav__icon::before,
+  .ut-bottomnav__label::after,
+  .ut-bottomnav__fab {
+    transition: none;
+  }
+
+  .ut-bottomnav a:active .ut-bottomnav__icon,
+  .ut-bottomnav__bag:active .ut-bottomnav__fab {
+    transform: none;
+  }
 }
 
 /* Offcanvas (cart + profile) */

@@ -174,8 +174,18 @@
   function syncBadges() {
     const c = cartCount();
     document.querySelectorAll('[data-cart-count]').forEach(el => {
+      const changed = el.textContent !== String(c);
       el.textContent = c;
       el.style.display = c > 0 ? '' : 'none';
+      // Pop the badge when the count actually changes (not on first paint).
+      if (changed && c > 0 && el.dataset.synced && el.animate
+        && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        el.animate(
+          [{ transform: 'scale(1)' }, { transform: 'scale(1.35)' }, { transform: 'scale(1)' }],
+          { duration: 320, easing: 'cubic-bezier(.22, 1, .36, 1)' }
+        );
+      }
+      el.dataset.synced = '1';
     });
     const w = store.wish.length;
     document.querySelectorAll('[data-wish-count]').forEach(el => {
