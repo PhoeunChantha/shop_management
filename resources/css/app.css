@@ -18562,3 +18562,21 @@ html.dark {
 .wa-preview strong i { font-size: 12px; color: var(--admin-muted); }
 .wa-preview small { flex-basis: 100%; color: #b91c1c; font-weight: 700; }
 .wa-preview.is-bad { background: color-mix(in srgb, #dc2626 8%, var(--admin-panel)); }
+
+/* Top-up Requests: payslip thumbnail in the table */
+.topup-slip {
+    display: inline-block;
+    width: 44px;
+    height: 56px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--admin-line);
+    background: var(--admin-panel);
+    transition: transform .16s cubic-bezier(.22, 1, .36, 1), border-color .16s ease;
+}
+
+.topup-slip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+@media (hover: hover) and (pointer: fine) {
+    .topup-slip:hover { transform: scale(1.06); border-color: var(--primary-color); }
+}
