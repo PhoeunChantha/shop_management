@@ -518,7 +518,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::prefix('wallets')->name('wallets.')->group(function () {
         Route::get('/', [WalletController::class, 'index'])->name('index');
-        Route::post('/{user}/adjust', [WalletController::class, 'adjust'])->name('adjust');
+        Route::post('/adjust', [WalletController::class, 'adjust'])->name('adjust');
+        Route::get('/topups', [WalletController::class, 'topups'])->name('topups.index');
         Route::post('/topups/{topup}/approve', [WalletController::class, 'approveTopup'])->name('topups.approve');
         Route::post('/topups/{topup}/reject', [WalletController::class, 'rejectTopup'])->name('topups.reject');
     });

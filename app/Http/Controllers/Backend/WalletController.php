@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Backend;
 
 use App\Exceptions\WalletException;
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Http\Requests\Wallet\AdjustWalletRequest;
 use App\Models\WalletTopup;
 use App\Services\Admin\WalletService;
 use Illuminate\Http\RedirectResponse;
@@ -31,31 +31,31 @@ class WalletController extends Controller
         ]);
         $perPage = (int) ($filters['per_page'] ?? 25);
 
-        $customers = User::role('customer')
-            ->when(
-                filled($filters['search'] ?? null),
-                function ($q) use ($filters): void {
-                    $term = trim((string) $filters['search']);
-                    $q->where(fn ($q) => $q->where('name', 'like', "%{$term}%")->orWhere('email', 'like', "%{$term}%"));
-                },
-            )
-            ->orderByDesc('wallet_balance')
-            ->orderBy('name')
-            ->paginate($perPage)
-            ->withQueryString();
-
         return view('admin.wallets.index', [
-            'customers' => $customers,
-            'totalBalance' => (float) User::role('customer')->sum('wallet_balance'),
+            'customers' => $this->wallet->customers($filters, $perPage),
+            'customerOptions' => $this->wallet->customerOptions(),
+            'totalBalance' => $this->wallet->totalCustomerBalance(),
             'perPage' => $perPage,
-            'pendingTopups' => WalletTopup::with('user:id,name,email')
-                ->where('status', 'pending')
-                ->where('method_type', 'manual')
-                ->latest()
-                ->get(),
+            'pendingCount' => $this->wallet->pendingTopupCount(),
             'transactions' => $this->wallet->transactions($filters, (int) ($filters['tx_per_page'] ?? 10)),
             'txPerPage' => (int) ($filters['tx_per_page'] ?? 10),
             'txTypes' => WalletService::TYPES,
+        ]);
+    }
+
+    /**
+     * Manual top-up requests: pending (approve / reject) and reviewed history.
+     */
+    public function topups(Request $request): View
+    {
+        abort_unless($request->user()->can('view wallets'), 403);
+
+        $tab = $request->validate(['tab' => ['nullable', 'in:pending,reviewed']])['tab'] ?? 'pending';
+
+        return view('admin.wallets.topups', [
+            'tab' => $tab,
+            'pendingTopups' => $this->wallet->pendingTopups(),
+            'reviewedTopups' => $tab === 'reviewed' ? $this->wallet->reviewedTopups() : null,
         ]);
     }
 
@@ -108,27 +108,22 @@ class WalletController extends Controller
         return back()->with('success', __('Top-up request rejected.'));
     }
 
-    public function adjust(Request $request, User $user): RedirectResponse
+    public function adjust(AdjustWalletRequest $request): RedirectResponse
     {
         abort_unless($request->user()->can('edit wallets'), 403);
 
-        $data = $request->validate([
-            'direction' => ['required', 'in:credit,debit'],
-            'amount' => ['required', 'numeric', 'min:0.01', 'max:100000'],
-            'note' => ['nullable', 'string', 'max:255'],
-        ]);
+        $data = $request->validated();
+        $customer = $request->customer();
 
         try {
-            $amount = (float) $data['amount'];
-            $note = ($data['note'] ?? null) ?: ($data['direction'] === 'credit' ? 'Admin credit' : 'Admin debit');
-
-            $data['direction'] === 'credit'
-                ? $this->wallet->credit($user, $amount, 'adjustment', $note)
-                : $this->wallet->debit($user, $amount, 'adjustment', $note);
+            $balance = $this->wallet->adjust($customer, $data['direction'], (float) $data['amount'], $data['note'] ?? null);
         } catch (WalletException $e) {
-            return back()->with('error', $e->getMessage());
+            return back()->withInput()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Wallet updated for '.$user->name.'.');
+        return back()->with('success', __(':name\'s wallet is now :balance.', [
+            'name' => $customer->name,
+            'balance' => '$'.number_format($balance, 2),
+        ]));
     }
 }
