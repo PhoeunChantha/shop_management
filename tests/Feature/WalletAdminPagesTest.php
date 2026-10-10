@@ -122,3 +122,17 @@ it('hides the top-up page from users without wallet permission', function () {
 
     $this->actingAs($user)->get(route('admin.wallets.topups.index'))->assertForbidden();
 });
+
+it('shows pending top-ups as a table with approve and a reject popup', function () {
+    $topup = topupFor($this->customer, 'pending', ['tran_id' => 'WT-TABLE-1']);
+
+    $html = $this->actingAs($this->admin)->get(route('admin.wallets.topups.index'))->assertOk()->getContent();
+
+    expect($html)->toContain('<table class="premium-table wallet-table">')
+        ->toContain('WT-TABLE-1')
+        ->toContain(route('admin.wallets.topups.approve', $topup))
+        ->toContain('openTopupReject(')
+        ->toContain('@topup-reject.window')
+        ->not->toContain('wallet-topup-reject-note')   // no reason input in the row
+        ->not->toContain('Pending top-up requests');   // duplicate inner heading removed
+});
