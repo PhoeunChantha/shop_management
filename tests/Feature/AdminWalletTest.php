@@ -26,7 +26,7 @@ it('lists customer wallets for an admin', function () {
 
 it('lets an admin credit a wallet', function () {
     $this->actingAs($this->admin)
-        ->post(route('admin.wallets.adjust', $this->customer), ['direction' => 'credit', 'amount' => 15, 'note' => 'Gift'])
+        ->post(route('admin.wallets.adjust'), ['user_id' => $this->customer->id, 'direction' => 'credit', 'amount' => 15, 'note' => 'Gift'])
         ->assertRedirect();
 
     expect((float) $this->customer->refresh()->wallet_balance)->toBe(55.0);
@@ -34,7 +34,7 @@ it('lets an admin credit a wallet', function () {
 
 it('lets an admin debit a wallet but not below zero', function () {
     $this->actingAs($this->admin)
-        ->post(route('admin.wallets.adjust', $this->customer), ['direction' => 'debit', 'amount' => 1000])
+        ->post(route('admin.wallets.adjust'), ['user_id' => $this->customer->id, 'direction' => 'debit', 'amount' => 1000])
         ->assertRedirect();
 
     // Debit rejected (insufficient) — balance unchanged.

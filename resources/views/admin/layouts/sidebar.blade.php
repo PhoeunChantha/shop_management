@@ -23,7 +23,8 @@
             'items' => [
                 ['label' => __('Orders'), 'icon' => 'fa-list-check', 'route' => 'admin.orders.index', 'active' => ['admin.orders.*']],
                 ['label' => __('Payments'), 'icon' => 'fa-credit-card', 'route' => 'admin.payments.index', 'active' => ['admin.payments.*']],
-                ['label' => __('Wallets'), 'icon' => 'fa-wallet', 'route' => 'admin.wallets.index', 'active' => ['admin.wallets.*']],
+                ['label' => __('Wallets'), 'icon' => 'fa-wallet', 'route' => 'admin.wallets.index', 'active' => ['admin.wallets.index']],
+                ['label' => __('Top-up Requests'), 'icon' => 'fa-hand-holding-dollar', 'route' => 'admin.wallets.topups.index', 'active' => ['admin.wallets.topups.*'], 'badge' => 'pending_topups'],
                 ['label' => __('Customers'), 'icon' => 'fa-user-group', 'route' => 'admin.customers.index', 'active' => ['admin.customers.*']],
                 ['label' => __('Live Chat'), 'icon' => 'fa-comments', 'route' => 'admin.chats.index', 'active' => ['admin.chats.*'], 'permission' => 'view chats'],
                 ['label' => __('Returns & Refunds'), 'icon' => 'fa-rotate-left', 'route' => 'admin.returns.index', 'active' => ['admin.returns.*']],
@@ -161,6 +162,9 @@
                                     class="admin-module__link {{ request()->routeIs(...$item['active']) ? 'active' : '' }}">
                                     <span><i class="fa-solid {{ $item['icon'] }}"></i></span>
                                     <strong>{{ $item['label'] }}</strong>
+                                    @if (($item['badge'] ?? null) === 'pending_topups' && ($pendingTopupBadge ??= app(\App\Services\Admin\WalletService::class)->pendingTopupCount()) > 0)
+                                        <em class="admin-module__badge" aria-label="{{ __(':n pending', ['n' => $pendingTopupBadge]) }}">{{ $pendingTopupBadge > 99 ? '99+' : $pendingTopupBadge }}</em>
+                                    @endif
                                 </a>
                             @endforeach
                         </div>
