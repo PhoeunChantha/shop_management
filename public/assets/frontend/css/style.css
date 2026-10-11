@@ -739,26 +739,64 @@ select.ut-input {
   transform: none !important;
 }
 
-/* ---- Toast ---- */
+/* ---- Toast (top-right, slides in from the edge) ---- */
 .ut-toast {
   position: fixed;
-  left: 50%;
-  bottom: 96px;
-  transform: translateX(-50%);
+  top: 20px;
+  right: 20px;
+  max-width: min(380px, calc(100vw - 40px));
   background: var(--ink);
   color: var(--bg);
-  padding: 14px 22px;
-  border-radius: var(--r-pill);
+  padding: 13px 20px 13px 16px;
+  border-radius: 14px;
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 13px;
-  letter-spacing: .04em;
+  line-height: 1.45;
+  letter-spacing: .02em;
   box-shadow: var(--sh-4);
   z-index: 4000;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
-  animation: pop .26s var(--ease-out) both;
+  animation: utToastIn .32s var(--ease-out) both;
+}
+
+.ut-toast svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ut-toast.is-error svg {
+  color: #fca5a5;
+}
+
+.ut-toast.is-leaving {
+  animation: utToastOut .2s ease-in both;
+}
+
+@keyframes utToastIn {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes utToastOut {
+  to { opacity: 0; transform: translateX(16px); }
+}
+
+@media (max-width: 575.98px) {
+  .ut-toast {
+    top: 12px;
+    right: 12px;
+    max-width: calc(100vw - 24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ut-toast,
+  .ut-toast.is-leaving {
+    animation: none;
+  }
 }
 
 /* ---- Inline field validation ---- */
