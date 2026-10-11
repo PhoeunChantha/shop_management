@@ -307,6 +307,7 @@ class AccountService
             'items' => $order->details->map(fn ($detail): array => [
                 'pid' => $detail->product_id,
                 'name' => $detail->name,
+                'image' => $detail->product?->thumbnail_preview_url ?: $detail->product?->thumbnail_url,
                 'color' => strtolower($detail->variant?->color?->code ?: 'black'),
                 'size' => $detail->variant?->size?->code ?: $detail->variant_label ?: 'One Size',
                 'price' => (float) $detail->price,
