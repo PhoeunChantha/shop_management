@@ -59,10 +59,6 @@
       box.className = 'ut-toasts';
       document.body.appendChild(box);
     }
-    // Sit just under the sticky header so the nav and bag stay clear.
-    const head = document.querySelector('.ut-header');
-    const edge = head ? head.getBoundingClientRect().bottom : 0;
-    if (edge > 0) box.style.top = Math.round(edge + 14) + 'px';
     return box;
   }
   function toast(msg, ms, type) {
