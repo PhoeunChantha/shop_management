@@ -18568,3 +18568,74 @@ html.dark {
 @media (hover: hover) and (pointer: fine) {
     .topup-slip:hover { transform: scale(1.06); border-color: var(--primary-color); }
 }
+
+/* ── New-order alert (admin/layouts/_order_alert) ─────────────── */
+.order-alert { max-width: 460px; padding: 0; overflow: hidden; }
+.order-alert__head {
+    padding: 30px 28px 22px;
+    text-align: center;
+    background:
+        radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--success-color, #059669) 18%, transparent), transparent 70%);
+}
+.order-alert__bell {
+    width: 62px; height: 62px; margin: 0 auto 14px;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    font-size: 24px;
+    color: #fff;
+    background: var(--success-color, #059669);
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--success-color, #059669) 16%, transparent);
+    animation: order-alert-pulse 1.6s ease-out infinite;
+}
+.order-alert__bell i { transform-origin: 50% 0; animation: order-alert-swing 1.6s ease-in-out infinite; }
+.order-alert__kicker {
+    margin: 0 0 4px;
+    font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--success-color, #059669);
+}
+.order-alert__head h3 { margin: 0; font-size: 21px; font-weight: 800; color: #0f172a; }
+.order-alert__list {
+    list-style: none; margin: 0; padding: 0 18px;
+    max-height: 264px; overflow-y: auto;
+}
+.order-alert__row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 12px;
+    border: 1px solid #e8edf3; border-radius: 14px;
+    margin-bottom: 8px;
+    color: inherit; text-decoration: none;
+    transition: border-color .15s ease, background-color .15s ease;
+}
+.order-alert__row:hover { border-color: var(--success-color, #059669); background: color-mix(in srgb, var(--success-color, #059669) 5%, #fff); color: inherit; }
+.order-alert__who { flex: 1; min-width: 0; }
+.order-alert__who strong, .order-alert__sum strong { display: block; font-size: 14.5px; font-weight: 800; color: #0f172a; }
+.order-alert__who small, .order-alert__sum small {
+    display: block; font-size: 12px; color: #64748b;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.order-alert__sum { text-align: right; flex-shrink: 0; }
+.order-alert__sum strong { color: var(--success-color, #059669); }
+.order-alert__row > i { font-size: 11px; color: #94a3b8; }
+.order-alert__foot { padding: 14px 18px 18px; margin: 0; }
+.order-alert__foot .form-submit-button { text-decoration: none; }
+
+@keyframes order-alert-pulse {
+    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--success-color, #059669) 40%, transparent); }
+    100% { box-shadow: 0 0 0 18px transparent; }
+}
+@keyframes order-alert-swing {
+    0%, 55%, 100% { transform: rotate(0); }
+    10% { transform: rotate(16deg); }
+    22% { transform: rotate(-13deg); }
+    34% { transform: rotate(8deg); }
+    45% { transform: rotate(-4deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .order-alert__bell, .order-alert__bell i { animation: none; }
+}
+
+html.dark .order-alert__head h3,
+html.dark .order-alert__who strong { color: #f1f5f9; }
+html.dark .order-alert__row { border-color: #334155; }
+html.dark .order-alert__row:hover { background: rgba(5, 150, 105, .12); }
+html.dark .order-alert__who small, html.dark .order-alert__sum small { color: #94a3b8; }

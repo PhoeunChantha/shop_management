@@ -139,6 +139,8 @@
 
     <x-toastr />
 
+    @include('admin.layouts._order_alert')
+
     @stack('js')
 </body>
 

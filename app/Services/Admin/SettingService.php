@@ -187,6 +187,8 @@ final class SettingService
                 'order_email_enabled' => ['label' => 'Order confirmation email', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '1', 'help' => 'Email the customer a receipt + PDF invoice when they place an order.', 'rules' => 'nullable|in:0,1'],
                 'mail_from_name' => ['label' => 'Sender name', 'type' => 'text', 'placeholder' => 'T-Shirt Shop', 'help' => 'The “from” name shown on outgoing store emails. Falls back to the site name.', 'rules' => 'nullable|string|max:255'],
                 'mail_from_address' => ['label' => 'Sender email', 'type' => 'email', 'placeholder' => 'orders@tshirtshop.com', 'help' => 'The “from” address for outgoing store emails. Falls back to the app default.', 'rules' => 'nullable|email|max:255'],
+                'order_alert_popup' => ['label' => 'New order popup (admin)', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '1', 'help' => 'Show a popup in the admin panel the moment a customer places an order on the website.', 'rules' => 'nullable|in:0,1'],
+                'order_alert_sound' => ['label' => 'New order sound (admin)', 'type' => 'select', 'options' => ['1' => 'Enabled', '0' => 'Disabled'], 'default' => '1', 'help' => 'Play a sound in the admin panel for every new website order. The browser only allows sound after you have clicked somewhere in the admin once.', 'rules' => 'nullable|in:0,1'],
                 'admin_order_alert_email' => ['label' => 'Admin order alert email', 'type' => 'email', 'placeholder' => 'admin@tshirtshop.com', 'help' => 'When set, a copy of every new order (with invoice) is also emailed here.', 'rules' => 'nullable|email|max:255'],
             ],
             SettingGroup::Localization->value => [
@@ -778,6 +780,19 @@ final class SettingService
     public function orderEmailEnabled(): bool
     {
         return (string) Setting::get('order_email_enabled', '1') !== '0';
+    }
+
+    /**
+     * In-panel "new order" alert switches (Settings → Notifications), default on.
+     *
+     * @return array{popup: bool, sound: bool, enabled: bool}
+     */
+    public function orderAlert(): array
+    {
+        $popup = (string) Setting::get('order_alert_popup', '1') !== '0';
+        $sound = (string) Setting::get('order_alert_sound', '1') !== '0';
+
+        return ['popup' => $popup, 'sound' => $sound, 'enabled' => $popup || $sound];
     }
 
     /**
