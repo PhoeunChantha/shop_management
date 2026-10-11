@@ -25,6 +25,40 @@ final class OrderService
     ) {}
 
     /**
+     * Orders placed after the given id, oldest first, for the admin "new
+     * order" alert. Capped so a long-idle tab cannot pull a huge list.
+     *
+     * @return array{latest_id: int, orders: array<int, array<string, mixed>>}
+     */
+    public function alertsSince(int $afterId, int $limit = 5): array
+    {
+        $latestId = (int) Order::query()->max('id');
+
+        $orders = $afterId >= $latestId ? collect() : Order::query()
+            ->where('id', '>', $afterId)
+            ->withSum('details as items_count', 'quantity')
+            ->latest('id')
+            ->limit($limit)
+            ->get()
+            ->reverse()
+            ->values();
+
+        return [
+            'latest_id' => $latestId,
+            'orders' => $orders->map(fn (Order $order): array => [
+                'id' => $order->id,
+                'number' => $order->order_number,
+                'customer' => $order->customer_name ?: __('Guest'),
+                'items' => (int) $order->items_count,
+                'total' => money($order->grand_total),
+                'payment' => str($order->payment_method ?: '')->replace('_', ' ')->upper()->value(),
+                'placed' => ($order->placed_at ?? $order->created_at)?->format('g:i A') ?? '',
+                'url' => route('admin.orders.show', $order->id),
+            ])->all(),
+        ];
+    }
+
+    /**
      * Headline KPIs for the orders index stat bar.
      *
      * @return array<string, float|int>

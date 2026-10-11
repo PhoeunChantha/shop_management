@@ -9,6 +9,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Services\Admin\OrderService;
 use App\Services\Admin\SettingService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -48,6 +49,18 @@ class OrderController extends Controller
                 ->mapWithKeys(fn (User $u) => [$u->id => $u->name.' — '.$u->email]),
             'priceRanges' => OrderService::priceRanges(),
         ]);
+    }
+
+    /**
+     * Polled by the admin layout: website orders placed since the last one seen.
+     */
+    public function alerts(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', Order::class);
+
+        $data = $request->validate(['after' => ['required', 'integer', 'min:0']]);
+
+        return response()->json($this->orders->alertsSince((int) $data['after']));
     }
 
     public function show(string $id): View

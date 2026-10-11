@@ -58,10 +58,10 @@ use App\Http\Controllers\Frontend\AuthController;
 use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\Frontend\ChatController;
 use App\Http\Controllers\Frontend\CheckoutController;
-use App\Http\Controllers\Frontend\OrderTrackingController;
 use App\Http\Controllers\Frontend\CustomerUnsubscribeController;
 use App\Http\Controllers\Frontend\HomeController;
 use App\Http\Controllers\Frontend\NewsletterController;
+use App\Http\Controllers\Frontend\OrderTrackingController;
 use App\Http\Controllers\Frontend\PageController;
 use App\Http\Controllers\Frontend\PaymentController;
 use App\Http\Controllers\Frontend\ProductFeedController;
@@ -476,6 +476,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
 
     Route::prefix('orders')->name('orders.')->group(function () {
         Route::get('/', [OrderController::class, 'index'])->name('index');
+        Route::get('/alerts', [OrderController::class, 'alerts'])->name('alerts');
         Route::get('/{id}', [OrderController::class, 'show'])->whereNumber('id')->name('show');
         Route::get('/{id}/invoice', [OrderController::class, 'invoice'])->whereNumber('id')->name('invoice');
         Route::get('/{id}/packing-slip', [OrderController::class, 'packingSlip'])->whereNumber('id')->name('packing-slip');
