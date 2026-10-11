@@ -19,14 +19,14 @@
             </div>
             <div class="ut-row" style="gap:8px;margin-bottom:16px">
                 @foreach($o['items'] as $it)
-                    <x-frontend.ph :tint="$products[$it['pid']]['tint'] ?? ''" style="width:48px;height:60px;border-radius:10px" />
+                    <x-frontend.thumb :src="$it['image'] ?? null" :alt="$it['name']" :tint="$products[$it['pid']]['tint'] ?? ''" style="width:48px;height:60px;border-radius:10px" />
                 @endforeach
                 <span class="muted" style="font-size:13px;align-self:center;margin-left:4px">{{ collect($o['items'])->sum('qty') }} {{ __('items') }}</span>
             </div>
             <div class="ut-row" style="gap:10px;flex-wrap:wrap">
                 <a href="{{ route('frontend.account.orders.show', $o['id']) }}" class="ut-btn ut-btn-ghost ut-btn-sm">{{ __('View details') }}</a>
                 <a href="{{ route('frontend.account.orders.tracking', $o['id']) }}" class="ut-btn ut-btn-ghost ut-btn-sm"><x-frontend.icon n="truck" :size="15" /> {{ __('Track order') }}</a>
-                @if($o['status'] === 'Delivered')
+                @if($o['status'] === 'Delivered' && !empty($o['items'][0]['pid']))
                     <a href="{{ route('frontend.account.orders.review', [$o['id'], $o['items'][0]['pid']]) }}" class="ut-btn ut-btn-ink ut-btn-sm"><x-frontend.icon n="star" :size="14" /> {{ __('Write review') }}</a>
                 @endif
             </div>

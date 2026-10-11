@@ -32,11 +32,11 @@
                 @foreach($order['items'] as $it)
                     @php $p = $products[$it['pid']] ?? null; @endphp
                     <div class="ut-row" style="gap:14px;padding:16px 0;{{ !$loop->last ? 'border-bottom:1px solid var(--border-2)' : '' }}">
-                        <x-frontend.ph :tint="$p['tint'] ?? ''" :dark="$p['dark'] ?? false" style="width:64px;height:80px;border-radius:12px;flex-shrink:0" />
+                        <x-frontend.thumb :src="$it['image'] ?? null" :alt="$it['name']" :tint="$p['tint'] ?? ''" :dark="$p['dark'] ?? false" style="width:64px;height:80px;border-radius:12px;flex-shrink:0" />
                         <div style="flex:1">
                             <div style="font-family:var(--font-head);font-weight:600">{{ $it['name'] }}</div>
                             <div class="muted" style="font-size:13px;margin-top:3px">{{ $colors[$it['color']]['name'] ?? $it['color'] }} · {{ __('Size') }} {{ $it['size'] }} · {{ __('Qty') }} {{ $it['qty'] }}</div>
-                            @if($order['status'] === 'Delivered')
+                            @if($order['status'] === 'Delivered' && !empty($it['pid']))
                                 <a href="{{ route('frontend.account.orders.review', [$order['id'], $it['pid']]) }}" class="ut-link" style="font-size:13px;margin-top:8px;display:inline-flex"><x-frontend.icon n="star" :size="13" /> {{ __('Write a review') }}</a>
                             @endif
                         </div>

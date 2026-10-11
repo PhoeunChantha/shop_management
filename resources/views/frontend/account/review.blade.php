@@ -10,7 +10,7 @@
 
     <div class="ut-card" id="reviewCard" style="padding:26px">
         <div class="ut-row" style="gap:14px;margin-bottom:24px;padding-bottom:22px;border-bottom:1px solid var(--border)">
-            <x-frontend.ph :tint="$product['tint']" :dark="$product['dark']" style="width:64px;height:80px;border-radius:12px" />
+            <x-frontend.thumb :src="$product['image_url'] ?? null" :alt="$product['name']" :tint="$product['tint']" :dark="$product['dark']" style="width:64px;height:80px;border-radius:12px" />
             <div><div style="font-family:var(--font-head);font-weight:700;font-size:17px">{{ $product['name'] }}</div><div class="muted" style="font-size:13.5px">{{ $product['cat'] }} · {{ money($product['price']) }}</div></div>
         </div>
         <form class="ut-col" style="gap:22px" method="POST" action="{{ route('frontend.account.orders.review.store', ['id' => $order['id'], 'pid' => $product['id']]) }}" onsubmit="return submitReview(event)">

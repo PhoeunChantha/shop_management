@@ -34,7 +34,7 @@
     @include('frontend.account.partials.mini-timeline', ['stage' => $active['stage']])
     <div class="ut-row" style="justify-content:space-between;margin-top:18px;flex-wrap:wrap;gap:12px">
         <div class="ut-row" style="gap:12px">
-            <x-frontend.ph :tint="$activeProduct['tint'] ?? ''" style="width:52px;height:52px;border-radius:12px" />
+            <x-frontend.thumb :src="$active['items'][0]['image'] ?? null" :alt="$active['items'][0]['name'] ?? ''" :tint="$activeProduct['tint'] ?? ''" style="width:52px;height:52px;border-radius:12px" />
             <div><div style="font-family:var(--font-head);font-weight:700">{{ __('Order') }} #UT-{{ $active['id'] }}</div><div class="muted" style="font-size:13px">{{ $active['date'] }} · {{ count($active['items']) }} {{ __('items') }} · {{ money($active['total']) }}</div></div>
         </div>
         <div class="ut-row" style="gap:10px">
