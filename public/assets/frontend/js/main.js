@@ -45,14 +45,25 @@
 
   /* ---------- toast ---------- */
   let toastTimer;
-  function toast(msg, ms) {
+  const TOAST_OK = '<circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5L16 9"/>';
+  const TOAST_ERR = '<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.2v.3"/>';
+  function toast(msg, ms, type) {
     document.querySelectorAll('.ut-toast').forEach(t => t.remove());
+    const bad = type === 'error' || type === 'warning';
     const el = document.createElement('div');
-    el.className = 'ut-toast';
-    el.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5L16 9"/></svg>' + msg;
+    el.className = 'ut-toast' + (bad ? ' is-error' : '');
+    el.setAttribute('role', bad ? 'alert' : 'status');
+    el.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + (bad ? TOAST_ERR : TOAST_OK) + '</svg><span>' + msg + '</span>';
+    // Sit just under the sticky header so the logo and nav stay clear.
+    const head = document.querySelector('.ut-header');
+    const edge = head ? head.getBoundingClientRect().bottom : 0;
+    if (edge > 0) el.style.top = Math.round(edge + 14) + 'px';
     document.body.appendChild(el);
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.remove(), ms || 2400);
+    toastTimer = setTimeout(() => {
+      el.classList.add('is-leaving');
+      setTimeout(() => el.remove(), 220);
+    }, ms || (bad ? 4200 : 2800));
   }
   window.utToast = toast;
 

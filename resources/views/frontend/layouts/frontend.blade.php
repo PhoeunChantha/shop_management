@@ -166,16 +166,18 @@
      window.toastr onto the storefront's native toast (utToast) — no jQuery needed. --}}
     <script>
         window.toastr = window.toastr || (function() {
-            var t = function(m) {
-                if (window.utToast) {
-                    window.utToast(m);
-                }
+            var t = function(type) {
+                return function(m) {
+                    if (window.utToast) {
+                        window.utToast(m, null, type);
+                    }
+                };
             };
             return {
-                success: t,
-                error: t,
-                warning: t,
-                info: t
+                success: t('success'),
+                error: t('error'),
+                warning: t('warning'),
+                info: t('info')
             };
         })();
     </script>
