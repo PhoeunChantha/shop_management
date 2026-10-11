@@ -16788,18 +16788,6 @@ html.dark .seo-preview__desc { color: #bdc1c6; }
 .wallet-stat--emerald .wallet-stat__bg { background: #059669; }
 .wallet-stat--amber .wallet-stat__bg  { background: #d97706; }
 
-/* left accent bar */
-.wallet-stat::before {
-    content: '';
-    position: absolute;
-    inset: 12px auto 12px 0;
-    width: 4px;
-    border-radius: 0 4px 4px 0;
-}
-.wallet-stat--teal::before   { background: #0d9488; }
-.wallet-stat--emerald::before { background: #059669; }
-.wallet-stat--amber::before  { background: #d97706; }
-
 /* ── Pending section ─────────────────────────────────────────── */
 .wallet-pending {
     margin-bottom: 28px;
