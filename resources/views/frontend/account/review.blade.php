@@ -42,7 +42,7 @@
 @push('scripts')
 <script>
     function submitReview(e){
-        if(+document.getElementById('ratingVal').value === 0){ e.preventDefault(); utToast('{{ __('Please add a rating') }}'); return false; }
+        if(+document.getElementById('ratingVal').value === 0){ e.preventDefault(); utToast('{{ __('Please add a rating') }}', null, 'warning'); return false; }
         return true;
     }
 </script>

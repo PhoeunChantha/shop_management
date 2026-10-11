@@ -44,26 +44,56 @@
   }
 
   /* ---------- toast ---------- */
-  let toastTimer;
-  const TOAST_OK = '<circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5L16 9"/>';
-  const TOAST_ERR = '<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.2v.3"/>';
-  function toast(msg, ms, type) {
-    document.querySelectorAll('.ut-toast').forEach(t => t.remove());
-    const bad = type === 'error' || type === 'warning';
-    const el = document.createElement('div');
-    el.className = 'ut-toast' + (bad ? ' is-error' : '');
-    el.setAttribute('role', bad ? 'alert' : 'status');
-    el.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + (bad ? TOAST_ERR : TOAST_OK) + '</svg><span>' + msg + '</span>';
-    // Sit just under the sticky header so the logo and nav stay clear.
+  // toastr-style: stacked top-right, coloured by type, close button and a
+  // progress bar; hovering pauses the countdown, clicking dismisses.
+  const TOAST_ICONS = {
+    success: '<circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5L16 9"/>',
+    error: '<circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/>',
+    warning: '<path d="M12 3.5 21.5 20h-19L12 3.5Z"/><path d="M12 10v4.5M12 17.3v.2"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.2"/>',
+  };
+  function toastBox() {
+    let box = document.querySelector('.ut-toasts');
+    if (!box) {
+      box = document.createElement('div');
+      box.className = 'ut-toasts';
+      document.body.appendChild(box);
+    }
+    // Sit just under the sticky header so the nav and bag stay clear.
     const head = document.querySelector('.ut-header');
     const edge = head ? head.getBoundingClientRect().bottom : 0;
-    if (edge > 0) el.style.top = Math.round(edge + 14) + 'px';
-    document.body.appendChild(el);
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => {
+    if (edge > 0) box.style.top = Math.round(edge + 14) + 'px';
+    return box;
+  }
+  function toast(msg, ms, type) {
+    const kind = TOAST_ICONS[type] ? type : 'success';
+    const life = ms || (kind === 'error' || kind === 'warning' ? 5000 : 3500);
+    const box = toastBox();
+    // Same message again: replace it instead of stacking duplicates.
+    box.querySelectorAll('.ut-toast').forEach(t => { if (t.dataset.msg === String(msg)) t.remove(); });
+    while (box.children.length >= 4) box.lastElementChild.remove();
+
+    const el = document.createElement('div');
+    el.className = 'ut-toast is-' + kind;
+    el.dataset.msg = String(msg);
+    el.setAttribute('role', kind === 'error' || kind === 'warning' ? 'alert' : 'status');
+    el.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + TOAST_ICONS[kind] + '</svg>'
+      + '<span class="ut-toast-msg">' + msg + '</span>'
+      + '<button type="button" class="ut-toast-close" aria-label="Close">&times;</button>'
+      + '<span class="ut-toast-bar" style="animation-duration:' + life + 'ms"></span>';
+    box.prepend(el);
+
+    let timer, left = life, started;
+    const close = () => {
+      clearTimeout(timer);
       el.classList.add('is-leaving');
       setTimeout(() => el.remove(), 220);
-    }, ms || (bad ? 4200 : 2800));
+    };
+    const run = () => { started = Date.now(); timer = setTimeout(close, left); };
+    el.addEventListener('mouseenter', () => { clearTimeout(timer); left -= Date.now() - started; });
+    el.addEventListener('mouseleave', run);
+    el.addEventListener('click', close);
+    run();
   }
   window.utToast = toast;
 
@@ -92,7 +122,7 @@
   function updateQty(key, qty) {
     const line = store.cart.find(i => i.key === key);
     if (line && typeof line.max === 'number' && qty > line.max) {
-      toast('Only ' + line.max + ' left in stock');
+      toast('Only ' + line.max + ' left in stock', null, 'warning');
       qty = line.max;
     }
     const cart = store.cart.map(i => i.key === key ? Object.assign({}, i, { qty: Math.max(1, qty) }) : i);
@@ -156,7 +186,7 @@
         if (lowered.length) parts.push(lowered.map(function (l) { return label(l) + ' — only ' + l.max + ' left, quantity changed to ' + l.qty; }).join('; ') + '.');
         var msg = parts.join(' ');
         // On checkout, say it in the form (plain text); elsewhere, a toast (HTML).
-        if (!(window.utFormAlert && window.utFormAlert(msg))) toast(escapeHtml(msg), 8000);
+        if (!(window.utFormAlert && window.utFormAlert(msg))) toast(escapeHtml(msg), 8000, 'error');
       })
       .catch(function () {});
   }
@@ -413,7 +443,7 @@
   function stockNotice(scope, msg) {
     const el = scope ? scope.querySelector('[data-stock-msg]') : null;
     if (el) { el.textContent = msg; el.hidden = !msg; return; }
-    if (msg) toast(escapeHtml(msg));
+    if (msg) toast(escapeHtml(msg), null, 'warning');
   }
   // Keep the product page honest: stock badge, disabled buttons, sold-out
   // options and quantity limit always match the selected size + colour.
@@ -465,7 +495,7 @@
       const btn = add || buy;
       if (btn.disabled) return;
       const sel = selectionFor(btn);
-      if (!sel) { toast('Please select a size'); return; }
+      if (!sel) { toast('Please select a size', null, 'warning'); return; }
       const ds = btn.dataset;
       if (sel.stock <= 0) { stockNotice(sel.scope, sel.variantMissing ? 'This option is not available.' : 'This option is sold out.'); return; }
 
@@ -570,7 +600,7 @@
       e.preventDefault();
       const input = e.target.querySelector('input');
       const code = (input ? input.value : '').trim();
-      if (!code) { toast('Enter a discount code'); return; }
+      if (!code) { toast('Enter a discount code', null, 'warning'); return; }
       postJSON(URLS.coupon, { code: code, subtotal: cartSubtotal() })
         .then(function (res) {
           if (res && res.valid) {
@@ -581,10 +611,10 @@
           } else {
             store.coupon = null;
             renderCartPage();
-            toast((res && res.message) || 'Invalid code');
+            toast((res && res.message) || 'Invalid code', null, 'error');
           }
         })
-        .catch(function () { toast('Could not apply the code'); });
+        .catch(function () { toast('Could not apply the code', null, 'error'); });
     }
   });
   window.__cartRemoveCoupon = function () {

@@ -119,7 +119,7 @@
 
     @if ($errors->any())
         // Re-open the form so validation errors aren't lost behind the modal.
-        document.addEventListener('DOMContentLoaded', function(){ addrModal().show(); utToast('{{ __('Please check the address form.') }}'); });
+        document.addEventListener('DOMContentLoaded', function(){ addrModal().show(); utToast('{{ __('Please check the address form.') }}', null, 'warning'); });
     @endif
 </script>
 @endpush

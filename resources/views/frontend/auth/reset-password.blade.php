@@ -39,7 +39,7 @@
     function checkMatch(){
         var a=document.getElementById('np').value, b=document.getElementById('np2').value;
         if(a && a===b){ return true; }
-        utToast('{{ __('Passwords must match') }}'); return false;
+        utToast('{{ __('Passwords must match') }}', null, 'warning'); return false;
     }
 </script>
 @endpush
