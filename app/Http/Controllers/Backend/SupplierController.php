@@ -28,7 +28,7 @@ class SupplierController extends Controller
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
             'sort' => ['nullable', Rule::in(array_keys(SupplierService::SORTS))],
-            'per_page' => ['nullable', 'integer', 'in:10,25,50,100'],
+            'per_page' => ['nullable', 'integer', 'in:5,10,25,50,100'],
         ]);
         $perPage = (int) ($filters['per_page'] ?? 10);
 

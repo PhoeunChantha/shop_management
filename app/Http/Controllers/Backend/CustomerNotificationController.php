@@ -26,7 +26,7 @@ class CustomerNotificationController extends Controller
 
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
-            'per_page' => ['nullable', 'integer', 'in:10,25,50,100'],
+            'per_page' => ['nullable', 'integer', 'in:5,10,25,50,100'],
         ]);
 
         $perPage = (int) ($filters['per_page'] ?? 25);

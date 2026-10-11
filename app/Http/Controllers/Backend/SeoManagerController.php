@@ -71,7 +71,7 @@ class SeoManagerController extends Controller
             'search' => ['nullable', 'string', 'max:255'],
             'type' => ['nullable', Rule::in(array_keys(SeoManagerService::TYPES))],
             'issue' => ['nullable', Rule::in(array_keys(SeoManagerService::ISSUES))],
-            'per_page' => ['nullable', 'integer', 'in:10,25,50,100'],
+            'per_page' => ['nullable', 'integer', 'in:5,10,25,50,100'],
         ]);
     }
 }

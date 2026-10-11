@@ -26,7 +26,7 @@ class CustomerController extends Controller
             'spend' => ['nullable', 'in:all,new,repeat,vip'],
             'tag_id' => ['nullable', 'integer', 'exists:customer_tags,id'],
             'sort' => ['nullable', 'in:last_order,lifetime_spend,orders_count,customer_name'],
-            'per_page' => ['nullable', 'integer', 'in:10,25,50,100'],
+            'per_page' => ['nullable', 'integer', 'in:5,10,25,50,100'],
         ]);
 
         $perPage = (int) ($filters['per_page'] ?? 25);
