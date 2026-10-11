@@ -58,7 +58,7 @@ class ActivityLogController extends Controller
             'order_id' => ['nullable', 'integer', 'exists:orders,id'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
-            'per_page' => ['nullable', 'integer', 'in:10,25,50,100'],
+            'per_page' => ['nullable', 'integer', 'in:5,10,25,50,100'],
         ]);
     }
 }

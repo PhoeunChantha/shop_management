@@ -136,3 +136,14 @@ it('shows pending top-ups as a table with approve and a reject popup', function 
         ->not->toContain('wallet-topup-reject-note')   // no reason input in the row
         ->not->toContain('Pending top-up requests');   // duplicate inner heading removed
 });
+
+it('accepts every per-page size the selector offers', function () {
+    User::factory()->count(6)->create()->each->assignRole('customer');
+
+    foreach ([5, 10, 25, 50] as $size) {
+        $this->actingAs($this->admin)->get(route('admin.wallets.index', ['per_page' => $size]))->assertOk();
+    }
+
+    expect($this->actingAs($this->admin)->get(route('admin.wallets.index', ['per_page' => 5]))->viewData('customers'))
+        ->toHaveCount(5);
+});

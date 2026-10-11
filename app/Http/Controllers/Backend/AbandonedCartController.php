@@ -83,7 +83,7 @@ class AbandonedCartController extends Controller
             'status' => ['nullable', Rule::in(array_keys(AbandonedCart::STATUSES))],
             'age' => ['nullable', Rule::in(array_keys(AbandonedCartService::AGE_FILTERS))],
             'value' => ['nullable', Rule::in(array_keys(AbandonedCartService::VALUE_FILTERS))],
-            'per_page' => ['nullable', 'integer', 'in:10,25,50,100'],
+            'per_page' => ['nullable', 'integer', 'in:5,10,25,50,100'],
         ]);
     }
 }

@@ -26,7 +26,7 @@ class ReturnRequestController extends Controller
             'search' => ['nullable', 'string', 'max:255'],
             'status' => ['nullable', Rule::in(array_keys(ReturnRequest::STATUSES))],
             'refund_status' => ['nullable', Rule::in(array_keys(ReturnRequest::REFUND_STATUSES))],
-            'per_page' => ['nullable', 'integer', 'in:10,25,50,100'],
+            'per_page' => ['nullable', 'integer', 'in:5,10,25,50,100'],
         ]);
 
         $perPage = (int) ($filters['per_page'] ?? 10);

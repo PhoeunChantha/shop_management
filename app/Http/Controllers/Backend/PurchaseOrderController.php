@@ -28,7 +28,7 @@ class PurchaseOrderController extends Controller
             'expected' => ['nullable', Rule::in(array_keys(PurchaseOrderService::EXPECTED_FILTERS))],
             'amount' => ['nullable', Rule::in(array_keys(PurchaseOrderService::AMOUNT_RANGES))],
             'sort' => ['nullable', Rule::in(array_keys(PurchaseOrderService::SORTS))],
-            'per_page' => ['nullable', 'integer', 'in:10,25,50,100'],
+            'per_page' => ['nullable', 'integer', 'in:5,10,25,50,100'],
         ]);
         $perPage = (int) ($filters['per_page'] ?? 10);
 
