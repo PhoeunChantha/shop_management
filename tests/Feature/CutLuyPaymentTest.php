@@ -346,9 +346,9 @@ it('opens the top-up QR as a popup on the wallet page, only for its owner', func
     $topup = WalletTopup::latest('id')->first();
 
     $this->actingAs($this->customer)->get(route('frontend.payment.topup.qr', $topup))
-        ->assertRedirect(route('frontend.account.wallet', ['pay' => $topup->id]));
+        ->assertRedirect(route('frontend.account.wallet', ['pay' => $topup->tran_id]));
 
-    $this->actingAs($this->customer)->get(route('frontend.account.wallet', ['pay' => $topup->id]))
+    $this->actingAs($this->customer)->get(route('frontend.account.wallet', ['pay' => $topup->tran_id]))
         ->assertOk()
         ->assertSee('class="ut-qrmodal"', false)
         ->assertSee('00020101021229TESTQR6304AB12')
@@ -356,7 +356,7 @@ it('opens the top-up QR as a popup on the wallet page, only for its owner', func
 
     // No popup without ?pay, and never for someone else's top-up.
     $this->actingAs($this->customer)->get(route('frontend.account.wallet'))->assertOk()->assertDontSee('ut-qrmodal"', false);
-    $this->actingAs(User::factory()->create())->get(route('frontend.account.wallet', ['pay' => $topup->id]))
+    $this->actingAs(User::factory()->create())->get(route('frontend.account.wallet', ['pay' => $topup->tran_id]))
         ->assertOk()->assertDontSee('ut-qrmodal"', false);
     $this->actingAs(User::factory()->create())->get(route('frontend.payment.topup.qr', $topup))->assertForbidden();
 });
@@ -384,4 +384,21 @@ it('reads the merchant name from the KHQR string for the card', function () {
     expect($payment->merchantName())->toBe('TSHIRT STORE')
         ->and((new CutluyPayment(['qr_string' => 'not-a-khqr']))->merchantName())->toBeNull()
         ->and((new CutluyPayment)->merchantName())->toBeNull();
+});
+
+it('uses the order number and top-up code in payment URLs, never the database id', function () {
+    $topup = WalletTopup::create([
+        'user_id' => $this->customer->id, 'tran_id' => 'WT-URL-1', 'payment_method' => 'aba_khqr',
+        'method_type' => 'online', 'amount' => 5, 'status' => 'pending',
+    ]);
+
+    expect(route('frontend.payment.topup.qr', $topup))->toEndWith('/wallet/topup/WT-URL-1/qr')
+        ->and(route('frontend.payment.qr', $this->order))->toEndWith('/payment/'.$this->order->order_number.'/qr')
+        ->and(route('frontend.payment.pay', $this->order))->toEndWith('/payment/'.$this->order->order_number.'/pay');
+
+    // The old numeric addresses no longer resolve.
+    $this->actingAs($this->customer)->get('/wallet/topup/'.$topup->id.'/qr')->assertNotFound();
+    $this->actingAs($this->customer)->get('/payment/'.$this->order->id.'/qr')->assertNotFound();
+    $this->actingAs($this->customer)->get(route('frontend.account.wallet', ['pay' => $topup->id]))
+        ->assertOk()->assertDontSee('ut-qrmodal"', false);
 });
