@@ -53,6 +53,32 @@ class CutluyPayment extends Model
         return $this->expires_at !== null && $this->expires_at->isPast();
     }
 
+    /**
+     * Merchant name embedded in the KHQR string (EMV tag 59) — the name the
+     * customer's banking app will show — or null when it cannot be read.
+     */
+    public function merchantName(): ?string
+    {
+        $qr = (string) $this->qr_string;
+
+        for ($i = 0; $i + 4 <= strlen($qr);) {
+            $tag = substr($qr, $i, 2);
+            $length = substr($qr, $i + 2, 2);
+
+            if (! ctype_digit($tag) || ! ctype_digit($length)) {
+                return null;
+            }
+
+            if ($tag === '59') {
+                return trim(substr($qr, $i + 4, (int) $length)) ?: null;
+            }
+
+            $i += 4 + (int) $length;
+        }
+
+        return null;
+    }
+
     public function isPaid(): bool
     {
         return $this->status === 'paid';
