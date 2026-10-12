@@ -144,7 +144,8 @@ class AccountController extends Controller
         $topup = WalletTopup::where('user_id', $request->user()->id)
             ->where('method_type', 'online')
             ->where('status', 'pending')
-            ->find((int) $request->query('pay'));
+            ->where('tran_id', (string) $request->query('pay'))
+            ->first();
 
         if (! $topup) {
             return null;

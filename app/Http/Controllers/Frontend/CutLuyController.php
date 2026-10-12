@@ -71,7 +71,7 @@ class CutLuyController extends Controller
             return redirect()->route('frontend.account.wallet')->with('success', __('Your wallet has been topped up.'));
         }
 
-        return redirect()->route('frontend.account.wallet', ['pay' => $topup->id]);
+        return redirect()->route('frontend.account.wallet', ['pay' => $topup->tran_id]);
     }
 
     public function topupStatus(Request $request, WalletTopup $topup): JsonResponse
