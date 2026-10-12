@@ -59,6 +59,8 @@ use App\Http\Controllers\Frontend\CartController;
 use App\Http\Controllers\Frontend\ChatController;
 use App\Http\Controllers\Frontend\CheckoutController;
 use App\Http\Controllers\Frontend\CustomerUnsubscribeController;
+use App\Http\Controllers\Frontend\CutLuyController;
+use App\Http\Controllers\Frontend\CutLuyWebhookController;
 use App\Http\Controllers\Frontend\HomeController;
 use App\Http\Controllers\Frontend\NewsletterController;
 use App\Http\Controllers\Frontend\OrderTrackingController;
@@ -132,6 +134,20 @@ Route::name('frontend.')->group(function () {
     Route::post('/payment/callback', [PaymentController::class, 'callback'])->name('payment.callback');
     Route::get('/wallet/topup/{topup}/pay', [PaymentController::class, 'topupPay'])->middleware('auth')->name('payment.topup.pay');
     Route::get('/wallet/topup/{topup}/success', [PaymentController::class, 'topupSuccess'])->middleware('auth')->name('payment.topup.success');
+
+    // ---- Payment (CutLuy QR) — our own pay page; the webhook confirms payment ----
+    Route::get('/payment/{order}/qr', [CutLuyController::class, 'pay'])->name('payment.qr');
+    Route::get('/payment/{order}/qr/status', [CutLuyController::class, 'status'])->middleware('throttle:60,1')->name('payment.qr.status');
+    Route::post('/payment/{order}/qr/renew', [CutLuyController::class, 'renew'])->middleware('throttle:6,1')->name('payment.qr.renew');
+    Route::get('/payment/{order}/qr/done', [CutLuyController::class, 'done'])->name('payment.qr.done');
+    Route::middleware('auth')->group(function () {
+        Route::get('/wallet/topup/{topup}/qr', [CutLuyController::class, 'topupPay'])->name('payment.topup.qr');
+        Route::get('/wallet/topup/{topup}/qr/status', [CutLuyController::class, 'topupStatus'])->middleware('throttle:60,1')->name('payment.topup.qr.status');
+        Route::post('/wallet/topup/{topup}/qr/renew', [CutLuyController::class, 'topupRenew'])->middleware('throttle:6,1')->name('payment.topup.qr.renew');
+        Route::get('/wallet/topup/{topup}/qr/done', [CutLuyController::class, 'topupDone'])->name('payment.topup.qr.done');
+    });
+    // Server-to-server, CSRF-exempt (bootstrap/app.php): authenticated by its signature.
+    Route::post('/webhooks/cutluy', [CutLuyWebhookController::class, 'handle'])->middleware('throttle:240,1')->name('webhooks.cutluy');
 
     // ---- Authentication ----
     // GET pages live at bare paths (/login, /register, …); the POST actions use an
@@ -638,6 +654,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/', [SettingController::class, 'index'])->name('index');
         Route::put('/', [SettingController::class, 'update'])->name('update');
         Route::post('storage-test', [SettingController::class, 'testStorage'])->name('storage-test');
+        Route::post('cutluy-test', [SettingController::class, 'testCutluy'])->name('cutluy-test');
     });
 });
 

@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Services\Frontend\CheckoutGuardService;
 use App\Services\Frontend\CheckoutService;
+use App\Services\Frontend\CutLuyService;
 use App\Services\Frontend\OrderTrackingService;
 use App\Services\Frontend\PaywayService;
 use Illuminate\Http\JsonResponse;
@@ -212,7 +213,13 @@ class CheckoutController extends Controller
 
         // Online methods (ABA / wallet) go through the PayWay gateway when it is
         // configured; manual methods jump straight to the confirmation page.
-        if ($this->checkout->isOnlineMethod($data['payment'] ?? null) && app(PaywayService::class)->configured()) {
+        $gateway = $this->checkout->methodGateway($data['payment'] ?? null);
+
+        if ($gateway === 'cutluy' && app(CutLuyService::class)->configured()) {
+            return redirect()->route('frontend.payment.qr', $order);
+        }
+
+        if ($gateway === 'payway' && app(PaywayService::class)->configured()) {
             return redirect()->route('frontend.payment.pay', $order);
         }
 

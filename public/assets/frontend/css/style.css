@@ -3959,3 +3959,151 @@ input[type=number]::-webkit-inner-spin-button {
 .ut-rail > div:not(.ut-pcard) > .ut-pcard,
 .ut-results-grid > div:not(.ut-pcard) > .ut-pcard,
 .wish-cell > .ut-pcard { flex: 1 1 auto; }
+
+/* ---- QR pay page (CutLuy) ---- */
+.ut-qrpay {
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 34px 28px 26px;
+  text-align: center;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl, 22px);
+  box-shadow: var(--sh-2, 0 10px 30px rgba(15, 12, 10, .06));
+}
+
+.ut-qrpay__kicker {
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--text-3, #8a8275);
+}
+
+.ut-qrpay__title {
+  margin: 0;
+  font-size: 24px;
+}
+
+.ut-qrpay__amount {
+  margin: 10px 0 22px;
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: 38px;
+  line-height: 1;
+}
+
+.ut-qrpay__amount small {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-3, #8a8275);
+  letter-spacing: .08em;
+}
+
+.ut-qrpay__frame {
+  position: relative;
+  width: min(264px, 100%);
+  margin: 0 auto;
+  padding: 18px;
+  background: #fff;
+  border-radius: 18px;
+}
+
+.ut-qrpay__code svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.ut-qrpay__corner {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border: 3px solid var(--ink);
+  transition: border-color .25s ease;
+}
+
+.ut-qrpay__corner--tl { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 14px 0 0 0; }
+.ut-qrpay__corner--tr { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 14px 0 0; }
+.ut-qrpay__corner--bl { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 14px; }
+.ut-qrpay__corner--br { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 14px 0; }
+
+.ut-qrpay.is-scanned .ut-qrpay__corner {
+  border-color: #d9820b;
+}
+
+.ut-qrpay__state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin: 20px 0 0;
+  font-weight: 600;
+  font-size: 14.5px;
+}
+
+.ut-qrpay__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #1f8a4c;
+  animation: utQrPulse 1.4s ease-out infinite;
+}
+
+.ut-qrpay.is-scanned .ut-qrpay__dot {
+  background: #d9820b;
+}
+
+.ut-qrpay__steps {
+  margin: 20px 0 0;
+  padding: 16px 18px 16px 34px;
+  text-align: left;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-2, #5d564c);
+  background: var(--bg);
+  border-radius: var(--r-md, 12px);
+}
+
+.ut-qrpay__alt {
+  display: inline-block;
+  margin-top: 16px;
+  font-size: 13.5px;
+}
+
+.ut-qrpay__result {
+  width: 76px;
+  height: 76px;
+  margin: 6px auto 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 34px;
+  font-weight: 800;
+}
+
+.ut-qrpay__result--ok { background: #1f8a4c; }
+.ut-qrpay__result--bad { background: #c0392b; }
+
+.ut-qrpay [data-qrpay-paid] .ut-btn,
+.ut-qrpay [data-qrpay-dead] .ut-btn {
+  margin-top: 20px;
+}
+
+.ut-qrpay__back {
+  display: inline-block;
+  margin-top: 22px;
+  font-size: 13px;
+  color: var(--text-3, #8a8275);
+}
+
+@keyframes utQrPulse {
+  0% { box-shadow: 0 0 0 0 rgba(31, 138, 76, .45); }
+  100% { box-shadow: 0 0 0 12px rgba(31, 138, 76, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ut-qrpay__dot { animation: none; }
+}

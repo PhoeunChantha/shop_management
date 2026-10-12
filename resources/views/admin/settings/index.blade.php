@@ -115,6 +115,40 @@
                                     </p>
                                 </div>
                             @endif
+                            @if ($groupKey === 'cutluy')
+                                <div class="sm:col-span-2" style="margin-bottom:16px;padding:12px 14px;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb"
+                                    x-data="{
+                                        busy: false, result: null,
+                                        async test() {
+                                            this.busy = true; this.result = null;
+                                            try {
+                                                const res = await fetch(@js(route('admin.settings.cutluy-test')), {
+                                                    method: 'POST',
+                                                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': @js(csrf_token()) },
+                                                });
+                                                this.result = await res.json();
+                                            } catch (e) {
+                                                this.result = { ok: false, message: @js(__('Request failed — try again.')) };
+                                            }
+                                            this.busy = false;
+                                        }
+                                    }">
+                                    <label style="display:block;font-weight:600;font-size:13px;margin-bottom:6px;color:#111827">{{ __('Webhook URL') }}</label>
+                                    <input type="text" readonly onclick="this.select()" value="{{ route('frontend.webhooks.cutluy') }}"
+                                        style="width:100%;font-size:13px;padding:7px 9px;border:1px solid #d1d5db;border-radius:6px;background:#fff">
+                                    <p style="font-size:12px;color:#6b7280;margin:6px 0 10px">
+                                        {{ __('Add this URL as a webhook endpoint in your CutLuy dashboard (events: payment.completed, payment.scanned, payment.expired, payment.failed), then paste the signing secret below. It must be a public https address — a local 127.0.0.1 address cannot receive webhooks.') }}
+                                    </p>
+                                    <p style="font-size:12px;color:#6b7280;margin:0 0 8px">
+                                        {{ __('To use it: open Payment Methods, set a method to Type “Online” and Gateway “CutLuy (KHQR)”. Save your keys first, then check the connection.') }}
+                                    </p>
+                                    <button type="button" class="form-cancel-button" @click="test()" :disabled="busy">
+                                        <i class="fa-solid" :class="busy ? 'fa-spinner fa-spin' : 'fa-plug'"></i> {{ __('Check connection & quota') }}
+                                    </button>
+                                    <p x-show="result" x-cloak style="font-size:13px;margin:8px 0 0"
+                                        :style="{ color: result?.ok ? '#16a34a' : '#dc2626' }" x-text="result?.message"></p>
+                                </div>
+                            @endif
                             @if ($groupKey === 'storage')
                                 <div class="sm:col-span-2" style="margin-bottom:16px;padding:12px 14px;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb"
                                     x-data="{
@@ -335,6 +369,13 @@
                                                                 <option value="manual">{{ __('Manual / QR') }}</option>
                                                             </select>
                                                         </div>
+                                                        <div class="form-field" x-show="method.type === 'online'">
+                                                            <label>{{ __('Gateway') }}</label>
+                                                            <select class="form-input" :name="`payment_methods[${i}][gateway]`" x-model="method.gateway">
+                                                                <option value="payway">{{ __('ABA PayWay (card)') }}</option>
+                                                                <option value="cutluy">{{ __('CutLuy (KHQR)') }}</option>
+                                                            </select>
+                                                        </div>
                                                         <div class="form-field payment-method-grid__wide">
                                                             <label>{{ __('Description') }}</label>
                                                             <input type="text" class="form-input" :name="`payment_methods[${i}][description]`"
@@ -551,6 +592,7 @@
                         preview: '',
                         qr_preview: '',
                         type: 'online',
+                        gateway: 'payway',
                         bank_name: '',
                         account_name: '',
                         account_number: '',

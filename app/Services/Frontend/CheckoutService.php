@@ -91,6 +91,7 @@ final class CheckoutService
                 'code' => $p['code'] ?? $p['id'] ?? 'card',
                 'name' => $p['name'] ?? 'Card',
                 'type' => $p['type'] ?? 'online',
+                'gateway' => ($p['gateway'] ?? null) === 'cutluy' ? 'cutluy' : 'payway',
                 'description' => $p['description'] ?? '',
                 'instructions' => $p['instructions'] ?? '',
                 'image' => ! empty($p['image']) ? ImageManager::url($p['image'], 'settings') : null,
@@ -139,6 +140,18 @@ final class CheckoutService
     public function isWalletMethod(?string $code): bool
     {
         return $code === 'wallet';
+    }
+
+    /**
+     * Gateway an online method is paid through: 'payway' or 'cutluy'.
+     */
+    public function methodGateway(?string $code): ?string
+    {
+        if (! $this->isOnlineMethod($code)) {
+            return null;
+        }
+
+        return collect($this->paymentMethods())->firstWhere('code', $code)['gateway'] ?? 'payway';
     }
 
     private function methodType(?string $code): ?string
