@@ -16,6 +16,7 @@ use App\Services\Admin\SettingService;
 use App\Services\Admin\WalletService;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -112,6 +113,7 @@ final class CutLuyService
                 'status' => (string) ($data['status'] ?? 'pending'),
                 'checkout_url' => $data['checkout_url'] ?? null,
                 'qr_string' => $data['qr_string'] ?? null,
+                'expires_at' => $this->timestamp($data['expires_at'] ?? null),
                 'payload' => $data,
             ],
         );
@@ -169,7 +171,7 @@ final class CutLuyService
             $locked->update([
                 'status' => $status,
                 'payload' => $data,
-                'paid_at' => $status === 'paid' ? now() : null,
+                'paid_at' => $status === 'paid' ? ($this->timestamp($data['approved_at'] ?? null) ?? now()) : null,
             ]);
 
             if ($status === 'paid') {
@@ -275,6 +277,15 @@ final class CutLuyService
 
         $locked->update(['status' => 'completed', 'reviewed_at' => now()]);
         $this->wallet->credit($locked->user, (float) $locked->amount, 'topup', 'Wallet top-up '.$locked->tran_id);
+    }
+
+    private function timestamp(mixed $value): ?Carbon
+    {
+        try {
+            return filled($value) ? Carbon::parse((string) $value) : null;
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**
