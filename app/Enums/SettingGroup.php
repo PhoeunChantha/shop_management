@@ -23,6 +23,7 @@ enum SettingGroup: string
     case Facebook = 'facebook';
     case Storage = 'storage';
     case Checkout = 'checkout';
+    case Cutluy = 'cutluy';
 
     /**
      * Human-readable tab label.
@@ -47,6 +48,7 @@ enum SettingGroup: string
             self::Facebook => 'Facebook Page',
             self::Storage => 'Media Storage',
             self::Checkout => 'Checkout & Security',
+            self::Cutluy => 'CutLuy QR Payments',
         };
     }
 
@@ -73,6 +75,7 @@ enum SettingGroup: string
             self::Facebook => 'fa-share-from-square',
             self::Storage => 'fa-cloud',
             self::Checkout => 'fa-user-shield',
+            self::Cutluy => 'fa-qrcode',
         };
     }
 

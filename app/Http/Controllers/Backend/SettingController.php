@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Backend;
 
+use App\Exceptions\CutLuyException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateSettingsRequest;
 use App\Models\Setting;
 use App\Services\Admin\MediaStorageService;
 use App\Services\Admin\SettingService;
+use App\Services\Frontend\CutLuyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
@@ -70,6 +72,33 @@ final class SettingController extends Controller
     /**
      * Check the saved Cloudflare R2 credentials with a write/read/delete probe.
      */
+    /**
+     * Check the saved CutLuy key and report the remaining quota.
+     */
+    public function testCutluy(CutLuyService $cutluy): JsonResponse
+    {
+        $this->authorize('update', Setting::class);
+
+        try {
+            $usage = $cutluy->usage();
+        } catch (CutLuyException $e) {
+            return response()->json(['ok' => false, 'message' => match ($e->errorCode) {
+                'not_configured' => __('Save your CutLuy API key first.'),
+                'unauthorized' => __('CutLuy rejected the API key. Check it and save again.'),
+                'account_suspended' => __('This CutLuy account is suspended. Contact CutLuy support.'),
+                'quota_exceeded' => __('The CutLuy payment quota for this period is used up. Upgrade or renew your plan.'),
+                'rate_limited' => __('Too many requests. Try again in :seconds seconds.', ['seconds' => $e->retryAfter ?? 30]),
+                default => __('Could not reach CutLuy. Try again in a moment.'),
+            }], 422);
+        }
+
+        return response()->json(['ok' => true, 'message' => __('Connected. Plan: :plan — :remaining of :limit payments left this period.', [
+            'plan' => (string) ($usage['plan'] ?? '—'),
+            'remaining' => (string) ($usage['remaining'] ?? '—'),
+            'limit' => (string) ($usage['limit'] ?? '—'),
+        ])]);
+    }
+
     public function testStorage(MediaStorageService $storage): JsonResponse
     {
         $this->authorize('update', Setting::class);

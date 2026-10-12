@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\WalletTopup;
 use App\Services\Frontend\AccountService;
 use App\Services\Frontend\CheckoutService;
+use App\Services\Frontend\CutLuyService;
 use App\Services\Frontend\InvoiceService;
 use App\Services\Frontend\PaywayService;
 use Illuminate\Http\RedirectResponse;
@@ -140,7 +141,10 @@ class AccountController extends Controller
         $method = $methods->firstWhere('code', $data['payment_method']);
         $isOnline = ($method['type'] ?? 'online') === 'online';
 
-        if ($isOnline && ! app(PaywayService::class)->configured()) {
+        $viaCutluy = $isOnline && ($method['gateway'] ?? 'payway') === 'cutluy';
+        $gatewayReady = $viaCutluy ? app(CutLuyService::class)->configured() : app(PaywayService::class)->configured();
+
+        if ($isOnline && ! $gatewayReady) {
             return back()->with('error', __('Online top-up is not available right now.'));
         }
 
@@ -161,7 +165,7 @@ class AccountController extends Controller
 
         // Online → gateway redirect. Manual → wait for admin approval before crediting.
         if ($isOnline) {
-            return redirect()->route('frontend.payment.topup.pay', $topup);
+            return redirect()->route($viaCutluy ? 'frontend.payment.topup.qr' : 'frontend.payment.topup.pay', $topup);
         }
 
         return redirect()->route('frontend.account.wallet')->with('success', __('Top-up request submitted. Your balance will be credited once we confirm your payment.'));

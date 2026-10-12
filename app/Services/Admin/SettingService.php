@@ -229,6 +229,10 @@ final class SettingService
                 'checkout_max_unpaid_orders' => ['label' => 'Max open unpaid orders per customer', 'type' => 'number', 'placeholder' => '3', 'default' => '3', 'help' => 'Blocks a new order while this many unpaid orders are open for the same email or the same network (IP). 0 = no limit.', 'rules' => 'nullable|integer|min:0|max:50'],
                 'checkout_unpaid_expiry_hours' => ['label' => 'Cancel unpaid orders after (hours)', 'type' => 'number', 'placeholder' => '24', 'default' => '24', 'help' => 'Unpaid orders still pending after this many hours are cancelled automatically and their stock is returned, so fake orders cannot hold your stock. 0 = never. Set 0 if you offer cash on delivery.', 'rules' => 'nullable|integer|min:0|max:720'],
             ],
+            SettingGroup::Cutluy->value => [
+                'cutluy_api_key' => ['label' => 'API key', 'type' => 'password', 'env' => 'CUTLUY_API_KEY', 'placeholder' => 'ck_live_...', 'help' => 'From your CutLuy dashboard. Saved to .env, never shown in page source. Leave blank to keep the saved key.', 'rules' => 'nullable|string|max:255'],
+                'cutluy_webhook_secret' => ['label' => 'Webhook secret', 'type' => 'password', 'env' => 'CUTLUY_WEBHOOK_SECRET', 'placeholder' => 'whsec_...', 'help' => 'The signing secret CutLuy shows for your webhook endpoint. Without it no payment is ever confirmed automatically.', 'rules' => 'nullable|string|max:255'],
+            ],
             SettingGroup::Storage->value => [
                 'media_disk' => ['label' => 'Media library storage', 'type' => 'select', 'env' => 'MEDIA_DISK', 'options' => ['local' => 'This server (public/uploads)', 'r2' => 'Cloudflare R2'], 'default' => 'local', 'help' => 'Where NEW media-library uploads go. Existing files keep loading from where they were saved.', 'rules' => 'nullable|in:local,r2'],
                 'r2_bucket' => ['label' => 'R2 bucket name', 'type' => 'text', 'env' => 'R2_BUCKET', 'placeholder' => 't-shirt-shop', 'rules' => 'nullable|required_if:media_disk,r2|string|max:63'],
@@ -449,6 +453,7 @@ final class SettingService
             'payment_methods.*.name' => ['nullable', 'string', 'max:100'],
             'payment_methods.*.code' => ['nullable', 'string', 'max:80'],
             'payment_methods.*.type' => ['nullable', 'string', 'in:online,manual,wallet'],
+            'payment_methods.*.gateway' => ['nullable', 'string', 'in:payway,cutluy'],
             'payment_methods.*.description' => ['nullable', 'string', 'max:255'],
             'payment_methods.*.instructions' => ['nullable', 'string', 'max:1000'],
             'payment_methods.*.image' => ['nullable', 'string', 'max:255'],
@@ -598,6 +603,23 @@ final class SettingService
         $facebook = $this->facebook();
 
         return $facebook['enabled'] && filled($facebook['page_id']) && filled($facebook['access_token']);
+    }
+
+    /**
+     * CutLuy credentials as currently saved in .env (read through EnvService
+     * so a key saved a moment ago is used without a restart).
+     *
+     * @return array{api_key: string, webhook_secret: string, base_url: string}
+     */
+    public function cutluy(): array
+    {
+        $env = app(EnvService::class);
+
+        return [
+            'api_key' => trim((string) $env->get('CUTLUY_API_KEY')),
+            'webhook_secret' => trim((string) $env->get('CUTLUY_WEBHOOK_SECRET')),
+            'base_url' => rtrim((string) config('services.cutluy.base_url', 'https://cutluy.com'), '/'),
+        ];
     }
 
     /**
@@ -1250,6 +1272,8 @@ final class SettingService
             'name' => $name,
             'code' => str($code ?: $name)->slug('_')->toString(),
             'type' => in_array($method['type'] ?? null, ['online', 'manual', 'wallet'], true) ? $method['type'] : 'online',
+            // Which gateway an online method is paid through.
+            'gateway' => ($method['gateway'] ?? null) === 'cutluy' ? 'cutluy' : 'payway',
             'description' => trim((string) ($method['description'] ?? '')),
             'instructions' => trim((string) ($method['instructions'] ?? '')),
             'image' => trim((string) ($method['image'] ?? '')),

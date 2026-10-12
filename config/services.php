@@ -57,4 +57,11 @@ return [
         ],
     ],
 
+    // CutLuy QR payments (Cambodia, USD). Keys are managed in Settings → CutLuy.
+    'cutluy' => [
+        'base_url' => env('CUTLUY_BASE_URL', 'https://cutluy.com'),
+        'api_key' => env('CUTLUY_API_KEY'),
+        'webhook_secret' => env('CUTLUY_WEBHOOK_SECRET'),
+    ],
+
 ];

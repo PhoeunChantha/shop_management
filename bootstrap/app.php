@@ -38,7 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: ['127.0.0.1', '::1']);
 
         // PayWay posts its result server-to-server (no session/CSRF token).
-        $middleware->validateCsrfTokens(except: ['payment/callback']);
+        $middleware->validateCsrfTokens(except: ['payment/callback', 'webhooks/cutluy']);
 
         // Send unauthenticated visitors of the admin area to the admin login page.
         $middleware->redirectGuestsTo(
