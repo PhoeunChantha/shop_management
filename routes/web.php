@@ -138,6 +138,7 @@ Route::name('frontend.')->group(function () {
     Route::get('/wallet/topup/{topup:tran_id}/success', [PaymentController::class, 'topupSuccess'])->middleware('auth')->name('payment.topup.success');
 
     // ---- Payment (CutLuy QR) — our own pay page; the webhook confirms payment ----
+    Route::get('/payment/cutluy/return', [CutLuyController::class, 'return'])->middleware('throttle:30,1')->name('payment.cutluy.return');
     Route::get('/payment/{order:order_number}/qr', [CutLuyController::class, 'pay'])->name('payment.qr');
     Route::get('/payment/{order:order_number}/qr/status', [CutLuyController::class, 'status'])->middleware('throttle:60,1')->name('payment.qr.status');
     Route::post('/payment/{order:order_number}/qr/renew', [CutLuyController::class, 'renew'])->middleware('throttle:6,1')->name('payment.qr.renew');

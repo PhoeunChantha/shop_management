@@ -139,6 +139,12 @@
                                     <p style="font-size:12px;color:#6b7280;margin:6px 0 10px">
                                         {{ __('Add this URL as a webhook endpoint in your CutLuy dashboard (events: payment.completed, payment.scanned, payment.expired, payment.failed), then paste the signing secret below. It must be a public https address — a local 127.0.0.1 address cannot receive webhooks.') }}
                                     </p>
+                                    <label style="display:block;font-weight:600;font-size:13px;margin-bottom:6px;color:#111827">{{ __('Checkout redirect URL') }}</label>
+                                    <input type="text" readonly onclick="this.select()" value="{{ rtrim((string) config('app.url'), '/').route('frontend.payment.cutluy.return', [], false) }}"
+                                        style="width:100%;font-size:13px;padding:7px 9px;border:1px solid #d1d5db;border-radius:6px;background:#fff">
+                                    <p style="font-size:12px;color:#6b7280;margin:6px 0 10px">
+                                        {{ __('In your CutLuy store settings, paste this same URL into both “Success redirect URL” and “Failure redirect URL”. It brings customers who paid on the CutLuy page back to their order or wallet.') }}
+                                    </p>
                                     <p style="font-size:12px;color:#6b7280;margin:0 0 8px">
                                         {{ __('To use it: open Payment Methods, set a method to Type “Online” and Gateway “CutLuy (KHQR)”. Save your keys first, then check the connection.') }}
                                     </p>

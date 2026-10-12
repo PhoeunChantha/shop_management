@@ -2556,5 +2556,7 @@
     "QR code expires in": "កូដ QR នឹងផុតកំណត់ក្នុង",
     "Open your banking app, choose Scan QR, then confirm the payment. This popup updates by itself.": "បើកកម្មវិធីធនាគាររបស់អ្នក ជ្រើសរើស «ស្កេន QR» រួចបញ្ជាក់ការបង់ប្រាក់។ ផ្ទាំងនេះនឹងធ្វើបច្ចុប្បន្នភាពដោយស្វ័យប្រវត្តិ។",
     "Pay later": "បង់ពេលក្រោយ",
-    "Pay now by QR": "បង់ឥឡូវតាម QR"
+    "Pay now by QR": "បង់ឥឡូវតាម QR",
+    "Checkout redirect URL": "URL ត្រឡប់មកវិញក្រោយបង់ប្រាក់",
+    "In your CutLuy store settings, paste this same URL into both “Success redirect URL” and “Failure redirect URL”. It brings customers who paid on the CutLuy page back to their order or wallet.": "ក្នុងការកំណត់ហាងរបស់ CutLuy សូមបិទភ្ជាប់ URL ដដែលនេះទៅក្នុង «Success redirect URL» និង «Failure redirect URL» ទាំងពីរ។ វានាំអតិថិជនដែលបានបង់ប្រាក់លើទំព័រ CutLuy ត្រឡប់មកការបញ្ជាទិញ ឬកាបូបប្រាក់របស់ពួកគេវិញ។"
 }

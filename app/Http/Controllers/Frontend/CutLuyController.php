@@ -97,6 +97,51 @@ class CutLuyController extends Controller
             : redirect()->route('frontend.account.wallet')->with('info', __('We could not confirm your top-up yet. It will update once payment clears.'));
     }
 
+    // ---- Return from CutLuy's hosted checkout -------------------------------
+
+    /**
+     * Where CutLuy's hosted page sends the customer back (success and failure
+     * alike), with ?status=&payment_id=&reference_id=. Those are only hints
+     * that anyone can type: the payment is re-read from CutLuy, and the
+     * visitor is only taken to an order / wallet that is theirs.
+     */
+    public function return(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'payment_id' => ['nullable', 'string', 'max:120'],
+            'reference_id' => ['nullable', 'string', 'max:120'],
+        ]);
+
+        $payment = filled($data['payment_id'] ?? null)
+            ? CutluyPayment::where('payment_id', $data['payment_id'])->first()
+            : (filled($data['reference_id'] ?? null) ? CutluyPayment::where('reference_id', $data['reference_id'])->latest('id')->first() : null);
+
+        if (! $payment) {
+            return redirect()->route('frontend.home');
+        }
+
+        $this->refresh($payment);
+        $payable = $payment->payable;
+
+        if ($payable instanceof Order) {
+            $owns = (int) $request->session()->get('pending_order_id') === $payable->id
+                || (Auth::check() && $payable->user_id === Auth::id());
+
+            return $owns
+                ? redirect()->route('frontend.checkout.confirmation', $payable->isPaid() ? [] : ['pay' => 1])->with('order_id', $payable->id)
+                : redirect()->route('frontend.home');
+        }
+
+        if ($payable instanceof WalletTopup && Auth::id() === $payable->user_id) {
+            return $payable->fresh()?->status === 'completed'
+                ? redirect()->route('frontend.account.wallet')->with('success', __('Your wallet has been topped up.'))
+                : redirect()->route('frontend.account.wallet', ['pay' => $payable->tran_id]);
+        }
+
+        // Someone else's (or a signed-out) top-up: sign in first, nothing revealed.
+        return redirect()->route('frontend.account.wallet');
+    }
+
     // ---- Shared -------------------------------------------------------------
 
     /**
@@ -110,20 +155,28 @@ class CutLuyController extends Controller
             return response()->json(['status' => 'none']);
         }
 
-        $unsettled = in_array($payment->status, CutluyPayment::OPEN, true);
-
-        if ($unsettled && Cache::add('cutluy:sync:'.$payment->id, 1, 20)) {
-            try {
-                $payment = $this->cutluy->sync($payment);
-            } catch (CutLuyException) {
-                // Keep showing the last known status; the webhook will catch up.
-            }
-        }
+        $payment = $this->refresh($payment);
 
         // The QR ran out and CutLuy has not said "paid": offer a new one.
         $status = ! $payment->isPaid() && $payment->hasLapsed() ? 'expired' : $payment->status;
 
         return response()->json(['status' => $status]);
+    }
+
+    /**
+     * Re-read an unsettled payment from CutLuy, at most once every 20 seconds.
+     */
+    private function refresh(CutluyPayment $payment): CutluyPayment
+    {
+        if (in_array($payment->status, CutluyPayment::OPEN, true) && Cache::add('cutluy:sync:'.$payment->id, 1, 20)) {
+            try {
+                return $this->cutluy->sync($payment);
+            } catch (CutLuyException) {
+                // Keep the last known status; the webhook will catch up.
+            }
+        }
+
+        return $payment;
     }
 
     /**
