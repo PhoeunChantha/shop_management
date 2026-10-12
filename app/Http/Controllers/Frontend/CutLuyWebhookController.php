@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use App\Jobs\ProcessCutLuyWebhook;
+use App\Models\CutluyPayment;
 use App\Models\CutluyWebhookEvent;
 use App\Services\Frontend\CutLuyService;
 use Illuminate\Http\JsonResponse;
@@ -32,7 +33,7 @@ class CutLuyWebhookController extends Controller
         }
 
         $payload = json_decode($raw, true);
-        $event = (string) ($request->header('X-CutLuy-Event') ?: ($payload['event'] ?? $payload['type'] ?? ''));
+        $event = (string) ($request->header('X-CutLuy-Event') ?: ($payload['type'] ?? $payload['event'] ?? ''));
         $paymentId = $this->paymentId(is_array($payload) ? $payload : []);
 
         // Signed but nothing to act on: acknowledge so CutLuy stops retrying.
@@ -54,16 +55,27 @@ class CutLuyWebhookController extends Controller
     }
 
     /**
+     * The payment an event is about. CutLuy's body is
+     * `{ "type": "payment.completed", "data": { "payment": { "id", "reference_id", … } } }`;
+     * the other paths only guard against a differently shaped delivery. With no
+     * id at all, fall back to our own reference (order number / top-up id).
+     *
      * @param  array<string, mixed>  $payload
      */
     private function paymentId(array $payload): string
     {
-        foreach (['data.id', 'data.payment.id', 'payment.id', 'payment_id', 'data.payment_id', 'id'] as $path) {
+        foreach (['data.payment.id', 'data.id', 'payment.id', 'data.payment_id', 'payment_id'] as $path) {
             $value = data_get($payload, $path);
 
             if (is_string($value) && $value !== '') {
                 return $value;
             }
+        }
+
+        $reference = data_get($payload, 'data.payment.reference_id') ?? data_get($payload, 'data.reference_id');
+
+        if (is_string($reference) && $reference !== '') {
+            return (string) CutluyPayment::where('reference_id', $reference)->latest('id')->value('payment_id');
         }
 
         return '';
