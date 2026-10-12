@@ -41,7 +41,7 @@ enum AttributeType: string
     public static function options(): array
     {
         return collect(self::cases())
-            ->mapWithKeys(fn (self $t) => [$t->value => $t->label()])
+            ->mapWithKeys(fn (self $t) => [$t->value => __($t->label())])
             ->all();
     }
 }

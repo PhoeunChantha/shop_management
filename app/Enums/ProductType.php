@@ -28,7 +28,7 @@ enum ProductType: string
     public static function options(): array
     {
         return collect(self::cases())
-            ->mapWithKeys(fn (self $type) => [$type->value => $type->label()])
+            ->mapWithKeys(fn (self $type) => [$type->value => __($type->label())])
             ->all();
     }
 }

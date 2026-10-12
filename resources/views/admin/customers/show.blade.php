@@ -91,8 +91,8 @@
                                     <td><a href="{{ route('admin.orders.show', $order->id) }}" class="dash-table__id">{{ $order->order_number }}</a></td>
                                     <td>{{ (int) $order->details_sum_quantity }}</td>
                                     <td class="dash-table__amt">${{ number_format((float) $order->grand_total, 2) }}</td>
-                                    <td><span class="status-chip {{ $order->payment_status->badge() }}">{{ $order->payment_status->label() }}</span></td>
-                                    <td><span class="status-chip {{ $order->status->badge() }}">{{ $order->status->label() }}</span></td>
+                                    <td><span class="status-chip {{ $order->payment_status->badge() }}">{{ __($order->payment_status->label()) }}</span></td>
+                                    <td><span class="status-chip {{ $order->status->badge() }}">{{ __($order->status->label()) }}</span></td>
                                     <td>{{ ($order->placed_at ?? $order->created_at)?->format('M d, Y') }}</td>
                                     <td class="text-end">
                                         <a href="{{ route('admin.orders.show', $order->id) }}" class="orders-view">

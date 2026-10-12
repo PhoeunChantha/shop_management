@@ -59,7 +59,7 @@
                                     <div class="orders-cust__name">{{ $method->name }}</div>
                                     @if ($method->delivery_time)<div class="orders-cust__email">{{ $method->delivery_time }}</div>@endif
                                 </td>
-                                <td><span class="status-chip {{ $method->type->badge() }}">{{ $method->type->label() }}</span></td>
+                                <td><span class="status-chip {{ $method->type->badge() }}">{{ __($method->type->label()) }}</span></td>
                                 <td class="dash-table__amt">
                                     @switch($method->type->value)
                                         @case('free') Free @break

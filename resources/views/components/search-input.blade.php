@@ -47,7 +47,7 @@
             type="search"
             name="{{ $name }}"
             value="{{ $current }}"
-            placeholder="{{ $placeholder }}"
+            placeholder="{{ $placeholder === 'Search...' ? __('Search...') : $placeholder }}"
             autocomplete="off"
             @if ($auto)
                 x-ref="field"

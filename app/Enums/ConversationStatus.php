@@ -35,7 +35,7 @@ enum ConversationStatus: string
     {
         $options = [];
         foreach (self::cases() as $case) {
-            $options[$case->value] = $case->label();
+            $options[$case->value] = __($case->label());
         }
 
         return $options;
