@@ -402,3 +402,38 @@ it('uses the order number and top-up code in payment URLs, never the database id
     $this->actingAs($this->customer)->get(route('frontend.account.wallet', ['pay' => $topup->id]))
         ->assertOk()->assertDontSee('ut-qrmodal"', false);
 });
+
+it('brings the customer back from the hosted checkout without trusting the status in the URL', function () {
+    CutluyPayment::create([
+        'payment_id' => 'PAY_1', 'payable_type' => $this->order->getMorphClass(), 'payable_id' => $this->order->id,
+        'reference_id' => $this->order->order_number, 'idempotency_key' => 'k', 'amount' => 47.19, 'status' => 'pending',
+    ]);
+    // The URL claims success, but CutLuy itself still says pending.
+    Http::fake(['cutluy.com/*' => Http::response(cutluyPaymentBody('PAY_1', 'pending'))]);
+
+    $this->actingAs($this->customer)
+        ->get(route('frontend.payment.cutluy.return', ['status' => 'paid', 'payment_id' => 'PAY_1']))
+        ->assertRedirect(route('frontend.checkout.confirmation', ['pay' => 1]));
+
+    expect($this->order->fresh()->payment_status)->toBe(PaymentStatus::Unpaid);
+
+    // A stranger with the same link learns nothing and lands on the home page.
+    $this->actingAs(User::factory()->create())
+        ->get(route('frontend.payment.cutluy.return', ['status' => 'paid', 'payment_id' => 'PAY_1']))
+        ->assertRedirect(route('frontend.home'));
+    $this->get(route('frontend.payment.cutluy.return', ['payment_id' => 'NOPE']))->assertRedirect(route('frontend.home'));
+});
+
+it('confirms a really-paid hosted checkout on return', function () {
+    CutluyPayment::create([
+        'payment_id' => 'PAY_1', 'payable_type' => $this->order->getMorphClass(), 'payable_id' => $this->order->id,
+        'reference_id' => $this->order->order_number, 'idempotency_key' => 'k', 'amount' => 47.19, 'status' => 'pending',
+    ]);
+    Http::fake(['cutluy.com/*' => Http::response(cutluyPaymentBody('PAY_1', 'paid'))]);
+
+    $this->actingAs($this->customer)
+        ->get(route('frontend.payment.cutluy.return', ['status' => 'failed', 'reference_id' => $this->order->order_number]))
+        ->assertRedirect(route('frontend.checkout.confirmation'));
+
+    expect($this->order->fresh()->payment_status)->toBe(PaymentStatus::Paid);
+});
