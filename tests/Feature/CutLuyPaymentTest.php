@@ -276,9 +276,13 @@ it('shows the CutLuy settings tab and reports quota from the connection check', 
     $admin->assignRole('admin');
     Http::fake(['cutluy.com/v1/usage' => Http::response(['plan' => 'starter', 'limit' => 500, 'used' => 20, 'remaining' => 480])]);
 
-    $this->actingAs($admin)->get(route('admin.settings.index', ['tab' => 'cutluy']))
+    // Opened on a local address, the page must still show the public site URL.
+    config(['app.url' => 'https://shop.example.com']);
+
+    $this->actingAs($admin)->get('http://127.0.0.1:2000'.route('admin.settings.index', ['tab' => 'cutluy'], false))
         ->assertOk()
-        ->assertSee(route('frontend.webhooks.cutluy'))
+        ->assertSee('https://shop.example.com/webhooks/cutluy')
+        ->assertDontSee('127.0.0.1:2000/webhooks/cutluy')
         ->assertSee('name="cutluy_api_key"', false)
         ->assertDontSee('ck_test_key');   // the saved key never reaches page source
 
