@@ -4323,3 +4323,15 @@ html.ut-qrmodal-open {
 .ut-qrmodal .ut-qrpay__kicker {
   margin: 6px 0 0;
 }
+
+/* "Pay on this phone" only where it helps: touch devices / small screens */
+.ut-qrmodal .ut-qrpay__alt {
+  display: none;
+  margin-top: 14px;
+}
+
+@media (max-width: 767.98px), (pointer: coarse) {
+  .ut-qrmodal .ut-qrpay__alt {
+    display: inline-flex;
+  }
+}

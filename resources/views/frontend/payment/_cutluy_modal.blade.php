@@ -39,10 +39,9 @@
             </p>
             <p class="ut-qrpay__timer" data-qrpay-timer hidden>{{ __('QR code expires in') }} <b data-qrpay-clock>5:00</b></p>
 
-            <p class="ut-qrpay__hint">{{ __('Open your banking app, choose Scan QR, then confirm the payment. This popup updates by itself.') }}</p>
-
+            {{-- A phone cannot scan its own screen: phones get a button to CutLuy's page instead. --}}
             @if ($payment->checkout_url)
-                <a href="{{ $payment->checkout_url }}" class="ut-link ut-qrpay__alt" target="_blank" rel="noopener">{{ __('On this phone? Open the payment page') }}</a>
+                <a href="{{ $payment->checkout_url }}" class="ut-btn ut-btn-ghost ut-qrpay__alt" target="_blank" rel="noopener">{{ __('Pay on this phone') }}</a>
             @endif
         </div>
 
