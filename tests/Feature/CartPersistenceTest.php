@@ -78,3 +78,27 @@ it('requires authentication to sync the cart', function () {
     $this->post(route('frontend.cart.sync'), ['items' => []])
         ->assertRedirect(route('frontend.login'));
 });
+
+it('keeps cart endpoints safe: own cart only, server price, no cost data, sane quantities', function () {
+    $product = Product::factory()->create(['status' => 'active', 'price' => 20, 'cost_price' => 7]);
+    $other = User::factory()->create();
+
+    // A guest cannot write a saved cart.
+    $this->postJson(route('frontend.cart.sync'), ['items' => []])->assertUnauthorized();
+
+    // The client cannot set the price, and never sees cost data.
+    $json = $this->actingAs($this->customer)
+        ->postJson(route('frontend.cart.sync'), ['items' => [['id' => $product->id, 'qty' => 1, 'price' => 0.01, 'user_id' => $other->id]]])
+        ->assertOk()->json('items.0');
+
+    expect((float) $json['price'])->toBe(20.0)
+        ->and($json)->not->toHaveKey('cost_price')
+        ->and(Cart::where('user_id', $other->id)->exists())->toBeFalse();
+
+    // Absurd quantities are rejected instead of overflowing the column.
+    $this->actingAs($this->customer)
+        ->postJson(route('frontend.cart.sync'), ['items' => [['id' => $product->id, 'qty' => 99999999999]]])
+        ->assertJsonValidationErrors('items.0.qty');
+    $this->postJson(route('frontend.cart.check'), ['items' => [['id' => $product->id, 'qty' => 1000]]])
+        ->assertJsonValidationErrors('items.0.qty');
+});
