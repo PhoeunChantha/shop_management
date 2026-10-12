@@ -21,6 +21,7 @@ class CutluyPayment extends Model
         'status',
         'checkout_url',
         'qr_string',
+        'expires_at',
         'paid_at',
         'payload',
     ];
@@ -29,6 +30,7 @@ class CutluyPayment extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'expires_at' => 'immutable_datetime',
             'paid_at' => 'immutable_datetime',
             'payload' => 'array',
         ];
@@ -39,9 +41,16 @@ class CutluyPayment extends Model
         return $this->morphTo();
     }
 
+    /** Still payable: an open status whose QR has not run out. */
     public function isOpen(): bool
     {
-        return in_array($this->status, self::OPEN, true);
+        return in_array($this->status, self::OPEN, true) && ! $this->hasLapsed();
+    }
+
+    /** Past CutLuy's expiry time, whether or not the expired event has arrived. */
+    public function hasLapsed(): bool
+    {
+        return $this->expires_at !== null && $this->expires_at->isPast();
     }
 
     public function isPaid(): bool

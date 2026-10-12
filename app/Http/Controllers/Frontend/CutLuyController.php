@@ -140,7 +140,9 @@ class CutLuyController extends Controller
             return response()->json(['status' => 'none']);
         }
 
-        if ($payment->isOpen() && Cache::add('cutluy:sync:'.$payment->id, 1, 20)) {
+        $unsettled = in_array($payment->status, CutluyPayment::OPEN, true);
+
+        if ($unsettled && Cache::add('cutluy:sync:'.$payment->id, 1, 20)) {
             try {
                 $payment = $this->cutluy->sync($payment);
             } catch (CutLuyException) {
@@ -148,7 +150,10 @@ class CutLuyController extends Controller
             }
         }
 
-        return response()->json(['status' => $payment->status]);
+        // The QR ran out and CutLuy has not said "paid": offer a new one.
+        $status = ! $payment->isPaid() && $payment->hasLapsed() ? 'expired' : $payment->status;
+
+        return response()->json(['status' => $status]);
     }
 
     /**

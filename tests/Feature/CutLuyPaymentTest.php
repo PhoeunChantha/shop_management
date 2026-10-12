@@ -287,3 +287,24 @@ it('shows the CutLuy settings tab and reports quota from the connection check', 
         ->assertJsonPath('ok', true)
         ->assertJsonFragment(['ok' => true]);
 });
+
+it('stores the expiry, shows a countdown and offers a new QR once it has run out', function () {
+    $body = cutluyPaymentBody('PAY_1') + ['expires_at' => now()->addMinutes(5)->toIso8601String(), 'approved_at' => null];
+    Http::fakeSequence('cutluy.com/*')->push($body, 201)->push($body)->push(cutluyPaymentBody('PAY_2'), 201);
+
+    $this->actingAs($this->customer)->get(route('frontend.payment.qr', $this->order))
+        ->assertOk()->assertSee('data-qrpay-timer', false);
+
+    $payment = CutluyPayment::where('payment_id', 'PAY_1')->first();
+    expect($payment->expires_at)->not->toBeNull()->and($payment->isOpen())->toBeTrue();
+
+    $this->travel(6)->minutes();
+
+    // CutLuy still says pending (its expired event is late): we report expired…
+    $this->actingAs($this->customer)->getJson(route('frontend.payment.qr.status', $this->order))
+        ->assertJson(['status' => 'expired']);
+
+    // …and reopening the page makes a fresh payment instead of the dead QR.
+    $this->actingAs($this->customer)->get(route('frontend.payment.qr', $this->order))->assertOk();
+    expect(CutluyPayment::count())->toBe(2);
+});

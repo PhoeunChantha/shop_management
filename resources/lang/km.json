@@ -2552,5 +2552,6 @@
     "The payment did not go through.": "ការបង់ប្រាក់មិនបានសម្រេច។",
     "This QR code has expired.": "កូដ QR នេះផុតកំណត់ហើយ។",
     "Waiting for your payment…": "កំពុងរង់ចាំការបង់ប្រាក់របស់អ្នក…",
-    "CutLuy QR Payments": "ការទូទាត់ QR តាម CutLuy"
+    "CutLuy QR Payments": "ការទូទាត់ QR តាម CutLuy",
+    "QR code expires in": "កូដ QR នឹងផុតកំណត់ក្នុង"
 }

@@ -7,6 +7,7 @@
         data-status-url="{{ $statusUrl }}"
         data-done-url="{{ $doneUrl }}"
         data-status="{{ $payment->status }}"
+        data-expires="{{ $payment->expires_at?->getTimestamp() }}"
         data-qr="{{ $payment->qr_string }}">
 
         <p class="ut-qrpay__kicker">{{ $reference }}</p>
@@ -25,6 +26,7 @@
                 <span class="ut-qrpay__dot"></span>
                 <span data-qrpay-text>{{ __('Waiting for your payment…') }}</span>
             </p>
+            <p class="ut-qrpay__timer" data-qrpay-timer hidden>{{ __('QR code expires in') }} <b data-qrpay-clock>5:00</b></p>
 
             <ol class="ut-qrpay__steps">
                 <li>{{ __('Open your banking app (ABA, ACLEDA, Wing, Bakong…).') }}</li>
@@ -104,8 +106,19 @@
             .catch(function () {});
     }
 
+    // Countdown to CutLuy's expiry; at zero ask the server, which offers a new QR.
+    var expires = parseInt(box.dataset.expires, 10) || 0;
+    var clock = null;
+    function tick() {
+        var left = Math.max(0, expires - Math.floor(Date.now() / 1000));
+        box.querySelector('[data-qrpay-clock]').textContent = Math.floor(left / 60) + ':' + ('0' + (left % 60)).slice(-2);
+        box.querySelector('[data-qrpay-timer]').classList.toggle('is-low', left <= 60);
+        if (left === 0) { clearInterval(clock); check(); }
+    }
+
     show(box.dataset.status);
     if (box.dataset.status === 'pending' || box.dataset.status === 'scanned') {
+        if (expires) { box.querySelector('[data-qrpay-timer]').hidden = false; tick(); clock = setInterval(tick, 1000); }
         timer = setInterval(check, 4000);
         document.addEventListener('visibilitychange', function () { if (!document.hidden && timer) check(); });
     }
