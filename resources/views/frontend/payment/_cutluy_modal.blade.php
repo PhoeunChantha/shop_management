@@ -14,16 +14,23 @@
     <div class="ut-qrpay">
         <button type="button" class="ut-qrpay__close" data-qrpay-close aria-label="{{ __('Close') }}">&times;</button>
 
-        <p class="ut-qrpay__kicker">{{ $qr['reference'] }}</p>
         <h2 class="ut-qrpay__title" id="qrpayTitle">{{ $qr['heading'] }}</h2>
-        <p class="ut-qrpay__amount">{{ money($payment->amount) }} <small>{{ $payment->currency }}</small></p>
+        <p class="ut-qrpay__kicker">{{ $qr['reference'] }}</p>
 
         {{-- waiting: the QR --}}
         <div data-qrpay-open>
-            <div class="ut-qrpay__frame">
-                <div class="ut-qrpay__code" data-qrpay-code role="img" aria-label="{{ __('Payment QR code') }}"></div>
-                <span class="ut-qrpay__corner ut-qrpay__corner--tl"></span><span class="ut-qrpay__corner ut-qrpay__corner--tr"></span>
-                <span class="ut-qrpay__corner ut-qrpay__corner--bl"></span><span class="ut-qrpay__corner ut-qrpay__corner--br"></span>
+            {{-- Laid out like the standard KHQR card customers know from their bank:
+                 red header, merchant name, amount, dashed rule, QR with the currency mark. --}}
+            <div class="ut-khqr">
+                <div class="ut-khqr__head"><span class="ut-khqr__mark">KHQR</span></div>
+                <div class="ut-khqr__info">
+                    <div class="ut-khqr__name">{{ $payment->merchantName() ?? app(\App\Services\Admin\SettingService::class)->siteName() }}</div>
+                    <div class="ut-khqr__amount">{{ number_format((float) $payment->amount, 2) }} <small>{{ $payment->currency }}</small></div>
+                </div>
+                <div class="ut-khqr__qr">
+                    <div class="ut-qrpay__code" data-qrpay-code role="img" aria-label="{{ __('Payment QR code') }}"></div>
+                    <span class="ut-khqr__currency" aria-hidden="true">{{ $payment->currency === 'KHR' ? '៛' : '$' }}</span>
+                </div>
             </div>
 
             <p class="ut-qrpay__state" aria-live="polite">
@@ -81,7 +88,7 @@
     // Draw the QR from the string CutLuy returned (no image is fetched).
     var holder = box.querySelector('[data-qrpay-code]');
     try {
-        var qr = qrcode(0, 'M');
+        var qr = qrcode(0, 'Q');
         qr.addData(box.dataset.qr || '');
         qr.make();
         holder.innerHTML = qr.createSvgTag({ cellSize: 6, margin: 0, scalable: true });

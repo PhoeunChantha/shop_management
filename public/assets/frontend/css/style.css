@@ -4220,3 +4220,106 @@ html.ut-qrmodal-open {
     animation: none;
   }
 }
+
+/* ---- KHQR card (inside the QR pay popup) ---- */
+.ut-khqr {
+  --khqr-red: #e1232e;
+  position: relative;
+  width: min(252px, 100%);
+  margin: 16px auto 0;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 6px 22px rgba(17, 14, 10, .16);
+  text-align: left;
+  overflow: hidden;
+  transition: box-shadow .25s ease;
+}
+
+.ut-khqr__head {
+  position: relative;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  background: var(--khqr-red);
+}
+
+/* the folded corner under the header, right side */
+.ut-khqr__head::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 100%;
+  border-top: 16px solid var(--khqr-red);
+  border-left: 16px solid transparent;
+}
+
+.ut-khqr__mark {
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: .06em;
+  line-height: 1;
+  color: #fff;
+}
+
+.ut-khqr__info {
+  padding: 14px 26px 12px;
+  border-bottom: 1.5px dashed #c9c9c9;
+}
+
+.ut-khqr__name {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  line-height: 1.3;
+  color: #000;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ut-khqr__amount {
+  margin-top: 3px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1.15;
+  color: #000;
+}
+
+.ut-khqr__amount small {
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: .02em;
+}
+
+.ut-khqr__qr {
+  position: relative;
+  padding: 22px 26px 26px;
+}
+
+.ut-khqr__currency {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 34px;
+  height: 34px;
+  margin: -19px 0 0 -17px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  background: #000;
+  color: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.ut-qrpay.is-scanned .ut-khqr {
+  box-shadow: 0 0 0 3px #d9820b, 0 6px 22px rgba(17, 14, 10, .16);
+}
+
+.ut-qrmodal .ut-qrpay__kicker {
+  margin: 6px 0 0;
+}

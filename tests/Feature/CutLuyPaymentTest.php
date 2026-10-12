@@ -377,3 +377,11 @@ it('opens the order QR as a popup on the confirmation page and offers Pay now on
         ->assertDontSee('class="ut-qrmodal"', false)
         ->assertSee(route('frontend.payment.qr', $this->order));
 });
+
+it('reads the merchant name from the KHQR string for the card', function () {
+    $payment = new CutluyPayment(['qr_string' => '00020101021229170014merchant@abaa520459995303840540520.005802KH5912TSHIRT STORE6010PHNOM PENH6304AB12']);
+
+    expect($payment->merchantName())->toBe('TSHIRT STORE')
+        ->and((new CutluyPayment(['qr_string' => 'not-a-khqr']))->merchantName())->toBeNull()
+        ->and((new CutluyPayment)->merchantName())->toBeNull();
+});
