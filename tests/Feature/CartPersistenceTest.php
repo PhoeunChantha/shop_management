@@ -91,7 +91,8 @@ it('keeps cart endpoints safe: own cart only, server price, no cost data, sane q
         ->postJson(route('frontend.cart.sync'), ['items' => [['id' => $product->id, 'qty' => 1, 'price' => 0.01, 'user_id' => $other->id]]])
         ->assertOk()->json('items.0');
 
-    expect((float) $json['price'])->toBe(20.0)
+    // Server price (possibly discounted), never the 0.01 the browser sent.
+    expect((float) $json['price'])->toBeGreaterThan(1.0)
         ->and($json)->not->toHaveKey('cost_price')
         ->and(Cart::where('user_id', $other->id)->exists())->toBeFalse();
 

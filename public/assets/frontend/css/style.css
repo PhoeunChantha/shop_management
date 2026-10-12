@@ -4122,3 +4122,101 @@ input[type=number]::-webkit-inner-spin-button {
 .ut-qrpay__timer.is-low b {
   color: #c0392b;
 }
+
+/* ---- QR pay popup ---- */
+.ut-qrmodal {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.ut-qrmodal__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 14, 10, .58);
+  backdrop-filter: blur(6px);
+  animation: utQrFade .2s ease both;
+}
+
+.ut-qrmodal .ut-qrpay {
+  position: relative;
+  width: min(400px, 100%);
+  max-width: none;
+  /* auto margins centre it, and still let a tall popup scroll from its top */
+  margin: auto;
+  padding: 30px 26px 22px;
+  box-shadow: 0 30px 80px rgba(17, 14, 10, .35);
+  animation: utQrRise .3s var(--ease-out) both;
+}
+
+.ut-qrmodal .ut-qrpay__amount {
+  margin: 8px 0 18px;
+  font-size: 34px;
+}
+
+.ut-qrmodal .ut-qrpay__frame {
+  width: min(232px, 100%);
+  padding: 16px;
+}
+
+.ut-qrmodal .ut-qrpay__state {
+  margin-top: 16px;
+}
+
+.ut-qrpay__close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  font-size: 24px;
+  line-height: 1;
+  color: var(--text-3, #8a8275);
+  cursor: pointer;
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.ut-qrpay__close:hover {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.ut-qrpay__hint {
+  margin: 14px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-2, #5d564c);
+}
+
+button.ut-qrpay__back {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-top: 16px;
+}
+
+html.ut-qrmodal-open {
+  overflow: hidden;
+}
+
+@keyframes utQrFade {
+  from { opacity: 0; }
+}
+
+@keyframes utQrRise {
+  from { opacity: 0; transform: translateY(14px) scale(.97); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ut-qrmodal__backdrop,
+  .ut-qrmodal .ut-qrpay {
+    animation: none;
+  }
+}

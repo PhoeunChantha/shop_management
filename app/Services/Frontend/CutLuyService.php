@@ -64,6 +64,43 @@ final class CutLuyService
         return $this->create($payable);
     }
 
+    /**
+     * What the QR popup needs for this order / top-up, or null when there is
+     * nothing left to pay.
+     *
+     * @return array{payment: CutluyPayment, heading: string, reference: string, statusUrl: string, renewUrl: string, doneUrl: string, closeLabel: string}|null
+     *
+     * @throws CutLuyException
+     */
+    public function popupFor(Order|WalletTopup $payable): ?array
+    {
+        $payment = $this->paymentFor($payable);
+
+        if ($payment->isPaid()) {
+            return null;
+        }
+
+        return $payable instanceof Order
+            ? [
+                'payment' => $payment,
+                'heading' => __('Scan to pay'),
+                'reference' => __('Order').' #'.$payable->order_number,
+                'statusUrl' => route('frontend.payment.qr.status', $payable),
+                'renewUrl' => route('frontend.payment.qr.renew', $payable),
+                'doneUrl' => route('frontend.payment.qr.done', $payable),
+                'closeLabel' => __('Pay later'),
+            ]
+            : [
+                'payment' => $payment,
+                'heading' => __('Scan to top up your wallet'),
+                'reference' => __('Top-up').' '.$payable->tran_id,
+                'statusUrl' => route('frontend.payment.topup.qr.status', $payable),
+                'renewUrl' => route('frontend.payment.topup.qr.renew', $payable),
+                'doneUrl' => route('frontend.payment.topup.qr.done', $payable),
+                'closeLabel' => __('Cancel'),
+            ];
+    }
+
     public function latestFor(Order|WalletTopup $payable): ?CutluyPayment
     {
         return CutluyPayment::query()

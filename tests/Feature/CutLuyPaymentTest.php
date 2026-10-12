@@ -24,10 +24,16 @@ beforeEach(function () {
     app()->useEnvironmentPath(dirname($this->envPath));
 
     $this->customer = User::factory()->create(['wallet_balance' => 0]);
+
+    Setting::set('payment_methods', json_encode([
+        ['id' => 'khqr', 'name' => 'ABA KHQR', 'code' => 'aba_khqr', 'type' => 'online', 'gateway' => 'cutluy', 'status' => true, 'sort_order' => 1],
+        ['id' => 'manual', 'name' => 'ABA QR', 'code' => 'aba_qr', 'type' => 'manual', 'status' => true, 'sort_order' => 2],
+    ]), 'payment');
     $this->order = Order::factory()->create([
         'user_id' => $this->customer->id,
         'grand_total' => 47.19,
         'payment_status' => PaymentStatus::Unpaid,
+        'paid_at' => null,
         'payment_method' => 'aba_khqr',
     ]);
 });
@@ -72,7 +78,7 @@ function deliverCutluy($test, string $event, string $paymentId, ?string $signatu
 it('creates a CutLuy payment for the order total and shows the QR', function () {
     Http::fake(['cutluy.com/v1/payments' => Http::response(cutluyPaymentBody('PAY_1'), 201)]);
 
-    $this->actingAs($this->customer)->get(route('frontend.payment.qr', $this->order))
+    $this->actingAs($this->customer)->followingRedirects()->get(route('frontend.payment.qr', $this->order))
         ->assertOk()
         ->assertSee('00020101021229TESTQR6304AB12')
         ->assertSee($this->order->order_number);
@@ -90,8 +96,8 @@ it('creates a CutLuy payment for the order total and shows the QR', function () 
 it('reuses the open payment when the pay page is reloaded', function () {
     Http::fake(['cutluy.com/v1/payments' => Http::response(cutluyPaymentBody('PAY_1'), 201)]);
 
-    $this->actingAs($this->customer)->get(route('frontend.payment.qr', $this->order))->assertOk();
-    $this->actingAs($this->customer)->get(route('frontend.payment.qr', $this->order))->assertOk();
+    $this->actingAs($this->customer)->followingRedirects()->get(route('frontend.payment.qr', $this->order))->assertOk();
+    $this->actingAs($this->customer)->followingRedirects()->get(route('frontend.payment.qr', $this->order))->assertOk();
 
     Http::assertSentCount(1);
     expect(CutluyPayment::count())->toBe(1);
@@ -102,12 +108,12 @@ it('creates a fresh payment with a new idempotency key after the QR expired', fu
         ->push(cutluyPaymentBody('PAY_1'), 201)
         ->push(cutluyPaymentBody('PAY_2'), 201);
 
-    $this->actingAs($this->customer)->get(route('frontend.payment.qr', $this->order));
+    $this->actingAs($this->customer)->followingRedirects()->get(route('frontend.payment.qr', $this->order));
     CutluyPayment::where('payment_id', 'PAY_1')->update(['status' => 'expired']);
 
     $this->actingAs($this->customer)->post(route('frontend.payment.qr.renew', $this->order))
         ->assertRedirect(route('frontend.payment.qr', $this->order));
-    $this->actingAs($this->customer)->get(route('frontend.payment.qr', $this->order))->assertOk();
+    $this->actingAs($this->customer)->followingRedirects()->get(route('frontend.payment.qr', $this->order))->assertOk();
 
     expect(CutluyPayment::where('payment_id', 'PAY_2')->value('idempotency_key'))->toBe($this->order->order_number.'-2');
 });
@@ -115,9 +121,9 @@ it('creates a fresh payment with a new idempotency key after the QR expired', fu
 it('handles quota, auth, suspension and rate-limit errors without retrying', function (int $status, string $code) {
     Http::fake(['cutluy.com/*' => Http::response(['error' => $code, 'message' => 'nope'], $status, ['Retry-After' => '17'])]);
 
-    $this->actingAs($this->customer)->get(route('frontend.payment.qr', $this->order))
-        ->assertRedirect(route('frontend.checkout.confirmation'))
-        ->assertSessionHas('error');
+    $this->actingAs($this->customer)->followingRedirects()->get(route('frontend.payment.qr', $this->order))
+        ->assertOk()
+        ->assertDontSee('data-qrpay-code', false);
 
     Http::assertSentCount(1);
     expect(CutluyPayment::count())->toBe(0);
@@ -296,7 +302,7 @@ it('stores the expiry, shows a countdown and offers a new QR once it has run out
     $body = cutluyPaymentBody('PAY_1') + ['expires_at' => now()->addMinutes(5)->toIso8601String(), 'approved_at' => null];
     Http::fakeSequence('cutluy.com/*')->push($body, 201)->push($body)->push(cutluyPaymentBody('PAY_2'), 201);
 
-    $this->actingAs($this->customer)->get(route('frontend.payment.qr', $this->order))
+    $this->actingAs($this->customer)->followingRedirects()->get(route('frontend.payment.qr', $this->order))
         ->assertOk()->assertSee('data-qrpay-timer', false);
 
     $payment = CutluyPayment::where('payment_id', 'PAY_1')->first();
@@ -309,7 +315,7 @@ it('stores the expiry, shows a countdown and offers a new QR once it has run out
         ->assertJson(['status' => 'expired']);
 
     // …and reopening the page makes a fresh payment instead of the dead QR.
-    $this->actingAs($this->customer)->get(route('frontend.payment.qr', $this->order))->assertOk();
+    $this->actingAs($this->customer)->followingRedirects()->get(route('frontend.payment.qr', $this->order))->assertOk();
     expect(CutluyPayment::count())->toBe(2);
 });
 
@@ -329,4 +335,45 @@ it('reads the event from the body type and finds the payment by reference when n
     ], $raw)->assertOk();
 
     expect($this->order->fresh()->payment_status)->toBe(PaymentStatus::Paid);
+});
+
+it('opens the top-up QR as a popup on the wallet page, only for its owner', function () {
+    Http::fake(['cutluy.com/v1/payments' => Http::response(cutluyPaymentBody('PAY_T', 'pending', '20.00'), 201)]);
+
+    $this->actingAs($this->customer)
+        ->post(route('frontend.account.wallet.topup'), ['amount' => 20, 'payment_method' => 'aba_khqr'])
+        ->assertRedirect();
+    $topup = WalletTopup::latest('id')->first();
+
+    $this->actingAs($this->customer)->get(route('frontend.payment.topup.qr', $topup))
+        ->assertRedirect(route('frontend.account.wallet', ['pay' => $topup->id]));
+
+    $this->actingAs($this->customer)->get(route('frontend.account.wallet', ['pay' => $topup->id]))
+        ->assertOk()
+        ->assertSee('class="ut-qrmodal"', false)
+        ->assertSee('00020101021229TESTQR6304AB12')
+        ->assertSee($topup->tran_id);
+
+    // No popup without ?pay, and never for someone else's top-up.
+    $this->actingAs($this->customer)->get(route('frontend.account.wallet'))->assertOk()->assertDontSee('ut-qrmodal"', false);
+    $this->actingAs(User::factory()->create())->get(route('frontend.account.wallet', ['pay' => $topup->id]))
+        ->assertOk()->assertDontSee('ut-qrmodal"', false);
+    $this->actingAs(User::factory()->create())->get(route('frontend.payment.topup.qr', $topup))->assertForbidden();
+});
+
+it('opens the order QR as a popup on the confirmation page and offers Pay now once closed', function () {
+    Http::fake(['cutluy.com/v1/payments' => Http::response(cutluyPaymentBody('PAY_1'), 201)]);
+
+    $this->actingAs($this->customer)->get(route('frontend.payment.qr', $this->order))
+        ->assertRedirect(route('frontend.checkout.confirmation', ['pay' => 1]));
+
+    $this->actingAs($this->customer)->withSession(['order_id' => $this->order->id])
+        ->get(route('frontend.checkout.confirmation', ['pay' => 1]))
+        ->assertOk()->assertSee('class="ut-qrmodal"', false);
+
+    $this->actingAs($this->customer)->withSession(['order_id' => $this->order->id])
+        ->get(route('frontend.checkout.confirmation'))
+        ->assertOk()
+        ->assertDontSee('class="ut-qrmodal"', false)
+        ->assertSee(route('frontend.payment.qr', $this->order));
 });

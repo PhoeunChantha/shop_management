@@ -13,6 +13,9 @@
         <span class="ut-eyebrow" style="color:var(--success)">{{ __('Order confirmed') }}</span>
         <h1 style="font-size:clamp(30px,4vw,44px);margin:10px 0 8px">{{ __('Thanks for your order!') }}</h1>
         <p class="muted">{{ __('Order') }} <b class="mono" style="color:var(--ink)">{{ $order->order_number }}</b> · {{ __('A confirmation was sent to') }} {{ $order->customer_email }}.</p>
+        @if (! empty($payNowUrl))
+            <a href="{{ $payNowUrl }}" class="ut-btn ut-btn-ink ut-btn-lg" style="margin-top:18px">{{ __('Pay now by QR') }}</a>
+        @endif
     </div>
 
     <div class="ut-card" style="padding:28px;margin-top:30px">
@@ -83,6 +86,7 @@
 @push('scripts')
 <script>if (window.__clearCart) { window.__clearCart(); } else { localStorage.removeItem('ut_cart'); localStorage.removeItem('ut_coupon'); }</script>
 @endpush
+@includeWhen(! empty($qr), 'frontend.payment._cutluy_modal')
 @endsection
 
 

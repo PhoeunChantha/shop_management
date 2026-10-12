@@ -2553,5 +2553,8 @@
     "This QR code has expired.": "កូដ QR នេះផុតកំណត់ហើយ។",
     "Waiting for your payment…": "កំពុងរង់ចាំការបង់ប្រាក់របស់អ្នក…",
     "CutLuy QR Payments": "ការទូទាត់ QR តាម CutLuy",
-    "QR code expires in": "កូដ QR នឹងផុតកំណត់ក្នុង"
+    "QR code expires in": "កូដ QR នឹងផុតកំណត់ក្នុង",
+    "Open your banking app, choose Scan QR, then confirm the payment. This popup updates by itself.": "បើកកម្មវិធីធនាគាររបស់អ្នក ជ្រើសរើស «ស្កេន QR» រួចបញ្ជាក់ការបង់ប្រាក់។ ផ្ទាំងនេះនឹងធ្វើបច្ចុប្បន្នភាពដោយស្វ័យប្រវត្តិ។",
+    "Pay later": "បង់ពេលក្រោយ",
+    "Pay now by QR": "បង់ឥឡូវតាម QR"
 }
