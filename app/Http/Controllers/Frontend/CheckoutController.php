@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Exceptions\CheckoutException;
+use App\Exceptions\CutLuyException;
 use App\Helpers\ImageManager;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
@@ -249,8 +250,23 @@ class CheckoutController extends Controller
         $request->session()->keep('order_id');
 
         $tracking = app(OrderTrackingService::class);
+        $payByQr = ! $order->isPaid()
+            && $this->checkout->methodGateway($order->payment_method) === 'cutluy'
+            && app(CutLuyService::class)->configured();
+        $qr = null;
+
+        if ($payByQr && $request->boolean('pay')) {
+            try {
+                $qr = app(CutLuyService::class)->popupFor($order);
+            } catch (CutLuyException $e) {
+                $request->session()->now('error', $e->customerMessage());
+            }
+        }
 
         return view('frontend.checkout.confirmation', [
+            'qr' => $qr,
+            // Unpaid QR order with the popup closed: offer to reopen it.
+            'payNowUrl' => $payByQr && $qr === null ? route('frontend.payment.qr', $order) : null,
             'order' => $order,
             'steps' => $tracking->steps($order),
             'statusLabel' => $tracking->statusLabel($order),

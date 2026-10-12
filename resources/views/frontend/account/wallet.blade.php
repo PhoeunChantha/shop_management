@@ -181,4 +181,5 @@
         });
     });
 </script>
+@includeWhen(! empty($qr), 'frontend.payment._cutluy_modal')
 @endsection

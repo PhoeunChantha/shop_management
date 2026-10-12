@@ -13,10 +13,10 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\View\View;
 
 /**
- * The storefront's own QR pay page for CutLuy: orders and wallet top-ups.
+ * CutLuy QR payments on the storefront (orders and wallet top-ups): opens the
+ * QR popup on the host page and answers its status polling.
  */
 class CutLuyController extends Controller
 {
@@ -24,32 +24,14 @@ class CutLuyController extends Controller
 
     // ---- Orders -------------------------------------------------------------
 
-    public function pay(Request $request, Order $order): View|RedirectResponse
+    /**
+     * Open the QR popup for an order — over its confirmation page.
+     */
+    public function pay(Request $request, Order $order): RedirectResponse
     {
         $this->authorizeOrder($request, $order);
 
-        try {
-            $payment = $this->cutluy->paymentFor($order);
-        } catch (CutLuyException $e) {
-            return redirect()->route('frontend.checkout.confirmation')
-                ->with('order_id', $order->id)
-                ->with('error', $e->customerMessage());
-        }
-
-        if ($payment->isPaid()) {
-            return $this->done($request, $order);
-        }
-
-        return view('frontend.payment.cutluy', [
-            'payment' => $payment,
-            'heading' => __('Scan to pay'),
-            'reference' => __('Order').' #'.$order->order_number,
-            'statusUrl' => route('frontend.payment.qr.status', $order),
-            'renewUrl' => route('frontend.payment.qr.renew', $order),
-            'doneUrl' => route('frontend.payment.qr.done', $order),
-            'backUrl' => route('frontend.shop.index'),
-            'backLabel' => __('Pay later — continue shopping'),
-        ]);
+        return redirect()->route('frontend.checkout.confirmation', ['pay' => 1])->with('order_id', $order->id);
     }
 
     public function status(Request $request, Order $order): JsonResponse
@@ -78,7 +60,10 @@ class CutLuyController extends Controller
 
     // ---- Wallet top-ups -----------------------------------------------------
 
-    public function topupPay(Request $request, WalletTopup $topup): View|RedirectResponse
+    /**
+     * Open the QR popup for a wallet top-up — over the wallet page.
+     */
+    public function topupPay(Request $request, WalletTopup $topup): RedirectResponse
     {
         $this->authorizeTopup($request, $topup);
 
@@ -86,22 +71,7 @@ class CutLuyController extends Controller
             return redirect()->route('frontend.account.wallet')->with('success', __('Your wallet has been topped up.'));
         }
 
-        try {
-            $payment = $this->cutluy->paymentFor($topup);
-        } catch (CutLuyException $e) {
-            return redirect()->route('frontend.account.wallet')->with('error', $e->customerMessage());
-        }
-
-        return view('frontend.payment.cutluy', [
-            'payment' => $payment,
-            'heading' => __('Scan to top up your wallet'),
-            'reference' => __('Top-up').' '.$topup->tran_id,
-            'statusUrl' => route('frontend.payment.topup.qr.status', $topup),
-            'renewUrl' => route('frontend.payment.topup.qr.renew', $topup),
-            'doneUrl' => route('frontend.payment.topup.qr.done', $topup),
-            'backUrl' => route('frontend.account.wallet'),
-            'backLabel' => __('Back to wallet'),
-        ]);
+        return redirect()->route('frontend.account.wallet', ['pay' => $topup->id]);
     }
 
     public function topupStatus(Request $request, WalletTopup $topup): JsonResponse

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Frontend;
 
+use App\Exceptions\CutLuyException;
 use App\Helpers\ImageManager;
 use App\Http\Controllers\Controller;
 use App\Models\WalletTopup;
@@ -115,6 +116,7 @@ class AccountController extends Controller
             ->all();
 
         return view('frontend.account.wallet', [
+            'qr' => $this->topupPopup($request),
             'user' => $this->account->user(),
             'balance' => (float) $user->wallet_balance,
             'transactions' => $user->walletTransactions()->with('order:id,order_number')->limit(40)->get(),
@@ -125,6 +127,36 @@ class AccountController extends Controller
                 ->latest()
                 ->get(),
         ]);
+    }
+
+    /**
+     * The CutLuy QR popup for ?pay={top-up}: only the customer's own, still
+     * pending, online top-up.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function topupPopup(Request $request): ?array
+    {
+        if (! $request->filled('pay')) {
+            return null;
+        }
+
+        $topup = WalletTopup::where('user_id', $request->user()->id)
+            ->where('method_type', 'online')
+            ->where('status', 'pending')
+            ->find((int) $request->query('pay'));
+
+        if (! $topup) {
+            return null;
+        }
+
+        try {
+            return app(CutLuyService::class)->popupFor($topup);
+        } catch (CutLuyException $e) {
+            $request->session()->now('error', $e->customerMessage());
+
+            return null;
+        }
     }
 
     public function walletTopup(Request $request): RedirectResponse
