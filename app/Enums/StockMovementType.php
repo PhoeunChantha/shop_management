@@ -58,7 +58,7 @@ enum StockMovementType: string
     public static function manualOptions(): array
     {
         return collect([self::Restock, self::Correction, self::Damage, self::Return, self::Adjustment])
-            ->mapWithKeys(fn (self $t) => [$t->value => $t->label()])
+            ->mapWithKeys(fn (self $t) => [$t->value => __($t->label())])
             ->all();
     }
 }

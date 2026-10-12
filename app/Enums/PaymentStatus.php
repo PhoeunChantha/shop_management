@@ -38,7 +38,7 @@ enum PaymentStatus: string
     public static function options(): array
     {
         return collect(self::cases())
-            ->mapWithKeys(fn (self $s) => [$s->value => $s->label()])
+            ->mapWithKeys(fn (self $s) => [$s->value => __($s->label())])
             ->all();
     }
 }

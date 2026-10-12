@@ -493,7 +493,7 @@
         disabled: {{ $disabled ? 'true' : 'false' }},
         readonly: {{ $readonly ? 'true' : 'false' }},
         loading: {{ $loading ? 'true' : 'false' }},
-        placeholder: @js($placeholder ?? ''),
+        placeholder: @js($placeholder === 'Select…' ? __('Select…') : ($placeholder ?? '')),
     })"
     @keydown="onKey($event)"
     @click.outside="close()"
@@ -519,7 +519,7 @@
     >
         {{-- Pass placeholder="" (or false) to render no blank option at all. --}}
         @if (! is_null($placeholder) && $placeholder !== '' && $placeholder !== false)
-            <option value="">{{ $placeholder }}</option>
+            <option value="">{{ $placeholder === 'Select…' ? __('Select…') : $placeholder }}</option>
         @endif
         @foreach ($normalized as $opt)
             <option value="{{ $opt['value'] }}" @selected($current === $opt['value']) @disabled($opt['disabled']) @if ($opt['depth'] > 0) data-depth="{{ $opt['depth'] }}" @endif>{{ $opt['label'] }}</option>
@@ -569,7 +569,7 @@
         <template x-if="searchable">
             <div class="x-select__search">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" x-ref="search" x-model="search" placeholder="Search…"
+                <input type="text" x-ref="search" x-model="search" placeholder="{{ __('Search…') }}"
                     @keydown.stop="onKey($event)" @click.stop autocomplete="off">
             </div>
         </template>
@@ -591,7 +591,7 @@
                 </li>
             </template>
 
-            <li class="x-select__empty" x-show="filtered.length === 0">{{ $empty }}</li>
+            <li class="x-select__empty" x-show="filtered.length === 0">{{ __($empty) }}</li>
         </ul>
     </div>
 

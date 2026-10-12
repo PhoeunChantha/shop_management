@@ -39,7 +39,7 @@
         @include('admin.saved-views._bar', ['scope' => 'orders', 'icon' => 'fa-receipt', 'color' => '#2563eb'])
 
         {{-- Filters --}}
-        <x-filter-card :action="route('admin.orders.index')" :grid="'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3'">
+        <x-filter-card :action="route('admin.orders.index')" :grid="'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'">
             <x-slot:hidden>
                 <input type="hidden" name="search" value="{{ request('search') }}">
                 <input type="hidden" name="per_page" value="{{ $perPage }}">
@@ -117,19 +117,19 @@
                                 <td style="font-variant-numeric: tabular-nums;">{{ (int) $order->details_sum_quantity }}</td>
                                 <td class="dash-table__amt">{{ money($order->grand_total) }}</td>
                                 <td>
-                                    <span class="status-chip {{ $order->payment_status->badge() }}">{{ $order->payment_status->label() }}</span>
+                                    <span class="status-chip {{ $order->payment_status->badge() }}">{{ __($order->payment_status->label()) }}</span>
                                     <div class="orders-pay__method">
                                         <i class="fa-regular fa-credit-card"></i>{{ $order->payment_method ? strtoupper($order->payment_method) : '—' }}
                                     </div>
                                 </td>
                                 
                                 <td>
-                                    <span class="status-chip {{ $order->fulfillment_status->badge() }}">{{ $order->fulfillment_status->label() }}</span>
+                                    <span class="status-chip {{ $order->fulfillment_status->badge() }}">{{ __($order->fulfillment_status->label()) }}</span>
                                     <div class="orders-pay__method">
                                         <i class="fa-solid fa-truck-fast"></i>{{ $order->carrier ?: ($order->tracking_number ? __('Tracking added') : __('No carrier')) }}
                                     </div>
                                 </td>
-                                <td><span class="status-chip {{ $order->status->badge() }}">{{ $order->status->label() }}</span></td>
+                                <td><span class="status-chip {{ $order->status->badge() }}">{{ __($order->status->label()) }}</span></td>
                                 <td class="dash-table__date">{{ ($order->placed_at ?? $order->created_at)?->format('M d, Y') }}</td>
                                 <td class="text-end">
                                     <div class="action-group">

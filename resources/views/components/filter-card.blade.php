@@ -42,11 +42,11 @@
 
     <div class="d-flex align-items-center justify-content-end gap-2 mt-3">
         <a href="{{ $reset ?? $action }}" class="ghost-button" data-ajax-link>
-            <i class="fa-solid fa-rotate-left"></i> {{ $resetLabel }}
+            <i class="fa-solid fa-rotate-left"></i> {{ __($resetLabel) }}
         </a>
         
         <button type="submit" class="filter-button">
-            <i class="fa-solid fa-sliders"></i> {{ $applyLabel }}
+            <i class="fa-solid fa-sliders"></i> {{ __($applyLabel) }}
         </button>
 
         @isset($actions)

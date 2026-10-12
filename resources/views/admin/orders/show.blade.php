@@ -15,12 +15,12 @@
                 <p class="section-kicker">{{ __('Order detail') }}</p>
                 <div class="order-detail-head__meta">
                     <span class="order-detail-head__num">{{ $order->order_number }}</span>
-                    <span class="status-chip {{ $order->status->badge() }}">{{ $order->status->label() }}</span>
+                    <span class="status-chip {{ $order->status->badge() }}">{{ __($order->status->label()) }}</span>
                     <span class="status-chip {{ $order->payment_status->badge() }}">
-                        <i class="fa-solid fa-credit-card me-1"></i>{{ $order->payment_status->label() }}
+                        <i class="fa-solid fa-credit-card me-1"></i>{{ __($order->payment_status->label()) }}
                     </span>
                     <span class="status-chip {{ $order->fulfillment_status->badge() }}">
-                        <i class="fa-solid fa-truck-fast me-1"></i>{{ $order->fulfillment_status->label() }}
+                        <i class="fa-solid fa-truck-fast me-1"></i>{{ __($order->fulfillment_status->label()) }}
                     </span>
                 </div>
                 <p class="text-sm text-gray-500 dark:text-slate-400 mt-2 mb-0">
@@ -60,7 +60,7 @@
             </div>
             <div class="order-detail-summary__card">
                 <span>{{ __('Fulfillment') }}</span>
-                <strong>{{ $order->fulfillment_status->label() }}</strong>
+                <strong>{{ __($order->fulfillment_status->label()) }}</strong>
             </div>
         </div>
 
@@ -71,7 +71,7 @@
                 @if ($order->status->isTerminal())
                     <div class="order-step is-current" style="flex:0 0 auto;min-width:120px;">
                         <span class="order-step__dot"><i class="fa-solid fa-ban"></i></span>
-                        <span class="order-step__label">{{ $order->status->label() }}</span>
+                        <span class="order-step__label">{{ __($order->status->label()) }}</span>
                     </div>
                 @endif
                 @foreach (\App\Enums\OrderStatus::flow() as $i => $stage)
@@ -83,7 +83,7 @@
                                 {{ $i + 1 }}
                             @endif
                         </span>
-                        <span class="order-step__label">{{ $stage->label() }}</span>
+                        <span class="order-step__label">{{ __($stage->label()) }}</span>
                     </div>
                 @endforeach
             </div>
@@ -243,7 +243,7 @@
                             <select name="status" id="status" class="form-input">
                                 {{-- Only the current status and the ones it may move to. --}}
                                 @foreach (array_merge([$order->status], $order->status->transitionsTo()) as $st)
-                                    <option value="{{ $st->value }}" @selected(old('status', $order->status->value) === $st->value)>{{ $st->label() }}</option>
+                                    <option value="{{ $st->value }}" @selected(old('status', $order->status->value) === $st->value)>{{ __($st->label()) }}</option>
                                 @endforeach
                             </select>
                             @error('status')<p class="text-red-500 text-sm mt-1.5">{{ $message }}</p>@enderror
@@ -338,7 +338,7 @@
                         </div>
                         <div class="order-info-row">
                             <dt>{{ __('Fulfillment') }}</dt>
-                            <dd><span class="status-chip {{ $order->fulfillment_status->badge() }}">{{ $order->fulfillment_status->label() }}</span></dd>
+                            <dd><span class="status-chip {{ $order->fulfillment_status->badge() }}">{{ __($order->fulfillment_status->label()) }}</span></dd>
                         </div>
                         @if ($order->carrier)
                             <div class="order-info-row">
@@ -376,7 +376,7 @@
                         </div>
                         <div class="order-info-row">
                             <dt>{{ __('Status') }}</dt>
-                            <dd><span class="status-chip {{ $order->payment_status->badge() }}">{{ $order->payment_status->label() }}</span></dd>
+                            <dd><span class="status-chip {{ $order->payment_status->badge() }}">{{ __($order->payment_status->label()) }}</span></dd>
                         </div>
                         @if ($order->paid_at)
                             <div class="order-info-row">

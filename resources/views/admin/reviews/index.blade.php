@@ -23,7 +23,7 @@
             @foreach (\App\Enums\ReviewStatus::cases() as $st)
                 <a href="{{ route('admin.reviews.index', ['status' => $st->value]) }}"
                     class="review-tab {{ $current === $st->value ? 'is-active' : '' }}">
-                    <i class="fa-solid {{ $st->icon() }}"></i> {{ $st->label() }}
+                    <i class="fa-solid {{ $st->icon() }}"></i> {{ __($st->label()) }}
                     <span>{{ $counts[$st->value] ?? 0 }}</span>
                 </a>
             @endforeach
@@ -143,7 +143,7 @@
                                         @endfor
                                     </span>
                                 </td>
-                                <td><span class="status-chip {{ $review->status->badge() }}">{{ $review->status->label() }}</span></td>
+                                <td><span class="status-chip {{ $review->status->badge() }}">{{ __($review->status->label()) }}</span></td>
                                 <td class="dash-table__date">{{ $review->created_at?->format('M d, Y') }}</td>
                                 <td class="text-end">
                                     <div class="action-group">

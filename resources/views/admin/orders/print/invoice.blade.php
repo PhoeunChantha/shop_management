@@ -35,7 +35,7 @@
                 <div class="num">{{ $order->order_number }}</div>
                 <div class="date">Issued {{ ($order->placed_at ?? $order->created_at)?->format('F j, Y') }}</div>
                 @php($pc = $order->payment_status->value === 'paid' ? '#047857' : ($order->payment_status->value === 'unpaid' ? '#b45309' : '#be123c'))
-                <span class="pill" style="color: {{ $pc }};">{{ $order->payment_status->label() }}</span>
+                <span class="pill" style="color: {{ $pc }};">{{ __($order->payment_status->label()) }}</span>
             </div>
         </div>
 
@@ -60,7 +60,7 @@
             <div class="party">
                 <h3>{{ __('Details') }}</h3>
                 <p>
-                    <strong>{{ __('Status:') }}</strong> {{ $order->status->label() }}<br>
+                    <strong>{{ __('Status:') }}</strong> {{ __($order->status->label()) }}<br>
                     <strong>{{ __('Payment:') }}</strong> {{ $order->payment_method ? strtoupper($order->payment_method) : '—' }}<br>
                     @if ($order->shipping_method)<strong>{{ __('Shipping:') }}</strong> {{ ucfirst($order->shipping_method) }}@endif
                 </p>

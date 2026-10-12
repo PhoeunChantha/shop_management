@@ -102,7 +102,7 @@
                                 <td class="orders-cust__name">{{ $m->variant?->variant_label ?: 'Base product' }}</td>
                                 <td>
                                     <span class="status-chip {{ $m->type->badge() }}">
-                                        <i class="fa-solid {{ $m->type->icon() }} me-1"></i>{{ $m->type->label() }}
+                                        <i class="fa-solid {{ $m->type->icon() }} me-1"></i>{{ __($m->type->label()) }}
                                     </span>
                                 </td>
                                 <td>

@@ -25,7 +25,7 @@
     @endforeach
 
     <label class="per-page-control">
-        <span>{{ $label }}</span>
+        <span>{{ __($label) }}</span>
         <select name="{{ $name }}" onchange="this.form.requestSubmit()">
             @foreach ($options as $size)
                 <option value="{{ $size }}" @selected((int) $selected === (int) $size)>{{ $size }}</option>
