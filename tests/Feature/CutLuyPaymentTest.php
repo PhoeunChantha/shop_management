@@ -58,7 +58,7 @@ function cutluySignature(string $raw, ?int $time = null, string $secret = CUTLUY
 
 function deliverCutluy($test, string $event, string $paymentId, ?string $signature = null)
 {
-    $raw = json_encode(['event' => $event, 'data' => ['id' => $paymentId]]);
+    $raw = json_encode(['type' => $event, 'data' => ['payment' => ['id' => $paymentId]]]);
 
     return $test->call('POST', route('frontend.webhooks.cutluy'), [], [], [], [
         'HTTP_X-CutLuy-Event' => $event,
@@ -160,7 +160,7 @@ it('rejects a wrong signature, a tampered body and a stale timestamp', function 
         'reference_id' => 'r', 'idempotency_key' => 'k', 'amount' => 47.19, 'status' => 'pending',
     ]);
     Http::fake(['cutluy.com/*' => Http::response(cutluyPaymentBody('PAY_1', 'paid'))]);
-    $raw = json_encode(['event' => 'payment.completed', 'data' => ['id' => 'PAY_1']]);
+    $raw = json_encode(['type' => 'payment.completed', 'data' => ['payment' => ['id' => 'PAY_1']]]);
 
     deliverCutluy($this, 'payment.completed', 'PAY_1', cutluySignature($raw, null, 'wrong-secret'))->assertUnauthorized();
     deliverCutluy($this, 'payment.completed', 'PAY_1', cutluySignature($raw.' '))->assertUnauthorized();
@@ -307,4 +307,22 @@ it('stores the expiry, shows a countdown and offers a new QR once it has run out
     // …and reopening the page makes a fresh payment instead of the dead QR.
     $this->actingAs($this->customer)->get(route('frontend.payment.qr', $this->order))->assertOk();
     expect(CutluyPayment::count())->toBe(2);
+});
+
+it('reads the event from the body type and finds the payment by reference when no id is sent', function () {
+    CutluyPayment::create([
+        'payment_id' => 'PAY_1', 'payable_type' => $this->order->getMorphClass(), 'payable_id' => $this->order->id,
+        'reference_id' => $this->order->order_number, 'idempotency_key' => 'k', 'amount' => 47.19, 'status' => 'pending',
+    ]);
+    Http::fake(['cutluy.com/v1/payments/PAY_1' => Http::response(cutluyPaymentBody('PAY_1', 'paid'))]);
+
+    $raw = json_encode(['type' => 'payment.completed', 'data' => ['payment' => ['reference_id' => $this->order->order_number]]]);
+
+    // No X-CutLuy-Event header: the event name comes from the body.
+    $this->call('POST', route('frontend.webhooks.cutluy'), [], [], [], [
+        'HTTP_X-CutLuy-Signature' => cutluySignature($raw),
+        'CONTENT_TYPE' => 'application/json',
+    ], $raw)->assertOk();
+
+    expect($this->order->fresh()->payment_status)->toBe(PaymentStatus::Paid);
 });
