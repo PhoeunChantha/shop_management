@@ -656,13 +656,9 @@
                             :help="__('Required for storefront navigation and filters. Pick a sub-category to file the product under it — its main category is set automatically.')" />
                     </div>
                     <div class="form-field">
-                        <label for="brand_id">{{ __('Brand') }}</label>
-                        <select name="brand_id" id="brand_id" class="form-input">
-                            <option value="">{{ __('None') }}</option>
-                            @foreach ($brands as $brand)
-                                <option value="{{ $brand->id }}" @selected(old('brand_id', $product->brand_id ?? '') == $brand->id)>{{ $brand->name }}</option>
-                            @endforeach
-                        </select>
+                        <x-select name="brand_id" id="brand_id" :label="__('Brand')" :options="$brands"
+                            :value="old('brand_id', $product->brand_id ?? '')"
+                            :placeholder="__('None')" searchable />
                     </div>
                     <div class="form-field">
                         <label>{{ __('Tags') }}</label>

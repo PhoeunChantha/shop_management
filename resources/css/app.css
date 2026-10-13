@@ -8819,6 +8819,22 @@ html.dark .variant-card:hover {
     min-height: 118px;
 }
 
+/* Custom selects sit beside plain inputs here; give them the same footprint. */
+.product-editor-page .x-select:not(.x-select--sm) {
+    --xs-h: 46px;
+    --xs-radius: 13px;
+}
+
+.product-editor-page .x-select:not(.x-select--sm) .x-select__control {
+    font-size: 13.5px;
+}
+
+.product-editor-page .x-select__label {
+    font-size: 12.5px;
+    font-weight: 700;
+    margin-bottom: 7px;
+}
+
 .product-editor-page .form-input:focus {
     border-color: #0f172a;
     box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.08);
