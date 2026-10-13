@@ -83,9 +83,16 @@ class ProductService
             ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when(($filters['min_price'] ?? null) !== null, fn ($q) => $q->where('price', '>=', $filters['min_price']))
             ->when(($filters['max_price'] ?? null) !== null, fn ($q) => $q->where('price', '<=', $filters['max_price']))
-            ->when(($filters['stock'] ?? null) === 'in_stock', fn ($q) => $q->whereHas('variants', fn ($v) => $v->where('stock', '>', 0)))
-            ->when(($filters['stock'] ?? null) === 'out_of_stock', fn ($q) => $q->whereDoesntHave('variants', fn ($v) => $v->where('stock', '>', 0)))
-            ->when(($filters['stock'] ?? null) === 'low_stock', fn ($q) => $q->whereHas('variants', fn ($v) => $v->whereColumn('stock', '<=', 'low_stock_alert')->where('low_stock_alert', '>', 0)))
+            // Single products keep stock on the row; variable products on their variants.
+            ->when(($filters['stock'] ?? null) === 'in_stock', fn ($q) => $q->where(fn ($q) => $q
+                ->where(fn ($q) => $q->where('product_type', 'single')->where('stock', '>', 0))
+                ->orWhere(fn ($q) => $q->where('product_type', 'variable')->whereHas('variants', fn ($v) => $v->where('stock', '>', 0)))))
+            ->when(($filters['stock'] ?? null) === 'out_of_stock', fn ($q) => $q->where(fn ($q) => $q
+                ->where(fn ($q) => $q->where('product_type', 'single')->where('stock', '<=', 0))
+                ->orWhere(fn ($q) => $q->where('product_type', 'variable')->whereDoesntHave('variants', fn ($v) => $v->where('stock', '>', 0)))))
+            ->when(($filters['stock'] ?? null) === 'low_stock', fn ($q) => $q->where(fn ($q) => $q
+                ->where(fn ($q) => $q->where('product_type', 'single')->where('low_stock_alert', '>', 0)->whereColumn('stock', '<=', 'low_stock_alert'))
+                ->orWhere(fn ($q) => $q->where('product_type', 'variable')->whereHas('variants', fn ($v) => $v->where('low_stock_alert', '>', 0)->whereColumn('stock', '<=', 'low_stock_alert')))))
             ->when(($filters['flag'] ?? null) === 'featured', fn ($q) => $q->where('is_featured', true))
             ->when(($filters['flag'] ?? null) === 'new', fn ($q) => $q->where('is_new', true))
             ->when(($filters['flag'] ?? null) === 'best_seller', fn ($q) => $q->where('is_best_seller', true))
@@ -292,7 +299,9 @@ class ProductService
         $this->fillTranslations($product, $request);
 
         // Single products carry their own sku/stock; variable products use variants.
-        if ($product->product_type === 'single') {
+        // product_type is cast to the ProductType enum, so compare via isSingle() —
+        // a string comparison is always false and zeroed every single product's stock.
+        if ($product->isSingle()) {
             // Auto-generate a unique SKU when the admin leaves it blank (keep the
             // existing one on edit so it stays stable).
             $product->sku = $request->filled('sku')
