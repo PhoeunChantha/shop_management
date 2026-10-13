@@ -4424,3 +4424,59 @@ html.ut-qrmodal-open {
     top: 48px !important;
   }
 }
+
+/* ---- Currency switcher ---- */
+.ut-cur-sym {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 4px;
+  border-radius: 7px;
+  background: var(--bg);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.ut-cur-name {
+  margin-left: 2px;
+  font-size: 12px;
+  color: var(--text-3, #8a8275);
+  white-space: nowrap;
+}
+
+/* Phones: language + currency buttons side by side must fit the header */
+@media (max-width: 480px) {
+  .ut-header-actions .ut-lang-btn {
+    padding: 0 8px;
+    gap: 5px;
+  }
+
+  .ut-header-actions .ut-lang-btn__caret {
+    display: none;
+  }
+}
+
+/* keep the check mark on the same line as a long currency name */
+.ut-lang-menu a .ut-lang-opt {
+  min-width: 0;
+}
+
+.ut-lang-menu .ut-cur-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+
+/* .ut-account-menu a (display:block) comes later and wins at equal specificity,
+   which pushed the check mark onto its own line in the language/currency menus. */
+.ut-account-menu.ut-lang-menu a {
+  display: flex;
+  flex-wrap: nowrap;
+}
+
+/* the heading font has no ៛ glyph: fall back to the system font for symbols */
+.ut-cur-sym {
+  font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans Khmer", sans-serif;
+  font-size: 17px;
+}

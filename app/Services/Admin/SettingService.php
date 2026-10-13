@@ -6,6 +6,7 @@ namespace App\Services\Admin;
 
 use App\Enums\SettingGroup;
 use App\Helpers\ImageManager;
+use App\Models\Currency;
 use App\Models\Setting;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -195,12 +196,6 @@ final class SettingService
                 'currency_code' => ['label' => 'Currency code', 'type' => 'text', 'placeholder' => 'USD', 'help' => 'ISO code shown on invoices/emails — e.g. USD, KHR, EUR.', 'rules' => 'nullable|string|max:8'],
                 'currency_symbol' => ['label' => 'Currency symbol', 'type' => 'text', 'placeholder' => '$', 'rules' => 'nullable|string|max:8'],
                 'currency_position' => ['label' => 'Symbol position', 'type' => 'select', 'options' => ['before' => 'Before amount ($10)', 'after' => 'After amount (10$)'], 'default' => 'before', 'rules' => 'nullable|in:before,after'],
-                'currency_secondary_enabled' => ['label' => 'Second display currency', 'type' => 'select', 'options' => ['0' => 'Disabled', '1' => 'Enabled'], 'default' => '0', 'help' => 'Let shoppers view approximate prices in a second currency. Orders are still charged in the base currency.', 'rules' => 'nullable|in:0,1'],
-                'currency_secondary_code' => ['label' => 'Second currency code', 'type' => 'text', 'placeholder' => 'KHR', 'rules' => 'nullable|string|max:8'],
-                'currency_secondary_symbol' => ['label' => 'Second currency symbol', 'type' => 'text', 'placeholder' => '៛', 'rules' => 'nullable|string|max:8'],
-                'currency_secondary_position' => ['label' => 'Second symbol position', 'type' => 'select', 'options' => ['before' => 'Before amount', 'after' => 'After amount (10៛)'], 'default' => 'after', 'rules' => 'nullable|in:before,after'],
-                'currency_secondary_rate' => ['label' => 'Exchange rate', 'type' => 'text', 'placeholder' => '4100', 'help' => 'Units of the second currency per 1 base unit (e.g. 4100 KHR = 1 USD).', 'rules' => 'nullable|numeric|min:0'],
-                'currency_secondary_decimals' => ['label' => 'Second currency decimals', 'type' => 'select', 'options' => ['0' => '0 (e.g. 4,100)', '2' => '2 (e.g. 4,100.00)'], 'default' => '0', 'rules' => 'nullable|in:0,2'],
                 'languages' => [
                     'label' => 'Store languages',
                     'hint' => 'Pick the languages your store supports. Product content can then be entered per selected language.',
@@ -928,46 +923,18 @@ final class SettingService
     }
 
     /**
-     * The optional second display currency (with exchange rate), or null when
-     * disabled/misconfigured.
+     * All currencies a shopper can view prices in: base first (rate 1), then the
+     * active extra currencies from Admin → Currencies, in their sort order.
      *
-     * @return array{code: string, symbol: string, position: string, rate: float, decimals: int}|null
-     */
-    public function secondaryCurrency(): ?array
-    {
-        if ((string) Setting::get('currency_secondary_enabled', '0') !== '1') {
-            return null;
-        }
-
-        // Fall back to sensible KHR defaults so enabling it works immediately even
-        // if the shop owner left the text fields blank (they show only placeholders).
-        $rate = (float) Setting::get('currency_secondary_rate');
-        if ($rate <= 0) {
-            $rate = 4100.0;
-        }
-
-        return [
-            'code' => Setting::get('currency_secondary_code') ?: 'KHR',
-            'symbol' => Setting::get('currency_secondary_symbol') ?: '៛',
-            'position' => Setting::get('currency_secondary_position') === 'before' ? 'before' : 'after',
-            'rate' => $rate,
-            'decimals' => (int) (Setting::get('currency_secondary_decimals') ?? 0),
-        ];
-    }
-
-    /**
-     * All currencies a shopper can view prices in: base first, then the optional
-     * secondary. Base always carries rate 1.
-     *
-     * @return array<string, array{code: string, symbol: string, position: string, rate: float, decimals: int}>
+     * @return array<string, array{code: string, name: string, symbol: string, position: string, rate: float, decimals: int}>
      */
     public function displayCurrencies(): array
     {
-        $base = $this->currency() + ['rate' => 1.0, 'decimals' => 2];
-        $list = [$base['code'] => $base];
+        $base = $this->currency();
+        $list = [$base['code'] => $base + ['name' => $base['code'], 'rate' => 1.0, 'decimals' => 2]];
 
-        if ($second = $this->secondaryCurrency()) {
-            $list[$second['code']] = $second;
+        foreach (Currency::activeList() as $code => $currency) {
+            $list[$code] ??= $currency; // never shadow the base currency
         }
 
         return $list;

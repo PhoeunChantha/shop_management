@@ -14,6 +14,7 @@ use App\Http\Controllers\Backend\CollectionController;
 use App\Http\Controllers\Backend\ColorController;
 use App\Http\Controllers\Backend\CommandPaletteController;
 use App\Http\Controllers\Backend\CouponController;
+use App\Http\Controllers\Backend\CurrencyController;
 use App\Http\Controllers\Backend\CustomerController;
 use App\Http\Controllers\Backend\CustomerNotificationController;
 use App\Http\Controllers\Backend\CustomerReportController;
@@ -651,6 +652,17 @@ Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () 
         Route::get('/{id}/edit', [TaxRuleController::class, 'edit'])->name('edit');
         Route::put('/{id}', [TaxRuleController::class, 'update'])->name('update');
         Route::delete('/{id}', [TaxRuleController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::prefix('currencies')->name('currencies.')->group(function () {
+        Route::get('/', [CurrencyController::class, 'index'])->name('index');
+        Route::delete('/bulk', [CurrencyController::class, 'bulkDestroy'])->name('bulk-destroy');
+        Route::patch('/bulk-status', [CurrencyController::class, 'bulkStatus'])->name('bulk-status');
+        Route::get('/create', [CurrencyController::class, 'create'])->name('create');
+        Route::post('/', [CurrencyController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [CurrencyController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [CurrencyController::class, 'update'])->name('update');
+        Route::delete('/{id}', [CurrencyController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('settings')->name('settings.')->group(function () {

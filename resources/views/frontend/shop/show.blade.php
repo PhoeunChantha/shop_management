@@ -190,7 +190,7 @@
                 <p class="ut-stock-msg" data-stock-msg role="status" @if($inStock) hidden @endif>{{ $inStock ? '' : __('This product is sold out.') }}</p>
                 <div class="ut-purchase-total">
                     <span>{{ __('Total for') }} <span data-pdp-qty-label>1</span> <span data-pdp-item-label>{{ __('item') }}</span></span>
-                    <strong data-pdp-total data-unit-price="{{ (float) $product['price'] }}">{{ money((float) $product['price']) }}</strong>
+                    <strong data-pdp-total data-unit-price="{{ (float) $product['price'] }}">{{ dprice((float) $product['price']) }}</strong>
                 </div>
                 <button type="button" class="ut-btn ut-btn-ink ut-btn-block ut-purchase-buy" @disabled(! $inStock)
                         data-buy-now data-require-size

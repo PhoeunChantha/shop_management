@@ -95,7 +95,7 @@
                     <div class="ut-col" style="gap:12px">
                         @php($shippingMethods = $shippingMethods ?? [])
                         @forelse($shippingMethods as $i => $m)
-                            @php($label = $m['type'] === 'free' ? __('Free') : money($m['rate']))
+                            @php($label = $m['type'] === 'free' ? __('Free') : dprice($m['rate']))
                             <label class="ut-radio-card {{ $i === 0 ? 'sel' : '' }}" onclick="document.querySelectorAll('.ut-radio-card').forEach(c=>c.classList.remove('sel')); this.classList.add('sel');">
                                 <input type="radio" name="del" value="{{ $m['id'] }}" {{ $i === 0 ? 'checked' : '' }}
                                     data-label="{{ $m['name'] }} · {{ $label }}"
@@ -255,7 +255,8 @@
             @php($dcBase = app(\App\Services\Admin\SettingService::class)->currency())
             @php($dcSel = app(\App\Services\Admin\SettingService::class)->displayCurrency())
             @if($dcSel['code'] !== $dcBase['code'])
-                <p class="muted" style="font-size:12px;margin-top:12px;line-height:1.5">{{ __('Prices shown in') }} {{ $dcSel['code'] }} {{ __('are approximate. Your order is charged in') }} {{ $dcBase['code'] }}.</p>
+                <div class="ut-row" style="justify-content:space-between;margin-top:12px;font-size:14px"><span class="muted">{{ __('You will be charged') }}</span><b id="sumBaseTotal" style="font-family:var(--font-head)">{{ money(0) }}</b></div>
+                <p class="muted" style="font-size:12px;margin-top:6px;line-height:1.5">{{ __('Prices shown in') }} {{ $dcSel['code'] }} {{ __('are approximate. Your order is charged in') }} {{ $dcBase['code'] }}.</p>
             @endif
         </div>
     </form>
@@ -357,6 +358,9 @@
             var colors = window.UT_COLORS || {};
             function cart(){ try { return JSON.parse(localStorage.getItem('ut_cart')||'[]'); } catch(e){ return []; } }
             var CUR = window.UT_CURRENCY || { symbol: '$', position: 'before', rate: 1, decimals: 2 };
+            // The amount actually charged, always in the base currency.
+            var BASE = @json(app(\App\Services\Admin\SettingService::class)->currency());
+            function baseMoney(n){ var a=Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); return BASE.position==='after' ? a+BASE.symbol : BASE.symbol+a; }
             function money(n){ var d = CUR.decimals != null ? CUR.decimals : 2; var a=(Number(n)*(CUR.rate||1)).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d}); return CUR.position==='after' ? a+CUR.symbol : CUR.symbol+a; }
 
             function renderLines(items){
@@ -418,8 +422,9 @@
                 if(g('sumShipping')) g('sumShipping').textContent = shipping===0 ? '{{ __('Free') }}' : money(shipping);
                 if(g('sumTax')) g('sumTax').textContent = money(tax);
                 if(g('sumTotal')) g('sumTotal').textContent = money(total);
+                if(g('sumBaseTotal')) g('sumBaseTotal').textContent = baseMoney(total);
                 var payAmount = document.querySelector('[data-pay-amount]');
-                if(payAmount) payAmount.textContent = money(total);
+                if(payAmount) payAmount.textContent = baseMoney(total); // the button charges base
             };
 
             window.applyCoupon = function(silent){
