@@ -110,7 +110,9 @@ class AuthController extends Controller
 
         event(new Registered($user));
 
-        Auth::login($user);
+        // Remembered, like Google sign-in: a shopper who leaves to pay in a
+        // banking app must not come back signed out once the session idles out.
+        Auth::login($user, true);
         $request->session()->regenerate();
 
         // Back to where they were headed (e.g. checkout when guest checkout is off).
