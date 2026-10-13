@@ -24,7 +24,7 @@
                     <div style="position:relative"><input class="ut-input" type="password" name="password" placeholder="{{ __('Your password') }}" style="padding-right:64px" required><button type="button" data-toggle-pw style="position:absolute;right:12px;top:11px;border:0;background:none;color:var(--text-2);font-family:var(--font-head);font-weight:600;font-size:12.5px">{{ __('Show') }}</button></div>
                     @error('password')<span style="color:var(--accent);font-size:12.5px;margin-top:6px;display:block">{{ $message }}</span>@enderror
                 </div>
-                <label class="ut-row" style="gap:9px;font-size:14px"><input type="checkbox" name="remember" value="1" @checked(old('remember')) style="accent-color:var(--blue);width:16px;height:16px"> {{ __('Keep me signed in') }}</label>
+                <label class="ut-row" style="gap:9px;font-size:14px"><input type="checkbox" name="remember" value="1" @checked($errors->any() ? old('remember') : true) style="accent-color:var(--blue);width:16px;height:16px"> {{ __('Keep me signed in') }}</label>
                 <button class="ut-btn ut-btn-ink ut-btn-block ut-btn-lg" type="submit">{{ __('Sign in') }}</button>
             </form>
             <p class="muted" style="text-align:center;margin-top:26px;font-size:14px">{{ __('New to T-Shirt Shop?') }} <a href="{{ route('frontend.register') }}" style="color:var(--blue);font-weight:600;font-family:var(--font-head)">{{ __('Create account') }}</a></p>
