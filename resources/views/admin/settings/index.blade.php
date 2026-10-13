@@ -284,6 +284,112 @@
                                         @endforeach
                                     </div>
                                 @endif
+                                @if ($groupKey === 'currencies')
+                                    {{-- Extra display currencies. Browsing only: orders are charged in the base
+                                         currency above. Row order = order in the storefront switcher. --}}
+                                    <div class="sm:col-span-2 form-field" style="margin-top:8px"
+                                        x-data="{
+                                            rows: @js($currencyRows),
+                                            base: @js(['symbol' => $values['currency_symbol'] ?? '$', 'position' => $values['currency_position'] ?? 'before']),
+                                            add() { this.rows.push({ code: '', name: '', symbol: '', symbol_position: 'after', exchange_rate: '', decimals: '0', status: '1' }); },
+                                            remove(i) { this.rows.splice(i, 1); },
+                                            move(i, d) { const j = i + d; if (j < 0 || j >= this.rows.length) return; const r = this.rows.splice(i, 1)[0]; this.rows.splice(j, 0, r); },
+                                            sample(r) {
+                                                const rate = parseFloat(r.exchange_rate);
+                                                if (!(rate > 0) || !r.symbol) return '—';
+                                                const d = parseInt(r.decimals, 10) || 0;
+                                                const n = (10 * rate).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+                                                return r.symbol_position === 'after' ? n + r.symbol : r.symbol + n;
+                                            },
+                                            baseTen() { return this.base.position === 'after' ? '10.00' + this.base.symbol : this.base.symbol + '10.00'; }
+                                        }">
+                                        <input type="hidden" name="currencies_submitted" value="1">
+
+                                        <div class="dynamic-field-header">
+                                            <div>
+                                                <label>{{ __('Extra display currencies') }}</label>
+                                                <small class="text-gray-400 dark:text-slate-500 d-block mt-1">{{ __('Shoppers can switch the prices they browse to any enabled currency. Checkout, payments, wallet and invoices still use the base currency. Rate = how many of this currency equal 1 base unit.') }}</small>
+                                            </div>
+                                            <button type="button" class="dynamic-add-button" style="white-space:nowrap;flex-shrink:0" @click="add()">
+                                                <i class="fa-solid fa-plus"></i> {{ __('Add currency') }}
+                                            </button>
+                                        </div>
+
+                                        <p x-show="rows.length === 0" x-cloak class="text-sm text-gray-500 dark:text-slate-400" style="margin:6px 0 0">
+                                            {{ __('No extra currencies yet. Add one, e.g. KHR.') }}
+                                        </p>
+
+                                        <div class="currency-rows">
+                                            <template x-for="(row, i) in rows" :key="i">
+                                                <div class="currency-row">
+                                                    <div class="currency-row__cell currency-row__cell--code">
+                                                        <span class="currency-row__label">{{ __('Code') }}</span>
+                                                        <input type="text" class="form-input" maxlength="3" style="text-transform:uppercase"
+                                                            :name="`currencies[${i}][code]`" x-model="row.code" placeholder="KHR">
+                                                    </div>
+                                                    <div class="currency-row__cell currency-row__cell--name">
+                                                        <span class="currency-row__label">{{ __('Name') }}</span>
+                                                        <input type="text" class="form-input" :name="`currencies[${i}][name]`" x-model="row.name" placeholder="{{ __('e.g. Cambodian Riel') }}">
+                                                    </div>
+                                                    <div class="currency-row__cell currency-row__cell--sym">
+                                                        <span class="currency-row__label">{{ __('Symbol') }}</span>
+                                                        <input type="text" class="form-input" maxlength="8" :name="`currencies[${i}][symbol]`" x-model="row.symbol" placeholder="៛">
+                                                    </div>
+                                                    <div class="currency-row__cell">
+                                                        <span class="currency-row__label">{{ __('Position') }}</span>
+                                                        <select class="form-input" :name="`currencies[${i}][symbol_position]`" x-model="row.symbol_position">
+                                                            <option value="before">{{ __('Before') }} (€10)</option>
+                                                            <option value="after">{{ __('After') }} (10៛)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="currency-row__cell">
+                                                        <span class="currency-row__label">{{ __('Rate') }}</span>
+                                                        <input type="number" step="any" min="0" class="form-input" :name="`currencies[${i}][exchange_rate]`" x-model="row.exchange_rate" placeholder="4100">
+                                                    </div>
+                                                    <div class="currency-row__cell">
+                                                        <span class="currency-row__label">{{ __('Decimals') }}</span>
+                                                        <select class="form-input" :name="`currencies[${i}][decimals]`" x-model="row.decimals">
+                                                            <option value="0">0</option>
+                                                            <option value="2">2</option>
+                                                            <option value="3">3</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="currency-row__cell">
+                                                        <span class="currency-row__label">{{ __('Status') }}</span>
+                                                        <select class="form-input" :name="`currencies[${i}][status]`" x-model="row.status">
+                                                            <option value="1">{{ __('Enabled') }}</option>
+                                                            <option value="0">{{ __('Disabled') }}</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="currency-row__tools">
+                                                        <span class="currency-row__sample" x-text="baseTen() + ' → ' + sample(row)"></span>
+                                                        <button type="button" class="dynamic-remove-button" style="background:none;color:inherit" @click="move(i, -1)" :disabled="i === 0" title="{{ __('Move up') }}"><i class="fa-solid fa-arrow-up"></i></button>
+                                                        <button type="button" class="dynamic-remove-button" style="background:none;color:inherit" @click="move(i, 1)" :disabled="i === rows.length - 1" title="{{ __('Move down') }}"><i class="fa-solid fa-arrow-down"></i></button>
+                                                        <button type="button" class="dynamic-remove-button" @click="remove(i)" title="{{ __('Remove') }}"><i class="fa-solid fa-trash"></i></button>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+
+                                        @foreach ($errors->keys() as $errorKey)
+                                            @if (str_starts_with($errorKey, 'currencies'))
+                                                <p class="text-red-500 text-sm mt-1.5">{{ $errors->first($errorKey) }}</p>
+                                            @endif
+                                        @endforeach
+                                    </div>
+
+                                    <style>
+                                        .currency-rows { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+                                        .currency-row { display: grid; grid-template-columns: 90px minmax(140px, 1.4fr) 80px 130px 110px 90px 120px; gap: 10px; padding: 12px; border: 1px solid rgba(148, 163, 184, .35); border-radius: 12px; align-items: end; }
+                                        .currency-row__cell { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+                                        .currency-row__label { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; opacity: .6; }
+                                        .currency-row__tools { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; }
+                                        .currency-row__sample { margin-right: auto; font-size: 13px; opacity: .75; font-variant-numeric: tabular-nums; }
+                                        .currency-row__tools button { width: 34px; height: 34px; flex: 0 0 34px; }
+                                        .currency-row__tools button:disabled { opacity: .3; cursor: default; }
+                                        @media (max-width: 1100px) { .currency-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } .currency-row__cell--name { grid-column: 1 / -1; } }
+                                    </style>
+                                @endif
                             @elseif (($group['type'] ?? '') === 'payment_methods')
                                 <div class="payment-method-builder sm:col-span-2"
                                     x-data="paymentMethodSettings(@js($paymentRows))">

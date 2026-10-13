@@ -193,9 +193,6 @@ final class SettingService
                 'admin_order_alert_email' => ['label' => 'Admin order alert email', 'type' => 'email', 'placeholder' => 'admin@tshirtshop.com', 'help' => 'When set, a copy of every new order (with invoice) is also emailed here.', 'rules' => 'nullable|email|max:255'],
             ],
             SettingGroup::Localization->value => [
-                'currency_code' => ['label' => 'Currency code', 'type' => 'text', 'placeholder' => 'USD', 'help' => 'ISO code shown on invoices/emails — e.g. USD, KHR, EUR.', 'rules' => 'nullable|string|max:8'],
-                'currency_symbol' => ['label' => 'Currency symbol', 'type' => 'text', 'placeholder' => '$', 'rules' => 'nullable|string|max:8'],
-                'currency_position' => ['label' => 'Symbol position', 'type' => 'select', 'options' => ['before' => 'Before amount ($10)', 'after' => 'After amount (10$)'], 'default' => 'before', 'rules' => 'nullable|in:before,after'],
                 'languages' => [
                     'label' => 'Store languages',
                     'hint' => 'Pick the languages your store supports. Product content can then be entered per selected language.',
@@ -203,6 +200,11 @@ final class SettingService
                     'options' => self::LANGUAGE_OPTIONS,
                     'default' => ['en'],
                 ],
+            ],
+            SettingGroup::Currencies->value => [
+                'currency_code' => ['label' => 'Base currency code', 'type' => 'text', 'placeholder' => 'USD', 'help' => 'Prices, orders, payments and invoices are in this currency. Changing it does not convert your prices.', 'rules' => 'nullable|string|max:8'],
+                'currency_symbol' => ['label' => 'Base currency symbol', 'type' => 'text', 'placeholder' => '$', 'rules' => 'nullable|string|max:8'],
+                'currency_position' => ['label' => 'Symbol position', 'type' => 'select', 'options' => ['before' => 'Before amount ($10)', 'after' => 'After amount (10$)'], 'default' => 'before', 'rules' => 'nullable|in:before,after'],
             ],
             SettingGroup::Appearance->value => $this->themeFieldDefinitions(),
             SettingGroup::Recaptcha->value => [
@@ -458,6 +460,17 @@ final class SettingService
             'payment_methods.*.account_number' => ['nullable', 'string', 'max:100'],
             'payment_methods.*.status' => ['nullable', 'boolean'],
             'payment_methods.*.sort_order' => ['nullable', 'integer', 'min:0', 'max:999'],
+            // Extra display currencies (Settings → Currencies). A row is ignored
+            // when its code is blank; once it has a code, the rest is required.
+            'currencies_submitted' => ['nullable', 'boolean'],
+            'currencies' => ['nullable', 'array', 'max:50'],
+            'currencies.*.code' => ['nullable', 'string', 'regex:/^[A-Za-z]{3}$/', 'distinct:ignore_case'],
+            'currencies.*.name' => ['required_with:currencies.*.code', 'nullable', 'string', 'max:100'],
+            'currencies.*.symbol' => ['required_with:currencies.*.code', 'nullable', 'string', 'max:8'],
+            'currencies.*.symbol_position' => ['nullable', 'in:before,after'],
+            'currencies.*.exchange_rate' => ['required_with:currencies.*.code', 'nullable', 'numeric', 'gt:0', 'max:999999999'],
+            'currencies.*.decimals' => ['nullable', 'integer', 'in:0,2,3'],
+            'currencies.*.status' => ['nullable', 'boolean'],
             'payment_method_images' => ['nullable', 'array'],
             'payment_method_images.*' => ['nullable', 'image', 'mimes:png,jpg,jpeg,svg,webp', 'max:2048'],
             'payment_method_qr_images' => ['nullable', 'array'],
@@ -1116,6 +1129,12 @@ final class SettingService
 
         Setting::set('footer_links', json_encode($footerLinks), SettingGroup::Footer->value);
 
+        // Only when the Currencies tab was part of the submit, so a partial
+        // save (e.g. one field over AJAX) never wipes the list.
+        if (! empty($validated['currencies_submitted'])) {
+            $this->syncCurrencies((array) ($validated['currencies'] ?? []));
+        }
+
         $this->savePaymentMethods(
             (array) ($validated['payment_methods'] ?? []),
             (array) ($validated['payment_method_images'] ?? []),
@@ -1199,6 +1218,41 @@ final class SettingService
      * @param  array<int|string, UploadedFile|null>  $images
      * @param  array<int|string, UploadedFile|null>  $qrImages
      */
+    /**
+     * Make the currencies table match the submitted rows: matched by code (so a
+     * row saved over AJAX without a reload is updated, not duplicated), row
+     * order becomes the display order, and codes no longer listed are removed.
+     *
+     * @param  array<int, array<string, mixed>>  $rows
+     */
+    private function syncCurrencies(array $rows): void
+    {
+        $kept = [];
+
+        foreach (array_values($rows) as $index => $row) {
+            $code = strtoupper(trim((string) ($row['code'] ?? '')));
+
+            if ($code === '') {
+                continue;
+            }
+
+            Currency::updateOrCreate(['code' => $code], [
+                'name' => trim((string) $row['name']),
+                'symbol' => trim((string) $row['symbol']),
+                'symbol_position' => ($row['symbol_position'] ?? 'before') === 'after' ? 'after' : 'before',
+                'exchange_rate' => (float) $row['exchange_rate'],
+                'decimals' => (int) ($row['decimals'] ?? 2),
+                'status' => (bool) ($row['status'] ?? false),
+                'sort_order' => $index,
+            ]);
+
+            $kept[] = $code;
+        }
+
+        // Model deletes (not one query) so the cached storefront list is flushed.
+        Currency::query()->whereNotIn('code', $kept)->get()->each->delete();
+    }
+
     private function savePaymentMethods(array $methods, array $images, array $qrImages): void
     {
         $normalized = collect($methods)
