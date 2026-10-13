@@ -7,7 +7,7 @@
     <div style="flex:1;min-width:0">
         <div class="ut-row" style="justify-content:space-between;gap:8px">
             <div style="font-family:var(--font-head);font-weight:600;font-size:{{ $big ? '16px' : '14.5px' }}">{{ $item['name'] }}</div>
-            <span style="font-family:var(--font-head);font-weight:700">{{ money($item['price'] * $item['qty']) }}</span>
+            <span style="font-family:var(--font-head);font-weight:700">{{ dprice($item['price'] * $item['qty']) }}</span>
         </div>
         <div class="ut-row muted" style="gap:8px;font-size:13px;margin-top:5px">
             <span class="ut-row" style="gap:5px"><span class="swatch" style="width:14px;height:14px;background:{{ $c['hex'] }}"></span> {{ $c['name'] }}</span>

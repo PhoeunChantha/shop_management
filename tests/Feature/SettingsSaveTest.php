@@ -18,24 +18,16 @@ it('renders the settings page for an admin', function () {
         ->assertOk();
 });
 
-it('saves settings with the second currency enabled', function () {
-    $payload = [
-        'currency_code' => 'USD',
-        'currency_symbol' => '$',
-        'currency_position' => 'before',
-        'currency_secondary_enabled' => '1',
-        'currency_secondary_code' => 'KHR',
-        'currency_secondary_symbol' => '៛',
-        'currency_secondary_position' => 'after',
-        'currency_secondary_rate' => '4100',
-        'currency_secondary_decimals' => '0',
-    ];
-
+it('saves the base currency settings', function () {
     $this->actingAs($this->admin)
-        ->put(route('admin.settings.update'), $payload)
+        ->put(route('admin.settings.update'), [
+            'currency_code' => 'USD',
+            'currency_symbol' => '$',
+            'currency_position' => 'before',
+        ])
         ->assertRedirect(route('admin.settings.index'));
 
-    expect(Setting::get('currency_secondary_rate'))->toBe('4100');
+    expect(app(SettingService::class)->currency())->toBe(['code' => 'USD', 'symbol' => '$', 'position' => 'before']);
 });
 
 it('saves the loyalty rewards rate', function () {

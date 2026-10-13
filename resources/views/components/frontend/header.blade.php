@@ -72,7 +72,7 @@
             @php($displayCurrencies = app(\App\Services\Admin\SettingService::class)->displayCurrencies())
             @if(count($displayCurrencies) > 1)
                 @php($curDc = app(\App\Services\Admin\SettingService::class)->displayCurrency())
-                <div class="dropdown ut-lang-dropdown ut-hide-mobile">
+                <div class="dropdown ut-lang-dropdown ut-currency-dropdown">
                     <button class="ut-lang-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="{{ __('Currency') }}">
                         <span class="ut-lang-btn__code">{{ $curDc['code'] }}</span>
                         <span class="ut-lang-btn__caret"><x-frontend.icon n="chevD" :size="11" /></span>
@@ -80,7 +80,7 @@
                     <div class="dropdown-menu dropdown-menu-end ut-account-menu ut-lang-menu">
                         @foreach($displayCurrencies as $code => $dc)
                             <a href="{{ route('currency.switch', $code) }}" @class(['is-active' => $curDc['code'] === $code])>
-                                <span class="ut-lang-opt">{{ $dc['symbol'] }} {{ $code }}</span>
+                                <span class="ut-lang-opt"><span class="ut-cur-sym">{{ $dc['symbol'] }}</span> {{ $code }}@if(($dc['name'] ?? $code) !== $code)<small class="ut-cur-name">{{ $dc['name'] }}</small>@endif</span>
                                 @if($curDc['code'] === $code)<x-frontend.icon n="check" :size="15" />@endif
                             </a>
                         @endforeach
