@@ -437,3 +437,19 @@ it('confirms a really-paid hosted checkout on return', function () {
 
     expect($this->order->fresh()->payment_status)->toBe(PaymentStatus::Paid);
 });
+
+it('builds the ABA Mobile link from the QR string, opened from a tap in the same tab', function () {
+    $payment = new CutluyPayment(['qr_string' => '000201010212&x=1 y']);
+
+    expect($payment->abaDeeplink())->toBe('abamobilebank://ababank.com?type=payway&qrcode=000201010212%26x%3D1%20y')
+        ->and((new CutluyPayment)->abaDeeplink())->toBeNull();
+
+    $html = view('frontend.payment._cutluy_modal', ['qr' => [
+        'payment' => new CutluyPayment(['qr_string' => '0002010102', 'checkout_url' => 'https://cutluy.com/pay/X', 'amount' => 5, 'currency' => 'USD', 'status' => 'pending']),
+        'heading' => 'h', 'reference' => 'r', 'statusUrl' => '/s', 'renewUrl' => '/r', 'doneUrl' => '/d', 'closeLabel' => 'c',
+    ]])->render();
+
+    expect($html)->toContain('href="abamobilebank://ababank.com?type=payway&amp;qrcode=0002010102"')
+        ->and($html)->toContain('href="https://cutluy.com/pay/X"')
+        ->and($html)->not->toContain('target="_blank"');
+});

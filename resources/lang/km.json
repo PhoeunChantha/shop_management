@@ -2559,5 +2559,6 @@
     "Pay now by QR": "បង់ឥឡូវតាម QR",
     "Checkout redirect URL": "URL ត្រឡប់មកវិញក្រោយបង់ប្រាក់",
     "In your CutLuy store settings, paste this same URL into both “Success redirect URL” and “Failure redirect URL”. It brings customers who paid on the CutLuy page back to their order or wallet.": "ក្នុងការកំណត់ហាងរបស់ CutLuy សូមបិទភ្ជាប់ URL ដដែលនេះទៅក្នុង «Success redirect URL» និង «Failure redirect URL» ទាំងពីរ។ វានាំអតិថិជនដែលបានបង់ប្រាក់លើទំព័រ CutLuy ត្រឡប់មកការបញ្ជាទិញ ឬកាបូបប្រាក់របស់ពួកគេវិញ។",
-    "Pay on this phone": "បង់ប្រាក់លើទូរសព្ទនេះ"
+    "Pay with ABA Mobile": "បង់តាម ABA Mobile",
+    "Other bank app? Open the payment page": "ប្រើកម្មវិធីធនាគារផ្សេង? បើកទំព័របង់ប្រាក់"
 }
