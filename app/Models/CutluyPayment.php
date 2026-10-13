@@ -79,6 +79,19 @@ class CutluyPayment extends Model
         return null;
     }
 
+    /**
+     * Link that opens this QR straight in ABA Mobile (the same link CutLuy's
+     * hosted page uses). It must be followed from a real tap: Safari and
+     * Firefox block app links opened by script, which is why sending phones
+     * to the hosted page only worked in Chrome.
+     */
+    public function abaDeeplink(): ?string
+    {
+        return filled($this->qr_string)
+            ? 'abamobilebank://ababank.com?type=payway&qrcode='.rawurlencode($this->qr_string)
+            : null;
+    }
+
     public function isPaid(): bool
     {
         return $this->status === 'paid';
