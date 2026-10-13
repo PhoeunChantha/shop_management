@@ -4,6 +4,7 @@ use App\Models\Currency;
 use App\Models\User;
 use App\Services\Admin\SettingService;
 use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Support\Facades\Route;
 use Spatie\Permission\PermissionRegistrar;
 
 function khr(array $overrides = []): Currency
@@ -79,7 +80,7 @@ it('shows the switcher with every enabled currency on the storefront', function 
         ->assertSee('Cambodian Riel');
 });
 
-describe('admin', function () {
+describe('settings tab', function () {
     beforeEach(function () {
         $this->seed(RolePermissionSeeder::class);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
@@ -87,58 +88,89 @@ describe('admin', function () {
         $this->admin->assignRole('admin');
     });
 
-    it('lists, creates, updates and deletes currencies', function () {
-        $this->actingAs($this->admin)->get(route('admin.currencies.index'))->assertOk();
-        $this->actingAs($this->admin)->get(route('admin.currencies.create'))->assertOk();
+    function currencyRow(array $overrides = []): array
+    {
+        return $overrides + ['code' => 'KHR', 'name' => 'Cambodian Riel', 'symbol' => '៛', 'symbol_position' => 'after', 'exchange_rate' => '4100', 'decimals' => '0', 'status' => '1'];
+    }
 
-        $this->actingAs($this->admin)->post(route('admin.currencies.store'), [
-            'code' => 'khr', 'name' => 'Cambodian Riel', 'symbol' => '៛', 'symbol_position' => 'after',
-            'exchange_rate' => '4100', 'decimals' => '0', 'status' => '1', 'sort_order' => '0',
-        ])->assertRedirect(route('admin.currencies.index'))->assertSessionHasNoErrors();
-
-        $c = Currency::firstWhere('code', 'KHR'); // normalised to upper case
-        expect($c)->not->toBeNull()->and((float) $c->exchange_rate)->toBe(4100.0);
-
-        $this->actingAs($this->admin)->get(route('admin.currencies.edit', $c->id))->assertOk()->assertSee('4100');
-
-        $this->actingAs($this->admin)->put(route('admin.currencies.update', $c->id), [
-            'code' => 'KHR', 'name' => 'Riel', 'symbol' => '៛', 'symbol_position' => 'after',
-            'exchange_rate' => '4050', 'decimals' => '0', 'status' => '1',
-        ])->assertRedirect(route('admin.currencies.index'))->assertSessionHasNoErrors();
-        expect((float) $c->fresh()->exchange_rate)->toBe(4050.0);
-
-        $this->actingAs($this->admin)->delete(route('admin.currencies.destroy', $c->id))->assertRedirect(route('admin.currencies.index'));
-        expect(Currency::count())->toBe(0);
-    });
-
-    it('rejects the base currency, duplicates, bad codes and non-positive rates', function () {
+    it('shows the Currencies tab with the saved rows and no separate page', function () {
         khr();
-        $valid = ['name' => 'X', 'symbol' => 'x', 'symbol_position' => 'before', 'exchange_rate' => '1', 'decimals' => '2', 'status' => '1'];
 
-        foreach (['USD', 'KHR', 'EURO', '12'] as $code) {
-            $this->actingAs($this->admin)->post(route('admin.currencies.store'), ['code' => $code] + $valid)->assertSessionHasErrors('code');
-        }
+        $this->actingAs($this->admin)->get(route('admin.settings.index'))
+            ->assertOk()
+            ->assertSee('data-tab="currencies"', false)
+            ->assertSee('Cambodian Riel');
 
-        $this->actingAs($this->admin)->post(route('admin.currencies.store'), ['code' => 'EUR', 'exchange_rate' => '0'] + $valid)
-            ->assertSessionHasErrors('exchange_rate');
+        expect(Route::has('admin.currencies.index'))->toBeFalse();
     });
 
-    it('bulk-disables currencies and the storefront list follows', function () {
-        $c = khr();
+    it('adds, updates, reorders and removes currencies on save', function () {
+        $save = fn (array $rows) => $this->actingAs($this->admin)->putJson(route('admin.settings.update'), [
+            'currency_code' => 'USD', 'currencies_submitted' => '1', 'currencies' => $rows,
+        ]);
 
-        $this->actingAs($this->admin)->patch(route('admin.currencies.bulk-status'), ['ids' => [$c->id], 'status' => '0'])->assertRedirect();
+        $save([currencyRow(['code' => 'khr']), currencyRow(['code' => 'EUR', 'name' => 'Euro', 'symbol' => '€', 'symbol_position' => 'before', 'exchange_rate' => '0.92', 'decimals' => '2'])])
+            ->assertOk();
 
-        expect(app(SettingService::class)->displayCurrencies())->not->toHaveKey('KHR');
+        expect(Currency::orderBy('sort_order')->pluck('code')->all())->toBe(['KHR', 'EUR'])
+            ->and(array_keys(app(SettingService::class)->displayCurrencies()))->toBe(['USD', 'KHR', 'EUR']);
+
+        // Same codes again (an AJAX save without reload): updated, not duplicated.
+        $save([currencyRow(['code' => 'EUR', 'name' => 'Euro', 'symbol' => '€', 'exchange_rate' => '0.9', 'decimals' => '2']), currencyRow(['exchange_rate' => '4050', 'status' => '0'])])
+            ->assertOk();
+
+        expect(Currency::count())->toBe(2)
+            ->and(Currency::orderBy('sort_order')->pluck('code')->all())->toBe(['EUR', 'KHR'])
+            ->and((float) Currency::firstWhere('code', 'KHR')->exchange_rate)->toBe(4050.0)
+            ->and(app(SettingService::class)->displayCurrencies())->not->toHaveKey('KHR'); // disabled
+
+        // Removing a row deletes it; a blank row is ignored.
+        $save([currencyRow(['code' => 'EUR', 'name' => 'Euro', 'symbol' => '€', 'exchange_rate' => '0.9']), ['code' => '', 'name' => '', 'symbol' => '', 'exchange_rate' => '']])
+            ->assertOk();
+
+        expect(Currency::pluck('code')->all())->toBe(['EUR']);
     });
 
-    it('forbids staff without the currencies permission', function () {
-        $staff = User::factory()->create();
+    it('leaves currencies alone when the tab was not part of the save', function () {
+        khr();
 
-        $this->actingAs($staff)->get(route('admin.currencies.index'))->assertForbidden();
-        $this->actingAs($staff)->post(route('admin.currencies.store'), [
-            'code' => 'EUR', 'name' => 'Euro', 'symbol' => '€', 'symbol_position' => 'before',
-            'exchange_rate' => '0.9', 'decimals' => '2', 'status' => '1',
+        $this->actingAs($this->admin)->putJson(route('admin.settings.update'), ['currency_code' => 'USD'])->assertOk();
+
+        expect(Currency::count())->toBe(1);
+    });
+
+    it('rejects bad rows', function (array $row, string $field) {
+        $this->actingAs($this->admin)->putJson(route('admin.settings.update'), [
+            'currency_code' => 'USD', 'currencies_submitted' => '1', 'currencies' => [$row],
+        ])->assertStatus(422)->assertJsonValidationErrors("currencies.0.{$field}");
+
+        expect(Currency::count())->toBe(0);
+    })->with([
+        'base currency' => [currencyRow(['code' => 'usd']), 'code'],
+        'not 3 letters' => [currencyRow(['code' => 'EURO']), 'code'],
+        'no rate' => [currencyRow(['exchange_rate' => '']), 'exchange_rate'],
+        'zero rate' => [currencyRow(['exchange_rate' => '0']), 'exchange_rate'],
+        'no symbol' => [currencyRow(['symbol' => '']), 'symbol'],
+    ]);
+
+    it('rejects the same currency twice', function () {
+        $this->actingAs($this->admin)->putJson(route('admin.settings.update'), [
+            'currency_code' => 'USD', 'currencies_submitted' => '1', 'currencies' => [currencyRow(), currencyRow(['code' => 'khr'])],
+        ])->assertStatus(422)->assertJsonValidationErrors('currencies.1.code');
+    });
+
+    it('checks the base currency being saved in the same submit', function () {
+        // Switching the base to KHR while KHR is still listed as an extra currency.
+        $this->actingAs($this->admin)->putJson(route('admin.settings.update'), [
+            'currency_code' => 'KHR', 'currencies_submitted' => '1', 'currencies' => [currencyRow()],
+        ])->assertStatus(422)->assertJsonValidationErrors('currencies.0.code');
+    });
+
+    it('forbids staff without the settings permission', function () {
+        $this->actingAs(User::factory()->create())->putJson(route('admin.settings.update'), [
+            'currency_code' => 'USD', 'currencies_submitted' => '1', 'currencies' => [currencyRow()],
         ])->assertForbidden();
+
         expect(Currency::count())->toBe(0);
     });
 });

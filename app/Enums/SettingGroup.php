@@ -16,6 +16,7 @@ enum SettingGroup: string
     case Payment = 'payment';
     case Notifications = 'notifications';
     case Localization = 'localization';
+    case Currencies = 'currencies';
     case Appearance = 'appearance';
     case Chat = 'chat';
     case Loyalty = 'loyalty';
@@ -41,6 +42,7 @@ enum SettingGroup: string
             self::Payment => 'Payment Methods',
             self::Notifications => 'Notifications',
             self::Localization => 'Languages',
+            self::Currencies => 'Currencies',
             self::Appearance => 'Theme Colors',
             self::Chat => 'Live Chat',
             self::Loyalty => 'Loyalty Points',
@@ -68,6 +70,7 @@ enum SettingGroup: string
             self::Payment => 'fa-credit-card',
             self::Notifications => 'fa-envelope',
             self::Localization => 'fa-language',
+            self::Currencies => 'fa-money-bill-transfer',
             self::Appearance => 'fa-palette',
             self::Chat => 'fa-comments',
             self::Loyalty => 'fa-gift',

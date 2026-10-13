@@ -93,12 +93,11 @@
             'label' => __('Operations'),
             'caption' => __('Store configuration'),
             'icon' => 'fa-gear',
-            'routes' => ['admin.setup-health.*', 'admin.shipping.*', 'admin.taxes.*', 'admin.currencies.*', 'admin.saved-views.*', 'admin.notifications.*', 'admin.settings.*', 'admin.activity.*'],
+            'routes' => ['admin.setup-health.*', 'admin.shipping.*', 'admin.taxes.*', 'admin.saved-views.*', 'admin.notifications.*', 'admin.settings.*', 'admin.activity.*'],
             'items' => [
                 ['label' => __('Setup Health'), 'icon' => 'fa-list-check', 'route' => 'admin.setup-health.index', 'active' => ['admin.setup-health.*']],
                 ['label' => __('Shipping Methods'), 'icon' => 'fa-truck', 'route' => 'admin.shipping.index', 'active' => ['admin.shipping.*']],
                 ['label' => __('Tax Rules'), 'icon' => 'fa-percent', 'route' => 'admin.taxes.index', 'active' => ['admin.taxes.*']],
-                ['label' => __('Currencies'), 'icon' => 'fa-money-bill-transfer', 'route' => 'admin.currencies.index', 'active' => ['admin.currencies.*'], 'permission' => 'view currencies'],
                 ['label' => __('Saved Views'), 'icon' => 'fa-bookmark', 'route' => 'admin.saved-views.index', 'active' => ['admin.saved-views.*']],
                 ['label' => __('Notifications'), 'icon' => 'fa-bell', 'route' => 'admin.notifications.index', 'active' => ['admin.notifications.*']],
                 ['label' => __('Settings'), 'icon' => 'fa-gear', 'route' => 'admin.settings.index', 'active' => ['admin.settings.*']],
