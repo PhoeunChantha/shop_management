@@ -39,9 +39,17 @@
             </p>
             <p class="ut-qrpay__timer" data-qrpay-timer hidden>{{ __('QR code expires in') }} <b data-qrpay-clock>5:00</b></p>
 
-            {{-- A phone cannot scan its own screen: phones get a button to CutLuy's page instead. --}}
-            @if ($payment->checkout_url)
-                <a href="{{ $payment->checkout_url }}" class="ut-btn ut-btn-ghost ut-qrpay__alt" target="_blank" rel="noopener">{{ __('Pay on this phone') }}</a>
+            {{-- A phone cannot scan its own screen: phones get a button that opens
+                 ABA Mobile directly. Same tab, no target=_blank — Safari / Firefox
+                 only open an app link from a direct tap. This popup keeps polling,
+                 so coming back from ABA shows the result. --}}
+            @if ($payment->abaDeeplink())
+                <div class="ut-qrpay__alt">
+                    <a href="{{ $payment->abaDeeplink() }}" class="ut-btn ut-btn-ink">{{ __('Pay with ABA Mobile') }}</a>
+                    @if ($payment->checkout_url)
+                        <a href="{{ $payment->checkout_url }}" class="ut-qrpay__alt-link">{{ __('Other bank app? Open the payment page') }}</a>
+                    @endif
+                </div>
             @endif
         </div>
 
