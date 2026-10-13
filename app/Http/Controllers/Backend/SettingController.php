@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Backend;
 use App\Exceptions\CutLuyException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateSettingsRequest;
+use App\Models\Currency;
 use App\Models\Setting;
 use App\Services\Admin\MediaStorageService;
 use App\Services\Admin\SettingService;
@@ -41,6 +42,18 @@ final class SettingController extends Controller
             $footerRows = [['column' => '', 'label' => '', 'url' => '']];
         }
 
+        // Extra display currencies (Currencies tab), in display order.
+        $currencyRows = old('currencies', Currency::query()->orderBy('sort_order')->orderBy('code')->get()
+            ->map(fn (Currency $c): array => [
+                'code' => $c->code,
+                'name' => $c->name,
+                'symbol' => $c->symbol,
+                'symbol_position' => $c->symbol_position,
+                'exchange_rate' => rtrim(rtrim(number_format((float) $c->exchange_rate, 6, '.', ''), '0'), '.'),
+                'decimals' => (string) $c->decimals,
+                'status' => $c->status ? '1' : '0',
+            ])->all());
+
         return view('admin.settings.index', [
             'schema' => $this->settings->schema(),
             'values' => $this->settings->values(),
@@ -48,6 +61,7 @@ final class SettingController extends Controller
             'socialRows' => array_values($rows),
             'paymentRows' => array_values($paymentRows),
             'footerRows' => array_values($footerRows),
+            'currencyRows' => array_values($currencyRows),
         ]);
     }
 

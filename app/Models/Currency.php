@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
@@ -89,24 +88,5 @@ class Currency extends Model
             'rate' => (float) $this->exchange_rate,
             'decimals' => (int) $this->decimals,
         ];
-    }
-
-    /** Sample of how a base amount looks in this currency, for the admin list. */
-    public function format(float $baseAmount): string
-    {
-        $number = number_format($baseAmount * (float) $this->exchange_rate, (int) $this->decimals);
-
-        return $this->symbol_position === 'after' ? $number.$this->symbol : $this->symbol.$number;
-    }
-
-    public function scopeSearch(Builder $query, ?string $term): Builder
-    {
-        return $query->when(
-            filled($term),
-            fn (Builder $query) => $query->where(function (Builder $query) use ($term) {
-                $query->where('code', 'like', "%{$term}%")
-                    ->orWhere('name', 'like', "%{$term}%");
-            })
-        );
     }
 }
