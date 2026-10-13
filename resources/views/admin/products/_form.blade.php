@@ -610,13 +610,10 @@
                 </div>
                 <div class="form-section__body d-flex flex-column gap-3">
                     <div class="form-field">
-                        <label for="status">Status <span class="text-red-500">*</span></label>
-                        <select name="status" id="status" class="form-input">
-                            @foreach (['draft' => 'Draft', 'active' => 'Active', 'inactive' => 'Inactive', 'archived' => 'Archived'] as $val => $label)
-                                <option value="{{ $val }}" @selected(old('status', $product->status ?? 'draft') === $val)>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                        <p class="form-help">{{ __('Draft products stay hidden until published.') }}</p>
+                        <x-select name="status" id="status" :label="__('Status')" required
+                            :options="['draft' => __('Draft'), 'active' => __('Active'), 'inactive' => __('Inactive'), 'archived' => __('Archived')]"
+                            :value="old('status', $product->status ?? 'draft')"
+                            :help="__('Draft products stay hidden until published.')" />
                     </div>
 
                     @php($flags = ['is_featured' => 'Featured', 'is_new' => 'New Arrival', 'is_best_seller' => 'Best Seller', 'is_on_sale' => 'On Sale'])
