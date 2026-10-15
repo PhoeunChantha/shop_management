@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Order;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Spatie\Permission\Models\Role;
@@ -70,4 +71,16 @@ it('puts the sales export beside the tabs and swaps tabs in place', function () 
         ->assertOk()
         ->assertSeeInOrder(['report-tabs-bar', 'data-report-tabs', 'report-tabs-bar__actions', 'Export CSV'], false)
         ->assertSeeInOrder(['data-report-tabs', 'report-tabs__link is-active', 'data-ajax-link'], false);
+});
+
+it('keeps the chosen customer in the sales filter', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    Order::factory()->create(['customer_name' => 'Dara Sok', 'customer_email' => 'dara@example.com']);
+
+    $this->actingAs($admin)
+        ->get(route('admin.reports.sales', ['customer' => 'dara@example.com']))
+        ->assertOk()
+        ->assertSee('report-controlbar', false)
+        ->assertSee('name="customer" x-ref="value" value="dara@example.com"', false)
+        ->assertSee('Dara Sok');
 });

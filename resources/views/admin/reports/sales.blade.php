@@ -56,77 +56,80 @@
 
         <p class="sr-intro__sub">{{ __('Paid orders placed in the period. Refunds use the shared sales definition: recorded refunds first, implied only for orders marked refunded.') }}</p>
 
-        {{-- ===================== FILTERS ===================== --}}
-        <form method="GET" action="{{ route('admin.reports.sales') }}" class="sr-filters" data-ajax-filter>
-            <input type="hidden" name="view" value="{{ $view }}">
-            <div class="sr-filters__field sr-filters__field--range">
-                <span>{{ __('Date range') }}</span>
-                <div class="daterange-control">
-                    <i class="fa-solid fa-calendar-days"></i>
-                    <input type="text" class="form-input" data-daterange data-daterange-from="start_date" data-daterange-to="end_date" placeholder="{{ __('Select report range') }}" readonly>
+        {{-- ===================== FILTERS =====================
+             One quiet row, same control bar as the other reports. Labels are
+             visually hidden; placeholders carry the meaning. --}}
+        <div class="report-controlbar">
+            <form method="GET" action="{{ route('admin.reports.sales') }}" class="report-controlbar__form" data-ajax-filter>
+                <input type="hidden" name="view" value="{{ $view }}">
+                <div class="daterange-control report-range">
+                    <i class="fa-regular fa-calendar"></i>
+                    <input type="text" class="form-input" data-daterange data-daterange-submit data-daterange-opens="right"
+                        data-daterange-from="start_date" data-daterange-to="end_date"
+                        placeholder="{{ __('Select report range') }}" aria-label="{{ __('Date range') }}" readonly>
+                    <i class="fa-solid fa-chevron-down report-range__caret" aria-hidden="true"></i>
                     <input type="hidden" name="start_date" value="{{ $filters->start->toDateString() }}">
                     <input type="hidden" name="end_date" value="{{ $filters->end->toDateString() }}">
                 </div>
-            </div>
 
-            {{-- Server-side customer autocomplete (never loads the full base). --}}
-            <div class="sr-filters__field sr-filters__field--customer"
-                 x-data="salesCustomerFilter('{{ route('admin.reports.sales.customers') }}', @js($filters->get('customer', '')))">
-                <span>{{ __('Customer') }}</span>
-                <div class="customer-select" @click.outside="close()">
-                    <div class="customer-select__control" :class="{ 'is-open': open }">
-                        <i class="fa-solid fa-user"></i>
+                {{-- Server-side customer autocomplete (never loads the full base). --}}
+                <div class="report-controlbar__field report-customer"
+                     x-data="salesCustomerFilter('{{ route('admin.reports.sales.customers') }}', @js($filters->get('customer', '')), @js($customerLabel))"
+                     @click.outside="close()" @keydown.escape="close()">
+                    <span>{{ __('Customer') }}</span>
+                    <div class="report-customer__control" :class="{ 'is-open': open, 'has-value': selected }">
+                        <i class="fa-regular fa-user"></i>
                         <input type="text" class="form-input" x-model="query" @focus="open = true; search()" @input.debounce.250ms="search()"
-                               placeholder="{{ __('All customers') }}" autocomplete="off">
-                        <button type="button" class="customer-select__clear" x-show="selected" @click="clear()" x-cloak title="{{ __('Clear') }}">
+                               placeholder="{{ __('All customers') }}" aria-label="{{ __('Customer') }}" autocomplete="off">
+                        <button type="button" class="report-customer__clear" x-show="selected" @click="clear()" x-cloak
+                                title="{{ __('Clear') }}" aria-label="{{ __('Clear customer') }}">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
-                    <input type="hidden" name="customer" :value="selected">
-                    <div class="customer-select__menu" x-show="open" x-transition x-cloak>
-                        <button type="button" class="customer-select__opt" @click="choose(null)">
-                            <span class="customer-select__name">{{ __('All customers') }}</span>
+                    <input type="hidden" name="customer" x-ref="value" value="{{ $filters->get('customer', '') }}">
+                    <div class="report-customer__menu" x-show="open" x-transition.origin.top x-cloak>
+                        <button type="button" class="report-customer__opt" :class="{ 'is-active': !selected }" @click="choose(null)">
+                            <span class="report-customer__name">{{ __('All customers') }}</span>
                         </button>
                         <template x-if="loading">
-                            <div class="customer-select__hint">{{ __('Searching…') }}</div>
+                            <div class="report-customer__hint">{{ __('Searching…') }}</div>
                         </template>
                         <template x-for="row in results" :key="row.value">
-                            <button type="button" class="customer-select__opt" @click="choose(row)">
-                                <span class="customer-select__name" x-text="row.name"></span>
-                                <span class="customer-select__mail" x-text="row.email"></span>
+                            <button type="button" class="report-customer__opt" :class="{ 'is-active': row.value === selected }" @click="choose(row)">
+                                <span class="report-customer__name" x-text="row.name"></span>
+                                <span class="report-customer__mail" x-text="row.email"></span>
                             </button>
                         </template>
                         <template x-if="!loading && results.length === 0 && query">
-                            <div class="customer-select__hint">{{ __('No customers found') }}</div>
+                            <div class="report-customer__hint">{{ __('No customers found') }}</div>
                         </template>
                     </div>
                 </div>
-            </div>
 
-            <div class="sr-filters__field">
-                <span>{{ __('Payment method') }}</span>
-                <x-select name="payment_method" size="sm" :value="$filters->get('payment_method')" placeholder="{{ __('All methods') }}" :options="$paymentMethods" />
-            </div>
+                <div class="report-controlbar__field">
+                    <span>{{ __('Payment method') }}</span>
+                    <x-select name="payment_method" size="sm" :value="$filters->get('payment_method')" placeholder="{{ __('All methods') }}" :options="$paymentMethods" />
+                </div>
 
-            <div class="sr-filters__field">
-                <span>{{ __('Order status') }}</span>
-                <x-select name="status" size="sm" :value="$filters->get('status')" placeholder="{{ __('All statuses') }}" :options="$orderStatuses" />
-            </div>
+                <div class="report-controlbar__field">
+                    <span>{{ __('Order status') }}</span>
+                    <x-select name="status" size="sm" :value="$filters->get('status')" placeholder="{{ __('All statuses') }}" :options="$orderStatuses" />
+                </div>
 
-            <div class="sr-filters__field">
-                <span>{{ __('Payment status') }}</span>
-                <x-select name="payment_status" size="sm" :value="$filters->get('payment_status')" placeholder="{{ __('All captured') }}" :options="$paymentStatuses" />
-            </div>
+                <div class="report-controlbar__field">
+                    <span>{{ __('Payment status') }}</span>
+                    <x-select name="payment_status" size="sm" :value="$filters->get('payment_status')" placeholder="{{ __('All captured') }}" :options="$paymentStatuses" />
+                </div>
 
-            <div class="sr-filters__actions">
-                <a href="{{ route('admin.reports.sales', ['view' => $view]) }}" class="ghost-button" data-ajax-link>
-                    <i class="fa-solid fa-rotate-left"></i><span>{{ __('Reset') }}</span>
-                </a>
-                <button type="submit" class="filter-button">
-                    <i class="fa-solid fa-filter"></i><span>{{ __('Apply') }}</span>
-                </button>
-            </div>
-        </form>
+                <div class="report-controlbar__actions">
+                    <a href="{{ route('admin.reports.sales', ['view' => $view]) }}" class="report-reset" data-ajax-link
+                       title="{{ __('Reset filters') }}" aria-label="{{ __('Reset filters') }}">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </a>
+                    <button type="submit" class="report-apply">{{ __('Apply') }}</button>
+                </div>
+            </form>
+        </div>
 
         <p class="rpt-period mb-3">
             <i class="fa-regular fa-calendar"></i>
@@ -475,13 +478,15 @@
     @push('js')
     <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.data('salesCustomerFilter', (url, initial) => ({
+            Alpine.data('salesCustomerFilter', (url, initial, label) => ({
                 url, open: false, query: '', selected: initial || '', loading: false, results: [],
-                init() { if (this.selected) { this.query = this.selected; } },
+                init() { if (this.selected) { this.query = label || this.selected; } },
                 async search() {
                     this.loading = true;
+                    // Focusing the chosen name lists everyone, not just that name.
+                    const term = this.selected && this.query === (label || this.selected) ? '' : this.query;
                     try {
-                        const res = await fetch(`${this.url}?q=${encodeURIComponent(this.query)}`, { headers: { 'Accept': 'application/json' } });
+                        const res = await fetch(`${this.url}?q=${encodeURIComponent(term)}`, { headers: { 'Accept': 'application/json' } });
                         const data = await res.json();
                         this.results = data.results || [];
                     } catch (e) { this.results = []; }
@@ -489,12 +494,19 @@
                 },
                 choose(row) {
                     if (row === null) { this.selected = ''; this.query = ''; }
-                    else { this.selected = row.value; this.query = row.name; }
+                    else { this.selected = row.value; this.query = row.name; label = row.name; }
+                    // Write the hidden input now: Alpine bindings update on the next
+                    // tick, but requestSubmit() reads the form synchronously.
+                    this.$refs.value.value = this.selected;
                     this.open = false;
                     this.$root.closest('form').requestSubmit();
                 },
                 clear() { this.choose(null); },
-                close() { this.open = false; },
+                close() {
+                    this.open = false;
+                    // Abandoned typing snaps back to the applied customer.
+                    this.query = this.selected ? (label || this.selected) : '';
+                },
             }));
         });
 
@@ -599,32 +611,33 @@
         .export-menu__panel a:hover { background: var(--sr-hover); }
         .export-menu__panel i { width: 16px; color: var(--sr-muted); }
 
-        /* Filters */
-        .sr-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.8rem;
-            background: var(--sr-panel); border: 1px solid var(--sr-line); border-radius: 16px; padding: 0.95rem 1.05rem; box-shadow: 0 1px 2px rgba(16,24,40,.03); }
-        .sr-filters__field { display: flex; flex-direction: column; gap: 0.35rem; min-width: 170px; }
-        .sr-filters__field > span { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--sr-muted); }
-        .sr-filters__field--range { min-width: 240px; }
-        .sr-filters__field--customer { min-width: 230px; }
-        .sr-filters__actions { display: flex; gap: 0.5rem; margin-left: auto; }
-        .daterange-control { position: relative; display: flex; align-items: center; }
-        .daterange-control > i { position: absolute; left: 0.7rem; color: var(--sr-muted); font-size: 0.8rem; pointer-events: none; }
-        .daterange-control .form-input { padding-left: 2rem; cursor: pointer; }
-
-        .customer-select { position: relative; }
-        .customer-select__control { position: relative; display: flex; align-items: center; }
-        .customer-select__control > i { position: absolute; left: 0.7rem; color: var(--sr-muted); font-size: 0.8rem; }
-        .customer-select__control .form-input { padding-left: 2rem; padding-right: 2rem; width: 100%; }
-        .customer-select__clear { position: absolute; right: 0.55rem; border: none; background: transparent; color: var(--sr-muted); cursor: pointer; }
-        .customer-select__clear:hover { color: var(--sr-neg); }
-        .customer-select__menu { position: absolute; z-index: 45; top: calc(100% + 5px); left: 0; right: 0; max-height: 260px; overflow-y: auto;
-            background: var(--sr-panel); border: 1px solid var(--sr-line); border-radius: 12px; box-shadow: var(--admin-shadow, 0 20px 44px -20px rgba(15,23,42,.4)); padding: 5px; }
-        .customer-select__opt { display: flex; flex-direction: column; gap: 1px; width: 100%; text-align: left; border: none; background: transparent;
-            padding: 0.5rem 0.6rem; border-radius: 8px; cursor: pointer; }
-        .customer-select__opt:hover { background: var(--sr-hover); }
-        .customer-select__name { font-size: 0.83rem; font-weight: 600; color: var(--sr-ink); }
-        .customer-select__mail { font-size: 0.72rem; color: var(--sr-muted); }
-        .customer-select__hint { padding: 0.6rem; font-size: 0.78rem; color: var(--sr-muted); text-align: center; }
+        /* Filters: shared .report-controlbar; only the customer picker is local */
+        .sales-report .report-controlbar { margin: 0; }
+        .report-customer { position: relative; flex: 0 1 220px; min-width: 160px; }
+        .report-customer__control { position: relative; display: flex; align-items: center; }
+        .report-customer__control > i { position: absolute; left: 13px; color: var(--rep-muted); font-size: 13px; pointer-events: none; }
+        .report-customer__control .form-input { width: 100%; min-height: 38px; padding: 0 30px 0 36px; border: 1px solid var(--rep-line); border-radius: 10px;
+            background: #fff; color: var(--rep-ink); font-size: 13px; font-weight: 500; text-overflow: ellipsis; transition: border-color .15s ease, box-shadow .15s ease; }
+        .report-customer__control .form-input::placeholder { color: var(--rep-muted); opacity: 1; }
+        .report-customer__control .form-input:hover { border-color: color-mix(in srgb, var(--rep-ink) 20%, var(--rep-line)); }
+        .report-customer__control .form-input:focus { border-color: color-mix(in srgb, var(--rep-ink) 35%, var(--rep-line)); box-shadow: 0 0 0 3px rgba(15,23,42,.06); outline: none; }
+        .report-customer__control.has-value .form-input { font-weight: 600; }
+        .report-customer__clear { position: absolute; right: 6px; display: grid; place-items: center; width: 24px; height: 24px; border: 0; border-radius: 6px;
+            background: transparent; color: var(--rep-muted); font-size: 12px; cursor: pointer; }
+        .report-customer__clear:hover { background: #f2f4f7; color: var(--sr-neg); }
+        .report-customer__menu { position: absolute; z-index: 1060; top: calc(100% + 8px); left: 0; width: max(100%, 260px); max-height: 280px; overflow-y: auto;
+            padding: 6px; border: 1px solid var(--rep-line); border-radius: 12px; background: #fff;
+            box-shadow: 0 18px 40px -14px rgba(15,23,42,.28), 0 4px 10px rgba(15,23,42,.06); }
+        .report-customer__opt { display: flex; flex-direction: column; gap: 1px; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px;
+            background: transparent; text-align: left; cursor: pointer; }
+        .report-customer__opt:hover, .report-customer__opt.is-active { background: #f2f4f7; }
+        .report-customer__name { font-size: 13px; font-weight: 600; color: var(--rep-ink); }
+        .report-customer__mail { font-size: 11.5px; color: var(--rep-muted); }
+        .report-customer__hint { padding: 10px; font-size: 12.5px; color: var(--rep-muted); text-align: center; }
+        html.dark .report-customer__control .form-input { background: rgba(15,23,42,.55); color: #f1f5f9; }
+        html.dark .report-customer__menu { background: #141f36; box-shadow: 0 18px 40px -14px rgba(0,0,0,.6); }
+        html.dark .report-customer__opt:hover, html.dark .report-customer__opt.is-active, html.dark .report-customer__clear:hover { background: rgba(255,255,255,.07); }
+        @media (max-width: 768px) { .report-customer { flex: 1 1 100%; } }
 
         /* Summary ledger */
         .sr-summary { padding: 0; overflow: hidden; }
@@ -720,7 +733,6 @@
         }
         @media (max-width: 720px) {
             .sr-intro { flex-direction: column; align-items: flex-start; }
-            .sr-filters__actions { margin-left: 0; width: 100%; }
             .sr-summary__head { align-items: flex-start; }
             .sr-summary__total { text-align: left; }
             .sr-stats { grid-template-columns: 1fr; }

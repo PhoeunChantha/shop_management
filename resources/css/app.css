@@ -16385,7 +16385,8 @@ html.dark .reorder-selection {
    Reports — refined analytics console (redesign, supersedes the
    earlier Finance Reports block above)
    ============================================================ */
-.finance-report-page {
+.finance-report-page,
+.sales-report {
     --rep-line: #e8ecf2;
     --rep-ink: #0f172a;
     --rep-muted: #667085;
@@ -16779,7 +16780,8 @@ html.dark .report-apply:hover { background: #fff; }
 }
 
 /* ---------- Dark mode ---------- */
-html.dark .finance-report-page {
+html.dark .finance-report-page,
+html.dark .sales-report {
     --rep-line: rgba(255, 255, 255, .09);
     --rep-ink: #f1f5f9;
     --rep-muted: #94a3b8;

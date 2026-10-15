@@ -31,6 +31,7 @@ final class SalesReportController extends Controller
             'orderStatuses' => OrderStatus::options(),
             'paymentStatuses' => PaymentStatus::options(),
             'paymentMethods' => $methods->options(),
+            'customerLabel' => $this->reports->customerLabel($request->filters()->get('customer')),
         ]);
     }
 
