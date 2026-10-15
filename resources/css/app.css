@@ -16744,6 +16744,10 @@ html.dark .report-apply:hover { background: #fff; }
     color: var(--rep-muted);
 }
 
+/* Orders list: keep order # and placed date on one line */
+.report-orders-table th,
+.report-orders-table td:nth-child(-n+2) { white-space: nowrap; }
+
 /* ---------- List rows ---------- */
 .finance-report-list { display: grid; gap: 8px; padding: 14px; }
 .finance-report-list > div {
