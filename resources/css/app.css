@@ -18750,6 +18750,11 @@ html.dark {
 .rpt-toggle button.is-active { background: var(--sx-card); color: var(--sx-ink); box-shadow: 0 1px 2px rgba(15, 23, 42, .1); }
 .rpt-toggle button:focus-visible { outline: 2px solid color-mix(in srgb, var(--viz-1) 60%, transparent); outline-offset: 1px; }
 .rpt-bars { min-height: 150px; margin: 0 -6px; }
+/* Side-by-side chart panels share one height; the fill chart takes the slack. */
+.rpt-grid--fill { align-items: stretch; }
+.rpt-grid--fill > .rpt-panel { display: flex; flex-direction: column; }
+.rpt-grid--fill [data-mix-panel] .rpt-bars { flex: 1 1 auto; min-height: 270px; }
+.rpt-grid--fill .rpt-panel__more { margin-top: 8px; align-self: flex-start; }
 .rpt-bars__empty { display: grid; place-items: center; min-height: 150px; margin: 0; font-size: 12.5px; color: var(--sx-muted); }
 .rpt-panel__more { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 12px; font-weight: 700; color: var(--viz-1); text-decoration: none; }
 .rpt-panel__more i { font-size: 11px; transition: transform .2s ease; }

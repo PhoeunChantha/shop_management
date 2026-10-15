@@ -158,7 +158,7 @@
                 $categoryBars = collect($topCategories)->map(fn ($r) => ['label' => $r['name'], 'value' => round((float) $r['net_sales'], 2), 'meta' => (int) $r['quantity']])->values();
                 $paymentBars = collect($paymentMix)->map(fn ($r) => ['label' => $r['method'], 'value' => round((float) $r['total_sales'], 2), 'meta' => (int) $r['orders']])->values();
             @endphp
-            <div class="rpt-grid">
+            <div class="rpt-grid rpt-grid--fill">
                 <section class="rpt-panel" data-mix-panel>
                     <header class="rpt-panel__head">
                         <div><h3>{{ __('Top sellers') }}</h3><p>{{ __('By net sales') }}</p></div>
@@ -267,13 +267,16 @@
                 };
             };
 
-            const renderBars = (el, rows, unit) => {
+            const renderBars = (el, rows, unit, fill = false) => {
                 if (!rows.length) {
                     el.innerHTML = '<p class="rpt-bars__empty">' + @json(__('No sales in this period')) + '</p>';
                     return null;
                 }
                 el.innerHTML = '';
-                const chart = new ApexCharts(el, barOptions(rows, unit));
+                const options = barOptions(rows, unit);
+                // Fill panels take whatever height the taller neighbour leaves them.
+                if (fill) options.chart.height = Math.max(270, el.clientHeight);
+                const chart = new ApexCharts(el, options);
                 chart.render();
                 charts.push(chart);
                 return chart;
@@ -315,12 +318,15 @@
                     charts.push(trend);
                 }
 
+                const payEl = root.querySelector('[data-payments]');
+                if (payEl) renderBars(payEl, parse(payEl.dataset.payments), payEl.dataset.unit);
+
                 // Top sellers: one chart, Products / Categories toggle swaps its data.
                 const panel = root.querySelector('[data-mix-panel]');
                 if (panel) {
                     const el = panel.querySelector('[data-bar-chart]');
                     const sets = { products: parse(el.dataset.products), categories: parse(el.dataset.categories) };
-                    let mix = renderBars(el, sets.products, el.dataset.unit);
+                    let mix = renderBars(el, sets.products, el.dataset.unit, true);
                     panel.querySelectorAll('[data-mix-tab]').forEach((tab) => {
                         tab.addEventListener('click', () => {
                             panel.querySelectorAll('[data-mix-tab]').forEach((t) => {
@@ -331,13 +337,11 @@
                             if (more) more.href = tab.dataset.href;
                             const rows = sets[tab.dataset.mixTab] || [];
                             if (mix) { charts = charts.filter((c) => c !== mix); try { mix.destroy(); } catch (e) {} }
-                            mix = renderBars(el, rows, el.dataset.unit);
+                            mix = renderBars(el, rows, el.dataset.unit, true);
                         });
                     });
                 }
 
-                const payEl = root.querySelector('[data-payments]');
-                if (payEl) renderBars(payEl, parse(payEl.dataset.payments), payEl.dataset.unit);
             };
 
             if (typeof ApexCharts !== 'undefined') boot(); else document.addEventListener('DOMContentLoaded', boot);
