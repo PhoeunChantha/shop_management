@@ -311,20 +311,20 @@
         @else
             {{-- Paginated breakdown tables --}}
             <section class="premium-card admin-table-card sr-orders mt-3" data-ajax-table>
+                <div class="panel-head">
+                    <h3>{{ $titles[$view] }}</h3>
+                    <span>
+                        @if (in_array($view, ['products', 'categories'], true))
+                            {{ __('Discounts and refunds are allocated to lines by their share of the order.') }}
+                        @elseif ($view === 'customers')
+                            {{ __('Grouped by email, so guest checkouts are included.') }}
+                        @else
+                            {{ __('Paid orders with their refund breakdown.') }}
+                        @endif
+                    </span>
+                </div>
                 <x-table-toolbar>
                     <x-slot:left>
-                        <div class="panel-head panel-head--flush">
-                            <h3>{{ $titles[$view] }}</h3>
-                            <span>
-                                @if (in_array($view, ['products', 'categories'], true))
-                                    {{ __('Discounts and refunds are allocated to lines by their share of the order.') }}
-                                @elseif ($view === 'customers')
-                                    {{ __('Grouped by email, so guest checkouts are included.') }}
-                                @else
-                                    {{ __('Paid orders with their refund breakdown.') }}
-                                @endif
-                            </span>
-                        </div>
                         <x-per-page-selector :current="$filters->perPage()" />
                     </x-slot:left>
                     @if ($view !== 'categories')
@@ -652,7 +652,7 @@
         .sr-chart__canvas { margin-top: 0.4rem; }
 
         /* Tables */
-        .panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; padding: 1.05rem 1.2rem 0.75rem; }
+        .panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.35rem 0.75rem; padding: 1.05rem 1.2rem 0.75rem; }
         .panel-head--flush { padding: 0; }
         .panel-head h3 { font-size: 0.95rem; font-weight: 650; color: var(--sr-ink); margin: 0; }
         .panel-head span { font-size: 0.74rem; color: var(--sr-muted); }
