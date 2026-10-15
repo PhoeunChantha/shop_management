@@ -16697,6 +16697,35 @@ html.dark .report-apply:hover { background: #fff; }
 .finance-report-metrics > div:nth-child(5) { animation-delay: .16s; }
 .finance-report-metrics > div:nth-child(6) { animation-delay: .20s; }
 
+/* Metric cards fit one row (auto-fit beats the legacy fixed-column media rules) */
+.finance-report-page .finance-report-metrics { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.report-metrics > div { padding: 16px 18px 15px; }
+.report-metrics__icon {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--rep-ink) 6%, transparent);
+    color: var(--rep-muted);
+    font-size: 13px;
+}
+.report-metrics strong { margin-top: 10px; font-size: 24px; line-height: 1.1; }
+.report-metrics small { display: block; margin-top: 6px; color: var(--rep-muted); font-size: 12px; }
+.report-metrics .is-warn .report-metrics__icon { background: #fef3c7; color: #b45309; }
+.report-metrics .is-warn strong { color: #b45309; }
+.report-metrics .is-danger .report-metrics__icon { background: #fee2e2; color: #dc2626; }
+.report-metrics .is-danger strong { color: #dc2626; }
+html.dark .report-metrics .is-warn .report-metrics__icon { background: rgba(245, 158, 11, .16); color: #fbbf24; }
+html.dark .report-metrics .is-warn strong { color: #fbbf24; }
+html.dark .report-metrics .is-danger .report-metrics__icon { background: rgba(239, 68, 68, .16); color: #f87171; }
+html.dark .report-metrics .is-danger strong { color: #f87171; }
+.report-more__caret { font-size: 10px; transition: transform .2s ease; }
+.report-more__caret.is-open { transform: rotate(180deg); }
+
 /* ---------- Panels ---------- */
 .finance-report-grid {
     display: grid;
