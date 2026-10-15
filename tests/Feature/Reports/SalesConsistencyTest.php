@@ -54,13 +54,13 @@ beforeEach(function () {
         return $o;
     };
 
-    // Plain paid order with a coupon, tax and shipping (100 − 10 + 9 + 5 = 104).
+    // Plain paid order with a coupon, tax and shipping (100 âˆ’ 10 + 9 + 5 = 104).
     $order(OrderStatus::Delivered, PaymentStatus::Paid, '2026-09-20 10:00', [[$shirt, 25, 4, 10]],
         ['discount_total' => 10, 'tax_total' => 9, 'shipping_total' => 5, 'grand_total' => 104, 'customer_email' => 'a@x.test']);
     // Two-product order, partially refunded through a return (30 recorded).
     $partial = $order(OrderStatus::Delivered, PaymentStatus::PartiallyRefunded, '2026-09-21 10:00', [[$shirt, 20, 2, 10], [$cap, 10, 4, null]],
         ['payment_method' => 'wallet', 'customer_email' => 'b@x.test']);
-    // Fully refunded by admin, no recorded amount → implied 50.
+    // Fully refunded by admin, no recorded amount â†’ implied 50.
     $order(OrderStatus::Refunded, PaymentStatus::Refunded, '2026-09-22 10:00', [[$cap, 10, 5, 4]], ['customer_email' => 'a@x.test']);
     // Cancelled but still paid: a sale, no invented refund.
     $order(OrderStatus::Cancelled, PaymentStatus::Paid, '2026-09-23 10:00', [[$cap, 12, 1, 4]], ['customer_email' => 'c@x.test']);
@@ -158,7 +158,7 @@ it('reports cost and margin only when finance access is granted', function () {
     $withFinance = app(OverviewReportService::class)->report($this->reportFilters, true);
     $without = app(OverviewReportService::class)->report($this->reportFilters, false);
 
-    // COGS = 4×10 + 2×10 + 5×4 + 1×4; cap/deleted lines without cost are flagged.
+    // COGS = 4Ã—10 + 2Ã—10 + 5Ã—4 + 1Ã—4; cap/deleted lines without cost are flagged.
     expect($withFinance['finance']['cogs'])->toBe(84.0)
         ->and($withFinance['finance']['uncosted_units'])->toBe(6)
         ->and($withFinance['finance']['gross_profit'])->toBe(round($this->ledger['net_sales'] - 84, 2))
@@ -191,3 +191,14 @@ it('renders every sales tab and its export', function (string $view) {
     $this->actingAs($admin)->get(route('admin.reports.sales', ['view' => $view, 'search' => 'a'] + $this->filters))->assertOk();
     $this->actingAs($admin)->get(route('admin.reports.sales.export', ['view' => $view] + $this->filters))->assertOk();
 })->with(['summary', 'products', 'categories', 'customers', 'methods', 'orders']);
+
+it('renders the overview mix as charts with their data', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+
+    $this->actingAs($admin)->get(route('admin.reports.index', $this->filters))
+        ->assertOk()
+        ->assertSee('data-mix-panel', false)
+        ->assertSee('data-payments=', false)
+        ->assertSee('"label":"Shirt"', false)
+        ->assertDontSee('rpt-rank__row', false);
+});
