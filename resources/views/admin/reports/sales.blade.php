@@ -502,7 +502,11 @@
 
         (function () {
             let chart = null;
-            const destroy = () => { if (chart) { try { chart.destroy(); } catch (e) {} chart = null; } };
+            let resizer = null;
+            const destroy = () => {
+                if (resizer) { resizer.disconnect(); resizer = null; }
+                if (chart) { try { chart.destroy(); } catch (e) {} chart = null; }
+            };
 
             const boot = () => {
                 destroy();
@@ -519,6 +523,16 @@
                 const money0 = (n) => '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
                 const money2 = (n) => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+                // Category bar axes ignore tickAmount, so thin the labels ourselves:
+                // keep every Nth one so each gets ~64px at the chart's real width.
+                const index = new Map(ROWS.map((r, i) => [r.x, i]));
+                const labelStep = () => Math.max(1, Math.ceil(ROWS.length / Math.max(1, Math.floor((el.clientWidth - 60) / 64))));
+                const tickFormatter = (step) => (value) => {
+                    const i = index.get(value);
+                    return i === undefined || i % step === 0 ? value : '';
+                };
+                let step = labelStep();
+
                 chart = new ApexCharts(el, {
                     chart: { type: 'bar', height: 260, fontFamily: 'inherit', toolbar: { show: false }, zoom: { enabled: false },
                         animations: { enabled: false }, background: 'transparent' },
@@ -528,14 +542,26 @@
                     dataLabels: { enabled: false },
                     states: { hover: { filter: { type: 'darken', value: 0.9 } } },
                     grid: { borderColor: v('--sx-line', '#ebedf1'), strokeDashArray: 4, padding: { left: 6, right: 6 } },
-                    xaxis: { categories: ROWS.map(r => r.x), tickAmount: Math.min(12, ROWS.length),
-                        labels: { style: { colors: v('--sx-muted', '#79838f'), fontSize: '11px' }, rotate: 0, hideOverlappingLabels: true },
+                    xaxis: { categories: ROWS.map(r => r.x),
+                        labels: { style: { colors: v('--sx-muted', '#79838f'), fontSize: '11px' }, rotate: 0, trim: false, hideOverlappingLabels: false,
+                            formatter: tickFormatter(step) },
                         axisBorder: { show: false }, axisTicks: { show: false } },
                     yaxis: { labels: { style: { colors: v('--sx-muted', '#79838f'), fontSize: '11px' }, formatter: money0 } },
                     tooltip: { theme: DARK ? 'dark' : 'light',
+                        x: { formatter: (value, { dataPointIndex }) => ROWS[dataPointIndex]?.x ?? value },
                         y: { formatter: (n, { dataPointIndex }) => money2(n) + ' · ' + (ROWS[dataPointIndex]?.orders ?? 0) + ' ' + @json(__('orders')) } },
                 });
                 chart.render();
+
+                if (typeof ResizeObserver !== 'undefined') {
+                    resizer = new ResizeObserver(() => {
+                        const next = labelStep();
+                        if (next === step || !chart) return;
+                        step = next;
+                        chart.updateOptions({ xaxis: { labels: { formatter: tickFormatter(step) } } }, false, false);
+                    });
+                    resizer.observe(el);
+                }
             };
 
             if (typeof ApexCharts !== 'undefined') boot(); else document.addEventListener('DOMContentLoaded', boot);
