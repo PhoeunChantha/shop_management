@@ -226,25 +226,42 @@
             const money2 = (n) => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             const parse = (raw) => { try { return JSON.parse(raw || '[]'); } catch (e) { return []; } };
 
-            // Ranked horizontal bars: one hue (magnitude), value labelled at the bar end.
+            // Ranked columns: one hue (magnitude), value labelled on top of each column.
+            const wrapLabel = (text, width = 14) => {
+                const words = String(text).split(/\s+/);
+                const lines = [''];
+                words.forEach((word) => {
+                    const line = lines[lines.length - 1];
+                    if (line && (line + ' ' + word).length > width) lines.push(word);
+                    else lines[lines.length - 1] = line ? line + ' ' + word : word;
+                });
+                if (lines.length > 2) lines[1] = lines[1].slice(0, width - 1) + '…';
+                return lines.slice(0, 2);
+            };
+
             const barOptions = (rows, unit) => {
                 const max = Math.max(1, ...rows.map((r) => r.value));
+                const ink = v('--sx-ink', '#0f1622');
+                const muted = v('--sx-muted', '#79838f');
                 return {
-                    chart: { type: 'bar', height: Math.max(150, 46 + rows.length * 46), fontFamily: 'inherit', background: 'transparent',
-                        toolbar: { show: false }, zoom: { enabled: false }, animations: { enabled: true, speed: 450, dynamicAnimation: { speed: 350 } },
-                        parentHeightOffset: 0 },
+                    chart: { type: 'bar', height: 270, fontFamily: 'inherit', background: 'transparent',
+                        toolbar: { show: false }, zoom: { enabled: false },
+                        animations: { enabled: true, speed: 500, dynamicAnimation: { speed: 350 } }, parentHeightOffset: 0 },
                     series: [{ name: @json(__('Net sales')), data: rows.map((r) => r.value) }],
                     colors: [v('--viz-1', '#2a78d6')],
-                    plotOptions: { bar: { horizontal: true, barHeight: '58%', borderRadius: 4, borderRadiusApplication: 'end',
-                        dataLabels: { position: 'top' } } },
-                    dataLabels: { enabled: true, formatter: money2, textAnchor: 'start', offsetX: 6,
-                        style: { colors: [v('--sx-ink', '#0f1622')], fontSize: '12px', fontWeight: 700 } },
+                    plotOptions: { bar: { horizontal: false, columnWidth: rows.length <= 2 ? '26%' : (rows.length <= 4 ? '40%' : '52%'),
+                        borderRadius: 4, borderRadiusApplication: 'end', dataLabels: { position: 'top' } } },
+                    dataLabels: { enabled: true, formatter: money2, offsetY: -22,
+                        style: { colors: [ink], fontSize: '12px', fontWeight: 700 } },
                     states: { hover: { filter: { type: 'darken', value: 0.88 } }, active: { filter: { type: 'none' } } },
-                    grid: { show: false, padding: { left: 0, right: 8, top: -12, bottom: -8 } },
-                    xaxis: { categories: rows.map((r) => r.label), max: max * 1.32,
-                        labels: { show: false }, axisBorder: { show: false }, axisTicks: { show: false } },
-                    yaxis: { labels: { maxWidth: 170, style: { colors: v('--sx-ink', '#0f1622'), fontSize: '12.5px', fontWeight: 600 } } },
+                    grid: { borderColor: v('--sx-line-soft', '#f2f4f6'), strokeDashArray: 0, yaxis: { lines: { show: true } },
+                        xaxis: { lines: { show: false } }, padding: { left: 4, right: 4, top: 0, bottom: 0 } },
+                    xaxis: { categories: rows.map((r) => wrapLabel(r.label)),
+                        labels: { rotate: 0, trim: false, style: { colors: muted, fontSize: '11.5px', fontWeight: 600 } },
+                        axisBorder: { show: true, color: v('--sx-line', '#ebedf1') }, axisTicks: { show: false } },
+                    yaxis: { show: false, min: 0, max: max * 1.22 },
                     tooltip: { theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+                        x: { formatter: (val, { dataPointIndex }) => (rows[dataPointIndex] || {}).label ?? val },
                         y: { formatter: (n, { dataPointIndex }) => money2(n) + ' · ' + ((rows[dataPointIndex] || {}).meta ?? 0) + ' ' + unit,
                             title: { formatter: () => '' } } },
                 };
