@@ -288,26 +288,32 @@ class NavigationService
     }
 
     /**
-     * @return array<int, array{label: string, url: string}>
+     * The search popup's "Popular products". Holds the base `amount`, not a
+     * formatted price: this list is cached for every visitor, so the view
+     * formats it in each shopper's display currency.
+     *
+     * @return array<int, array{label: string, url: string, amount: float, image: string|null}>
      */
     private function popularProducts(int $limit = 2): array
     {
         return Product::query()
+            ->with('images')
             ->where('status', 'active')
             ->orderByDesc('is_best_seller')
             ->orderByDesc('is_featured')
             ->latest()
             ->limit($limit)
-            ->get(['id', 'name', 'slug', 'price', 'discount_type', 'discount_amount'])
+            ->get(['id', 'name', 'slug', 'thumbnail', 'price', 'discount_type', 'discount_amount'])
             ->map(fn (Product $product): array => [
                 'label' => $product->name,
                 'url' => route('frontend.shop.show', $this->productSlug($product)),
-                'price' => '$'.number_format((float) $product->final_price, 2),
+                'amount' => (float) $product->final_price,
+                'image' => $product->thumbnail_url,
             ])
             ->values()
             ->all() ?: [
-                ['label' => 'Essential Heavyweight Tee', 'url' => route('frontend.shop.index'), 'price' => '$42'],
-                ['label' => 'Vintage Box Tee', 'url' => route('frontend.shop.index'), 'price' => '$48'],
+                ['label' => 'Essential Heavyweight Tee', 'url' => route('frontend.shop.index'), 'amount' => 42.0, 'image' => null],
+                ['label' => 'Vintage Box Tee', 'url' => route('frontend.shop.index'), 'amount' => 48.0, 'image' => null],
             ];
     }
 
