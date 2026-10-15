@@ -108,7 +108,7 @@
             </div>
 
             {{-- Trend + waterfall --}}
-            <div class="rpt-grid">
+            <div class="rpt-grid rpt-grid--fill">
                 <section class="rpt-panel">
                     <header class="rpt-panel__head">
                         <div>
@@ -294,7 +294,7 @@
                 const trendEl = root.querySelector('[data-trend-chart]');
                 if (trendEl) {
                     const trend = new ApexCharts(trendEl, {
-                        chart: { type: 'area', height: 300, fontFamily: 'inherit', toolbar: { show: false }, zoom: { enabled: false },
+                        chart: { type: 'area', height: Math.max(300, trendEl.clientHeight), fontFamily: 'inherit', toolbar: { show: false }, zoom: { enabled: false },
                             animations: { enabled: false }, background: 'transparent' },
                         series: [
                             { name: @json(__('This period')), data: data.total_sales || [] },

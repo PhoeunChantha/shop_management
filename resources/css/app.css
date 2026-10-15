@@ -18754,6 +18754,7 @@ html.dark {
 .rpt-grid--fill { align-items: stretch; }
 .rpt-grid--fill > .rpt-panel { display: flex; flex-direction: column; }
 .rpt-grid--fill [data-mix-panel] .rpt-bars { flex: 1 1 auto; min-height: 270px; }
+.rpt-grid--fill [data-trend-chart] { flex: 1 1 auto; min-height: 300px; }
 .rpt-grid--fill .rpt-panel__more { margin-top: 8px; align-self: flex-start; }
 .rpt-bars__empty { display: grid; place-items: center; min-height: 150px; margin: 0; font-size: 12.5px; color: var(--sx-muted); }
 .rpt-panel__more { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 12px; font-weight: 700; color: var(--viz-1); text-decoration: none; }
