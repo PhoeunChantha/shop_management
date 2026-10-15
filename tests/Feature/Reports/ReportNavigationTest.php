@@ -61,3 +61,13 @@ it('omits the reports group entirely for a user with no report permissions', fun
         ->assertOk()
         ->assertDontSee('Analytics and exports');
 });
+
+it('puts the sales export beside the tabs and swaps tabs in place', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->get(route('admin.reports.sales'))
+        ->assertOk()
+        ->assertSeeInOrder(['report-tabs-bar', 'data-report-tabs', 'report-tabs-bar__actions', 'Export CSV'], false)
+        ->assertSeeInOrder(['data-report-tabs', 'report-tabs__link is-active', 'data-ajax-link'], false);
+});

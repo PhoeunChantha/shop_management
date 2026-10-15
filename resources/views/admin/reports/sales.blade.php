@@ -35,28 +35,26 @@
     </x-slot>
 
     <div class="admin-page sales-report" data-sales-report>
-        <x-admin.report-tabs :tabs="\App\Services\Admin\Reports\ReportNavigation::tabs('sales')" />
-
-        {{-- ===================== INTRO / ACTIONS ===================== --}}
-        <div class="sr-intro">
-            <p class="sr-intro__sub">{{ __('Paid orders placed in the period. Refunds use the shared sales definition: recorded refunds first, implied only for orders marked refunded.') }}</p>
-            <div class="sr-intro__actions">
+        <x-admin.report-tabs :tabs="\App\Services\Admin\Reports\ReportNavigation::tabs('sales')">
+            <x-slot:actions>
                 <div class="export-menu" x-data="{ open: false }" @keydown.escape="open = false">
-                    <button type="button" class="premium-button premium-button--dark" @click="open = !open" :aria-expanded="open">
+                    <button type="button" class="report-tabs-bar__button" @click="open = !open" :aria-expanded="open" aria-haspopup="menu">
                         <i class="fa-solid fa-file-export"></i><span>{{ __('Export') }}</span>
                         <i class="fa-solid fa-chevron-down export-menu__caret"></i>
                     </button>
-                    <div class="export-menu__panel" x-show="open" x-transition.origin.top.right @click.outside="open = false" x-cloak>
-                        <a href="{{ route('admin.reports.sales.export', ['format' => 'csv'] + request()->except('page')) }}">
+                    <div class="export-menu__panel" x-show="open" x-transition.origin.top.right @click.outside="open = false" x-cloak role="menu">
+                        <a href="{{ route('admin.reports.sales.export', ['format' => 'csv'] + request()->except('page')) }}" role="menuitem">
                             <i class="fa-solid fa-file-csv"></i>{{ __('Export CSV') }}
                         </a>
-                        <a href="{{ route('admin.reports.sales.export', ['format' => 'pdf'] + request()->except('page')) }}">
+                        <a href="{{ route('admin.reports.sales.export', ['format' => 'pdf'] + request()->except('page')) }}" role="menuitem">
                             <i class="fa-solid fa-file-pdf"></i>{{ __('Export PDF') }}
                         </a>
                     </div>
                 </div>
-            </div>
-        </div>
+            </x-slot:actions>
+        </x-admin.report-tabs>
+
+        <p class="sr-intro__sub">{{ __('Paid orders placed in the period. Refunds use the shared sales definition: recorded refunds first, implied only for orders marked refunded.') }}</p>
 
         {{-- ===================== FILTERS ===================== --}}
         <form method="GET" action="{{ route('admin.reports.sales') }}" class="sr-filters" data-ajax-filter>
