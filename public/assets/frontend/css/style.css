@@ -4480,3 +4480,10 @@ html.ut-qrmodal-open {
   font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans Khmer", sans-serif;
   font-size: 17px;
 }
+
+/* Search popup: real product photo in the "Popular products" tile */
+img.ut-search-product-image {
+  width: 100%;
+  object-fit: cover;
+  background: var(--bg);
+}
