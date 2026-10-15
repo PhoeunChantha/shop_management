@@ -16401,80 +16401,214 @@ html.dark .reorder-selection {
     font-variant-numeric: tabular-nums;
 }
 
-/* ---------- Control bar: filters + exports on one clean row ---------- */
+/* ---------- Control bar: period row + optional filters row ---------- */
 .report-controlbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    gap: 12px;
     margin-bottom: 16px;
-    padding: 14px 16px;
+    padding: 10px;
     border: 1px solid var(--rep-line);
-    border-radius: 16px;
+    border-radius: 18px;
     background: var(--rep-card);
-    box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 8px 24px -18px rgba(15, 23, 42, .18);
 }
-.report-controlbar__filters {
+.report-controlbar__form { margin: 0; }
+.report-controlbar__period {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-end;
-    gap: 12px;
-    /* Always claim the full row. Letting this share a line with the export
-       buttons made the wrap point depend on how many filters a given report
-       has (fine with 2-3 fields, but a 4th — e.g. Product Report's category
-       filter — tipped it over on common desktop widths, stranding PDF/CSV
-       alone on their own line with a large, unbalanced gap beside them). */
-    flex: 1 1 100%;
-    margin: 0;
+    align-items: center;
+    gap: 8px;
 }
-.report-controlbar__field { display: grid; gap: 6px; margin: 0; }
-.report-controlbar__field--range { min-width: 250px; flex: 1 1 250px; }
-.report-controlbar__field > span {
+
+/* Quick ranges: one segmented control */
+.report-quick {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 12px;
+    background: #f2f4f7;
+}
+.report-quick__chip {
+    min-width: 46px;
+    height: 32px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
     color: var(--rep-muted);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .04em;
-    text-transform: uppercase;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color .18s ease, color .18s ease, box-shadow .18s ease, transform .12s ease;
 }
-.report-controlbar__field input,
-.report-controlbar__field select {
+.report-quick__chip:hover { color: var(--rep-ink); }
+.report-quick__chip:active { transform: scale(.95); }
+.report-quick__chip.is-active {
+    background: #fff;
+    color: var(--rep-ink);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .1), 0 0 0 1px rgba(15, 23, 42, .04);
+}
+
+/* Custom range: a pill-sized button, not a stretched input */
+.report-range {
+    position: relative;
+    flex: 0 1 300px;
+    min-width: 230px;
+}
+.report-range > .fa-calendar {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--rep-muted);
+    font-size: 13px;
+    pointer-events: none;
+}
+.report-range .form-input {
     width: 100%;
-    min-height: 40px;
-    padding: 0 13px;
+    min-height: 38px;
+    padding: 0 34px 0 36px;
     border: 1px solid var(--rep-line);
     border-radius: 11px;
-    color: var(--rep-ink);
     background: #fff;
+    color: var(--rep-ink);
     font-size: 13px;
     font-weight: 600;
+    cursor: pointer;
+    transition: border-color .15s ease, box-shadow .15s ease;
 }
-.report-controlbar__field .daterange-control { width: 100%; }
-.report-controlbar__field--range .form-input { padding-left: 39px; cursor: pointer; }
-.finance-daterange-control input[readonly] { background: #fff; }
-.report-controlbar__field input:focus,
-.report-controlbar__field select:focus {
+.report-range .form-input:hover { border-color: color-mix(in srgb, var(--rep-ink) 22%, var(--rep-line)); }
+.report-range .form-input:focus {
     border-color: color-mix(in srgb, var(--rep-accent) 55%, #fff);
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--rep-accent) 14%, transparent);
     outline: none;
 }
-.report-controlbar__actions,
+.report-range__caret {
+    position: absolute;
+    right: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #98a2b3;
+    font-size: 10px;
+    pointer-events: none;
+}
+
+/* Exports */
 .report-controlbar__exports {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
     margin-left: auto;
-    align-self: flex-end;
 }
-/* Only when a filters row actually precedes the exports (reports with no
-   filters at all, e.g. Inventory, render exports as the bar's only child)
-   does it become a deliberate second row with a divider — otherwise it just
-   stays the single right-aligned row it always was. */
-.report-controlbar__filters + .report-controlbar__exports {
-    width: 100%;
-    margin-left: 0;
-    justify-content: flex-end;
-    padding-top: 12px;
-    border-top: 1px solid var(--rep-line);
+.report-export {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 38px;
+    padding: 0 14px;
+    border: 1px solid var(--rep-line);
+    border-radius: 11px;
+    background: #fff;
+    color: var(--rep-ink);
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color .15s ease, border-color .15s ease, transform .12s ease;
+}
+.report-export i { font-size: 12.5px; color: var(--rep-muted); }
+.report-export:hover { background: #f8fafc; border-color: color-mix(in srgb, var(--rep-ink) 22%, var(--rep-line)); color: var(--rep-ink); }
+.report-export:active { transform: scale(.97); }
+.report-export--primary { background: var(--rep-ink); border-color: var(--rep-ink); color: #fff; }
+.report-export--primary i { color: rgba(255, 255, 255, .75); }
+.report-export--primary:hover { background: #1e293b; border-color: #1e293b; color: #fff; }
+
+/* Filters row */
+.report-controlbar__filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+    padding: 12px 4px 2px;
+    border-top: 1px dashed var(--rep-line);
+}
+.report-controlbar__field { display: grid; gap: 5px; margin: 0; min-width: 170px; }
+.report-controlbar__field > span {
+    padding-left: 2px;
+    color: var(--rep-muted);
+    font-size: 11.5px;
+    font-weight: 600;
+}
+.report-controlbar__field .x-select--sm { --xs-h: 38px; --xs-radius: 11px; }
+.report-controlbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+}
+.report-reset {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 11px;
+    color: var(--rep-muted);
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color .15s ease, color .15s ease;
+}
+.report-reset i { font-size: 11.5px; transition: transform .35s cubic-bezier(.16, 1, .3, 1); }
+.report-reset:hover { background: #f2f4f7; color: var(--rep-ink); }
+.report-reset:hover i { transform: rotate(-120deg); }
+.report-apply {
+    height: 38px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 11px;
+    background: var(--rep-accent);
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color .15s ease, transform .12s ease;
+}
+.report-apply:hover { background: color-mix(in srgb, var(--rep-accent) 86%, #000); }
+.report-apply:active { transform: scale(.97); }
+
+.report-quick__chip:focus-visible,
+.report-export:focus-visible,
+.report-reset:focus-visible,
+.report-apply:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--rep-accent) 60%, transparent);
+    outline-offset: 2px;
+}
+
+html.dark .report-quick { background: rgba(255, 255, 255, .06); }
+html.dark .report-quick__chip.is-active { background: rgba(255, 255, 255, .12); color: #f1f5f9; box-shadow: none; }
+html.dark .report-range .form-input,
+html.dark .report-export { background: rgba(15, 23, 42, .55); color: #f1f5f9; }
+html.dark .report-export:hover,
+html.dark .report-reset:hover { background: rgba(255, 255, 255, .07); color: #f1f5f9; }
+html.dark .report-export--primary { background: #f1f5f9; border-color: #f1f5f9; color: #0b1226; }
+html.dark .report-export--primary i { color: #475569; }
+html.dark .report-export--primary:hover { background: #fff; color: #0b1226; }
+
+@media (max-width: 768px) {
+    .report-quick { width: 100%; }
+    .report-quick__chip { flex: 1 1 0; min-width: 0; padding: 0 6px; }
+    .report-range { flex: 1 1 100%; min-width: 0; }
+    .report-controlbar__exports { margin-left: 0; width: 100%; }
+    .report-export { flex: 1 1 0; justify-content: center; }
+    .report-controlbar__field { flex: 1 1 100%; }
+    .report-controlbar__actions { margin-left: 0; width: 100%; }
+    .report-reset,
+    .report-apply { flex: 1 1 0; justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .report-quick__chip,
+    .report-reset i,
+    .report-export,
+    .report-apply { transition: none; }
 }
 
 /* ---------- Stat cards (summary rail + metrics) ---------- */
@@ -16657,8 +16791,6 @@ html.dark .report-controlbar,
 html.dark .finance-report-rail > div,
 html.dark .finance-report-metrics > div,
 html.dark .finance-report-panel { background: var(--rep-card); }
-html.dark .report-controlbar__field input,
-html.dark .report-controlbar__field select,
 html.dark .finance-daterange-control input[readonly],
 html.dark .finance-report-list > div,
 html.dark .finance-report-payment-row > div {
@@ -16671,12 +16803,6 @@ html.dark .finance-report-payment-row > div {
     .finance-report-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 768px) {
-    .report-controlbar__actions,
-    .report-controlbar__exports { margin-left: 0; width: 100%; }
-    .report-controlbar__actions .ghost-button,
-    .report-controlbar__actions .filter-button,
-    .report-controlbar__exports .ghost-button,
-    .report-controlbar__exports .premium-button { flex: 1 1 0; }
     .finance-report-panel__head { flex-direction: column; align-items: flex-start; }
 }
 @media (prefers-reduced-motion: reduce) {

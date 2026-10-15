@@ -61,3 +61,14 @@ it('omits the reports group entirely for a user with no report permissions', fun
         ->assertOk()
         ->assertDontSee('Analytics and exports');
 });
+
+it('marks the matching quick range in the report control bar', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    [$from, $to] = \App\Enums\ReportPreset::Last7Days->range();
+
+    $this->actingAs($admin)
+        ->get(route('admin.reports.index', ['start_date' => $from->toDateString(), 'end_date' => $to->toDateString()]))
+        ->assertOk()
+        ->assertSee('report-quick__chip is-active', false)
+        ->assertSeeInOrder(['is-active', 'data-start="'.$from->toDateString().'"'], false);
+});
