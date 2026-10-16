@@ -106,7 +106,7 @@ $(function () {
 
             $input.daterangepicker({
                 autoUpdateInput: false,
-                opens: 'left',
+                opens: $input.data('daterangeOpens') || 'left',
                 locale: { format: format, cancelLabel: 'Clear', separator: ' - ' },
                 ranges: {
                     'Today': [moment(), moment()],

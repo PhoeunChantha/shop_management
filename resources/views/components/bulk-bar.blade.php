@@ -15,6 +15,8 @@
         <span x-text="count"></span> selected
     </span>
 
+    <span class="bulk-bar__divider" aria-hidden="true"></span>
+
     @isset($actions)
         {{ $actions }}
     @endisset
@@ -36,12 +38,16 @@
         </form>
     @endisset
 
+    @if (isset($actions) || isset($status))
+        <span class="bulk-bar__divider" aria-hidden="true"></span>
+    @endif
+
     <button type="button" class="bulk-btn bulk-btn--danger" @click="confirmingDelete = true">
         <i class="fa-solid fa-trash"></i> Delete
     </button>
 
-    <button type="button" class="bulk-bar__clear" @click="clear()">
-        <i class="fa-solid fa-xmark"></i> Clear
+    <button type="button" class="bulk-bar__clear" @click="clear()" title="Clear selection" aria-label="Clear selection">
+        <i class="fa-solid fa-xmark"></i>
     </button>
 </div>
 

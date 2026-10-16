@@ -14,14 +14,34 @@
         :pdf-url="route('admin.reports.stock.export', ['format' => 'pdf'])"
         :show-range="false">
 
-        <div class="finance-report-metrics">
-            <div><span>{{ __('SKUs') }}</span><strong>{{ number_format($summary['skus']) }}</strong></div>
-            <div><span>{{ __('Units on hand') }}</span><strong>{{ number_format($summary['units']) }}</strong></div>
+        <div class="finance-report-metrics report-metrics">
+            <div>
+                <i class="report-metrics__icon fa-solid fa-barcode"></i>
+                <span>{{ __('SKUs') }}</span><strong>{{ number_format($summary['skus']) }}</strong>
+                <small>{{ __('Tracked items') }}</small>
+            </div>
+            <div>
+                <i class="report-metrics__icon fa-solid fa-boxes-stacked"></i>
+                <span>{{ __('Units on hand') }}</span><strong>{{ number_format($summary['units']) }}</strong>
+                <small>{{ __('Across all SKUs') }}</small>
+            </div>
             @can('view finance reports')
-                <div><span>{{ __('Stock value') }}</span><strong>${{ number_format($summary['value'], 2) }}</strong></div>
+                <div>
+                    <i class="report-metrics__icon fa-solid fa-sack-dollar"></i>
+                    <span>{{ __('Stock value') }}</span><strong>${{ number_format($summary['value'], 2) }}</strong>
+                    <small>{{ __('At unit cost') }}</small>
+                </div>
             @endcan
-            <div><span>{{ __('Low stock') }}</span><strong>{{ number_format($summary['low']) }}</strong></div>
-            <div><span>{{ __('Out of stock') }}</span><strong>{{ number_format($summary['out']) }}</strong></div>
+            <div @class(['is-warn' => $summary['low'] > 0])>
+                <i class="report-metrics__icon fa-solid fa-triangle-exclamation"></i>
+                <span>{{ __('Low stock') }}</span><strong>{{ number_format($summary['low']) }}</strong>
+                <small>{{ __('At or below threshold') }}</small>
+            </div>
+            <div @class(['is-danger' => $summary['out'] > 0])>
+                <i class="report-metrics__icon fa-solid fa-ban"></i>
+                <span>{{ __('Out of stock') }}</span><strong>{{ number_format($summary['out']) }}</strong>
+                <small>{{ $summary['out'] > 0 ? __('Needs restock') : __('All in stock') }}</small>
+            </div>
         </div>
 
         <x-admin.table-card ajax :loader="false">

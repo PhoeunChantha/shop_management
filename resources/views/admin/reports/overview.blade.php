@@ -2,9 +2,6 @@
     $money = fn ($v) => '$'.number_format((float) $v, 2);
     $hasData = $summary['orders'] > 0;
     $prev = $filters->previous();
-    $productMax = max(1, (float) collect($topProducts)->max('net_sales'));
-    $categoryMax = max(1, (float) collect($topCategories)->max('net_sales'));
-    $methodMax = max(1, (float) collect($paymentMix)->max('total_sales'));
     $buyers = $customerMix['new']['customers'] + $customerMix['returning']['customers'];
     $hints = [
         'admin.reports.sales' => __('Waterfall, products, customers'),
@@ -111,7 +108,7 @@
             </div>
 
             {{-- Trend + waterfall --}}
-            <div class="rpt-grid">
+            <div class="rpt-grid rpt-grid--fill">
                 <section class="rpt-panel">
                     <header class="rpt-panel__head">
                         <div>
@@ -155,64 +152,40 @@
                 </section>
             </div>
 
-            {{-- Mix --}}
-            <div class="rpt-grid rpt-grid--three">
-                <section class="rpt-panel">
+            {{-- Mix: two chart panels instead of four ranked lists --}}
+            @php
+                $productBars = collect($topProducts)->map(fn ($r) => ['label' => $r['name'], 'value' => round((float) $r['net_sales'], 2), 'meta' => (int) $r['quantity']])->values();
+                $categoryBars = collect($topCategories)->map(fn ($r) => ['label' => $r['name'], 'value' => round((float) $r['net_sales'], 2), 'meta' => (int) $r['quantity']])->values();
+                $paymentBars = collect($paymentMix)->map(fn ($r) => ['label' => $r['method'], 'value' => round((float) $r['total_sales'], 2), 'meta' => (int) $r['orders']])->values();
+            @endphp
+            <div class="rpt-grid rpt-grid--fill">
+                <section class="rpt-panel" data-mix-panel>
                     <header class="rpt-panel__head">
-                        <div><h3>{{ __('Top products') }}</h3><p>{{ __('By net sales') }}</p></div>
-                        @can('view sales reports')
-                            <a href="{{ route('admin.reports.sales', ['view' => 'products'] + $filters->toQuery()) }}">{{ __('All') }} <i class="fa-solid fa-arrow-right"></i></a>
-                        @endcan
-                    </header>
-                    <div class="rpt-rank">
-                        @foreach ($topProducts as $row)
-                            <div class="rpt-rank__row">
-                                <span class="rpt-rank__name">{{ $row['name'] }}<small>{{ number_format($row['quantity']) }} {{ __('units') }}</small></span>
-                                <span class="rpt-rank__value">{{ $money($row['net_sales']) }}</span>
-                                <span class="rpt-rank__bar"><i style="width: {{ max(0, round($row['net_sales'] / $productMax * 100)) }}%"></i></span>
-                            </div>
-                        @endforeach
-                    </div>
-                </section>
-
-                <section class="rpt-panel">
-                    <header class="rpt-panel__head">
-                        <div><h3>{{ __('Top categories') }}</h3><p>{{ __('By net sales') }}</p></div>
-                        @can('view sales reports')
-                            <a href="{{ route('admin.reports.sales', ['view' => 'categories'] + $filters->toQuery()) }}">{{ __('All') }} <i class="fa-solid fa-arrow-right"></i></a>
-                        @endcan
-                    </header>
-                    <div class="rpt-rank">
-                        @foreach ($topCategories as $row)
-                            <div class="rpt-rank__row">
-                                <span class="rpt-rank__name">{{ $row['name'] }}<small>{{ number_format($row['quantity']) }} {{ __('units') }}</small></span>
-                                <span class="rpt-rank__value">{{ $money($row['net_sales']) }}</span>
-                                <span class="rpt-rank__bar"><i style="width: {{ max(0, round($row['net_sales'] / $categoryMax * 100)) }}%"></i></span>
-                            </div>
-                        @endforeach
-                    </div>
-                </section>
-
-                <div class="rpt">
-                    <section class="rpt-panel">
-                        <header class="rpt-panel__head">
-                            <div><h3>{{ __('Payment methods') }}</h3><p>{{ __('Total sales by method') }}</p></div>
-                        </header>
-                        <div class="rpt-rank">
-                            @foreach ($paymentMix as $row)
-                                <div class="rpt-rank__row">
-                                    <span class="rpt-rank__name">{{ $row['method'] }}<small>{{ trans_choice('{1} :count order|[2,*] :count orders', $row['orders'], ['count' => $row['orders']]) }}</small></span>
-                                    <span class="rpt-rank__value">{{ $money($row['total_sales']) }}</span>
-                                    <span class="rpt-rank__bar"><i style="width: {{ max(0, round($row['total_sales'] / $methodMax * 100)) }}%"></i></span>
-                                </div>
-                            @endforeach
+                        <div><h3>{{ __('Top sellers') }}</h3><p>{{ __('By net sales') }}</p></div>
+                        <div class="rpt-toggle" role="tablist" aria-label="{{ __('Top sellers by') }}">
+                            <button type="button" role="tab" class="is-active" aria-selected="true" data-mix-tab="products"
+                                data-href="{{ route('admin.reports.sales', ['view' => 'products'] + $filters->toQuery()) }}">{{ __('Products') }}</button>
+                            <button type="button" role="tab" aria-selected="false" data-mix-tab="categories"
+                                data-href="{{ route('admin.reports.sales', ['view' => 'categories'] + $filters->toQuery()) }}">{{ __('Categories') }}</button>
                         </div>
-                    </section>
+                    </header>
+                    <div class="rpt-bars" data-bar-chart data-unit="{{ __('units') }}"
+                        data-products='@json($productBars)' data-categories='@json($categoryBars)'></div>
+                    @can('view sales reports')
+                        <a class="rpt-panel__more" data-mix-more href="{{ route('admin.reports.sales', ['view' => 'products'] + $filters->toQuery()) }}">
+                            {{ __('View full breakdown') }} <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+                    @endcan
+                </section>
 
-                    <section class="rpt-panel">
-                        <header class="rpt-panel__head">
-                            <div><h3>{{ __('New vs returning') }}</h3><p>{{ __('Buyers in the period') }}</p></div>
-                        </header>
+                <section class="rpt-panel">
+                    <header class="rpt-panel__head">
+                        <div><h3>{{ __('Payment methods') }}</h3><p>{{ __('Total sales by method') }}</p></div>
+                    </header>
+                    <div class="rpt-bars" data-bar-chart data-unit="{{ __('orders') }}" data-payments='@json($paymentBars)'></div>
+
+                    <div class="rpt-subsection">
+                        <h4>{{ __('New vs returning') }} <small>{{ __('Buyers in the period') }}</small></h4>
                         <div class="rpt-split" role="img" aria-label="{{ __('New customers') }} {{ $customerMix['new']['customers'] }}, {{ __('Returning') }} {{ $customerMix['returning']['customers'] }}">
                             <i style="width: {{ $buyers ? $customerMix['new']['customers'] / $buyers * 100 : 0 }}%"></i>
                             <i style="width: {{ $buyers ? $customerMix['returning']['customers'] / $buyers * 100 : 0 }}%"></i>
@@ -221,8 +194,8 @@
                             <div><span>{{ __('New') }}</span><strong>{{ number_format($customerMix['new']['customers']) }}</strong>{{ $money($customerMix['new']['total_sales']) }}</div>
                             <div><span>{{ __('Returning') }}</span><strong>{{ number_format($customerMix['returning']['customers']) }}</strong>{{ $money($customerMix['returning']['total_sales']) }}</div>
                         </div>
-                    </section>
-                </div>
+                    </div>
+                </section>
             </div>
             @endif
 
@@ -244,45 +217,131 @@
     @push('js')
     <script>
         (function () {
-            let chart = null;
-            const destroy = () => { if (chart) { try { chart.destroy(); } catch (e) {} chart = null; } };
+            let charts = [];
+            const destroy = () => { charts.forEach((c) => { try { c.destroy(); } catch (e) {} }); charts = []; };
+
+            const css = () => getComputedStyle(document.documentElement);
+            const v = (name, fallback) => (css().getPropertyValue(name) || fallback).trim();
+            const money0 = (n) => '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
+            const money2 = (n) => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const parse = (raw) => { try { return JSON.parse(raw || '[]'); } catch (e) { return []; } };
+
+            // Ranked columns: one hue (magnitude), value labelled on top of each column.
+            const wrapLabel = (text, width = 14) => {
+                const words = String(text).split(/\s+/);
+                const lines = [''];
+                words.forEach((word) => {
+                    const line = lines[lines.length - 1];
+                    if (line && (line + ' ' + word).length > width) lines.push(word);
+                    else lines[lines.length - 1] = line ? line + ' ' + word : word;
+                });
+                if (lines.length > 2) lines[1] = lines[1].slice(0, width - 1) + '…';
+                return lines.slice(0, 2);
+            };
+
+            const barOptions = (rows, unit) => {
+                const max = Math.max(1, ...rows.map((r) => r.value));
+                const ink = v('--sx-ink', '#0f1622');
+                const muted = v('--sx-muted', '#79838f');
+                return {
+                    chart: { type: 'bar', height: 270, fontFamily: 'inherit', background: 'transparent',
+                        toolbar: { show: false }, zoom: { enabled: false },
+                        animations: { enabled: true, speed: 500, dynamicAnimation: { speed: 350 } }, parentHeightOffset: 0 },
+                    series: [{ name: @json(__('Net sales')), data: rows.map((r) => r.value) }],
+                    colors: [v('--viz-1', '#2a78d6')],
+                    plotOptions: { bar: { horizontal: false, columnWidth: rows.length <= 2 ? '26%' : (rows.length <= 4 ? '40%' : '52%'),
+                        borderRadius: 4, borderRadiusApplication: 'end', dataLabels: { position: 'top' } } },
+                    dataLabels: { enabled: true, formatter: money2, offsetY: -22,
+                        style: { colors: [ink], fontSize: '12px', fontWeight: 700 } },
+                    states: { hover: { filter: { type: 'darken', value: 0.88 } }, active: { filter: { type: 'none' } } },
+                    grid: { borderColor: v('--sx-line-soft', '#f2f4f6'), strokeDashArray: 0, yaxis: { lines: { show: true } },
+                        xaxis: { lines: { show: false } }, padding: { left: 4, right: 4, top: 0, bottom: 0 } },
+                    xaxis: { categories: rows.map((r) => wrapLabel(r.label)),
+                        labels: { rotate: 0, trim: false, style: { colors: muted, fontSize: '11.5px', fontWeight: 600 } },
+                        axisBorder: { show: true, color: v('--sx-line', '#ebedf1') }, axisTicks: { show: false } },
+                    yaxis: { show: false, min: 0, max: max * 1.22 },
+                    tooltip: { theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+                        x: { formatter: (val, { dataPointIndex }) => (rows[dataPointIndex] || {}).label ?? val },
+                        y: { formatter: (n, { dataPointIndex }) => money2(n) + ' · ' + ((rows[dataPointIndex] || {}).meta ?? 0) + ' ' + unit,
+                            title: { formatter: () => '' } } },
+                };
+            };
+
+            const renderBars = (el, rows, unit, fill = false) => {
+                if (!rows.length) {
+                    el.innerHTML = '<p class="rpt-bars__empty">' + @json(__('No sales in this period')) + '</p>';
+                    return null;
+                }
+                el.innerHTML = '';
+                const options = barOptions(rows, unit);
+                // Fill panels take whatever height the taller neighbour leaves them.
+                if (fill) options.chart.height = Math.max(270, el.clientHeight);
+                const chart = new ApexCharts(el, options);
+                chart.render();
+                charts.push(chart);
+                return chart;
+            };
 
             const boot = () => {
                 destroy();
                 const root = document.querySelector('[data-overview]');
-                const el = root ? root.querySelector('[data-trend-chart]') : null;
-                if (!el || typeof ApexCharts === 'undefined') return;
+                if (!root || typeof ApexCharts === 'undefined') return;
 
                 let data = {};
                 try { data = JSON.parse(root.dataset.chart || '{}'); } catch (e) { data = {}; }
-                const css = getComputedStyle(document.documentElement);
-                const v = (name, fallback) => (css.getPropertyValue(name) || fallback).trim();
                 const dark = document.documentElement.classList.contains('dark');
-                const money0 = (n) => '$' + Number(n).toLocaleString('en-US', { maximumFractionDigits: 0 });
-                const money2 = (n) => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-                chart = new ApexCharts(el, {
-                    chart: { type: 'area', height: 300, fontFamily: 'inherit', toolbar: { show: false }, zoom: { enabled: false },
-                        animations: { enabled: false }, background: 'transparent' },
-                    series: [
-                        { name: @json(__('This period')), data: data.total_sales || [] },
-                        { name: @json(__('Previous period')), data: data.previous_total_sales || [] },
-                    ],
-                    colors: [v('--viz-1', '#2a78d6'), v('--viz-ghost', '#c3cad5')],
-                    stroke: { curve: 'smooth', width: [2, 2], dashArray: [0, 5] },
-                    fill: { type: ['gradient', 'solid'], gradient: { opacityFrom: 0.22, opacityTo: 0.02 }, opacity: [1, 0] },
-                    markers: { size: 0, hover: { size: 5 } },
-                    dataLabels: { enabled: false },
-                    legend: { show: false },
-                    grid: { borderColor: v('--sx-line', '#ebedf1'), strokeDashArray: 4, padding: { left: 6, right: 6 } },
-                    xaxis: { categories: data.labels || [], tickAmount: Math.min(10, (data.labels || []).length),
-                        labels: { rotate: 0, hideOverlappingLabels: true, style: { colors: v('--sx-muted', '#79838f'), fontSize: '11px' } },
-                        axisBorder: { show: false }, axisTicks: { show: false }, crosshairs: { show: true } },
-                    yaxis: { labels: { style: { colors: v('--sx-muted', '#79838f'), fontSize: '11px' }, formatter: money0 } },
-                    tooltip: { shared: true, intersect: false, theme: dark ? 'dark' : 'light',
-                        y: { formatter: (n, { seriesIndex, dataPointIndex }) => money2(n) + (seriesIndex === 0 ? ' · ' + ((data.orders || [])[dataPointIndex] ?? 0) + ' ' + @json(__('orders')) : '') } },
-                });
-                chart.render();
+                const trendEl = root.querySelector('[data-trend-chart]');
+                if (trendEl) {
+                    const trend = new ApexCharts(trendEl, {
+                        chart: { type: 'area', height: Math.max(300, trendEl.clientHeight), fontFamily: 'inherit', toolbar: { show: false }, zoom: { enabled: false },
+                            animations: { enabled: false }, background: 'transparent' },
+                        series: [
+                            { name: @json(__('This period')), data: data.total_sales || [] },
+                            { name: @json(__('Previous period')), data: data.previous_total_sales || [] },
+                        ],
+                        colors: [v('--viz-1', '#2a78d6'), v('--viz-ghost', '#c3cad5')],
+                        stroke: { curve: 'smooth', width: [2, 2], dashArray: [0, 5] },
+                        fill: { type: ['gradient', 'solid'], gradient: { opacityFrom: 0.22, opacityTo: 0.02 }, opacity: [1, 0] },
+                        markers: { size: 0, hover: { size: 5 } },
+                        dataLabels: { enabled: false },
+                        legend: { show: false },
+                        grid: { borderColor: v('--sx-line', '#ebedf1'), strokeDashArray: 4, padding: { left: 6, right: 6 } },
+                        xaxis: { categories: data.labels || [], tickAmount: Math.min(10, (data.labels || []).length),
+                            labels: { rotate: 0, hideOverlappingLabels: true, style: { colors: v('--sx-muted', '#79838f'), fontSize: '11px' } },
+                            axisBorder: { show: false }, axisTicks: { show: false }, crosshairs: { show: true } },
+                        yaxis: { labels: { style: { colors: v('--sx-muted', '#79838f'), fontSize: '11px' }, formatter: money0 } },
+                        tooltip: { shared: true, intersect: false, theme: dark ? 'dark' : 'light',
+                            y: { formatter: (n, { seriesIndex, dataPointIndex }) => money2(n) + (seriesIndex === 0 ? ' · ' + ((data.orders || [])[dataPointIndex] ?? 0) + ' ' + @json(__('orders')) : '') } },
+                    });
+                    trend.render();
+                    charts.push(trend);
+                }
+
+                const payEl = root.querySelector('[data-payments]');
+                if (payEl) renderBars(payEl, parse(payEl.dataset.payments), payEl.dataset.unit);
+
+                // Top sellers: one chart, Products / Categories toggle swaps its data.
+                const panel = root.querySelector('[data-mix-panel]');
+                if (panel) {
+                    const el = panel.querySelector('[data-bar-chart]');
+                    const sets = { products: parse(el.dataset.products), categories: parse(el.dataset.categories) };
+                    let mix = renderBars(el, sets.products, el.dataset.unit, true);
+                    panel.querySelectorAll('[data-mix-tab]').forEach((tab) => {
+                        tab.addEventListener('click', () => {
+                            panel.querySelectorAll('[data-mix-tab]').forEach((t) => {
+                                t.classList.toggle('is-active', t === tab);
+                                t.setAttribute('aria-selected', t === tab ? 'true' : 'false');
+                            });
+                            const more = panel.querySelector('[data-mix-more]');
+                            if (more) more.href = tab.dataset.href;
+                            const rows = sets[tab.dataset.mixTab] || [];
+                            if (mix) { charts = charts.filter((c) => c !== mix); try { mix.destroy(); } catch (e) {} }
+                            mix = renderBars(el, rows, el.dataset.unit, true);
+                        });
+                    });
+                }
+
             };
 
             if (typeof ApexCharts !== 'undefined') boot(); else document.addEventListener('DOMContentLoaded', boot);

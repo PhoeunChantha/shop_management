@@ -206,65 +206,39 @@
             <x-slot:bulkBar>
                 <x-bulk-bar :destroy="route('admin.products.bulk-destroy')" noun="product">
                     <x-slot:actions>
-                        <form method="POST" action="{{ route('admin.products.bulk-update') }}" class="bulk-bar__form product-bulk-form">
-                            @csrf
-                            @method('PATCH')
-                            <template x-for="id in selected" :key="'bulk-status-' + id"><input type="hidden" name="ids[]" :value="id"></template>
-                            <input type="hidden" name="operation" value="status">
-                            <select name="status" class="bulk-select" aria-label="{{ __('Bulk product status') }}">
-                                <option value="active">{{ __('Active') }}</option>
-                                <option value="draft">{{ __('Draft') }}</option>
-                                <option value="inactive">{{ __('Inactive') }}</option>
-                                <option value="archived">{{ __('Archived') }}</option>
-                            </select>
-                            <button type="submit" class="bulk-btn"><i class="fa-solid fa-toggle-on"></i> {{ __('Status') }}</button>
-                        </form>
+                        <x-bulk-menu :action="route('admin.products.bulk-update')" operation="status" :label="__('Status')" icon="fa-solid fa-toggle-on">
+                            @foreach (['active' => __('Active'), 'draft' => __('Draft'), 'inactive' => __('Inactive'), 'archived' => __('Archived')] as $value => $text)
+                                <button type="button" class="bulk-menu__item" role="menuitem" @click="apply({ status: '{{ $value }}' })">
+                                    <span class="bulk-menu__dot bulk-menu__dot--{{ $value }}"></span>{{ $text }}
+                                </button>
+                            @endforeach
+                        </x-bulk-menu>
 
-                        <form method="POST" action="{{ route('admin.products.bulk-update') }}" class="bulk-bar__form product-bulk-form">
-                            @csrf
-                            @method('PATCH')
-                            <template x-for="id in selected" :key="'bulk-category-' + id"><input type="hidden" name="ids[]" :value="id"></template>
-                            <input type="hidden" name="operation" value="category">
-                            <select name="category_id" class="bulk-select" aria-label="{{ __('Bulk product category') }}" required>
-                                <option value="">{{ __('Category') }}</option>
-                                @foreach ($categories as $category)
-                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                @endforeach
-                            </select>
-                            <button type="submit" class="bulk-btn"><i class="fa-solid fa-layer-group"></i> {{ __('Move') }}</button>
-                        </form>
+                        <x-bulk-menu :action="route('admin.products.bulk-update')" operation="category" :label="__('Category')" icon="fa-solid fa-layer-group"
+                            searchable :search-placeholder="__('Find category…')">
+                            @foreach ($categories as $category)
+                                <button type="button" class="bulk-menu__item" role="menuitem" data-label="{{ $category->name }}"
+                                    x-show="matches($el.dataset.label)" @click="apply({ category_id: {{ $category->id }} })">{{ $category->name }}</button>
+                            @endforeach
+                        </x-bulk-menu>
 
-                        <form method="POST" action="{{ route('admin.products.bulk-update') }}" class="bulk-bar__form product-bulk-form">
-                            @csrf
-                            @method('PATCH')
-                            <template x-for="id in selected" :key="'bulk-brand-' + id"><input type="hidden" name="ids[]" :value="id"></template>
-                            <input type="hidden" name="operation" value="brand">
-                            <select name="brand_id" class="bulk-select" aria-label="{{ __('Bulk product brand') }}" required>
-                                <option value="">{{ __('Brand') }}</option>
-                                @foreach ($brands as $brand)
-                                    <option value="{{ $brand->id }}">{{ $brand->name }}</option>
-                                @endforeach
-                            </select>
-                            <button type="submit" class="bulk-btn"><i class="fa-solid fa-copyright"></i> {{ __('Brand') }}</button>
-                        </form>
+                        <x-bulk-menu :action="route('admin.products.bulk-update')" operation="brand" :label="__('Brand')" icon="fa-solid fa-copyright"
+                            searchable :search-placeholder="__('Find brand…')">
+                            @foreach ($brands as $brand)
+                                <button type="button" class="bulk-menu__item" role="menuitem" data-label="{{ $brand->name }}"
+                                    x-show="matches($el.dataset.label)" @click="apply({ brand_id: {{ $brand->id }} })">{{ $brand->name }}</button>
+                            @endforeach
+                        </x-bulk-menu>
 
-                        <form method="POST" action="{{ route('admin.products.bulk-update') }}" class="bulk-bar__form product-bulk-form">
-                            @csrf
-                            @method('PATCH')
-                            <template x-for="id in selected" :key="'bulk-flag-' + id"><input type="hidden" name="ids[]" :value="id"></template>
-                            <input type="hidden" name="operation" value="flag">
-                            <select name="flag" class="bulk-select" aria-label="{{ __('Bulk product flag') }}">
-                                <option value="is_featured">{{ __('Featured') }}</option>
-                                <option value="is_new">{{ __('New') }}</option>
-                                <option value="is_best_seller">{{ __('Best seller') }}</option>
-                                <option value="is_on_sale">{{ __('On sale') }}</option>
-                            </select>
-                            <select name="flag_value" class="bulk-select bulk-select--mini" aria-label="{{ __('Bulk product flag value') }}">
-                                <option value="1">{{ __('On') }}</option>
-                                <option value="0">{{ __('Off') }}</option>
-                            </select>
-                            <button type="submit" class="bulk-btn"><i class="fa-solid fa-tags"></i> {{ __('Flag') }}</button>
-                        </form>
+                        <x-bulk-menu :action="route('admin.products.bulk-update')" operation="flag" :label="__('Flags')" icon="fa-solid fa-tags">
+                            @foreach (['is_featured' => __('Featured'), 'is_new' => __('New'), 'is_best_seller' => __('Best seller'), 'is_on_sale' => __('On sale')] as $flag => $text)
+                                <div class="bulk-menu__row">
+                                    <span class="bulk-menu__row-label">{{ $text }}</span>
+                                    <button type="button" class="bulk-menu__chip" role="menuitem" @click="apply({ flag: '{{ $flag }}', flag_value: 1 })">{{ __('On') }}</button>
+                                    <button type="button" class="bulk-menu__chip bulk-menu__chip--off" role="menuitem" @click="apply({ flag: '{{ $flag }}', flag_value: 0 })">{{ __('Off') }}</button>
+                                </div>
+                            @endforeach
+                        </x-bulk-menu>
 
                         <form method="POST" action="{{ route('admin.products.bulk-export') }}" class="bulk-bar__form">
                             @csrf

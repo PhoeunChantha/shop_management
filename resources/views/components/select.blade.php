@@ -178,6 +178,14 @@
                     const idx = this.filtered.findIndex((o) => o.value === this.value);
                     this.activeIndex = idx >= 0 ? idx : 0;
                     this.$nextTick(() => {
+                        this.place();
+                        this._reposition = (e) => {
+                            // Scrolling the option list itself needs no re-placement.
+                            if (!this.open || (e && e.type === 'scroll' && this.$refs.panel.contains(e.target))) return;
+                            this.place();
+                        };
+                        window.addEventListener('scroll', this._reposition, true);
+                        window.addEventListener('resize', this._reposition);
                         if (this.searchable && this.$refs.search) this.$refs.search.focus();
                         this.scrollActive();
                     });
@@ -186,6 +194,52 @@
                 close() {
                     this.open = false;
                     this.activeIndex = -1;
+                    if (this._reposition) {
+                        window.removeEventListener('scroll', this._reposition, true);
+                        window.removeEventListener('resize', this._reposition);
+                        this._reposition = null;
+                    }
+                },
+
+                /*
+                 * Pin the panel to the viewport (position: fixed) so a parent
+                 * with overflow:hidden — table cards, modals — can never clip
+                 * it. Opens downward, flips up when there is clearly more room
+                 * above, and caps its height to the space available.
+                 */
+                place() {
+                    const panel = this.$refs.panel;
+                    const control = this.$refs.control;
+                    if (!panel || !control) return;
+
+                    const gap = 8, edge = 12;
+                    const c = control.getBoundingClientRect();
+                    const vw = window.innerWidth, vh = window.innerHeight;
+                    const below = vh - c.bottom - gap - edge;
+                    const above = c.top - gap - edge;
+
+                    panel.style.position = 'fixed';
+                    panel.style.right = 'auto';
+                    panel.style.removeProperty('--xs-avail');
+                    const natural = panel.scrollHeight;
+                    const up = below < Math.min(natural, 240) && above > below;
+                    panel.classList.toggle('is-up', up);
+                    panel.style.setProperty('--xs-avail', Math.max(140, up ? above : below) + 'px');
+
+                    panel.style.width = c.width + 'px';
+                    panel.style.bottom = 'auto';
+                    // Layout sizes (offset*) ignore the enter transform, so
+                    // they are safe to read mid-animation.
+                    const width = panel.offsetWidth;
+                    const height = panel.offsetHeight;
+                    const left = Math.max(edge, Math.min(c.left, vw - edge - width));
+                    const top = up ? c.top - gap - height : c.bottom + gap;
+
+                    // A transformed/filtered ancestor makes `fixed` relative to
+                    // that ancestor; the zero-size probe reveals its origin.
+                    const origin = this.$refs.probe ? this.$refs.probe.getBoundingClientRect() : { left: 0, top: 0 };
+                    panel.style.left = (left - origin.left) + 'px';
+                    panel.style.top = (top - origin.top) + 'px';
                 },
 
                 clear() {
@@ -386,7 +440,16 @@
             box-shadow: 0 20px 44px rgba(16, 24, 40, 0.14), 0 2px 6px rgba(16, 24, 40, 0.06);
             padding: 6px;
             transform-origin: top center;
+            /* Height is capped to the room left in the viewport (set by
+               place()); the list scrolls inside it. */
+            display: flex;
+            flex-direction: column;
+            max-height: var(--xs-avail, none);
+            z-index: 1070;
         }
+        .x-select__panel.is-up { transform-origin: bottom center; }
+        .x-select__panel.is-up.x-select__panel--from { transform: translateY(6px) scale(.97); }
+        .x-select__probe { position: fixed; top: 0; left: 0; width: 0; height: 0; pointer-events: none; }
         .x-select__panel--enter { transition: opacity .2s ease, transform .22s cubic-bezier(.16, 1, .3, 1); }
         .x-select__panel--leave { transition: opacity .15s ease, transform .15s ease; }
         .x-select__panel--from { opacity: 0; transform: translateY(-6px) scale(.97); }
@@ -420,6 +483,7 @@
         .x-select__list {
             list-style: none; margin: 0; padding: 0;
             max-height: 280px; overflow-y: auto;
+            flex: 1 1 auto; min-height: 0;
             scrollbar-width: thin;
         }
         .x-select__list::-webkit-scrollbar { width: 8px; }
@@ -553,9 +617,14 @@
         </span>
     </button>
 
+    {{-- Zero-size probe sharing the panel's containing block (see place()). --}}
+    <span x-ref="probe" class="x-select__probe" aria-hidden="true"></span>
+
     {{-- Animated dropdown --}}
     <div
+        x-ref="panel"
         class="x-select__panel"
+        @click.stop
         x-show="open"
         x-cloak
         x-transition:enter="x-select__panel--enter"
