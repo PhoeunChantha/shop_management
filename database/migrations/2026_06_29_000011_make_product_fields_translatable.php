@@ -41,7 +41,7 @@ return new class extends Migration
         }
 
         if (DB::getDriverName() !== 'sqlite') {
-            DB::statement("ALTER TABLE products MODIFY `name` VARCHAR(191) NOT NULL");
+            DB::statement('ALTER TABLE products MODIFY `name` VARCHAR(191) NOT NULL');
             DB::statement('ALTER TABLE products MODIFY `short_description` VARCHAR(191) NULL');
             DB::statement('ALTER TABLE products MODIFY `description` TEXT NULL');
             DB::statement('ALTER TABLE products MODIFY `seo_title` VARCHAR(191) NULL');
