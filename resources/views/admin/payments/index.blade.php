@@ -1,3 +1,4 @@
+@inject('settings', \App\Services\Admin\SettingService::class)
 <x-app-layout>
     <x-slot name="header">
         <div>
@@ -97,7 +98,7 @@
                                 @if($payment->payment_option)<small class="d-block text-gray-400 mt-1">{{ $payment->payment_option }}</small>@endif
                             </td>
                             <td><code>{{ $payment->tran_id }}</code></td>
-                            <td><strong>{{ $payment->currency }} {{ number_format((float) $payment->amount, 2) }}</strong></td>
+                            <td><strong title="{{ $payment->currency }}">{{ $settings->formatIn((float) $payment->amount, $payment->currency) }}</strong></td>
                             <td>
                                 @php($chip = ['completed' => 'is-success', 'failed' => 'is-danger', 'pending' => 'is-warning'][$payment->status] ?? '')
                                 <span class="status-chip {{ $chip }}">{{ __($statuses[$payment->status] ?? ucfirst($payment->status)) }}</span>

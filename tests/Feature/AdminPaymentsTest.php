@@ -103,3 +103,13 @@ it('rejects an unknown amount range', function () {
         ->get(route('admin.payments.index', ['amount' => '5-6']))
         ->assertSessionHasErrors('amount');
 });
+
+it('shows payment amounts with the currency symbol instead of the code', function () {
+    makePayment()->update(['amount' => 1.08, 'currency' => 'USD']);
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.payments.index'))
+        ->assertOk()
+        ->assertSee('$1.08')
+        ->assertDontSee('USD 1.08');
+});

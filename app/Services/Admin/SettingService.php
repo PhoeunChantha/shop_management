@@ -936,6 +936,27 @@ final class SettingService
     }
 
     /**
+     * Format an amount recorded in a given currency (e.g. a gateway payment)
+     * with that currency's symbol instead of its code: "USD 1.08" → "$1.08".
+     * Uses the configured currencies first, then common symbols, then the code.
+     */
+    public function formatIn(float $amount, ?string $code, int $decimals = 2): string
+    {
+        $code = strtoupper((string) $code);
+        $known = $this->displayCurrencies()[$code] ?? null;
+        $symbol = $known['symbol'] ?? (['USD' => '$', 'KHR' => '៛', 'EUR' => '€', 'GBP' => '£', 'THB' => '฿'][$code] ?? null);
+        $number = number_format($amount, $decimals);
+
+        if ($symbol === null) {
+            return trim($code.' '.$number);
+        }
+
+        return ($known['position'] ?? ($code === 'KHR' ? 'after' : 'before')) === 'after'
+            ? $number.$symbol
+            : $symbol.$number;
+    }
+
+    /**
      * All currencies a shopper can view prices in: base first (rate 1), then the
      * active extra currencies from Admin → Currencies, in their sort order.
      *
