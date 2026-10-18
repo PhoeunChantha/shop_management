@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\Order;
 use App\Models\User;
+use App\Services\Admin\WalletService;
 use Database\Seeders\RolePermissionSeeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -48,8 +50,8 @@ it('forbids a customer from the admin wallets page', function () {
 });
 
 it('lists wallet transactions, including wallet payments for orders', function () {
-    $wallet = app(\App\Services\Admin\WalletService::class);
-    $order = \App\Models\Order::create([
+    $wallet = app(WalletService::class);
+    $order = Order::create([
         'customer_name' => 'A B', 'customer_email' => $this->customer->email, 'shipping_address' => 'x',
         'subtotal' => 25, 'discount_total' => 0, 'shipping_total' => 0, 'tax_total' => 0, 'grand_total' => 25,
         'status' => 'paid', 'payment_status' => 'paid', 'payment_method' => 'wallet', 'placed_at' => now(),
@@ -71,7 +73,7 @@ it('lists wallet transactions, including wallet payments for orders', function (
 it('filters wallet transactions by type and by customer', function () {
     $other = User::factory()->create(['email' => 'other@example.com']);
     $other->assignRole('customer');
-    $wallet = app(\App\Services\Admin\WalletService::class);
+    $wallet = app(WalletService::class);
     $wallet->credit($this->customer, 10, 'topup', 'note-topup-7f3');
     $wallet->credit($other, 7, 'adjustment', 'note-adjust-9k2');
 

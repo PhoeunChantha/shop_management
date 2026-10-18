@@ -56,7 +56,7 @@ class ProductSeeder extends Seeder
         }
 
         // Non-destructive backfill for products created before this upgrade.
-        Product::with(['variants', 'specifications', 'tags'])->get()->each(function (Product $product, int $index) use ($sizes, $colors, $tagIds, $brandIds) {
+        Product::with(['variants', 'specifications', 'tags'])->get()->each(function (Product $product, int $index) use ($sizes, $colors, $brandIds) {
             if (! $product->brand_id && $brandIds->isNotEmpty()) {
                 $product->update(['brand_id' => $brandIds->random()]);
             }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\Order;
+use App\Models\OrderDetail;
 use App\Models\ProductVariant;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -43,7 +44,7 @@ class OrderSeeder extends Seeder
                         'line_total' => round($price * $quantity, 2),
                     ]);
                 } else {
-                    $order->details()->save(\App\Models\OrderDetail::factory()->make());
+                    $order->details()->save(OrderDetail::factory()->make());
                 }
             }
 
