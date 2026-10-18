@@ -19,17 +19,17 @@
         {{-- KPI stat bar --}}
         <div class="order-stats">
             @php($cards = [
-                ['label' => __('Revenue'), 'value' => money($stats['revenue']), 'icon' => 'fa-sack-dollar', 'tone' => 'emerald'],
-                ['label' => __('Orders'), 'value' => number_format($stats['orders']), 'icon' => 'fa-receipt', 'tone' => 'blue'],
-                ['label' => __('Pending'), 'value' => number_format($stats['pending']), 'icon' => 'fa-clock', 'tone' => 'amber'],
-                ['label' => __('Unfulfilled'), 'value' => number_format($stats['unfulfilled']), 'icon' => 'fa-box-open', 'tone' => 'rose'],
-                ['label' => __('Avg. order value'), 'value' => money($stats['aov']), 'icon' => 'fa-chart-line', 'tone' => 'violet'],
+                ['label' => __('Revenue'), 'value' => money($stats['revenue']), 'raw' => $stats['revenue'], 'decimals' => 2, 'icon' => 'fa-sack-dollar', 'tone' => 'emerald'],
+                ['label' => __('Orders'), 'value' => number_format($stats['orders']), 'raw' => $stats['orders'], 'icon' => 'fa-receipt', 'tone' => 'blue'],
+                ['label' => __('Pending'), 'value' => number_format($stats['pending']), 'raw' => $stats['pending'], 'icon' => 'fa-clock', 'tone' => 'amber'],
+                ['label' => __('Unfulfilled'), 'value' => number_format($stats['unfulfilled']), 'raw' => $stats['unfulfilled'], 'icon' => 'fa-box-open', 'tone' => 'rose'],
+                ['label' => __('Avg. order value'), 'value' => money($stats['aov']), 'raw' => $stats['aov'], 'decimals' => 2, 'icon' => 'fa-chart-line', 'tone' => 'violet'],
             ])
             @foreach ($cards as $c)
                 <div class="order-stat">
                     <span class="order-stat__icon order-stat__icon--{{ $c['tone'] }}"><i class="fa-solid {{ $c['icon'] }}"></i></span>
                     <div>
-                        <div class="order-stat__value">{{ $c['value'] }}</div>
+                        <div class="order-stat__value" data-count-up="{{ (float) $c['raw'] }}" data-count-decimals="{{ $c['decimals'] ?? 0 }}">{{ $c['value'] }}</div>
                         <div class="order-stat__label">{{ $c['label'] }}</div>
                     </div>
                 </div>

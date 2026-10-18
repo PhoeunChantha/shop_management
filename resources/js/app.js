@@ -749,4 +749,58 @@ Alpine.data('commandPalette', (url) => ({
     });
 })();
 
+/*
+ * Count-up stat values.
+ *
+ *   <div data-count-up="9545.12" data-count-decimals="2">$9,545.12</div>
+ *
+ * The server renders the final, formatted text (so it is correct without JS);
+ * on page load / AJAX swap the number counts up from 0 to the target, keeping
+ * the text around it (currency symbol, suffix) and its separators.
+ */
+(function () {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const DURATION = 1100;
+
+    function animate(el) {
+        if (el.dataset.counted) return;
+        el.dataset.counted = '1';
+
+        const target = Number(el.dataset.countUp);
+        const final = el.textContent.trim();
+        const match = final.match(/\d[\d.,\s ]*\d|\d/);
+        if (!match || !Number.isFinite(target) || target === 0 || reduceMotion.matches) return;
+
+        const token = match[0];
+        // Trust the rendered text over the hint (a currency may format without decimals).
+        let decimals = Number(el.dataset.countDecimals || 0);
+        if (decimals > 0 && !/[.,]/.test(token.charAt(token.length - decimals - 1))) decimals = 0;
+        const decimalSep = decimals > 0 ? token.charAt(token.length - decimals - 1) : '';
+        const whole = decimals > 0 ? token.slice(0, -(decimals + 1)) : token;
+        const groupSep = (whole.match(/\D/) || [''])[0];
+        const before = final.slice(0, match.index);
+        const after = final.slice(match.index + token.length);
+
+        const format = (n) => {
+            const [int, frac] = Math.abs(n).toFixed(decimals).split('.');
+            return before + int.replace(/\B(?=(\d{3})+(?!\d))/g, groupSep) + (frac ? decimalSep + frac : '') + after;
+        };
+
+        el.textContent = format(0);
+        const start = performance.now();
+        const tick = (now) => {
+            const t = Math.min(1, (now - start) / DURATION);
+            el.textContent = t < 1 ? format(target * (1 - Math.pow(1 - t, 3))) : final;
+            if (t < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    }
+
+    const run = (root) => (root || document).querySelectorAll('[data-count-up]').forEach(animate);
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => run());
+    else run();
+    document.addEventListener('ajax:page-loaded', (e) => run(e.detail && e.detail.root));
+})();
+
 Alpine.start();

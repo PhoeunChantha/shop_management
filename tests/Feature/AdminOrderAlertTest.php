@@ -77,3 +77,13 @@ it('offers both switches on the Notifications settings tab', function () {
         ->assertSee('name="order_alert_popup"', false)
         ->assertSee('name="order_alert_sound"', false);
 });
+
+it('marks the order stat cards to count up from their raw values', function () {
+    alertOrder();
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.orders.index'))
+        ->assertOk()
+        ->assertSee('data-count-up="1"', false)
+        ->assertSee('data-count-decimals="2"', false);
+});
