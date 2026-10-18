@@ -1,0 +1,61 @@
+name: Deploy
+
+# dev  → staging    (GitHub environment "staging")
+# main → production (GitHub environment "production")
+# Deploys only after the test suite passes. Server setup: docs/DEPLOYMENT.md.
+on:
+  push:
+    branches: [dev, main]
+  workflow_dispatch:
+
+# One deploy per environment at a time; a newer push waits, never cancels a running deploy.
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  tests:
+    uses: ./.github/workflows/tests.yml
+
+  deploy:
+    name: Deploy to ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    needs: tests
+    if: github.ref_name == 'main' || github.ref_name == 'dev'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment:
+      name: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+      url: ${{ vars.APP_URL }}
+
+    steps:
+      # Lets the workflow merge before a server exists: no SSH_HOST secret → skip with a warning.
+      - name: Check server secrets
+        id: check
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+        run: |
+          if [ -z "$SSH_HOST" ]; then
+            echo "::warning::No SSH_HOST secret in the '${{ github.ref_name == 'main' && 'production' || 'staging' }}' environment — deploy skipped. See docs/DEPLOYMENT.md."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy over SSH
+        if: steps.check.outputs.ready == 'true'
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          command_timeout: 15m
+          script: |
+            set -e
+            cd "${{ secrets.DEPLOY_PATH }}"
+            git fetch --quiet origin "${{ github.ref_name }}"
+            # Run the deploy script from the commit being deployed, not the old checkout.
+            script="$(mktemp)"
+            git show "${{ github.sha }}:scripts/deploy.sh" > "$script"
+            bash "$script" "${{ github.sha }}"
+            rm -f "$script"

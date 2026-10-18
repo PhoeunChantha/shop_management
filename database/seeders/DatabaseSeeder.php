@@ -19,17 +19,17 @@ class DatabaseSeeder extends Seeder
         $this->call(RolePermissionSeeder::class);
 
         $admin = User::firstOrCreate(
-        ['email' => 'admin@gmail.com'], 
-        [
-            'name' => 'Admin',
-            'password' => bcrypt('password'), 
-            'email_verified_at' => now(),
-        ]
-    );
+            ['email' => 'admin@gmail.com'],
+            [
+                'name' => 'Admin',
+                'password' => bcrypt('password'),
+                'email_verified_at' => now(),
+            ]
+        );
 
-        if (!$admin->hasRole('admin')) {
-        $admin->assignRole('admin');
-    }
+        if (! $admin->hasRole('admin')) {
+            $admin->assignRole('admin');
+        }
 
         // Complete admin demo data for reviewing the system.
         $this->call(AdminDemoSeeder::class);

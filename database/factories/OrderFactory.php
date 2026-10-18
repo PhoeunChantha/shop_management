@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Enums\OrderStatus;
 use App\Enums\FulfillmentStatus;
+use App\Enums\OrderStatus;
 use App\Models\Order;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
