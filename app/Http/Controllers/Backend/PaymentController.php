@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Services\Admin\PaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response as ResponseFactory;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -25,7 +26,10 @@ class PaymentController extends Controller
 
         return view('admin.payments.index', [
             'payments' => $this->payments->paginate($filters, $perPage),
-            'stats' => $this->payments->stats(),
+            'stats' => $this->payments->stats($filters),
+            'filterOptions' => $this->payments->filterOptions(),
+            'statuses' => PaymentService::STATUSES,
+            'amountRanges' => PaymentService::amountRanges(),
             'perPage' => $perPage,
         ]);
     }
@@ -51,7 +55,13 @@ class PaymentController extends Controller
     {
         return $request->validate([
             'search' => ['nullable', 'string', 'max:255'],
-            'status' => ['nullable', 'string', 'in:pending,completed,failed'],
+            'status' => ['nullable', 'string', Rule::in(array_keys(PaymentService::STATUSES))],
+            'gateway' => ['nullable', 'string', 'max:50'],
+            'payment_option' => ['nullable', 'string', 'max:50'],
+            'currency' => ['nullable', 'string', 'max:10'],
+            'amount' => ['nullable', 'string', Rule::in(array_keys(PaymentService::amountRanges()))],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
             'per_page' => ['nullable', 'integer', 'in:5,10,25,50,100'],
         ]);
     }

@@ -98,3 +98,13 @@ it('gates the orders report behind its own permission', function () {
         $this->actingAs($admin)->get(route('admin.reports.orders.export', ['view' => $view]))->assertOk();
     }
 });
+
+it('renders the order list with the shared report table toolbar', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+
+    $this->actingAs($admin)
+        ->get(route('admin.reports.orders', ['view' => 'orders']))
+        ->assertOk()
+        ->assertSeeInOrder(['data-ajax-table', 'table-toolbar', 'Search order or customer', 'report-orders-table'], false)
+        ->assertDontSee('panel-head--flush', false);
+});

@@ -145,23 +145,15 @@
                     </div>
                 </div>
             @else
-                <section class="premium-card admin-table-card" data-ajax-table>
-                    <x-table-toolbar>
-                        <x-slot:left>
-                            <div class="panel-head panel-head--flush">
-                                <h3>{{ __('Order list') }}</h3>
-                                <span>{{ __('Every order placed in the period') }}</span>
-                            </div>
-                            <x-per-page-selector :current="$filters->perPage()" />
-                        </x-slot:left>
-                        <x-slot:right>
-                            <x-search-input name="search" placeholder="{{ __('Search order or customer…') }}" />
-                        </x-slot:right>
-                    </x-table-toolbar>
+                <x-admin.table-card ajax :loader="false">
+                    <x-slot:toolbar>
+                        <x-table-toolbar>
+                            <x-slot:left><x-per-page-selector :current="$filters->perPage()" /></x-slot:left>
+                            <x-slot:right><x-search-input name="search" placeholder="{{ __('Search order or customer…') }}" /></x-slot:right>
+                        </x-table-toolbar>
+                    </x-slot:toolbar>
 
-                    <div data-ajax-region>
-                        <div class="premium-table-wrap admin-table-card__scroll">
-                            <table class="premium-table">
+                            <table class="premium-table finance-report-table report-orders-table">
                                 <thead>
                                     <tr>
                                         <th>{{ __('Order') }}</th>
@@ -193,10 +185,11 @@
                                     @endforelse
                                 </tbody>
                             </table>
-                        </div>
+
+                    <x-slot:footer>
                         <x-table-footer :paginator="$rows" label="{{ __('orders') }}" />
-                    </div>
-                </section>
+                    </x-slot:footer>
+                </x-admin.table-card>
             @endif
         </div>
     </x-admin.report-shell>

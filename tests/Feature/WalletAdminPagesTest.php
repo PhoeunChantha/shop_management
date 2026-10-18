@@ -147,3 +147,10 @@ it('accepts every per-page size the selector offers', function () {
     expect($this->actingAs($this->admin)->get(route('admin.wallets.index', ['per_page' => 5]))->viewData('customers'))
         ->toHaveCount(5);
 });
+
+it('groups the transaction type filter with the search on one toolbar row', function () {
+    $this->actingAs($this->admin)
+        ->get(route('admin.wallets.index'))
+        ->assertOk()
+        ->assertSeeInOrder(['table-toolbar__right', 'toolbar-filters', 'name="tx_type"', 'name="tx_search"'], false);
+});

@@ -7,12 +7,12 @@
     </x-slot>
 
     <div class="admin-page">
-        <div class="return-stat-strip">
-            <div class="return-stat"><span>{{ __('Total returns') }}</span><strong>{{ number_format($stats['total']) }}</strong></div>
-            <div class="return-stat"><span>{{ __('Requested') }}</span><strong>{{ number_format($stats['requested']) }}</strong></div>
-            <div class="return-stat return-stat--active"><span>{{ __('In progress') }}</span><strong>{{ number_format($stats['approved']) }}</strong></div>
-            <div class="return-stat"><span>{{ __('Refunded') }}</span><strong>${{ number_format($stats['refunds'], 2) }}</strong></div>
-        </div>
+        <x-admin.stat-cards :cards="[
+            ['label' => __('Total returns'), 'value' => number_format($stats['total']), 'raw' => $stats['total'], 'icon' => 'fa-rotate-left', 'tone' => 'blue'],
+            ['label' => __('Requested'), 'value' => number_format($stats['requested']), 'raw' => $stats['requested'], 'icon' => 'fa-inbox', 'tone' => 'amber'],
+            ['label' => __('In progress'), 'value' => number_format($stats['approved']), 'raw' => $stats['approved'], 'icon' => 'fa-hourglass-half', 'tone' => 'violet'],
+            ['label' => __('Refunded'), 'value' => '$'.number_format($stats['refunds'], 2), 'raw' => $stats['refunds'], 'decimals' => 2, 'icon' => 'fa-money-bill-wave', 'tone' => 'emerald'],
+        ]" />
 
         <div class="page-section-header">
             <div>
@@ -26,17 +26,29 @@
 
         @include('admin.saved-views._bar', ['scope' => 'returns', 'icon' => 'fa-rotate-left', 'color' => '#dc2626'])
 
-        <x-filter-card :action="route('admin.returns.index')" class="return-filter-card">
-            <x-select name="status" size="sm" :value="request('status')" placeholder="{{ __('Any return status') }}" :options="\App\Models\ReturnRequest::STATUSES" />
-            <x-select name="refund_status" size="sm" :value="request('refund_status')" placeholder="{{ __('Any refund status') }}" :options="\App\Models\ReturnRequest::REFUND_STATUSES" />
-        </x-filter-card>
-
         <x-admin.table-card class="return-table-card">
             <x-slot:toolbar>
                 <x-table-toolbar>
                     <x-slot:left><x-per-page-selector :current="$perPage" /></x-slot:left>
                     <x-slot:right>
-                        <x-search-input name="search" placeholder="{{ __('Search return, order or customer...') }}" />
+                        {{-- Status filters live with the search: one row, each select applies on change. --}}
+                        <div class="toolbar-filters">
+                            <form method="GET" action="{{ route('admin.returns.index') }}" class="toolbar-filters__selects">
+                                @foreach (request()->except(['status', 'refund_status', 'page']) as $key => $val)
+                                    @unless (is_array($val))<input type="hidden" name="{{ $key }}" value="{{ $val }}">@endunless
+                                @endforeach
+                                <x-select name="status" size="sm" :value="request('status')" placeholder="{{ __('Any return status') }}"
+                                    :options="\App\Models\ReturnRequest::STATUSES" submit-on-change />
+                                <x-select name="refund_status" size="sm" :value="request('refund_status')" placeholder="{{ __('Any refund status') }}"
+                                    :options="\App\Models\ReturnRequest::REFUND_STATUSES" submit-on-change />
+                            </form>
+                            <x-search-input name="search" placeholder="{{ __('Search return, order or customer...') }}" />
+                            @if (request()->filled('status') || request()->filled('refund_status') || request()->filled('search'))
+                                <a href="{{ route('admin.returns.index', request()->only('per_page')) }}" class="toolbar-filters__clear">
+                                    <i class="fa-solid fa-xmark"></i><span>{{ __('Clear') }}</span>
+                                </a>
+                            @endif
+                        </div>
                     </x-slot:right>
                 </x-table-toolbar>
             </x-slot:toolbar>

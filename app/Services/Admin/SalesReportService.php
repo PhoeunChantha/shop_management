@@ -303,6 +303,21 @@ final class SalesReportService
             ->all();
     }
 
+    /** Display name for the customer filter (it stores the email). */
+    public function customerLabel(?string $customer): ?string
+    {
+        if (blank($customer)) {
+            return null;
+        }
+
+        return Order::query()
+            ->where('customer_email', $customer)
+            ->whereNotNull('customer_name')
+            ->where('customer_name', '!=', '')
+            ->latest('id')
+            ->value('customer_name') ?? $customer;
+    }
+
     /**
      * Export for the active tab, with every active filter (incl. search) applied.
      *

@@ -1,3 +1,4 @@
+@inject('settings', \App\Services\Admin\SettingService::class)
 <x-app-layout>
     <x-slot name="header">
         <div>
@@ -7,21 +8,6 @@
     </x-slot>
 
     <div class="admin-page">
-        <div class="cart-recovery-strip">
-            <div class="cart-recovery-stat">
-                <span><i class="fa-solid fa-receipt"></i> {{ __('Transactions') }}</span>
-                <strong>{{ number_format($stats['total']) }}</strong>
-            </div>
-            <div class="cart-recovery-stat cart-recovery-stat--active">
-                <span><i class="fa-solid fa-check-double"></i> {{ __('Completed') }}</span>
-                <strong>{{ number_format($stats['completed']) }}</strong>
-            </div>
-            <div class="cart-recovery-stat">
-                <span><i class="fa-solid fa-sack-dollar"></i> {{ __('Collected') }}</span>
-                <strong>${{ number_format($stats['collected'], 2) }}</strong>
-            </div>
-        </div>
-
         <div class="page-section-header">
             <div>
                 <p class="section-kicker">{{ __('Gateway') }}</p>
@@ -32,12 +18,52 @@
             </a>
         </div>
 
-        <x-filter-card :action="route('admin.payments.index')">
-            <x-select name="status" size="sm" :value="request('status')" placeholder="{{ __('Any status') }}"
-                :options="['pending' => 'Pending', 'completed' => 'Completed', 'failed' => 'Failed']" />
+        {{-- KPI stat bar (follows the active filters) --}}
+        @php($cards = [
+            ['label' => __('Collected'), 'value' => money($stats['collected']), 'raw' => $stats['collected'], 'decimals' => 2, 'icon' => 'fa-sack-dollar', 'tone' => 'emerald'],
+            ['label' => __('Transactions'), 'value' => number_format($stats['total']), 'raw' => $stats['total'], 'icon' => 'fa-receipt', 'tone' => 'blue'],
+            ['label' => __('Completed'), 'value' => number_format($stats['completed']), 'raw' => $stats['completed'], 'icon' => 'fa-circle-check', 'tone' => 'violet'],
+            ['label' => __('Pending'), 'value' => number_format($stats['pending']), 'raw' => $stats['pending'], 'icon' => 'fa-clock', 'tone' => 'amber'],
+            ['label' => __('Failed'), 'value' => number_format($stats['failed']), 'raw' => $stats['failed'], 'icon' => 'fa-circle-xmark', 'tone' => 'rose'],
+        ])
+        <x-admin.stat-cards :cards="$cards" />
+
+        {{-- Filters --}}
+        <x-filter-card :action="route('admin.payments.index')" :grid="'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'">
+            <x-slot:hidden>
+                <input type="hidden" name="search" value="{{ request('search') }}">
+                <input type="hidden" name="per_page" value="{{ $perPage }}">
+            </x-slot:hidden>
+
+            <x-select name="status" size="sm" :label="__('Status')" :value="request('status')" :placeholder="__('Any status')"
+                :options="$statuses" />
+
+            <x-select name="gateway" size="sm" :label="__('Gateway')" :value="request('gateway')" :placeholder="__('Any gateway')"
+                :options="$filterOptions['gateways']" />
+
+            <x-select name="payment_option" size="sm" :label="__('Method')" :value="request('payment_option')" :placeholder="__('Any method')"
+                :options="$filterOptions['options']" searchable />
+
+            <x-select name="currency" size="sm" :label="__('Currency')" :value="request('currency')" :placeholder="__('Any currency')"
+                :options="$filterOptions['currencies']" />
+
+            <x-select name="amount" size="sm" :label="__('Amount')" :value="request('amount')" :placeholder="__('Any amount')"
+                :options="$amountRanges" />
+
+            <div class="form-field">
+                <label>{{ __('Date range') }}</label>
+                <div class="daterange-control">
+                    <i class="fa-regular fa-calendar"></i>
+                    <input type="text" class="form-input" data-daterange placeholder="{{ __('Any date') }}"
+                        readonly autocomplete="off"
+                        value="{{ request('date_from') && request('date_to') ? \Illuminate\Support\Carbon::parse(request('date_from'))->format('M d, Y') . ' – ' . \Illuminate\Support\Carbon::parse(request('date_to'))->format('M d, Y') : '' }}">
+                </div>
+                <input type="hidden" name="date_from" value="{{ request('date_from') }}">
+                <input type="hidden" name="date_to" value="{{ request('date_to') }}">
+            </div>
         </x-filter-card>
 
-        <x-admin.table-card>
+        <x-admin.table-card class="mt-3">
             <x-slot:toolbar>
                 <x-table-toolbar>
                     <x-slot:left><x-per-page-selector :current="$perPage" /></x-slot:left>
@@ -72,10 +98,10 @@
                                 @if($payment->payment_option)<small class="d-block text-gray-400 mt-1">{{ $payment->payment_option }}</small>@endif
                             </td>
                             <td><code>{{ $payment->tran_id }}</code></td>
-                            <td><strong>{{ $payment->currency }} {{ number_format((float) $payment->amount, 2) }}</strong></td>
+                            <td><strong title="{{ $payment->currency }}">{{ $settings->formatIn((float) $payment->amount, $payment->currency) }}</strong></td>
                             <td>
                                 @php($chip = ['completed' => 'is-success', 'failed' => 'is-danger', 'pending' => 'is-warning'][$payment->status] ?? '')
-                                <span class="status-chip {{ $chip }}">{{ ucfirst($payment->status) }}</span>
+                                <span class="status-chip {{ $chip }}">{{ __($statuses[$payment->status] ?? ucfirst($payment->status)) }}</span>
                             </td>
                             <td>
                                 {{ $payment->created_at?->format('M d, Y g:i A') }}

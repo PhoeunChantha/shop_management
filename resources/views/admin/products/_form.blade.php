@@ -610,13 +610,10 @@
                 </div>
                 <div class="form-section__body d-flex flex-column gap-3">
                     <div class="form-field">
-                        <label for="status">Status <span class="text-red-500">*</span></label>
-                        <select name="status" id="status" class="form-input">
-                            @foreach (['draft' => 'Draft', 'active' => 'Active', 'inactive' => 'Inactive', 'archived' => 'Archived'] as $val => $label)
-                                <option value="{{ $val }}" @selected(old('status', $product->status ?? 'draft') === $val)>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                        <p class="form-help">{{ __('Draft products stay hidden until published.') }}</p>
+                        <x-select name="status" id="status" :label="__('Status')" required
+                            :options="['draft' => __('Draft'), 'active' => __('Active'), 'inactive' => __('Inactive'), 'archived' => __('Archived')]"
+                            :value="old('status', $product->status ?? 'draft')"
+                            :help="__('Draft products stay hidden until published.')" />
                     </div>
 
                     @php($flags = ['is_featured' => 'Featured', 'is_new' => 'New Arrival', 'is_best_seller' => 'Best Seller', 'is_on_sale' => 'On Sale'])
@@ -656,13 +653,9 @@
                             :help="__('Required for storefront navigation and filters. Pick a sub-category to file the product under it — its main category is set automatically.')" />
                     </div>
                     <div class="form-field">
-                        <label for="brand_id">{{ __('Brand') }}</label>
-                        <select name="brand_id" id="brand_id" class="form-input">
-                            <option value="">{{ __('None') }}</option>
-                            @foreach ($brands as $brand)
-                                <option value="{{ $brand->id }}" @selected(old('brand_id', $product->brand_id ?? '') == $brand->id)>{{ $brand->name }}</option>
-                            @endforeach
-                        </select>
+                        <x-select name="brand_id" id="brand_id" :label="__('Brand')" :options="$brands"
+                            :value="old('brand_id', $product->brand_id ?? '')"
+                            :placeholder="__('None')" searchable />
                     </div>
                     <div class="form-field">
                         <label>{{ __('Tags') }}</label>

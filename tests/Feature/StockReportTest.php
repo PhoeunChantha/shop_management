@@ -75,3 +75,15 @@ it('renders the dashboard low-stock widget when only variants are low on stock',
         ->get(route('admin.dashboard'))
         ->assertOk();
 });
+
+it('puts the stock export beside the tabs instead of an empty filter bar', function () {
+    seedLowStockVariantOnly();
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.reports.stock'))
+        ->assertOk()
+        ->assertDontSee('report-controlbar', false)
+        ->assertSeeInOrder(['report-tabs-bar__actions', 'report-tabs-bar__button', 'Download PDF'], false)
+        ->assertSee('report-metrics__icon', false)
+        ->assertSee('is-warn', false);
+});
