@@ -101,7 +101,7 @@
                     </thead>
                     <tbody>
                         @forelse ($orders as $order)
-                            <tr>
+                            <tr data-row-href="{{ route('admin.orders.show', $order->id) }}">
                                 <td>
                                     <a href="{{ route('admin.orders.show', $order->id) }}" class="dash-table__id">{{ $order->order_number }}</a>
                                 </td>

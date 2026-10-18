@@ -803,4 +803,41 @@ Alpine.data('commandPalette', (url) => ({
     document.addEventListener('ajax:page-loaded', (e) => run(e.detail && e.detail.root));
 })();
 
+/*
+ * Clickable table rows.
+ *
+ *   <tr data-row-href="/admin/orders/5"> … </tr>
+ *
+ * A click anywhere on the row opens the link, except on controls inside it
+ * (links, buttons, inputs, action menus) or when the user is selecting text.
+ * Ctrl/Cmd-click and middle-click open it in a new tab. The row keeps a real
+ * <a> in one cell, so keyboard and screen-reader users are unaffected.
+ */
+(function () {
+    const INTERACTIVE = 'a, button, input, select, textarea, label, summary, [role="menu"], [role="menuitem"], [data-no-row-link]';
+
+    function rowTarget(event) {
+        const row = event.target.closest('tr[data-row-href]');
+        if (!row || event.target.closest(INTERACTIVE)) return null;
+        if (String(window.getSelection() || '').trim() !== '') return null;
+        return row;
+    }
+
+    document.addEventListener('click', (event) => {
+        const row = rowTarget(event);
+        if (!row) return;
+        if (event.ctrlKey || event.metaKey || event.shiftKey) {
+            window.open(row.dataset.rowHref, '_blank', 'noopener');
+            return;
+        }
+        window.location.assign(row.dataset.rowHref);
+    });
+
+    document.addEventListener('auxclick', (event) => {
+        if (event.button !== 1) return;
+        const row = rowTarget(event);
+        if (row) window.open(row.dataset.rowHref, '_blank', 'noopener');
+    });
+})();
+
 Alpine.start();

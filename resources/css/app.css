@@ -19136,3 +19136,7 @@ html.dark .order-alert__who strong { color: #f1f5f9; }
 html.dark .order-alert__row { border-color: #334155; }
 html.dark .order-alert__row:hover { background: rgba(5, 150, 105, .12); }
 html.dark .order-alert__who small, html.dark .order-alert__sum small { color: #94a3b8; }
+
+/* Clickable table rows (data-row-href) */
+tr[data-row-href] { cursor: pointer; }
+tr[data-row-href] :is(a, button, input, select, label) { cursor: pointer; }

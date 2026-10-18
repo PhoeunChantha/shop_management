@@ -87,3 +87,12 @@ it('marks the order stat cards to count up from their raw values', function () {
         ->assertSee('data-count-up="1"', false)
         ->assertSee('data-count-decimals="2"', false);
 });
+
+it('makes each order row open its detail page', function () {
+    $order = alertOrder();
+
+    $this->actingAs($this->admin)
+        ->get(route('admin.orders.index'))
+        ->assertOk()
+        ->assertSee('data-row-href="'.route('admin.orders.show', $order->id).'"', false);
+});
