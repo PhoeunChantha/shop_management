@@ -152,5 +152,5 @@ it('groups the transaction type filter with the search on one toolbar row', func
     $this->actingAs($this->admin)
         ->get(route('admin.wallets.index'))
         ->assertOk()
-        ->assertSeeInOrder(['table-toolbar__right', 'wallet-tx-filters', 'name="tx_type"', 'name="tx_search"'], false);
+        ->assertSeeInOrder(['table-toolbar__right', 'toolbar-filters', 'name="tx_type"', 'name="tx_search"'], false);
 });

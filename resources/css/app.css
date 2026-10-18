@@ -19141,12 +19141,18 @@ html.dark .order-alert__who small, html.dark .order-alert__sum small { color: #9
 tr[data-row-href] { cursor: pointer; }
 tr[data-row-href] :is(a, button, input, select, label) { cursor: pointer; }
 
-/* Wallets: transaction type filter grouped with the search, one row */
-.wallet-tx-filters { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: flex-end; }
-.wallet-tx-filters__type { flex: 0 0 200px; }
-.wallet-tx-filters__type .x-select { width: 100%; }
-.wallet-tx-filters .search-control { flex: 1 1 260px; max-width: 360px; }
-@media (max-width: 640px) {
-    .wallet-tx-filters { flex-wrap: wrap; }
-    .wallet-tx-filters__type, .wallet-tx-filters .search-control { flex: 1 1 100%; max-width: none; }
+/* Toolbar filter group: compact selects + search on one row (Wallets, Returns) */
+.table-toolbar__right:has(.toolbar-filters) { flex: 1 1 auto; }
+.toolbar-filters { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: flex-end; }
+.toolbar-filters__selects { display: flex; align-items: center; gap: 10px; }
+.toolbar-filters__selects .x-select { width: 190px; }
+.toolbar-filters .search-control { flex: 1 1 240px; max-width: 360px; width: auto; margin-left: 0; }
+.toolbar-filters__clear { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 12px; border-radius: 11px; color: #64748b; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.toolbar-filters__clear:hover { color: #0f172a; background: #f1f5f9; }
+html.dark .toolbar-filters__clear:hover { color: #f1f5f9; background: rgba(148, 163, 184, .14); }
+@media (max-width: 760px) {
+    .toolbar-filters { flex-wrap: wrap; }
+    .toolbar-filters__selects { flex: 1 1 100%; }
+    .toolbar-filters__selects .x-select { flex: 1 1 0; width: auto; min-width: 0; }
+    .toolbar-filters .search-control { flex: 1 1 100%; max-width: none; }
 }

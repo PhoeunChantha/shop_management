@@ -156,8 +156,8 @@
                     </x-slot:left>
                     <x-slot:right>
                         {{-- Type filter sits with the search: one filter group, one row. Same toolbar-form pattern, so the AJAX table refreshes in place. --}}
-                        <div class="wallet-tx-filters">
-                            <form method="GET" action="{{ url()->current() }}" class="wallet-tx-filters__type">
+                        <div class="toolbar-filters">
+                            <form method="GET" action="{{ url()->current() }}" class="toolbar-filters__selects">
                                 @foreach (request()->except(['tx_type', 'tx_page']) as $key => $val)
                                     @unless (is_array($val))<input type="hidden" name="{{ $key }}" value="{{ $val }}">@endunless
                                 @endforeach
