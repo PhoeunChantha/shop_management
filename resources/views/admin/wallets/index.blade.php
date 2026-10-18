@@ -153,17 +153,19 @@
                 <x-table-toolbar>
                     <x-slot:left>
                         <x-per-page-selector name="tx_per_page" page-name="tx_page" :current="$txPerPage" />
-                        {{-- Type filter: same toolbar-form pattern, so the AJAX table refreshes in place. --}}
-                        <form method="GET" action="{{ url()->current() }}" class="toolbar-form">
-                            @foreach (request()->except(['tx_type', 'tx_page']) as $key => $val)
-                                @unless (is_array($val))<input type="hidden" name="{{ $key }}" value="{{ $val }}">@endunless
-                            @endforeach
-                            <x-select name="tx_type" size="sm" :value="request('tx_type')" placeholder="{{ __('All types') }}"
-                                :options="collect($txTypes)->map(fn ($label) => __($label))->all()" submit-on-change />
-                        </form>
                     </x-slot:left>
                     <x-slot:right>
-                        <x-search-input name="tx_search" page-name="tx_page" placeholder="{{ __('Search customer, email, order or note...') }}" />
+                        {{-- Type filter sits with the search: one filter group, one row. Same toolbar-form pattern, so the AJAX table refreshes in place. --}}
+                        <div class="wallet-tx-filters">
+                            <form method="GET" action="{{ url()->current() }}" class="wallet-tx-filters__type">
+                                @foreach (request()->except(['tx_type', 'tx_page']) as $key => $val)
+                                    @unless (is_array($val))<input type="hidden" name="{{ $key }}" value="{{ $val }}">@endunless
+                                @endforeach
+                                <x-select name="tx_type" size="sm" :value="request('tx_type')" placeholder="{{ __('All types') }}"
+                                    :options="collect($txTypes)->map(fn ($label) => __($label))->all()" submit-on-change />
+                            </form>
+                            <x-search-input name="tx_search" page-name="tx_page" placeholder="{{ __('Search customer, email, order or note...') }}" />
+                        </div>
                     </x-slot:right>
                 </x-table-toolbar>
             </x-slot:toolbar>

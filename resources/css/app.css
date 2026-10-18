@@ -19140,3 +19140,13 @@ html.dark .order-alert__who small, html.dark .order-alert__sum small { color: #9
 /* Clickable table rows (data-row-href) */
 tr[data-row-href] { cursor: pointer; }
 tr[data-row-href] :is(a, button, input, select, label) { cursor: pointer; }
+
+/* Wallets: transaction type filter grouped with the search, one row */
+.wallet-tx-filters { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: flex-end; }
+.wallet-tx-filters__type { flex: 0 0 200px; }
+.wallet-tx-filters__type .x-select { width: 100%; }
+.wallet-tx-filters .search-control { flex: 1 1 260px; max-width: 360px; }
+@media (max-width: 640px) {
+    .wallet-tx-filters { flex-wrap: wrap; }
+    .wallet-tx-filters__type, .wallet-tx-filters .search-control { flex: 1 1 100%; max-width: none; }
+}
